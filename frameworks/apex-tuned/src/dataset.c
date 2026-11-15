@@ -53,7 +53,8 @@ bool dataset_load(const char *dataset_file_path) {
     size_t item_index = 0;
     const cJSON *item_node = NULL;
     cJSON_ArrayForEach(item_node, root_array) {
-        dataset_item_t *item = &g_items[item_index++];
+        size_t current_item_index = item_index++;
+        dataset_item_t *item = &g_items[current_item_index];
         item->id = cjson_int(item_node, "id");
         item->price = cjson_int(item_node, "price");
         item->quantity = cjson_int(item_node, "quantity");
@@ -83,6 +84,13 @@ bool dataset_load(const char *dataset_file_path) {
 
         char prefix_buffer[2048];
         char *prefix_cursor = prefix_buffer;
+        if (current_item_index == 0) {
+            memcpy(prefix_cursor, "{\"items\":[", 10);
+            prefix_cursor += 10;
+        } else {
+            memcpy(prefix_cursor, "},", 2);
+            prefix_cursor += 2;
+        }
         prefix_cursor += sprintf(prefix_cursor,
                                  "{\"id\":%lld,\"name\":\"%s\",\"category\":\"%s\",\"price\":%lld,\"quantity\":%lld,"
                                  "\"active\":%s,\"tags\":[",
@@ -120,24 +128,33 @@ size_t json_serialize(size_t count, int64_t multiplier, char *destination_buffer
     }
     char *cursor = destination_buffer;
 
-    memcpy(cursor, "{\"items\":[", 10);
-    cursor += 10;
+    if (count == 0) {
+        memcpy(cursor, "{\"items\":[", 10);
+        cursor += 10;
+    }
 
     for (size_t item_index = 0; item_index < count; item_index++) {
-        if (item_index > 0) {
-            *cursor++ = ',';
-        }
         memcpy(cursor, g_items[item_index].prefix, g_items[item_index].prefix_len);
         cursor += g_items[item_index].prefix_len;
         int64_t total_price =
             (multiplier == 1) ? g_items[item_index].base_total : (g_items[item_index].base_total * multiplier);
-        cursor += format_i64(cursor, total_price);
+        if (__builtin_expect((uint64_t)total_price <= UINT32_MAX, 1)) {
+            cursor += format_u32(cursor, (uint32_t)total_price);
+        } else {
+            cursor += format_i64(cursor, total_price);
+        }
+    }
+    if (count > 0) {
         *cursor++ = '}';
     }
 
     memcpy(cursor, "],\"count\":", 10);
     cursor += 10;
-    cursor += format_i64(cursor, (int64_t)count);
+    if (__builtin_expect(count <= UINT32_MAX, 1)) {
+        cursor += format_u32(cursor, (uint32_t)count);
+    } else {
+        cursor += format_i64(cursor, (int64_t)count);
+    }
     *cursor++ = '}';
 
     return (size_t)(cursor - destination_buffer);

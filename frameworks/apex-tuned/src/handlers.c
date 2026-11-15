@@ -74,35 +74,74 @@ void delay_handler(context_t *context) {
     context->async_parked = true;
 }
 
+static void parse_json_request_parameters(const request_t *request, size_t *out_item_count,
+                                          int64_t *out_multiplier) {
+    int64_t item_count = 50;
+    if (request->path.len >= 6 && memcmp(request->path.ptr, "/json/", 6) == 0) {
+        const char *count_start = request->path.ptr + 6;
+        size_t count_length = request->path.len - 6;
+        const char *slash = memchr(count_start, '/', count_length);
+        if (slash) {
+            count_length = (size_t)(slash - count_start);
+        }
+        parse_i64(count_start, count_length, &item_count);
+    }
+    if (item_count < 1) {
+        item_count = 1;
+    } else if (item_count > 50) {
+        item_count = 50;
+    }
+
+    int64_t multiplier = 1;
+    if (request->query.ptr && request->query.len > 0) {
+        const char *cursor = request->query.ptr;
+        const char *query_end = cursor + request->query.len;
+        for (size_t parameter_index = 0; cursor < query_end && parameter_index < MAX_PARAMS; parameter_index++) {
+            const char *field_end = memchr(cursor, '&', (size_t)(query_end - cursor));
+            if (!field_end) {
+                field_end = query_end;
+            }
+            const char *equals_separator = memchr(cursor, '=', (size_t)(field_end - cursor));
+            if (equals_separator && equals_separator == cursor + 1 && cursor[0] == 'm') {
+                parse_i64(equals_separator + 1, (size_t)(field_end - equals_separator - 1), &multiplier);
+                break;
+            }
+            cursor = field_end < query_end ? field_end + 1 : query_end;
+        }
+    }
+
+    *out_item_count = (size_t)item_count;
+    *out_multiplier = multiplier;
+}
+
+static bool json_accepts_gzip(const request_t *request) {
+    str_view_t accept_encoding = request->accept_encoding;
+    if (!accept_encoding.ptr || accept_encoding.len < 4) {
+        return false;
+    }
+    for (size_t index = 0; index + 4 <= accept_encoding.len; index++) {
+        const unsigned char *candidate = (const unsigned char *)accept_encoding.ptr + index;
+        if ((candidate[0] | 0x20) == 'g' && (candidate[1] | 0x20) == 'z' && (candidate[2] | 0x20) == 'i' &&
+            (candidate[3] | 0x20) == 'p') {
+            return true;
+        }
+    }
+    return false;
+}
+
 void json_handler(context_t *context) {
     request_t *request = context->req;
     response_t *response = context->res;
     worker_t *worker = t_worker;
 
-    int64_t item_count = 50;
-    if (request->num_route_params > 0) {
-        parse_i64(request->route_params[0].ptr, request->route_params[0].len, &item_count);
-    }
-    if (item_count < 1) {
-        item_count = 1;
-    }
-    if (item_count > 50) {
-        item_count = 50;
-    }
-
+    size_t item_count;
     int64_t multiplier = 1;
-    str_view_t multiplier_parameter;
-    if (req_get_query_param(request, "m", &multiplier_parameter)) {
-        parse_i64(multiplier_parameter.ptr, multiplier_parameter.len, &multiplier);
-    }
+    parse_json_request_parameters(request, &item_count, &multiplier);
 
-    size_t json_length =
-        json_serialize((size_t)item_count, multiplier, worker->compress.json_buf, sizeof(worker->compress.json_buf));
+    size_t json_length = json_serialize(item_count, multiplier, worker->compress.json_buf,
+                                        sizeof(worker->compress.json_buf));
 
-    bool client_accepts_gzip =
-        (request->accept_encoding.ptr && strcasestr(request->accept_encoding.ptr, "gzip") != NULL);
-
-    if (client_accepts_gzip) {
+    if (json_accepts_gzip(request)) {
         size_t compressed_length = 0;
         if (compress_gzip(&worker->compress, worker->compress.json_buf, json_length, worker->compress.comp_buf,
                           sizeof(worker->compress.comp_buf), &compressed_length) == 0) {
@@ -114,6 +153,87 @@ void json_handler(context_t *context) {
 
     res_set_json(response, worker->compress.json_buf, json_length);
     response->content_encoding = NULL;
+}
+
+size_t format_json_http1_response(const request_t *request, worker_t *worker, char *destination_buffer,
+                                  size_t max_destination_size, const char **out_response_start) {
+    enum { JSON_HEADER_RESERVE = 128 };
+    static const char header_prefix[] =
+        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: ";
+    static const char keep_alive_suffix[] = "\r\nConnection: keep-alive\r\n\r\n";
+    static const char keep_alive_gzip_suffix[] =
+        "\r\nContent-Encoding: gzip\r\nConnection: keep-alive\r\n\r\n";
+    static const char close_suffix[] = "\r\nConnection: close\r\n\r\n";
+    static const char close_gzip_suffix[] = "\r\nContent-Encoding: gzip\r\nConnection: close\r\n\r\n";
+
+    if (max_destination_size <= JSON_HEADER_RESERVE || !out_response_start) {
+        return 0;
+    }
+
+    size_t item_count;
+    int64_t multiplier;
+    parse_json_request_parameters(request, &item_count, &multiplier);
+
+    char *body_start = destination_buffer + JSON_HEADER_RESERVE;
+    size_t body_capacity = max_destination_size - JSON_HEADER_RESERVE;
+    size_t body_length;
+    bool use_gzip = json_accepts_gzip(request);
+    if (use_gzip) {
+        size_t json_length = json_serialize(item_count, multiplier, worker->compress.json_buf,
+                                            sizeof(worker->compress.json_buf));
+        if (compress_gzip(&worker->compress, worker->compress.json_buf, json_length, body_start, body_capacity,
+                          &body_length) != 0) {
+            if (json_length > body_capacity) {
+                return 0;
+            }
+            memcpy(body_start, worker->compress.json_buf, json_length);
+            body_length = json_length;
+            use_gzip = false;
+        }
+    } else {
+        body_length = json_serialize(item_count, multiplier, body_start, body_capacity);
+    }
+
+    if (body_length > body_capacity || body_length > UINT32_MAX) {
+        return 0;
+    }
+
+    char content_length_buffer[10];
+    size_t content_length_length = format_u32(content_length_buffer, (uint32_t)body_length);
+    const char *header_suffix;
+    size_t header_suffix_length;
+    if (request->keep_alive) {
+        if (use_gzip) {
+            header_suffix = keep_alive_gzip_suffix;
+            header_suffix_length = sizeof(keep_alive_gzip_suffix) - 1;
+        } else {
+            header_suffix = keep_alive_suffix;
+            header_suffix_length = sizeof(keep_alive_suffix) - 1;
+        }
+    } else if (use_gzip) {
+        header_suffix = close_gzip_suffix;
+        header_suffix_length = sizeof(close_gzip_suffix) - 1;
+    } else {
+        header_suffix = close_suffix;
+        header_suffix_length = sizeof(close_suffix) - 1;
+    }
+
+    size_t header_length =
+        sizeof(header_prefix) - 1 + content_length_length + header_suffix_length;
+    if (header_length > JSON_HEADER_RESERVE) {
+        return 0;
+    }
+
+    char *header_start = body_start - header_length;
+    char *cursor = header_start;
+    memcpy(cursor, header_prefix, sizeof(header_prefix) - 1);
+    cursor += sizeof(header_prefix) - 1;
+    memcpy(cursor, content_length_buffer, content_length_length);
+    cursor += content_length_length;
+    memcpy(cursor, header_suffix, header_suffix_length);
+
+    *out_response_start = header_start;
+    return header_length + body_length;
 }
 
 void echo_handler(context_t *context) {

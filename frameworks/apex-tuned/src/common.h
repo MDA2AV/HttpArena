@@ -89,49 +89,111 @@ static inline bool parse_i64(const char *string_buffer, size_t buffer_length, in
 #include <sys/prctl.h>
 #endif
 
-static inline size_t format_i64(char *destination_buffer, int64_t integer_value) {
-    if (__builtin_expect(integer_value >= 0 && integer_value < 100, 1)) {
-        if (integer_value < 10) {
-            destination_buffer[0] = (char)('0' + integer_value);
-            return 1;
-        }
-        destination_buffer[0] = (char)('0' + (integer_value / 10));
-        destination_buffer[1] = (char)('0' + (integer_value % 10));
-        return 2;
+static inline const char *decimal_digit_pair(uint32_t value) {
+    static const char pairs[201] = "0001020304050607080910111213141516171819"
+                                   "2021222324252627282930313233343536373839"
+                                   "4041424344454647484950515253545556575859"
+                                   "6061626364656667686970717273747576777879"
+                                   "8081828384858687888990919293949596979899";
+    return pairs + (value * 2);
+}
+
+static inline char *format_u32_head(char *destination_buffer, uint32_t integer_value) {
+    if (integer_value < 10) {
+        *destination_buffer++ = (char)('0' + integer_value);
+    } else {
+        memcpy(destination_buffer, decimal_digit_pair(integer_value), 2);
+        destination_buffer += 2;
     }
+    return destination_buffer;
+}
+
+static inline size_t format_u32(char *destination_buffer, uint32_t integer_value) {
+    char *cursor = destination_buffer;
+    uint32_t high;
+    uint32_t remainder;
+    uint32_t group;
+
+    if (__builtin_expect(integer_value < 100, 1)) {
+        return (size_t)(format_u32_head(cursor, integer_value) - destination_buffer);
+    }
+    if (integer_value < 10000) {
+        high = integer_value / 100;
+        remainder = integer_value - (high * 100);
+        cursor = format_u32_head(cursor, high);
+        memcpy(cursor, decimal_digit_pair(remainder), 2);
+        return (size_t)(cursor + 2 - destination_buffer);
+    }
+    if (integer_value < 1000000) {
+        high = integer_value / 10000;
+        remainder = integer_value - (high * 10000);
+        cursor = format_u32_head(cursor, high);
+        group = remainder / 100;
+        memcpy(cursor, decimal_digit_pair(group), 2);
+        memcpy(cursor + 2, decimal_digit_pair(remainder - (group * 100)), 2);
+        return (size_t)(cursor + 4 - destination_buffer);
+    }
+    if (integer_value < 100000000) {
+        high = integer_value / 1000000;
+        remainder = integer_value - (high * 1000000);
+        cursor = format_u32_head(cursor, high);
+        group = remainder / 10000;
+        memcpy(cursor, decimal_digit_pair(group), 2);
+        remainder -= group * 10000;
+        group = remainder / 100;
+        memcpy(cursor + 2, decimal_digit_pair(group), 2);
+        memcpy(cursor + 4, decimal_digit_pair(remainder - (group * 100)), 2);
+        return (size_t)(cursor + 6 - destination_buffer);
+    }
+
+    high = integer_value / 100000000;
+    remainder = integer_value - (high * 100000000);
+    cursor = format_u32_head(cursor, high);
+    group = remainder / 1000000;
+    memcpy(cursor, decimal_digit_pair(group), 2);
+    remainder -= group * 1000000;
+    group = remainder / 10000;
+    memcpy(cursor + 2, decimal_digit_pair(group), 2);
+    remainder -= group * 10000;
+    group = remainder / 100;
+    memcpy(cursor + 4, decimal_digit_pair(group), 2);
+    memcpy(cursor + 6, decimal_digit_pair(remainder - (group * 100)), 2);
+    return (size_t)(cursor + 8 - destination_buffer);
+}
+
+static inline size_t format_i64(char *destination_buffer, int64_t integer_value) {
+    if (__builtin_expect(integer_value >= 0 && (uint64_t)integer_value <= UINT32_MAX, 1)) {
+        return format_u32(destination_buffer, (uint32_t)integer_value);
+    }
+
     char temporary_buffer[24];
     size_t digits_written = 0;
     uint64_t unsigned_magnitude;
-    bool is_negative = false;
     if (integer_value < 0) {
-        is_negative = true;
-        unsigned_magnitude = (uint64_t)-integer_value;
+        destination_buffer[0] = '-';
+        unsigned_magnitude = 0 - (uint64_t)integer_value;
+        if (unsigned_magnitude <= UINT32_MAX) {
+            return 1 + format_u32(destination_buffer + 1, (uint32_t)unsigned_magnitude);
+        }
     } else {
         unsigned_magnitude = (uint64_t)integer_value;
     }
-    static const char two_digit_lookup_table[201] = "0001020304050607080910111213141516171819"
-                                                    "2021222324252627282930313233343536373839"
-                                                    "4041424344454647484950515253545556575859"
-                                                    "6061626364656667686970717273747576777879"
-                                                    "8081828384858687888990919293949596979899";
     while (unsigned_magnitude >= 100) {
         uint64_t quotient = unsigned_magnitude / 100;
         uint32_t remainder = (uint32_t)(unsigned_magnitude - (quotient * 100));
-        temporary_buffer[digits_written++] = two_digit_lookup_table[remainder * 2 + 1];
-        temporary_buffer[digits_written++] = two_digit_lookup_table[remainder * 2];
+        const char *pair = decimal_digit_pair(remainder);
+        temporary_buffer[digits_written++] = pair[1];
+        temporary_buffer[digits_written++] = pair[0];
         unsigned_magnitude = quotient;
     }
     if (unsigned_magnitude < 10) {
         temporary_buffer[digits_written++] = (char)('0' + unsigned_magnitude);
     } else {
-        uint32_t remainder = (uint32_t)unsigned_magnitude;
-        temporary_buffer[digits_written++] = two_digit_lookup_table[remainder * 2 + 1];
-        temporary_buffer[digits_written++] = two_digit_lookup_table[remainder * 2];
+        const char *pair = decimal_digit_pair((uint32_t)unsigned_magnitude);
+        temporary_buffer[digits_written++] = pair[1];
+        temporary_buffer[digits_written++] = pair[0];
     }
-    size_t output_length = 0;
-    if (is_negative) {
-        destination_buffer[output_length++] = '-';
-    }
+    size_t output_length = integer_value < 0 ? 1 : 0;
     for (size_t index = 0; index < digits_written; index++) {
         destination_buffer[output_length++] = temporary_buffer[digits_written - 1 - index];
     }

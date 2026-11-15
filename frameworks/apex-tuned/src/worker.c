@@ -155,6 +155,37 @@ void process_requests(worker_t *worker, conn_t *connection) {
             continue;
         }
 
+        if (__builtin_expect(request.method == HTTP_METHOD_GET &&
+                                 ((request.path.len == 5 && memcmp(request.path.ptr, "/json", 5) == 0) ||
+                                  (request.path.len >= 6 && memcmp(request.path.ptr, "/json/", 6) == 0)),
+                             0)) {
+            if (write_pos > 0) {
+                flush_data(worker, connection, worker->write_buf, write_pos);
+                write_pos = 0;
+                if (connection->fd < 0) {
+                    return;
+                }
+            }
+
+            const char *response_start = NULL;
+            size_t response_length = format_json_http1_response(
+                &request, worker, worker->write_buf, sizeof(worker->write_buf), &response_start);
+            if (response_length == 0) {
+                close_conn(worker, connection);
+                return;
+            }
+
+            read_offset += consumed_bytes;
+            if (!connection->keep_alive) {
+                connection->closing = true;
+            }
+            flush_data(worker, connection, response_start, response_length);
+            if (connection->fd < 0) {
+                break;
+            }
+            continue;
+        }
+
         response_t response;
         res_init(&response, connection->keep_alive);
 
