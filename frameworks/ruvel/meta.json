@@ -1,0 +1,26 @@
+{
+	"display_name": "Ruvel",
+	"description": "A laravel alternative framework for rust developers",
+	"repo": "https://github.com/Stephan-MC/ruvel-ui",
+	"language": "Rust",
+	"type": "experimental",
+	"mode": "standard",
+	"engine": "ruvel",
+	"enabled": true,
+	"tests": [
+		"baseline",
+		"pipelined",
+		"limited-conn",
+		"async",
+		"latency-1m",
+		"latency-10k",
+		"latency-500k-8cpu"
+	],
+	"completeness": {
+		"routing": true,
+		"middleware": true,
+		"request": true,
+		"response": true
+	},
+	"maintainers": ["Stephan-MC", "orlando-guy"]
+}
