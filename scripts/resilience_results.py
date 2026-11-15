@@ -169,6 +169,11 @@ def score_attack(r):
     # the sampler's last value can undercount. By definition it reached the cap.
     if verdict == "oom-killed" and limit_mb and peak_mb < limit_mb:
         peak_mb = float(limit_mb)
+    # Offered load: the client's own frames/elapsed. Meaningful for the floods;
+    # the slow/hold attacks report 0 frames (their pressure is held connections).
+    _cl = r.get("client") or {}
+    _fr, _el = _cl.get("frames_sent") or 0, _cl.get("elapsed_s") or 0
+    rps = round(_fr / _el) if (_fr and _el) else None
     out = {
         "verdict": verdict,
         "passed": passed,
@@ -182,6 +187,9 @@ def score_attack(r):
         "oom_killed": bool(r.get("oom_killed")),
         "exit_code": r.get("exit_code"),
         "duration_s": r.get("duration_s"),
+        "rps": rps,
+        "client_cpu_cores": r.get("client_cpu_cores"),
+        "server_cpu_cores": r.get("server_cpu_cores"),
     }
     client = r.get("client") or {}
     # A server that reaped most of our connections defended itself; surface it.

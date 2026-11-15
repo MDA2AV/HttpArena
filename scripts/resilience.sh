@@ -58,7 +58,7 @@ RES_BODY_SIZE="${RES_BODY_SIZE:-104857600}"  # 100 MiB declared body for slow-bo
 RES_DRIP="${RES_DRIP:-1.0}"          # seconds between drips
 RES_DRIP_BYTES="${RES_DRIP_BYTES:-256}"       # bytes per drip for slow-body/huge-chunk: ~256 B/s, slow
                                               # enough to be low-and-slow but above a bytes-at-zero reaper
-RES_H2_CONNS="${RES_H2_CONNS:-1024}"           # connections for the HTTP/2 flood attacks (each floods hard)
+RES_H2_CONNS="${RES_H2_CONNS:-2048}"           # connections for the HTTP/2 flood attacks (each floods hard)
 RES_DECOMP_CONNS="${RES_DECOMP_CONNS:-256}"    # connections for the H1 payload/parser floods
 RES_BOMB_SIZE="${RES_BOMB_SIZE:-1073741824}"  # 1 GiB decompressed per gzip bomb
 RES_HASHDOS_KEYS="${RES_HASHDOS_KEYS:-100000}"      # form keys for hashdos
@@ -268,6 +268,36 @@ sample_mem() {
     done
 }
 
+# Cumulative server CPU time in microseconds (cgroup v2 cpu.stat usage_usec, v1
+# cpuacct.usage in ns → µs). Read once before and once after the attack; the delta
+# over the wall time is the server's CPU utilisation (cores busy).
+read_cpu_usec() {
+    local id="$1" f v
+    if f=$(_cgfile "$id" cpu.stat); then
+        grep -oP 'usage_usec \K\d+' "$f" 2>/dev/null || echo 0
+    elif f=$(_cgfile "$id" cpuacct.usage); then
+        v=$(cat "$f" 2>/dev/null || echo 0); echo $((v / 1000))
+    else
+        echo 0
+    fi
+}
+
+# Poll the ATTACK CLIENT's own CPU time (utime+stime jiffies, process-wide across
+# its threads) from /proc/<pid>/stat into $2 until it exits. The last line written
+# is within one poll of exit — enough to tell a CPU-bound flood (many cores busy)
+# from one idling on server backpressure (near 0). comm (field 2) can hold spaces,
+# so split on the final ')': after it, utime/stime are fields 12/13.
+sample_cpu() {
+    local pid="$1" out="$2" clk j
+    clk=$(getconf CLK_TCK 2>/dev/null || echo 100)
+    echo "0 $clk" > "$out"
+    while [ -r "/proc/$pid/stat" ]; do
+        j=$(awk -F')' '{split($2,a," "); print a[12]+a[13]}' "/proc/$pid/stat" 2>/dev/null) || j=""
+        [ -n "$j" ] && echo "$j $clk" > "$out"
+        sleep 0.3
+    done
+}
+
 # Seconds until a plaintext GET succeeds again, or "dead" after the budget.
 recovery_probe() {
     local max="$1" start now i
@@ -378,6 +408,11 @@ run_attack() {
         client_cmd=("$ATTACK_GO_BIN")
         info "$name: Go attack client (no GIL)"
     fi
+    # Instrumentation: wall clock + server CPU counter straddle the attack so the
+    # report can show requests/sec and client-vs-server CPU (which end is the limit).
+    local attack_t0 cpu_srv_start
+    attack_t0=$(date +%s.%N)
+    cpu_srv_start=$(read_cpu_usec "$cid")
     taskset -c "$ATTACK_CPUS" "${client_cmd[@]}" \
         --attack "$name" --host 127.0.0.1 --port "$port" --path "$path" \
         --conns "$conns" --duration "$RES_DURATION" \
@@ -396,6 +431,8 @@ run_attack() {
         --ws-frag-size "$RES_WS_FRAG_SIZE" "${tls_flag[@]}" \
         > "$WORK/$name.client.json" 2> "$WORK/$name.client.log" &
     local attack_pid=$! killed_early=0
+    sample_cpu "$attack_pid" "$WORK/$name.clientcpu" &
+    local client_cpu_pid=$!
     # Early-exit on either settled outcome, so a run never burns the full duration
     # once the verdict is decided. Poll every 2s while the client runs:
     #   1. the server DIED (OOM / crash) — nothing left to measure; or
@@ -428,11 +465,16 @@ run_attack() {
     done
     local arc=0
     wait "$attack_pid" 2>/dev/null || arc=$?
+    # Close the instrumentation window the moment the client exits (before teardown).
+    local attack_t1 cpu_srv_end
+    attack_t1=$(date +%s.%N)
+    cpu_srv_end=$(read_cpu_usec "$cid")
     [ "$killed_early" = 0 ] && [ "$arc" -ne 0 ] && \
         warn "attack client exited non-zero (see $name.client.log)"
 
     kill "$live_pid" 2>/dev/null || true; wait "$live_pid" 2>/dev/null || true
     kill "$sampler_pid" 2>/dev/null || true; wait "$sampler_pid" 2>/dev/null || true
+    kill "$client_cpu_pid" 2>/dev/null || true; wait "$client_cpu_pid" 2>/dev/null || true
 
     # Server-side verdict inputs, captured before we tear the container down.
     local oom exitc running peak sampled
@@ -456,6 +498,19 @@ run_attack() {
     local live_ok live_total
     live_ok=$(grep -c '^ok$' "$live_file" 2>/dev/null) || live_ok=0
     live_total=$(grep -c .   "$live_file" 2>/dev/null) || live_total=0
+
+    # Load/CPU instrumentation: cores busy on each side over the attack's wall time,
+    # so the report shows whether the client (CPU-bound → more cores/conns help) or
+    # the server (its cap pegged → the load is already enough) is the limit. rps is
+    # computed by the comment from the client's own frames_sent/elapsed_s.
+    local attack_wall cpuline client_j clk client_cpu_cores server_cpu_cores
+    attack_wall=$(awk "BEGIN{d=$attack_t1-$attack_t0; printf \"%.2f\", (d>0)?d:1}")
+    cpuline=$(cat "$WORK/$name.clientcpu" 2>/dev/null || echo "0 100")
+    client_j=${cpuline%% *}; clk=${cpuline##* }
+    [ -n "$client_j" ] || client_j=0; [ -n "$clk" ] || clk=100
+    client_cpu_cores=$(awk "BEGIN{printf \"%.2f\", ($client_j/$clk)/$attack_wall}")
+    server_cpu_cores=$(awk "BEGIN{printf \"%.2f\", (($cpu_srv_end-$cpu_srv_start)/1000000.0)/$attack_wall}")
+
     python3 - "$WORK/$name.result.json" <<PY || warn "could not write the $name result record"
 import json, sys
 client = {}
@@ -473,6 +528,9 @@ json.dump({
     "mem_limit": "$RES_MEM",
     "cpuset": "$RES_CPUSET",
     "duration_s": $RES_DURATION,
+    "attack_wall_s": $attack_wall,
+    "client_cpu_cores": $client_cpu_cores,
+    "server_cpu_cores": $server_cpu_cores,
     "recovery": "$recovery",
     "liveness_ok": int("$live_ok" or 0),
     "liveness_total": int("$live_total" or 0),
