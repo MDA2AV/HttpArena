@@ -209,11 +209,25 @@ void trim_inactive_connections(worker_t *worker, uint64_t current_time_ms) {
             continue;
         }
 
-        if (current_time_ms - curr->last_active_ms < IDLE_TIMEOUT_MS) {
-            break;
+        if (curr->read_pos == 0 && (current_time_ms - curr->last_active_ms > 5000)) {
+            close_conn(worker, curr);
+            curr = next;
+            continue;
         }
 
-        close_conn(worker, curr);
+        if (current_time_ms - curr->last_active_ms >= IDLE_TIMEOUT_MS) {
+            close_conn(worker, curr);
+            curr = next;
+            continue;
+        }
+
         curr = next;
     }
+
+#if defined(__linux__) && defined(__GLIBC__)
+    if (current_time_ms - worker->last_malloc_trim_ms > 5000) {
+        malloc_trim(0);
+        worker->last_malloc_trim_ms = current_time_ms;
+    }
+#endif
 }
