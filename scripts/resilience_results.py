@@ -127,9 +127,13 @@ def mem_limit_mb(s):
 
 
 def classify(r):
-    """verdict, passed from one attack's raw result record."""
+    """verdict, passed from one attack's raw result record. passed is None for a
+    verdict that is neither pass nor fail (the target doesn't implement the
+    endpoint the attack needs), so it drops out of the pass/total count."""
     if r.get("verdict") == "error":
         return "error", False
+    if (r.get("client") or {}).get("endpoint_missing"):
+        return "no-endpoint", None
     if r.get("oom_killed") or r.get("exit_code") == 137:
         return "oom-killed", False
     if not r.get("running"):
@@ -149,6 +153,11 @@ def score_attack(r):
     if verdict == "error":
         return {"verdict": "error", "error": r.get("error", "could not measure"),
                 "passed": False}
+    if verdict == "no-endpoint":
+        resource, desc = RESOURCE.get(r["attack"], ("", ""))
+        return {"verdict": "no-endpoint", "passed": None, "resource": resource,
+                "description": desc,
+                "note": "the entry does not implement the endpoint this attack needs"}
     total = r.get("liveness_total") or 0
     ok = r.get("liveness_ok") or 0
     fail_pct = round(100 * (total - ok) / total, 1) if total else 0.0
@@ -205,12 +214,13 @@ def main():
         with open(path) as f:
             scored[name] = score_attack(json.load(f))
 
-    passed = sum(1 for a in scored.values() if a.get("passed"))
+    # no-endpoint attacks have passed=None — not a pass, not a fail, not counted.
+    passed = sum(1 for a in scored.values() if a.get("passed") is True)
     result = {
         "framework": display,
         "dir": entry,
         "passed": passed,
-        "total": len(scored),
+        "total": sum(1 for a in scored.values() if a.get("passed") is not None),
         "attacks": scored,
         "tool": {"driver": "resilience/attack.py"},
     }

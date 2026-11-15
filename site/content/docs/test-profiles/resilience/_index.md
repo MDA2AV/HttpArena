@@ -34,7 +34,7 @@ The suite has **41 attacks** across four protocol surfaces. The most valuable fo
 | `duplicate-header-merge` | CPU | the same header name ×N → O(n²) join before dispatch |
 | `pipelining-flood` | memory | thousands of pipelined requests, responses unread ([CVE-2026-54273](https://nvd.nist.gov/vuln/detail/CVE-2026-54273)) |
 
-**HTTP/1.1 parser-differential — only bite an entry that parses that input** (minimal handler → clean `survived`):
+**HTTP/1.1 parser-differential — run against the `POST /parse` endpoint.** An entry that implements `/parse` parses the request body with its standard facilities (JSON, form/multipart, request decompression) — so these measure the framework's real parser limits. An entry that does **not** implement `/parse` (returns 404/405) shows **🔌 no-endpoint** and is **not scored** (neither pass nor fail):
 
 | Attack | Exhausts | What it does |
 |---|---|---|
@@ -78,6 +78,21 @@ The suite has **41 attacks** across four protocol surfaces. The most valuable fo
 | `dheat` | CPU | offer only DHE → a modular exponentiation per handshake ([CVE-2002-20001](https://nvd.nist.gov/vuln/detail/CVE-2002-20001)); reports *immune* if no DHE is offered |
 
 A connection the server **reaps** (closes on the client) is the *correct* defense. The **memory** attacks give the cleanest verdict (OOM-kill → exit 137) and `chunk-size-overflow` aims for a **crash**; the **CPU** attacks don't OOM, so they surface as `hung`/`degraded` through the liveness probe. Many reaped connections with flat memory and green liveness means the server defended itself.
+
+### The `/parse` endpoint
+
+The six parser-differential attacks need a route that actually **parses** the request body — benchmark handlers like `/echo` just stream bytes back, so the attack never reaches a parser and would falsely read `survived`. An entry opts into these attacks by implementing:
+
+```
+POST /parse   — parse the request body with the framework's standard facilities:
+                application/json      → the JSON parser (depth / number limits)
+                x-www-form-urlencoded → the form parser (key count / hashing)
+                multipart/form-data   → the multipart parser (part count)
+                other (+ Content-Encoding) → request decompression + buffering
+              Return 200 with anything (the body content is not checked).
+```
+
+If an entry doesn't implement `/parse` (returns 404/405), those six attacks report **🔌 no-endpoint** and drop out of its score — honest, rather than a phantom `survived`. `aspnet-minimal` implements it as the reference (System.Text.Json + `ReadFormAsync` + `UseRequestDecompression`).
 
 ## The verdict
 

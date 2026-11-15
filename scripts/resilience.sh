@@ -229,7 +229,12 @@ run_attack() {
         content-length-prealloc|expect-100-continue|chunk-size-overflow|trailer-flood|chunk-extension-flood) \
                             port=$PORT; path=/echo; conns=$RES_CONNS ;;
         # H1 request / payload floods on a body endpoint (RES_DECOMP_CONNS)
-        decompression-bomb|decomp-codec-bypass|hashdos|json-nesting-bomb|multipart-flood|tiny-chunk-flood|large-upload|json-bignum) \
+        # The parser-differential attacks need a body-PARSING endpoint (/parse);
+        # if the entry doesn't implement it the attack reports "no-endpoint".
+        decompression-bomb|decomp-codec-bypass|hashdos|json-nesting-bomb|multipart-flood|json-bignum) \
+                            port=$PORT; path=/parse; conns=$RES_DECOMP_CONNS ;;
+        # These just need a body sink, not a parser — /echo is fine.
+        tiny-chunk-flood|large-upload) \
                             port=$PORT; path=/echo; conns=$RES_DECOMP_CONNS ;;
         # H1 header / request floods on a GET endpoint
         redos-headers|header-bomb|header-count-flood|duplicate-header-merge|pipelining-flood|qvalue-cpu-bomb|cookie-flood) \

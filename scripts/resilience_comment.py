@@ -57,6 +57,9 @@ def entry_section(fw):
         if a.get("verdict") == "error":
             lines.append(f"| `{name}` | — | ❓ {cell(a.get('error', 'not measured'))} | — | — | — | — |")
             continue
+        if a.get("verdict") == "no-endpoint":
+            lines.append(f"| `{name}` | {cell(a.get('resource'))} | 🔌 no endpoint | — | — | — | — |")
+            continue
         emoji, label = VERDICT.get(a["verdict"], ("", a["verdict"]))
         peak, lim = a.get("peak_mem_mb"), a.get("mem_limit_mb")
         if peak is not None and lim:
@@ -90,8 +93,9 @@ def main():
     if not sections:
         return
     legend = ("✅ survived · ⚠️ degraded (shed load, then recovered) · 🟠 hung · "
-              "💀 crashed · 💥 OOM-killed. A connection the server **reaped** is the "
-              "correct defense — a read-timeout or a size cap fired.")
+              "💀 crashed · 💥 OOM-killed · 🔌 no endpoint (entry doesn't implement "
+              "the endpoint the attack needs — not scored). A connection the server "
+              "**reaped** is the correct defense — a read-timeout or a size cap fired.")
     out = ["## 🛡️ Resilience Report", "",
            "Adversarial load against each opted-in entry in a fixed memory/CPU box — does it "
            "survive, shed load, hang, or run out of memory? Verdicts are not scored into the "
