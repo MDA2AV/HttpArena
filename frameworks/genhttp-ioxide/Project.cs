@@ -28,6 +28,7 @@ public static class Project
                         .AddService<Baseline>("baseline11")
                         .AddService<Baseline>("baseline2")
                         .AddService<Echo>("echo")
+                        .AddService<Spec>("spec")
                         .Add("json", ServiceResource.From<Json>().Add(CompressedContent.Default()))
                         .Add("delay", new DelayBuilder());
 

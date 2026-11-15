@@ -30,6 +30,7 @@ is a flag on the listener, not a second implementation.
 | `/baseline2` | GET | Sums query parameter values |
 | `/json/:count` | GET | Serializes a slice of the dataset, gzipped when the client accepts it |
 | `/echo` | POST | Returns the request body back verbatim |
+| `/spec`, `/spec/headers` | GET, HEAD, OPTIONS, POST | The compliance route ([contract](https://http-arena.com/docs/test-profiles/compliance/)) for the h1 and h2 suites, on every listener |
 | `/static/:name` | GET | Serves one of the 20 files from `/data/static`, read off disk per request |
 | `/async-db` | GET | Postgres range query over `items`, `min`/`max`/`limit` |
 | `/crud/items` | GET/POST | Paginated list by category; POST upserts |

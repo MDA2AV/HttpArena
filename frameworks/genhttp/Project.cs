@@ -25,6 +25,7 @@ public static class Project
                         .AddService<Baseline>("baseline11")
                         .AddService<Baseline>("baseline2")
                         .AddService<Echo>("echo")
+                        .AddService<Spec>("spec")
                         .AddService<Json>("json")
                         .AddService<Delay>("delay")
                         .AddService<AsyncDatabase>("async-db")

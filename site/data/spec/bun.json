@@ -1,0 +1,347 @@
+{
+  "framework": "bun",
+  "dir": "bun",
+  "suites": {
+    "h1": {
+      "tool": "http11probe",
+      "version": "d50d818",
+      "passed": 133,
+      "total": 159,
+      "warnings": 17,
+      "failed": [
+        {
+          "id": "RFC9112-2.2-BARE-LF-REQUEST-LINE",
+          "test": "Bare LF in request line should be rejected, but MAY be accepted",
+          "expected": "400 or close (pass), 2xx (warn)",
+          "got": "505, connection closed",
+          "rfc": "RFC 9112 \u00a72.2",
+          "level": "May"
+        },
+        {
+          "id": "RFC9112-3-CR-ONLY-LINE-ENDING",
+          "test": "CR without LF as line ending must be rejected",
+          "expected": "400, close, or timeout = warn",
+          "got": "505, connection closed",
+          "rfc": "RFC 9112 \u00a72.2",
+          "level": "Must"
+        },
+        {
+          "id": "RFC9112-2.3-HTTP09-REQUEST",
+          "test": "HTTP/0.9 request (no version) must be rejected",
+          "expected": "400/close/timeout",
+          "got": "505, connection closed",
+          "rfc": "RFC 9112 \u00a72.3",
+          "level": "Should"
+        },
+        {
+          "id": "RFC9110-5.4-DUPLICATE-HOST",
+          "test": "Duplicate Host headers with different values must be rejected",
+          "expected": "400",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a73.2",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-DUPLICATE-HOST-SAME",
+          "test": "Duplicate Host headers with identical values must be rejected",
+          "expected": "400",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a73.2",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-HOST-WITH-USERINFO",
+          "test": "Host header with userinfo (user@host) must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a73.2",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-HOST-WITH-PATH",
+          "test": "Host header with path component must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a73.2",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-OPTIONS-STAR",
+          "test": "OPTIONS * is the only valid asterisk-form request",
+          "expected": "2xx or 405; close/timeout = warn",
+          "got": "400, connection closed",
+          "rfc": "RFC 9112 \u00a73.2.4",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-METHOD-CONNECT",
+          "test": "CONNECT to an origin server must be rejected",
+          "expected": "400/405/501 or close",
+          "got": "404, connection left open",
+          "rfc": "RFC 9110 \u00a79.3.6",
+          "level": "Should"
+        },
+        {
+          "id": "COMP-HOST-EMPTY-VALUE",
+          "test": "Empty Host header value must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a73.2",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-REQUEST-LINE-TAB",
+          "test": "Tab as request-line delimiter \u2014 SHOULD reject but MAY parse on whitespace",
+          "expected": "400 or 2xx; close/timeout = warn",
+          "got": "505, connection closed",
+          "rfc": "RFC 9112 \u00a73",
+          "level": "Should"
+        },
+        {
+          "id": "COMP-VERSION-MISSING-MINOR",
+          "test": "HTTP/1 with no minor version digit is invalid",
+          "expected": "400, close, or timeout = warn",
+          "got": "505, connection closed",
+          "rfc": "RFC 9112 \u00a72.3",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-VERSION-LEADING-ZEROS",
+          "test": "HTTP/01.01 \u2014 leading zeros in version digits are invalid",
+          "expected": "400, close, or timeout = warn",
+          "got": "505, connection closed",
+          "rfc": "RFC 9112 \u00a72.3",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-VERSION-WHITESPACE",
+          "test": "HTTP/ 1.1 \u2014 whitespace inside version token is invalid",
+          "expected": "400, close, or timeout = warn",
+          "got": "505, connection closed",
+          "rfc": "RFC 9112 \u00a72.3",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-CHUNKED-TRAILER-VALID",
+          "test": "Valid chunked body with trailer field should be accepted",
+          "expected": "2xx + echo",
+          "got": "200, connection closed",
+          "rfc": "RFC 9112 \u00a77.1.2",
+          "level": "Must",
+          "note": "Echo mismatch: expected \"hello\", got \"helloHTTP/1.1 400 Bad Request Connectio...\""
+        },
+        {
+          "id": "COMP-NO-1XX-HTTP10",
+          "test": "Server must not send 1xx responses to an HTTP/1.0 client",
+          "expected": "non-1xx response",
+          "got": "100, connection closed",
+          "rfc": "RFC 9110 \u00a715.2",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-VERSION-CASE",
+          "test": "HTTP version is case-sensitive \u2014 lowercase 'http' must be rejected",
+          "expected": "400, close, or timeout = warn",
+          "got": "505, connection closed",
+          "rfc": "RFC 9112 \u00a72.3",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-SPACE-IN-TARGET",
+          "test": "Whitespace inside request-target is invalid",
+          "expected": "400, close, or timeout = warn",
+          "got": "505, connection closed",
+          "rfc": "RFC 9112 \u00a73.2",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-BARE-SEMICOLON",
+          "test": "Chunk size with bare semicolon and no extension name must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-EXT-INVALID-TOKEN",
+          "test": "Chunk extension with invalid token character must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-MULTIPLE-HOST-COMMA",
+          "test": "Host header with comma-separated values must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9110 \u00a77.2",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-NUL-IN-URL",
+          "test": "NUL byte in URL should be rejected",
+          "expected": "400 or close",
+          "got": "505, connection closed",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-LONG-METHOD",
+          "test": "100KB method name should be rejected",
+          "expected": "400, 501 or close",
+          "got": "431, connection closed",
+          "level": "Should"
+        },
+        {
+          "id": "MAL-NON-ASCII-URL",
+          "test": "Non-ASCII bytes (UTF-8 \u00e9) in URL must be rejected",
+          "expected": "400 or close",
+          "got": "404, connection left open",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-URL-OVERLONG-UTF8",
+          "test": "Overlong UTF-8 encoding of / (0xC0 0xAF) in URL must be rejected",
+          "expected": "400 or close",
+          "got": "404, connection left open",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-CHUNK-EXT-64K",
+          "test": "64KB chunk extension \u2014 tests extension length limits (CVE-2023-39326 class)",
+          "expected": "400 or 2xx",
+          "got": "413, connection closed",
+          "level": "NotApplicable"
+        }
+      ]
+    },
+    "h2": {
+      "tool": "h2spec",
+      "version": "2.6.0",
+      "passed": 144,
+      "total": 146,
+      "failed": [
+        {
+          "id": "http2/3.5/2",
+          "test": "Sends invalid connection preface",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "Error: unexpected EOF"
+        },
+        {
+          "id": "http2/6.9.1/3",
+          "test": "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1 on a stream",
+          "expected": "RST_STREAM Frame (Error Code: FLOW_CONTROL_ERROR)",
+          "got": "RST_STREAM Frame (length:4, flags:0x00, stream_id:1)"
+        }
+      ],
+      "listeners": {
+        "tls": {
+          "passed": 145,
+          "total": 146,
+          "failed": [
+            {
+              "id": "http2/6.9.1/3",
+              "test": "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1 on a stream",
+              "expected": "RST_STREAM Frame (Error Code: FLOW_CONTROL_ERROR)",
+              "got": "RST_STREAM Frame (length:4, flags:0x00, stream_id:1)"
+            }
+          ]
+        },
+        "h2c": {
+          "passed": 144,
+          "total": 146,
+          "failed": [
+            {
+              "id": "http2/3.5/2",
+              "test": "Sends invalid connection preface",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Error: unexpected EOF"
+            },
+            {
+              "id": "http2/6.9.1/3",
+              "test": "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1 on a stream",
+              "expected": "RST_STREAM Frame (Error Code: FLOW_CONTROL_ERROR)",
+              "got": "RST_STREAM Frame (length:4, flags:0x00, stream_id:1)"
+            }
+          ]
+        }
+      }
+    },
+    "h3": {
+      "tool": "h3spec",
+      "version": "v0.1.15",
+      "passed": 64,
+      "total": 81,
+      "failed": [
+        {
+          "id": "QUIC servers MUST send FRAME_ENCODING_ERROR if a frame is cut short [Transport 12.4]",
+          "got": "predicate failed on expected exception: QUICException / TransportErrorIsReceived InternalError \"connection error\""
+        },
+        {
+          "id": "QUIC servers MUST send CRYPTO_BUFFER_EXCEEDED if CRYPTO data is buffered beyond the limit [Transport 7.5]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "QUIC servers MUST send unexpected_message TLS alert if KeyUpdate in 1-RTT is received [TLS 6]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_MESSAGE_ERROR if a pseudo-header is duplicated [HTTP/3 4.3.1]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_MESSAGE_ERROR if mandatory pseudo-header fields are absent [HTTP/3 4.3.1]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_MESSAGE_ERROR if prohibited pseudo-header fields are present [HTTP/3 4.3]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_MESSAGE_ERROR if pseudo-header fields exist after fields [HTTP/3 4.3]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST treat a request with connection as malformed [HTTP/3 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST treat a request with keep-alive as malformed [HTTP/3 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST treat a request with proxy-connection as malformed [HTTP/3 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST treat a request with transfer-encoding as malformed [HTTP/3 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST treat a request with upgrade as malformed [HTTP/3 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST treat a request with te as malformed [HTTP/3 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_FRAME_ERROR if a SETTINGS frame stops mid-parameter [HTTP/3 7.1]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers treats a repeated setting identifier as an error whatever its value [HTTP/3 7.2.4]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_ID_ERROR if GOAWAY goes up [HTTP/3 5.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST NOT buffer an over-long frame on a control stream [HTTP/3 7.1]",
+          "got": "did not get expected exception: QUICException"
+        }
+      ]
+    }
+  }
+}

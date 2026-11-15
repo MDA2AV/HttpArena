@@ -72,12 +72,23 @@ def h1(work):
     }, None
 
 
+# h2spec copies frame payloads into its report unescaped: a PING's opaque data
+# arrives as raw NUL bytes, which XML 1.0 does not allow anywhere. They are shown
+# as \xNN instead, so the report parses and the "got" text stays readable.
+XML_INVALID = re.compile("[" + "".join(re.escape(chr(c)) for c in
+                                       [*range(0x00, 0x09), 0x0B, 0x0C, *range(0x0E, 0x20), 0xFFFE, 0xFFFF]) + "]")
+
+
+def xml_text(path):
+    return XML_INVALID.sub(lambda m: "\\x%02x" % ord(m.group()), read(path))
+
+
 def h2_listener(path):
     """One h2spec JUnit report. Failures are <error> elements, whose text lists
     what h2spec would have accepted, one per line, and then what arrived. IDs
     follow h2spec's own numbering, <section>/<position in that section>."""
     passed, total, failed = 0, 0, []
-    for suite in ET.fromstring(read(path)).iter("testsuite"):
+    for suite in ET.fromstring(xml_text(path)).iter("testsuite"):
         for i, case in enumerate(suite.iter("testcase"), 1):
             if case.find("skipped") is not None:
                 continue
