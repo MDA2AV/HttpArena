@@ -95,10 +95,8 @@ banner() {
 
 # ── Failure diagnostics ─────────────────────────────────────────────────────
 #
-# Container logs are written to site/static/logs/ only by save_result(), which
-# a server that never became ready never reaches — and framework_stop() runs
-# `docker rm -f` moments later, so the evidence is gone. These print it while
-# it still exists. Bounded by FAIL_LOG_TAIL: a crash-looping server can emit
+# Print diagnostics before teardown removes the containers. Bounded by
+# FAIL_LOG_TAIL: a crash-looping server can emit
 # megabytes, and this output is also what lands in the PR comment, which
 # quotes the last 200 lines of the run.
 
@@ -113,6 +111,10 @@ dump_container_logs() {
         return 0
     fi
     echo "─── $label — $state"
+    if [ "$n" = all ]; then
+        docker logs "$ref" 2>&1 || true
+        return 0
+    fi
     logs=$(docker logs --tail "$n" "$ref" 2>&1) || true
     if [ -n "$logs" ]; then
         echo "─── $label — last $n log lines ───"
@@ -132,4 +134,37 @@ dump_compose_logs() {
         name=$(docker inspect -f '{{.Name}}' "$id" 2>/dev/null | sed 's#^/##')
         dump_container_logs "$id" "${name:-$id}"
     done
+}
+
+dump_benchmark_logs() {
+    if [ -n "${GATEWAY_PROJECT:-}" ]; then
+        dump_compose_logs "$GATEWAY_PROJECT"
+    else
+        dump_container_logs "$CONTAINER_NAME" "$FRAMEWORK"
+    fi
+}
+
+save_benchmark_logs() {
+    local profile="$1" conns="$2"
+    local log_dir="$ROOT_DIR/site/static/logs/$profile/$conns"
+    mkdir -p "$log_dir"
+    local log_file="$log_dir/${FRAMEWORK}.log"
+    if [ -n "${GATEWAY_PROJECT:-}" ]; then
+        FAIL_LOG_TAIL=all dump_compose_logs "$GATEWAY_PROJECT" >"$log_file" 2>&1
+    else
+        docker logs "$CONTAINER_NAME" >"$log_file" 2>&1 || true
+    fi
+
+    # Keep noisy containers below GitHub's file-size limit.
+    local log_max=${HTTPARENA_MAX_LOG_BYTES:-8000000} log_size
+    log_size=$(wc -c < "$log_file")
+    if [ "$log_size" -gt "$log_max" ] 2>/dev/null; then
+        tail -c "$log_max" "$log_file" >"$log_file.tail"
+        {
+            echo "[httparena] container log was ${log_size} bytes; keeping the last ${log_max}."
+            cat "$log_file.tail"
+        } >"$log_file"
+        rm -f "$log_file.tail"
+        warn "$FRAMEWORK $profile/$conns: container log was ${log_size} bytes, truncated to ${log_max}"
+    fi
 }

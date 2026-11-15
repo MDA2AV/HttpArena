@@ -270,7 +270,8 @@ run_one() {
     framework_start "$endpoint" "$PROF_CPU" || return 1
     if ! framework_wait_ready "$endpoint"; then
         warn "$FRAMEWORK did not come up for $profile; skipping"
-        dump_container_logs "$CONTAINER_NAME" "$FRAMEWORK"
+        dump_benchmark_logs
+        if [ "$SAVE_RESULTS" = true ]; then save_benchmark_logs "$profile" "$CONNS"; fi
         framework_stop
         return 1
     fi
@@ -299,10 +300,12 @@ run_one() {
 
         if [ "$run_exit" -ne 0 ]; then
             warn "run $run failed: load generator exited with status $run_exit"
+            dump_benchmark_logs
             continue
         fi
         if ! metrics=$("${tool//-/_}_parse" "$endpoint" "$output"); then
             warn "run $run failed: invalid load-generator output"
+            dump_benchmark_logs
             continue
         fi
 
@@ -326,6 +329,7 @@ run_one() {
 
     if [ "$best_rps" -lt 0 ]; then
         warn "$profile/$CONNS: no valid measurements; no result saved"
+        if [ "$SAVE_RESULTS" = true ]; then save_benchmark_logs "$profile" "$CONNS"; fi
         framework_stop
         return 1
     fi
@@ -387,9 +391,7 @@ save_result() {
 EOF
     info "saved results/$profile/$CONNS/${FRAMEWORK}.json"
 
-    local log_dir="$ROOT_DIR/site/static/logs/$profile/$CONNS"
-    mkdir -p "$log_dir"
-    docker logs "$CONTAINER_NAME" >"$log_dir/${FRAMEWORK}.log" 2>&1 || true
+    save_benchmark_logs "$profile" "$CONNS"
 }
 
 # ── Driver: either one framework, or loop through every enabled one ────────

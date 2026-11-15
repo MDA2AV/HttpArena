@@ -3,6 +3,7 @@
 
 import re
 import sys
+from collections import Counter
 from decimal import Decimal
 
 
@@ -75,7 +76,38 @@ def parse(output, endpoint):
     return result
 
 
+def diagnose(lines):
+    counts = {}
+    failures = {}
+    section = "requests"
+    for line in lines:
+        if line.startswith("=== h2load-"):
+            section = line.strip().removeprefix("=== h2load-").removesuffix(" ===")
+        record = re.fullmatch(r"(\d+)\t(-?\d+)\t(\d+)\s*", line)
+        if record:
+            status = int(record[2])
+            counts.setdefault(section, Counter())[status] += 1
+            samples = failures.setdefault(section, [])
+            if not 200 <= status < 300 and len(samples) < 5:
+                samples.append((record[1], status, record[3]))
+        elif line.startswith(("finished in ", "requests:", "status codes:")):
+            print(f"[diagnostic] {section}: {line.strip()}")
+    for section, statuses in counts.items():
+        summary = ", ".join(
+            f"{'stream error' if code == -1 else f'HTTP {code}'}={count}"
+            for code, count in sorted(statuses.items())
+        )
+        print(f"[diagnostic] {section}: {summary}")
+        for started, status, duration in failures[section]:
+            print(f"[diagnostic] {section}: start_us={started} status={status} duration_us={duration}")
+    if not counts:
+        print("[diagnostic] no per-request records; replay did not complete requests")
+
+
 def main():
+    if sys.argv[1] == "--diagnostic":
+        diagnose(sys.stdin)
+        return 0
     try:
         metrics = parse(sys.stdin.read(), sys.argv[1])
     except (ValueError, ArithmeticError) as error:

@@ -279,11 +279,8 @@ run_one() {
 
     if ! framework_wait_ready "$endpoint"; then
         warn "$FRAMEWORK did not come up for $profile; skipping"
-        if $is_gateway; then
-            dump_compose_logs "$GATEWAY_PROJECT"
-        else
-            dump_container_logs "$CONTAINER_NAME" "$FRAMEWORK"
-        fi
+        dump_benchmark_logs
+        if [ "$SAVE_RESULTS" = true ]; then save_benchmark_logs "$profile" "$CONNS"; fi
         framework_stop
         $is_gateway && gateway_down
         return 1
@@ -339,10 +336,12 @@ run_one() {
 
         if [ "$run_exit" -ne 0 ]; then
             warn "run $run failed: load generator exited with status $run_exit"
+            dump_benchmark_logs
             continue
         fi
         if ! metrics=$("${tool//-/_}_parse" "$endpoint" "$output"); then
             warn "run $run failed: invalid load-generator output"
+            dump_benchmark_logs
             continue
         fi
 
@@ -404,6 +403,11 @@ run_one() {
 
     if [ "$best_rps" -lt 0 ]; then
         warn "$profile/$CONNS: no valid measurements; no result saved"
+        if [ "$endpoint" = production-stack ]; then
+            h2load_diagnose "${gc_args[@]}" || true
+            dump_benchmark_logs
+        fi
+        if [ "$SAVE_RESULTS" = true ]; then save_benchmark_logs "$profile" "$CONNS"; fi
         [ -z "$_mdir" ] || rm -rf "$_mdir"
         if $is_gateway; then gateway_down; else framework_stop; fi
         return 1
@@ -638,32 +642,7 @@ save_result() {
 EOF
     info "saved results/$profile/$CONNS/${FRAMEWORK}.json"
 
-    # Persist container logs alongside results for post-mortem.
-    local log_dir="$ROOT_DIR/site/static/logs/$profile/$CONNS"
-    mkdir -p "$log_dir"
-    # Cap what a noisy container can write. A framework that logs per request
-    # produces a log proportional to throughput: sanic's static run emitted a
-    # traceback on every request and reached 240MB, which GitHub then refused to
-    # accept - the push is rejected over the 100MB file limit, after the whole
-    # benchmark has already run. Keep the tail, which is where a post-mortem
-    # looks anyway, and say so in the file when it was cut.
-    local log_max=${HTTPARENA_MAX_LOG_BYTES:-8000000}
-    local log_file="$log_dir/${FRAMEWORK}.log"
-    docker logs "$CONTAINER_NAME" >"$log_file" 2>&1 || true
-    local log_size
-    log_size=$(stat -c %s "$log_file" 2>/dev/null || echo 0)
-    if [ "$log_size" -gt "$log_max" ] 2>/dev/null; then
-        tail -c "$log_max" "$log_file" >"$log_file.tail" 2>/dev/null || true
-        {
-            echo "[httparena] container log was ${log_size} bytes and has been"
-            echo "[httparena] truncated to the last ${log_max}; a framework that"
-            echo "[httparena] logs per request is usually the cause."
-            echo
-            cat "$log_file.tail"
-        } >"$log_file"
-        rm -f "$log_file.tail"
-        warn "$FRAMEWORK $profile/$CONNS: container log was ${log_size} bytes, truncated to ${log_max}"
-    fi
+    save_benchmark_logs "$profile" "$CONNS"
 }
 
 # Iterate profiles × conns.

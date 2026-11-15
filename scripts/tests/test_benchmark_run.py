@@ -36,6 +36,8 @@ h2load_build_args() { echo ignored; }
 h2load_check_version() { test "$VERSION_SUPPORTED" = true; }
 h2load_run() { printf '%s\\n' "$LOAD_OUTPUT"; return "$LOAD_EXIT"; }
 save_result() { echo SAVED; }
+dump_benchmark_logs() { :; }
+save_benchmark_logs() { :; }
 FRAMEWORK=sample
 CONTAINER_NAME=sample
 RUNS=1

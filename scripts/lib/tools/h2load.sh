@@ -192,9 +192,11 @@ h2load_run() {
     reads_log=$(mktemp)
     writes_log=$(mktemp)
 
-    timeout 45 taskset -c "$GCANNON_CPUS" "${reads_argv[@]}"  >"$reads_log"  2>&1 &
+    # Diagnostic clients reopen stdout with O_APPEND for per-request records.
+    # Normal stdout must append too, or its buffered summary overwrites them.
+    timeout 45 taskset -c "$GCANNON_CPUS" "${reads_argv[@]}"  >>"$reads_log"  2>&1 &
     local reads_pid=$!
-    timeout 45 taskset -c "$GCANNON_CPUS" "${writes_argv[@]}" >"$writes_log" 2>&1 &
+    timeout 45 taskset -c "$GCANNON_CPUS" "${writes_argv[@]}" >>"$writes_log" 2>&1 &
     local writes_pid=$!
 
     local reads_exit=0 writes_exit=0
@@ -217,4 +219,24 @@ h2load_run() {
 
 h2load_parse() {
     python3 "${BASH_SOURCE[0]%/*}/h2load_parse.py" "$1" <<< "$2"
+}
+
+# A separate replay after a failed production profile; never a scored run.
+h2load_diagnose() {
+    local -a args=()
+    local arg log exit_code=0
+    for arg in "$@"; do
+        if [ "$arg" = --split-- ]; then args+=(--log-file=/dev/stdout); fi
+        args+=("$arg")
+    done
+    args+=(--log-file=/dev/stdout)
+    log=$(mktemp)
+    echo "[diagnostic] replaying production traffic with per-request status logging; excluded from results"
+    h2load_run "${args[@]}" >>"$log" 2>&1 || exit_code=$?
+    python3 "${BASH_SOURCE[0]%/*}/h2load_parse.py" --diagnostic <"$log"
+    rm -f "$log"
+    if [ "$exit_code" -ne 0 ]; then
+        echo "[diagnostic] load generator exited with status $exit_code" >&2
+    fi
+    return "$exit_code"
 }

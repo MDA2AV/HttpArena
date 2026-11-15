@@ -1,5 +1,7 @@
 import pathlib
 import subprocess
+import sys
+import tempfile
 import unittest
 
 
@@ -113,6 +115,69 @@ class H2loadTests(unittest.TestCase):
         self.assertEqual(result.returncode, 124)
         self.assertIn("=== h2load-reads ===", result.stdout)
         self.assertIn("=== h2load-writes ===", result.stdout)
+
+    def test_diagnostic_replay_reports_exact_statuses_without_metrics(self):
+        harness = r'''
+source "$1"
+GCANNON_CPUS=0
+timeout() {
+    [[ "$*" == *--log-file=/dev/stdout* ]] || return 99
+    if [[ "$*" == *reads* ]]; then
+        printf '1000000\t200\t300\n1000001\t401\t400\n1000002\t404\t500\n'
+    else
+        printf '1000003\t204\t600\n1000004\t-1\t700\n'
+    fi
+    echo 'requests: diagnostic summary'
+}
+h2load_diagnose reads --split-- writes
+'''
+        result = subprocess.run(
+            ["bash", "-c", harness, "test", str(ROOT / "scripts/lib/tools/h2load.sh")],
+            capture_output=True, text=True, check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("reads: HTTP 200=1, HTTP 401=1, HTTP 404=1", result.stdout)
+        self.assertIn("writes: stream error=1, HTTP 204=1", result.stdout)
+        self.assertIn("1000001", result.stdout)
+        self.assertNotIn("rps=", result.stdout)
+
+    def test_diagnostic_replay_keeps_process_failure_visible(self):
+        result = subprocess.run(
+            ["bash", "-c", 'source "$1"; GCANNON_CPUS=0; timeout() { echo partial; return 124; }; h2load_diagnose reads --split-- writes',
+             "test", str(ROOT / "scripts/lib/tools/h2load.sh")],
+            capture_output=True, text=True, check=False,
+        )
+        self.assertEqual(result.returncode, 124, result.stderr)
+        self.assertIn("status 124", result.stderr)
+        self.assertIn("no per-request records", result.stdout)
+
+    def test_native_diagnostic_records_survive_normal_stdout_writes(self):
+        client = '''
+import os
+print("starting benchmark", flush=True)
+fd = os.open("/dev/stdout", os.O_WRONLY | os.O_APPEND)
+os.write(fd, b"1000001\\t404\\t500\\n")
+print("requests: normal buffered summary written after request log", flush=True)
+os.close(fd)
+'''
+        harness = r'''
+source "$1"
+GCANNON_CPUS=0
+timeout() { shift; "$@"; }
+taskset() { shift 2; "$@"; }
+h2load_diagnose "$2" "$3" --split-- "$2" "$3"
+'''
+        with tempfile.TemporaryDirectory() as tmp:
+            path = pathlib.Path(tmp) / "client.py"
+            path.write_text(client)
+            result = subprocess.run(
+                ["bash", "-c", harness, "test", str(ROOT / "scripts/lib/tools/h2load.sh"),
+                 sys.executable, str(path)],
+                capture_output=True, text=True, check=False,
+            )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("reads: HTTP 404=1", result.stdout)
+        self.assertIn("writes: HTTP 404=1", result.stdout)
 
 
 if __name__ == "__main__":
