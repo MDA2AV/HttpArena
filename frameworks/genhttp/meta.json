@@ -15,6 +15,7 @@
   "website": "https://genhttp.org/",
   "enabled": true,
   "spec": ["h1", "ws"],
+  "resilience": true,
   "tests": [
     "baseline",
     "async",
