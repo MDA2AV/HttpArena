@@ -113,7 +113,7 @@ ATTACK_GO_BIN="$ATTACK_GO_DIR/attacker"
 # The Go client has no GIL. Everything else (slow holds, amplification, parser,
 # WebSocket, dheat) stays on attack.py, where the GIL is not the bottleneck.
 # RES_USE_GO=0 forces the Python client everywhere.
-RES_GO_ATTACKS=" continuation-flood hpack-bomb rapid-reset madeyoureset settings-flood ping-flood empty-frame-flood large-upload pipelining-flood tls-handshake-flood "
+RES_GO_ATTACKS=" continuation-flood hpack-bomb rapid-reset madeyoureset settings-flood ping-flood empty-frame-flood window-stall large-upload pipelining-flood tls-handshake-flood slow-body slow-headers slow-read huge-chunk trailer-flood chunk-extension-flood keepalive-hoard content-length-prealloc expect-100-continue chunk-size-overflow "
 RES_USE_GO="${RES_USE_GO:-1}"
 
 # Build the Go attack client once per run: native `go build` if the host has go,
