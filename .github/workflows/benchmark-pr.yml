@@ -421,11 +421,12 @@ jobs:
               text = tail(logs_dir + "/" + fw + ".composite.md", 50).strip()
               return "\n\n" + text if text else ""
 
-          def spec(fw):
-              # The compliance scores this run measured, from scripts/spec_comment.py.
+          def spec(fw, limit=None):
+              # The compliance scores this run measured, from scripts/spec_comment.py;
+              # limit caps the failures listed per suite (0: scores only).
+              args = ["python3", "scripts/spec_comment.py", fw] + ([str(limit)] if limit is not None else [])
               try:
-                  out = subprocess.run(["python3", "scripts/spec_comment.py", fw], capture_output=True,
-                                       text=True, timeout=60).stdout.strip()
+                  out = subprocess.run(args, capture_output=True, text=True, timeout=60).stdout.strip()
               except Exception:
                   out = ""
               return "\n\n" + out if out else ""
@@ -436,39 +437,42 @@ jobs:
           def details(summary, text):
               return "<details><summary>" + summary + "</summary>\n\n```\n" + text + "\n```\n</details>"
 
-          if len(fws) == 1:
-              fw = fws[0]
-              if spec_only:
-                  head = spec(fw).strip() or "No compliance scores captured"
-              else:
-                  rows = parse_rows(logs_dir + "/" + fw + ".log", fw)
-                  deltas = parse_deltas(logs_dir + "/" + fw + ".compare.md")
-                  head = (table(rows, deltas) + composite(fw) if rows else "No results captured") + spec(fw)
-              body = head + "\n\n" + details("Full log", tail(logs_dir + "/" + fw + log_suffix, 200))
-          else:
-              heads = []
-              extras = []
+          def build(limit, tails):
+              if len(fws) == 1:
+                  fw = fws[0]
+                  if spec_only:
+                      head = spec(fw, limit).strip() or "No compliance scores captured"
+                  else:
+                      rows = parse_rows(logs_dir + "/" + fw + ".log", fw)
+                      deltas = parse_deltas(logs_dir + "/" + fw + ".compare.md")
+                      head = (table(rows, deltas) + composite(fw) if rows else "No results captured") + spec(fw, limit)
+                  if tails:
+                      head += "\n\n" + details("Full log", tail(logs_dir + "/" + fw + log_suffix, 200))
+                  return head
+              parts = []
               for fw in fws:
                   mark = "❌" if fw in failed else "✅"
                   head = "### " + mark + " `" + fw + "`\n\n"
                   if spec_only:
-                      head += spec(fw).strip() or "_No compliance scores captured._"
+                      head += spec(fw, limit).strip() or "_No compliance scores captured._"
                   else:
                       rows = parse_rows(logs_dir + "/" + fw + ".log", fw)
                       deltas = parse_deltas(logs_dir + "/" + fw + ".compare.md")
-                      head += (table(rows, deltas) + composite(fw) if rows else "_No results captured._") + spec(fw)
-                  extra = ""
-                  if fw in failed:
-                      extra = "\n\n" + details("Log tail", tail(logs_dir + "/" + fw + log_suffix, 60))
-                  heads.append(head)
-                  extras.append(extra)
-              body = "\n\n".join(h + e for h, e in zip(heads, extras))
-              # GitHub comments cap at 65536 chars: drop the log tails first,
-              # then hard-truncate as a last resort.
-              if len(body) > 60000:
-                  body = "\n\n".join(heads)
-              if len(body) > 60000:
-                  body = body[:60000] + "\n\n… (truncated)"
+                      head += (table(rows, deltas) + composite(fw) if rows else "_No results captured._") + spec(fw, limit)
+                  if tails and fw in failed:
+                      head += "\n\n" + details("Log tail", tail(logs_dir + "/" + fw + log_suffix, 60))
+                  parts.append(head)
+              return "\n\n".join(parts)
+
+          # GitHub comments cap at 65536 chars. A long comment loses its log tails
+          # first, then lists fewer failures per suite, then none: every entry keeps
+          # its scores. Cutting the text is the last resort.
+          for limit, tails in ((None, True), (None, False), (25, False), (10, False), (0, False)):
+              body = build(limit, tails)
+              if len(body) <= 60000:
+                  break
+          if len(body) > 60000:
+              body = body[:60000] + "\n\n… (truncated)"
 
           with open("/tmp/bench_body.txt", "w") as out:
               out.write(body)

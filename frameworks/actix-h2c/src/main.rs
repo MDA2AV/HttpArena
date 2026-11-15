@@ -1,7 +1,9 @@
 use actix_web::dev::{Service, ServiceRequest, ServiceResponse};
-use actix_web::http::Version;
-use actix_web::{web, App, HttpResponse, HttpServer};
+use actix_web::http::header::{self, ContentType};
+use actix_web::http::{Method, Version};
+use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer};
 use futures_util::future::{ready, Either};
+use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::io;
 
@@ -115,6 +117,46 @@ async fn json_endpoint(
     ))
 }
 
+// /spec, the compliance route (site/content/docs/test-profiles/compliance/):
+// what h2spec needs from one route on this h2c listener, in the same shape as
+// the actix entry's. GET answers a fixed body of at least five bytes - h2spec
+// skips a flow-control test below that - and POST echoes the body.
+async fn spec_text() -> HttpResponse {
+    HttpResponse::Ok().content_type(ContentType::plaintext()).body("spec ok")
+}
+
+async fn spec_echo(mut payload: web::Payload) -> HttpResponse {
+    let mut body = web::BytesMut::new();
+    while let Some(chunk) = payload.next().await {
+        match chunk {
+            Ok(data) => body.extend_from_slice(&data),
+            Err(_) => return HttpResponse::BadRequest().finish(),
+        }
+    }
+    HttpResponse::Ok()
+        .content_type(ContentType::octet_stream())
+        .body(body.freeze())
+}
+
+async fn spec_options(mut payload: web::Payload) -> HttpResponse {
+    while payload.next().await.is_some() {}
+    HttpResponse::Ok()
+        .insert_header((header::ALLOW, "GET, HEAD, POST, OPTIONS"))
+        .finish()
+}
+
+async fn spec_headers(req: HttpRequest, mut payload: web::Payload) -> HttpResponse {
+    while payload.next().await.is_some() {}
+    let mut out = String::new();
+    for (name, value) in req.headers().iter() {
+        out.push_str(name.as_str());
+        out.push_str(": ");
+        out.push_str(&String::from_utf8_lossy(value.as_bytes()));
+        out.push('\n');
+    }
+    HttpResponse::Ok().content_type(ContentType::plaintext()).body(out)
+}
+
 #[actix_web::main]
 async fn main() -> io::Result<()> {
     // Leaked once at startup so handlers borrow the items instead of cloning
@@ -141,6 +183,18 @@ async fn main() -> io::Result<()> {
             })
             .route("/baseline2", web::get().to(baseline2))
             .route("/json/{count}", web::get().to(json_endpoint))
+            .service(
+                web::resource("/spec")
+                    .route(web::get().to(spec_text))
+                    .route(web::head().to(spec_text))
+                    .route(web::method(Method::OPTIONS).to(spec_options))
+                    .route(web::post().to(spec_echo)),
+            )
+            .service(
+                web::resource("/spec/headers")
+                    .route(web::get().to(spec_headers))
+                    .route(web::post().to(spec_headers)),
+            )
     })
     .tcp_nodelay(true)
     .bind_auto_h2c("0.0.0.0:8082")?

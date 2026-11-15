@@ -21,6 +21,7 @@ Actix-web 4 HTTP server with rustls for TLS/HTTP/2 support, compiled with thin L
 | `/delay/{ms}` | GET | Asynchronously waits `ms` milliseconds and returns the delay |
 | `/json/{count}?m=N` | GET | First `count` dataset items with `total = price * quantity * m` |
 | `/echo` | POST | Returns the request body back verbatim |
+| `/spec`, `/spec/headers` | GET, HEAD, OPTIONS, POST | The compliance route ([contract](https://http-arena.com/docs/test-profiles/compliance/)) for the h1 and h2 suites; `actix-h2c` serves it on `:8082` as well |
 | `/static/{name}` | GET | Serves `/data/static/{name}` from disk, preferring a `.br`/`.gz` sibling |
 | `/async-db?min=&max=&limit=` | GET | Items with `price` in range from Postgres, up to `limit` (1-50) |
 | `/fortunes` | GET | Fortune rows from Postgres plus a runtime row, sorted and rendered as HTML |

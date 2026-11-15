@@ -21,6 +21,7 @@ Lightweight embeddable C# web server using the GenHTTP library on the internal e
 | `/compression` | GET | Gzip-compressed large JSON response |
 | `/db` | GET | SQLite range query with JSON response |
 | `/echo` | POST | Returns the request body back verbatim |
+| `/spec`, `/spec/headers` | GET, HEAD, OPTIONS, POST | The compliance route ([contract](https://http-arena.com/docs/test-profiles/compliance/)) for the h1 suite |
 | `/static/{filename}` | GET | Serves preloaded static files with MIME types |
 
 ## Notes

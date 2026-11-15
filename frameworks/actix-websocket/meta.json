@@ -7,6 +7,7 @@
   "description": "Actix-web WebSocket echo server with TCP_NODELAY enabled and mimalloc as the allocator",
   "repo": "https://github.com/actix/actix-web",
   "enabled": true,
+  "spec": ["ws"],
   "tests": [
     "echo-ws",
     "echo-ws-pipeline",

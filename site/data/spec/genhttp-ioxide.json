@@ -1,0 +1,1939 @@
+{
+  "framework": "genhttp-ioxide",
+  "dir": "genhttp-ioxide",
+  "suites": {
+    "h1": {
+      "tool": "http11probe",
+      "version": "d50d818",
+      "passed": 157,
+      "total": 159,
+      "warnings": 10,
+      "failed": [
+        {
+          "id": "COMP-OPTIONS-STAR",
+          "test": "OPTIONS * is the only valid asterisk-form request",
+          "expected": "2xx or 405; close/timeout = warn",
+          "got": "308, connection left open",
+          "rfc": "RFC 9112 \u00a73.2.4",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-EXT-INVALID-TOKEN",
+          "test": "Chunk extension with invalid token character must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1.1",
+          "level": "Must"
+        }
+      ]
+    },
+    "h2": {
+      "tool": "h2spec",
+      "version": "2.6.0",
+      "passed": 88,
+      "total": 146,
+      "failed": [
+        {
+          "id": "generic/2/2",
+          "test": "Sends a WINDOW_UPDATE frame on half-closed (remote) stream",
+          "expected": "DATA frame",
+          "got": "HEADERS Frame (length:35, flags:0x04, stream_id:1)"
+        },
+        {
+          "id": "generic/2/3",
+          "test": "Sends a PRIORITY frame on half-closed (remote) stream",
+          "expected": "DATA frame",
+          "got": "HEADERS Frame (length:35, flags:0x04, stream_id:1)"
+        },
+        {
+          "id": "generic/2/4",
+          "test": "Sends a RST_STREAM frame on half-closed (remote) stream",
+          "expected": "PING Frame (length:8, flags:0x01, stream_id:0, opaque_data:\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00)",
+          "got": "Connection closed"
+        },
+        {
+          "id": "http2/3.5/2",
+          "test": "Sends invalid connection preface",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "Error: unexpected EOF"
+        },
+        {
+          "id": "http2/4.3/2",
+          "test": "Sends a PRIORITY frame while sending the header blocks",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/5.1/1",
+          "test": "idle: Sends a DATA frame",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "WINDOW_UPDATE Frame (length:4, flags:0x00, stream_id:1)"
+        },
+        {
+          "id": "http2/5.1/2",
+          "test": "idle: Sends a RST_STREAM frame",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/5.1/3",
+          "test": "idle: Sends a WINDOW_UPDATE frame",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/5.1/5",
+          "test": "half closed (remote): Sends a DATA frame",
+          "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+          "got": "WINDOW_UPDATE Frame (length:4, flags:0x00, stream_id:1)"
+        },
+        {
+          "id": "http2/5.1/6",
+          "test": "half closed (remote): Sends a HEADERS frame",
+          "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/5.1/8",
+          "test": "closed: Sends a DATA frame after sending RST_STREAM frame",
+          "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+          "got": "WINDOW_UPDATE Frame (length:4, flags:0x00, stream_id:1)"
+        },
+        {
+          "id": "http2/5.1/9",
+          "test": "closed: Sends a HEADERS frame after sending RST_STREAM frame",
+          "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/5.1/11",
+          "test": "closed: Sends a DATA frame",
+          "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+          "got": "WINDOW_UPDATE Frame (length:4, flags:0x00, stream_id:1)"
+        },
+        {
+          "id": "http2/5.1/12",
+          "test": "closed: Sends a HEADERS frame",
+          "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/5.1.1/1",
+          "test": "Sends even-numbered stream identifier",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:2)"
+        },
+        {
+          "id": "http2/5.1.1/2",
+          "test": "Sends stream identifier that is numerically smaller than previous",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:3)"
+        },
+        {
+          "id": "http2/5.3.1/1",
+          "test": "Sends HEADERS frame that depends on itself",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/5.3.1/2",
+          "test": "Sends PRIORITY frame that depend on itself",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/5.4.1/1",
+          "test": "Sends an invalid PING frame for connection close",
+          "expected": "Connection closed",
+          "got": "PING Frame (length:8, flags:0x01, stream_id:0)"
+        },
+        {
+          "id": "http2/5.5/2",
+          "test": "Sends an unknown extension frame in the middle of a header block",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/6.1/1",
+          "test": "Sends a DATA frame with 0x0 stream identifier",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "WINDOW_UPDATE Frame (length:4, flags:0x00, stream_id:0)"
+        },
+        {
+          "id": "http2/6.1/2",
+          "test": "Sends a DATA frame on the stream that is not in \"open\" or \"half-closed (local)\" state",
+          "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+          "got": "WINDOW_UPDATE Frame (length:4, flags:0x00, stream_id:0)"
+        },
+        {
+          "id": "http2/6.2/1",
+          "test": "Sends a HEADERS frame without the END_HEADERS flag, and a PRIORITY frame",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/6.3/1",
+          "test": "Sends a PRIORITY frame with 0x0 stream identifier",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/6.3/2",
+          "test": "Sends a PRIORITY frame with a length other than 5 octets",
+          "expected": "GOAWAY Frame (Error Code: FRAME_SIZE_ERROR) or RST_STREAM Frame (Error Code: FRAME_SIZE_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/6.4/1",
+          "test": "Sends a RST_STREAM frame with 0x0 stream identifier",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/6.4/2",
+          "test": "Sends a RST_STREAM frame on a idle stream",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/6.4/3",
+          "test": "Sends a RST_STREAM frame with a length other than 4 octets",
+          "expected": "GOAWAY Frame (Error Code: FRAME_SIZE_ERROR) or RST_STREAM Frame (Error Code: FRAME_SIZE_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/6.5/1",
+          "test": "Sends a SETTINGS frame with ACK flag and payload",
+          "expected": "GOAWAY Frame (Error Code: FRAME_SIZE_ERROR) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/6.5/2",
+          "test": "Sends a SETTINGS frame with a stream identifier other than 0x0",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "SETTINGS Frame (length:0, flags:0x01, stream_id:0)"
+        },
+        {
+          "id": "http2/6.5.2/1",
+          "test": "SETTINGS_ENABLE_PUSH (0x2): Sends the value other than 0 or 1",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "SETTINGS Frame (length:0, flags:0x01, stream_id:0)"
+        },
+        {
+          "id": "http2/6.7/3",
+          "test": "Sends a PING frame with a stream identifier field value other than 0x0",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "PING Frame (length:8, flags:0x01, stream_id:0)"
+        },
+        {
+          "id": "http2/6.9.1/2",
+          "test": "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1",
+          "expected": "GOAWAY Frame (Error Code: FLOW_CONTROL_ERROR)",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/6.9.1/3",
+          "test": "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1 on a stream",
+          "expected": "RST_STREAM Frame (Error Code: FLOW_CONTROL_ERROR)",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/6.10/2",
+          "test": "Sends a CONTINUATION frame followed by any frame other than CONTINUATION",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "WINDOW_UPDATE Frame (length:4, flags:0x00, stream_id:1)"
+        },
+        {
+          "id": "http2/6.10/3",
+          "test": "Sends a CONTINUATION frame with 0x0 stream identifier",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "Error: connection error: PROTOCOL_ERROR"
+        },
+        {
+          "id": "http2/7/2",
+          "test": "Sends a RST_STREAM frame with unknown error code",
+          "expected": "PING Frame (length:8, flags:0x01, stream_id:0, opaque_data:\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00)",
+          "got": "Connection closed"
+        },
+        {
+          "id": "http2/8.1/1",
+          "test": "Sends a second HEADERS frame without the END_STREAM flag",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:66, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/8.1.2/1",
+          "test": "Sends a HEADERS frame that contains the header field name in uppercase letters",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/8.1.2.1/1",
+          "test": "Sends a HEADERS frame that contains a unknown pseudo-header field",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/8.1.2.1/2",
+          "test": "Sends a HEADERS frame that contains the pseudo-header field defined for response",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/8.1.2.1/3",
+          "test": "Sends a HEADERS frame that contains a pseudo-header field as trailers",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:66, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/8.1.2.1/4",
+          "test": "Sends a HEADERS frame that contains a pseudo-header field that appears in a header block after a regular header field",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/8.1.2.2/1",
+          "test": "Sends a HEADERS frame that contains the connection-specific header field",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/8.1.2.2/2",
+          "test": "Sends a HEADERS frame that contains the TE header field with any value other than \"trailers\"",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/8.1.2.3/1",
+          "test": "Sends a HEADERS frame with empty \":path\" pseudo-header field",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:0, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/8.1.2.3/2",
+          "test": "Sends a HEADERS frame that omits \":method\" pseudo-header field",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:72, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/8.1.2.3/3",
+          "test": "Sends a HEADERS frame that omits \":scheme\" pseudo-header field",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/8.1.2.3/4",
+          "test": "Sends a HEADERS frame that omits \":path\" pseudo-header field",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:0, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/8.1.2.3/5",
+          "test": "Sends a HEADERS frame with duplicated \":method\" pseudo-header field",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/8.1.2.3/6",
+          "test": "Sends a HEADERS frame with duplicated \":scheme\" pseudo-header field",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/8.1.2.3/7",
+          "test": "Sends a HEADERS frame with duplicated \":path\" pseudo-header field",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/8.1.2.6/1",
+          "test": "Sends a HEADERS frame with the \"content-length\" header field which does not equal the DATA frame payload length",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:0, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/8.1.2.6/2",
+          "test": "Sends a HEADERS frame with the \"content-length\" header field which does not equal the sum of the multiple DATA frames payload length",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:0, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/8.2/1",
+          "test": "Sends a PUSH_PROMISE frame",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "hpack/4.2/1",
+          "test": "Sends a dynamic table size update at the end of header block",
+          "expected": "GOAWAY Frame (Error Code: COMPRESSION_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "hpack/5.2/2",
+          "test": "Sends a Huffman-encoded string literal representation padded by zero",
+          "expected": "GOAWAY Frame (Error Code: COMPRESSION_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "hpack/6.3/1",
+          "test": "Sends a dynamic table size update larger than the value of SETTINGS_HEADER_TABLE_SIZE",
+          "expected": "GOAWAY Frame (Error Code: COMPRESSION_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        }
+      ],
+      "listeners": {
+        "tls": {
+          "passed": 91,
+          "total": 146,
+          "failed": [
+            {
+              "id": "generic/2/2",
+              "test": "Sends a WINDOW_UPDATE frame on half-closed (remote) stream",
+              "expected": "DATA frame",
+              "got": "HEADERS Frame (length:35, flags:0x04, stream_id:1)"
+            },
+            {
+              "id": "http2/4.3/2",
+              "test": "Sends a PRIORITY frame while sending the header blocks",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1/1",
+              "test": "idle: Sends a DATA frame",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "WINDOW_UPDATE Frame (length:4, flags:0x00, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1/2",
+              "test": "idle: Sends a RST_STREAM frame",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/5.1/3",
+              "test": "idle: Sends a WINDOW_UPDATE frame",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/5.1/5",
+              "test": "half closed (remote): Sends a DATA frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "WINDOW_UPDATE Frame (length:4, flags:0x00, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1/6",
+              "test": "half closed (remote): Sends a HEADERS frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1/8",
+              "test": "closed: Sends a DATA frame after sending RST_STREAM frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "WINDOW_UPDATE Frame (length:4, flags:0x00, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1/9",
+              "test": "closed: Sends a HEADERS frame after sending RST_STREAM frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1/11",
+              "test": "closed: Sends a DATA frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "WINDOW_UPDATE Frame (length:4, flags:0x00, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1/12",
+              "test": "closed: Sends a HEADERS frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1.1/1",
+              "test": "Sends even-numbered stream identifier",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:2)"
+            },
+            {
+              "id": "http2/5.1.1/2",
+              "test": "Sends stream identifier that is numerically smaller than previous",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:3)"
+            },
+            {
+              "id": "http2/5.3.1/1",
+              "test": "Sends HEADERS frame that depends on itself",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/5.3.1/2",
+              "test": "Sends PRIORITY frame that depend on itself",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/5.4.1/1",
+              "test": "Sends an invalid PING frame for connection close",
+              "expected": "Connection closed",
+              "got": "PING Frame (length:8, flags:0x01, stream_id:0)"
+            },
+            {
+              "id": "http2/5.5/2",
+              "test": "Sends an unknown extension frame in the middle of a header block",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.1/1",
+              "test": "Sends a DATA frame with 0x0 stream identifier",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "WINDOW_UPDATE Frame (length:4, flags:0x00, stream_id:0)"
+            },
+            {
+              "id": "http2/6.1/2",
+              "test": "Sends a DATA frame on the stream that is not in \"open\" or \"half-closed (local)\" state",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "WINDOW_UPDATE Frame (length:4, flags:0x00, stream_id:1)"
+            },
+            {
+              "id": "http2/6.2/1",
+              "test": "Sends a HEADERS frame without the END_HEADERS flag, and a PRIORITY frame",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/6.3/1",
+              "test": "Sends a PRIORITY frame with 0x0 stream identifier",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.3/2",
+              "test": "Sends a PRIORITY frame with a length other than 5 octets",
+              "expected": "GOAWAY Frame (Error Code: FRAME_SIZE_ERROR) or RST_STREAM Frame (Error Code: FRAME_SIZE_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/6.4/1",
+              "test": "Sends a RST_STREAM frame with 0x0 stream identifier",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.4/2",
+              "test": "Sends a RST_STREAM frame on a idle stream",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.4/3",
+              "test": "Sends a RST_STREAM frame with a length other than 4 octets",
+              "expected": "GOAWAY Frame (Error Code: FRAME_SIZE_ERROR) or RST_STREAM Frame (Error Code: FRAME_SIZE_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/6.5/1",
+              "test": "Sends a SETTINGS frame with ACK flag and payload",
+              "expected": "GOAWAY Frame (Error Code: FRAME_SIZE_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.5/2",
+              "test": "Sends a SETTINGS frame with a stream identifier other than 0x0",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "SETTINGS Frame (length:0, flags:0x01, stream_id:0)"
+            },
+            {
+              "id": "http2/6.5.2/1",
+              "test": "SETTINGS_ENABLE_PUSH (0x2): Sends the value other than 0 or 1",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "SETTINGS Frame (length:0, flags:0x01, stream_id:0)"
+            },
+            {
+              "id": "http2/6.7/3",
+              "test": "Sends a PING frame with a stream identifier field value other than 0x0",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "PING Frame (length:8, flags:0x01, stream_id:0)"
+            },
+            {
+              "id": "http2/6.9.1/2",
+              "test": "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1",
+              "expected": "GOAWAY Frame (Error Code: FLOW_CONTROL_ERROR)",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.9.1/3",
+              "test": "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1 on a stream",
+              "expected": "RST_STREAM Frame (Error Code: FLOW_CONTROL_ERROR)",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/6.10/2",
+              "test": "Sends a CONTINUATION frame followed by any frame other than CONTINUATION",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "WINDOW_UPDATE Frame (length:4, flags:0x00, stream_id:1)"
+            },
+            {
+              "id": "http2/6.10/3",
+              "test": "Sends a CONTINUATION frame with 0x0 stream identifier",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Error: connection error: PROTOCOL_ERROR"
+            },
+            {
+              "id": "http2/6.10/5",
+              "test": "Sends a CONTINUATION frame preceded by a CONTINUATION frame with END_HEADERS flag",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1/1",
+              "test": "Sends a second HEADERS frame without the END_STREAM flag",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:66, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2/1",
+              "test": "Sends a HEADERS frame that contains the header field name in uppercase letters",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.1/1",
+              "test": "Sends a HEADERS frame that contains a unknown pseudo-header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.1/2",
+              "test": "Sends a HEADERS frame that contains the pseudo-header field defined for response",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.1/3",
+              "test": "Sends a HEADERS frame that contains a pseudo-header field as trailers",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:66, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.1/4",
+              "test": "Sends a HEADERS frame that contains a pseudo-header field that appears in a header block after a regular header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.2/1",
+              "test": "Sends a HEADERS frame that contains the connection-specific header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.2/2",
+              "test": "Sends a HEADERS frame that contains the TE header field with any value other than \"trailers\"",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.3/1",
+              "test": "Sends a HEADERS frame with empty \":path\" pseudo-header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:0, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.3/2",
+              "test": "Sends a HEADERS frame that omits \":method\" pseudo-header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:72, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.3/3",
+              "test": "Sends a HEADERS frame that omits \":scheme\" pseudo-header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.3/4",
+              "test": "Sends a HEADERS frame that omits \":path\" pseudo-header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:0, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.3/5",
+              "test": "Sends a HEADERS frame with duplicated \":method\" pseudo-header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.3/6",
+              "test": "Sends a HEADERS frame with duplicated \":scheme\" pseudo-header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.3/7",
+              "test": "Sends a HEADERS frame with duplicated \":path\" pseudo-header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.6/1",
+              "test": "Sends a HEADERS frame with the \"content-length\" header field which does not equal the DATA frame payload length",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:0, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.6/2",
+              "test": "Sends a HEADERS frame with the \"content-length\" header field which does not equal the sum of the multiple DATA frames payload length",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:0, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.2/1",
+              "test": "Sends a PUSH_PROMISE frame",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "hpack/4.2/1",
+              "test": "Sends a dynamic table size update at the end of header block",
+              "expected": "GOAWAY Frame (Error Code: COMPRESSION_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "hpack/5.2/2",
+              "test": "Sends a Huffman-encoded string literal representation padded by zero",
+              "expected": "GOAWAY Frame (Error Code: COMPRESSION_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "hpack/6.3/1",
+              "test": "Sends a dynamic table size update larger than the value of SETTINGS_HEADER_TABLE_SIZE",
+              "expected": "GOAWAY Frame (Error Code: COMPRESSION_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            }
+          ]
+        },
+        "h2c": {
+          "passed": 88,
+          "total": 146,
+          "failed": [
+            {
+              "id": "generic/2/2",
+              "test": "Sends a WINDOW_UPDATE frame on half-closed (remote) stream",
+              "expected": "DATA frame",
+              "got": "HEADERS Frame (length:35, flags:0x04, stream_id:1)"
+            },
+            {
+              "id": "generic/2/3",
+              "test": "Sends a PRIORITY frame on half-closed (remote) stream",
+              "expected": "DATA frame",
+              "got": "HEADERS Frame (length:35, flags:0x04, stream_id:1)"
+            },
+            {
+              "id": "generic/2/4",
+              "test": "Sends a RST_STREAM frame on half-closed (remote) stream",
+              "expected": "PING Frame (length:8, flags:0x01, stream_id:0, opaque_data:\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00)",
+              "got": "Connection closed"
+            },
+            {
+              "id": "http2/3.5/2",
+              "test": "Sends invalid connection preface",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Error: unexpected EOF"
+            },
+            {
+              "id": "http2/4.3/2",
+              "test": "Sends a PRIORITY frame while sending the header blocks",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1/1",
+              "test": "idle: Sends a DATA frame",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "WINDOW_UPDATE Frame (length:4, flags:0x00, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1/2",
+              "test": "idle: Sends a RST_STREAM frame",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/5.1/3",
+              "test": "idle: Sends a WINDOW_UPDATE frame",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/5.1/5",
+              "test": "half closed (remote): Sends a DATA frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "WINDOW_UPDATE Frame (length:4, flags:0x00, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1/6",
+              "test": "half closed (remote): Sends a HEADERS frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1/8",
+              "test": "closed: Sends a DATA frame after sending RST_STREAM frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "WINDOW_UPDATE Frame (length:4, flags:0x00, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1/9",
+              "test": "closed: Sends a HEADERS frame after sending RST_STREAM frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1/11",
+              "test": "closed: Sends a DATA frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "WINDOW_UPDATE Frame (length:4, flags:0x00, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1/12",
+              "test": "closed: Sends a HEADERS frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1.1/1",
+              "test": "Sends even-numbered stream identifier",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:2)"
+            },
+            {
+              "id": "http2/5.1.1/2",
+              "test": "Sends stream identifier that is numerically smaller than previous",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:3)"
+            },
+            {
+              "id": "http2/5.3.1/1",
+              "test": "Sends HEADERS frame that depends on itself",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/5.3.1/2",
+              "test": "Sends PRIORITY frame that depend on itself",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/5.4.1/1",
+              "test": "Sends an invalid PING frame for connection close",
+              "expected": "Connection closed",
+              "got": "PING Frame (length:8, flags:0x01, stream_id:0)"
+            },
+            {
+              "id": "http2/5.5/2",
+              "test": "Sends an unknown extension frame in the middle of a header block",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.1/1",
+              "test": "Sends a DATA frame with 0x0 stream identifier",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "WINDOW_UPDATE Frame (length:4, flags:0x00, stream_id:0)"
+            },
+            {
+              "id": "http2/6.1/2",
+              "test": "Sends a DATA frame on the stream that is not in \"open\" or \"half-closed (local)\" state",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "WINDOW_UPDATE Frame (length:4, flags:0x00, stream_id:0)"
+            },
+            {
+              "id": "http2/6.2/1",
+              "test": "Sends a HEADERS frame without the END_HEADERS flag, and a PRIORITY frame",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/6.3/1",
+              "test": "Sends a PRIORITY frame with 0x0 stream identifier",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.3/2",
+              "test": "Sends a PRIORITY frame with a length other than 5 octets",
+              "expected": "GOAWAY Frame (Error Code: FRAME_SIZE_ERROR) or RST_STREAM Frame (Error Code: FRAME_SIZE_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/6.4/1",
+              "test": "Sends a RST_STREAM frame with 0x0 stream identifier",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.4/2",
+              "test": "Sends a RST_STREAM frame on a idle stream",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.4/3",
+              "test": "Sends a RST_STREAM frame with a length other than 4 octets",
+              "expected": "GOAWAY Frame (Error Code: FRAME_SIZE_ERROR) or RST_STREAM Frame (Error Code: FRAME_SIZE_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/6.5/1",
+              "test": "Sends a SETTINGS frame with ACK flag and payload",
+              "expected": "GOAWAY Frame (Error Code: FRAME_SIZE_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.5/2",
+              "test": "Sends a SETTINGS frame with a stream identifier other than 0x0",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "SETTINGS Frame (length:0, flags:0x01, stream_id:0)"
+            },
+            {
+              "id": "http2/6.5.2/1",
+              "test": "SETTINGS_ENABLE_PUSH (0x2): Sends the value other than 0 or 1",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "SETTINGS Frame (length:0, flags:0x01, stream_id:0)"
+            },
+            {
+              "id": "http2/6.7/3",
+              "test": "Sends a PING frame with a stream identifier field value other than 0x0",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "PING Frame (length:8, flags:0x01, stream_id:0)"
+            },
+            {
+              "id": "http2/6.9.1/2",
+              "test": "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1",
+              "expected": "GOAWAY Frame (Error Code: FLOW_CONTROL_ERROR)",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.9.1/3",
+              "test": "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1 on a stream",
+              "expected": "RST_STREAM Frame (Error Code: FLOW_CONTROL_ERROR)",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/6.10/2",
+              "test": "Sends a CONTINUATION frame followed by any frame other than CONTINUATION",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "WINDOW_UPDATE Frame (length:4, flags:0x00, stream_id:1)"
+            },
+            {
+              "id": "http2/6.10/3",
+              "test": "Sends a CONTINUATION frame with 0x0 stream identifier",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Error: connection error: PROTOCOL_ERROR"
+            },
+            {
+              "id": "http2/7/2",
+              "test": "Sends a RST_STREAM frame with unknown error code",
+              "expected": "PING Frame (length:8, flags:0x01, stream_id:0, opaque_data:\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00)",
+              "got": "Connection closed"
+            },
+            {
+              "id": "http2/8.1/1",
+              "test": "Sends a second HEADERS frame without the END_STREAM flag",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:66, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2/1",
+              "test": "Sends a HEADERS frame that contains the header field name in uppercase letters",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.1/1",
+              "test": "Sends a HEADERS frame that contains a unknown pseudo-header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.1/2",
+              "test": "Sends a HEADERS frame that contains the pseudo-header field defined for response",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.1/3",
+              "test": "Sends a HEADERS frame that contains a pseudo-header field as trailers",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:66, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.1/4",
+              "test": "Sends a HEADERS frame that contains a pseudo-header field that appears in a header block after a regular header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.2/1",
+              "test": "Sends a HEADERS frame that contains the connection-specific header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.2/2",
+              "test": "Sends a HEADERS frame that contains the TE header field with any value other than \"trailers\"",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.3/1",
+              "test": "Sends a HEADERS frame with empty \":path\" pseudo-header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:0, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.3/2",
+              "test": "Sends a HEADERS frame that omits \":method\" pseudo-header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:72, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.3/3",
+              "test": "Sends a HEADERS frame that omits \":scheme\" pseudo-header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.3/4",
+              "test": "Sends a HEADERS frame that omits \":path\" pseudo-header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:0, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.3/5",
+              "test": "Sends a HEADERS frame with duplicated \":method\" pseudo-header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.3/6",
+              "test": "Sends a HEADERS frame with duplicated \":scheme\" pseudo-header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.3/7",
+              "test": "Sends a HEADERS frame with duplicated \":path\" pseudo-header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.6/1",
+              "test": "Sends a HEADERS frame with the \"content-length\" header field which does not equal the DATA frame payload length",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:0, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.6/2",
+              "test": "Sends a HEADERS frame with the \"content-length\" header field which does not equal the sum of the multiple DATA frames payload length",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:0, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.2/1",
+              "test": "Sends a PUSH_PROMISE frame",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "hpack/4.2/1",
+              "test": "Sends a dynamic table size update at the end of header block",
+              "expected": "GOAWAY Frame (Error Code: COMPRESSION_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "hpack/5.2/2",
+              "test": "Sends a Huffman-encoded string literal representation padded by zero",
+              "expected": "GOAWAY Frame (Error Code: COMPRESSION_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "hpack/6.3/1",
+              "test": "Sends a dynamic table size update larger than the value of SETTINGS_HEADER_TABLE_SIZE",
+              "expected": "GOAWAY Frame (Error Code: COMPRESSION_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            }
+          ]
+        }
+      }
+    },
+    "h3": {
+      "tool": "h3spec",
+      "version": "v0.1.15",
+      "passed": 37,
+      "total": 81,
+      "failed": [
+        {
+          "id": "QUIC servers MUST send unexpected_message TLS alert if KeyUpdate in Handshake is received [TLS 6]",
+          "got": "predicate failed on expected exception: QUICException / TransportErrorIsReceived ProtocolViolation \"\""
+        },
+        {
+          "id": "QUIC servers MUST send unexpected_message TLS alert if KeyUpdate in 1-RTT is received [TLS 6]",
+          "got": "predicate failed on expected exception: QUICException / TransportErrorIsReceived ProtocolViolation \"\""
+        },
+        {
+          "id": "QUIC servers MUST send no_application_protocol TLS alert if no application protocols are supported [TLS 8.1]",
+          "got": "predicate failed on expected exception: QUICException / TransportErrorIsReceived ProtocolViolation \"\""
+        },
+        {
+          "id": "QUIC servers MUST send missing_extension TLS alert if the quic_transport_parameters extension is not included [TLS 8.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "QUIC servers MUST send missing_extension TLS alert if only the draft quic_transport_parameters extension (0xffa5) is included [TLS 8.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "QUIC servers MUST send unexpected_message TLS alert if EndOfEarlyData is received [TLS 8.3]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_FRAME_UNEXPECTED if DATA is received before HEADERS [HTTP/3 4.1]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_MESSAGE_ERROR if a pseudo-header is duplicated [HTTP/3 4.3.1]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_MESSAGE_ERROR if mandatory pseudo-header fields are absent [HTTP/3 4.3.1]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_MESSAGE_ERROR if prohibited pseudo-header fields are present [HTTP/3 4.3]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_MESSAGE_ERROR if pseudo-header fields exist after fields [HTTP/3 4.3]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST treat a request with connection as malformed [HTTP/3 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST treat a request with keep-alive as malformed [HTTP/3 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST treat a request with proxy-connection as malformed [HTTP/3 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST treat a request with transfer-encoding as malformed [HTTP/3 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST treat a request with upgrade as malformed [HTTP/3 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST treat a request with te as malformed [HTTP/3 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST accept TE with trailers [HTTP/3 4.2]",
+          "got": "expected: Just () / but got: Nothing"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_MISSING_SETTINGS if the first control frame is not SETTINGS [HTTP/3 6.2.1]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_FRAME_UNEXPECTED if a DATA frame is received on a control stream [HTTP/3 7.2.1]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_FRAME_UNEXPECTED if a HEADERS frame is received on a control stream [HTTP/3 7.2.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_FRAME_UNEXPECTED if a second SETTINGS frame is received [HTTP/3 7.2.4]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_SETTINGS_ERROR if HTTP/2 settings are included [HTTP/3 7.2.4.1]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_FRAME_ERROR if a SETTINGS frame stops mid-parameter [HTTP/3 7.1]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST NOT stop reading settings at a reserved identifier [HTTP/3 7.2.4.1]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers treats a repeated setting identifier as an error whatever its value [HTTP/3 7.2.4]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_FRAME_UNEXPECTED if CANCEL_PUSH is received in a request stream [HTTP/3 7.2.3]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_FRAME_UNEXPECTED if PUSH_PROMISE is received [HTTP/3 7.2.5]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_ID_ERROR if CANCEL_PUSH names a push ID not allowed [HTTP/3 7.2.3]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_ID_ERROR if MAX_PUSH_ID goes down [HTTP/3 7.2.7]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_ID_ERROR if GOAWAY goes up [HTTP/3 5.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_FRAME_ERROR if MAX_PUSH_ID has octets after its push ID [HTTP/3 7.1]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST ignore a frame of unknown type, however long [HTTP/3 7.2.8]",
+          "got": "expected: Just () / but got: Nothing"
+        },
+        {
+          "id": "HTTP/3 servers MUST send QPACK_DECOMPRESSION_FAILED if an invalid static table index exists in a field line representation [QPACK 3.1]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send QPACK_DECOMPRESSION_FAILED if a field line references a dynamic table entry that is not there [QPACK 2.2.3]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send QPACK_DECOMPRESSION_FAILED if a field line is cut short [QPACK 2.2.3]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send QPACK_DECOMPRESSION_FAILED if a Huffman string is badly padded [QPACK 4.1.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST NOT buffer an over-long frame on a control stream [HTTP/3 7.1]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send QPACK_ENCODER_STREAM_ERROR if a new dynamic table capacity value exceeds the limit [QPACK 4.3.1]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_CLOSED_CRITICAL_STREAM if a control stream is closed [HTTP/3 6.2.1]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_CLOSED_CRITICAL_STREAM if an encoder stream is closed [QPACK 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_CLOSED_CRITICAL_STREAM if a decoder stream is closed [QPACK 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_CLOSED_CRITICAL_STREAM if an encoder stream ends inside an instruction [QPACK 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send QPACK_DECODER_STREAM_ERROR if Insert Count Increment is 0 [QPACK 4.4.3]",
+          "got": "did not get expected exception: QUICException"
+        }
+      ],
+      "crashed": true
+    },
+    "ws": {
+      "tool": "autobahn-testsuite",
+      "version": "25.10.1",
+      "passed": 133,
+      "total": 244,
+      "non_strict": 0,
+      "failed": [
+        {
+          "id": "1.1.6",
+          "test": "Send text message message with payload of length 65535.",
+          "expected": "Receive echo'ed text message (with payload as sent). Clean close with normal code.",
+          "got": "Actual events differ from any expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "1.1.7",
+          "test": "Send text message message with payload of length 65536.",
+          "expected": "Receive echo'ed text message (with payload as sent). Clean close with normal code.",
+          "got": "Actual events differ from any expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "1.1.8",
+          "test": "Send text message message with payload of length 65536. Sent out data in chops of 997 octets.",
+          "expected": "Receive echo'ed text message (with payload as sent). Clean close with normal code.",
+          "got": "Actual events differ from any expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "1.2.6",
+          "test": "Send binary message message with payload of length 65535.",
+          "expected": "Receive echo'ed binary message (with payload as sent). Clean close with normal code.",
+          "got": "Actual events differ from any expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "1.2.7",
+          "test": "Send binary message message with payload of length 65536.",
+          "expected": "Receive echo'ed binary message (with payload as sent). Clean close with normal code.",
+          "got": "Actual events differ from any expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "1.2.8",
+          "test": "Send binary message message with payload of length 65536. Sent out data in chops of 997 octets.",
+          "expected": "Receive echo'ed binary message (with payload as sent). Clean close with normal code.",
+          "got": "Actual events differ from any expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "3.1",
+          "test": "Send small text message with <b>RSV = 1</b>.",
+          "expected": "The connection is failed immediately (1002/protocol error), since RSV must be 0, when no extension defining RSV meaning has been negotiated.",
+          "got": "Actual events differ from any expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "3.2",
+          "test": "Send small text message, then send again with <b>RSV = 2</b>, then send Ping.",
+          "expected": "Echo for first message is received, but then connection is failed immediately, since RSV must be 0, when no extension defining RSV meaning has been negotiated. The Pong is not received.",
+          "got": "Actual events differ from any expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "3.3",
+          "test": "Send small text message, then send again with <b>RSV = 3</b>, then send Ping. Octets are sent in frame-wise chops. Octets are sent in octet-wise chops.",
+          "expected": "Echo for first message is received, but then connection is failed immediately, since RSV must be 0, when no extension defining RSV meaning has been negotiated. The Pong is not received.",
+          "got": "Actual events differ from any expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "3.4",
+          "test": "Send small text message, then send again with <b>RSV = 4</b>, then send Ping. Octets are sent in octet-wise chops.",
+          "expected": "Echo for first message is received, but then connection is failed immediately, since RSV must be 0, when no extension defining RSV meaning has been negotiated. The Pong is not received.",
+          "got": "Actual events differ from any expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "3.5",
+          "test": "Send small binary message with <b>RSV = 5</b>.",
+          "expected": "The connection is failed immediately, since RSV must be 0.",
+          "got": "Actual events differ from any expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "3.6",
+          "test": "Send Ping with <b>RSV = 6</b>.",
+          "expected": "The connection is failed immediately, since RSV must be 0.",
+          "got": "Actual events differ from any expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "3.7",
+          "test": "Send Close with <b>RSV = 7</b>.",
+          "expected": "The connection is failed immediately, since RSV must be 0.",
+          "got": "Actual events match at least one expected. / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "5.6",
+          "test": "Send text Message fragmented into 2 fragments, one ping with payload in-between.",
+          "expected": "A pong is received, then the message is echo'ed back to us.",
+          "got": "Actual events differ from any expected. / close: The spec requires the connection to be failed cleanly here"
+        },
+        {
+          "id": "5.9",
+          "test": "Send unfragmented Text Message after Continuation Frame with FIN = true, where there is nothing to continue, sent in one chop.",
+          "expected": "The connection is failed immediately, since there is no message to continue.",
+          "got": "Actual events differ from any expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "5.10",
+          "test": "Send unfragmented Text Message after Continuation Frame with FIN = true, where there is nothing to continue, sent in per-frame chops.",
+          "expected": "The connection is failed immediately, since there is no message to continue.",
+          "got": "Actual events differ from any expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "5.11",
+          "test": "Send unfragmented Text Message after Continuation Frame with FIN = true, where there is nothing to continue, sent in octet-wise chops.",
+          "expected": "The connection is failed immediately, since there is no message to continue.",
+          "got": "Actual events differ from any expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "5.12",
+          "test": "Send unfragmented Text Message after Continuation Frame with FIN = false, where there is nothing to continue, sent in one chop.",
+          "expected": "The connection is failed immediately, since there is no message to continue.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "5.13",
+          "test": "Send unfragmented Text Message after Continuation Frame with FIN = false, where there is nothing to continue, sent in per-frame chops.",
+          "expected": "The connection is failed immediately, since there is no message to continue.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "5.14",
+          "test": "Send unfragmented Text Message after Continuation Frame with FIN = false, where there is nothing to continue, sent in octet-wise chops.",
+          "expected": "The connection is failed immediately, since there is no message to continue.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "5.15",
+          "test": "Send text Message fragmented into 2 fragments, then Continuation Frame with FIN = false where there is nothing to continue, then unfragmented Text Message, a...",
+          "expected": "The connection is failed immediately, since there is no message to continue.",
+          "got": "Actual events differ from any expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "5.16",
+          "test": "Repeated 2x: Continuation Frame with FIN = false (where there is nothing to continue), then text Message fragmented into 2 fragments.",
+          "expected": "The connection is failed immediately, since there is no message to continue.",
+          "got": "Actual events differ from any expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "5.17",
+          "test": "Repeated 2x: Continuation Frame with FIN = true (where there is nothing to continue), then text Message fragmented into 2 fragments.",
+          "expected": "The connection is failed immediately, since there is no message to continue.",
+          "got": "Actual events differ from any expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "5.18",
+          "test": "Send text Message fragmented into 2 fragments, with both frame opcodes set to text, sent in one chop.",
+          "expected": "The connection is failed immediately, since all data frames after the initial data frame must have opcode 0.",
+          "got": "Actual events differ from any expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "5.19",
+          "test": "A fragmented text message is sent in multiple frames. After sending the first 2 frames of the text message, a Ping is sent. Then we wait 1s, then we send 2 m...",
+          "expected": "The peer immediately answers the first Ping before it has received the last text message fragment. The peer pong's back the Ping's payload exactly, and echo's the payload of the fragmented message ...",
+          "got": "Actual events differ from any expected. / close: The spec requires the connection to be failed cleanly here"
+        },
+        {
+          "id": "6.3.1",
+          "test": "Send invalid UTF-8 text message unfragmented.<br><br>MESSAGE:<br>cebae1bdb9cf83cebcceb5eda080656469746564",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.3.2",
+          "test": "Send invalid UTF-8 text message in fragments of 1 octet, resulting in frames ending on positions which are not code point ends.<br><br>MESSAGE:<br>cebae1bdb9...",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.4.1",
+          "test": "Send invalid UTF-8 text message in 3 fragments (frames). First frame payload is valid, then wait, then 2nd frame which contains the payload making the sequen...",
+          "expected": "The first frame is accepted, we expect to timeout on the first wait. The 2nd frame should be rejected immediately (fail fast on UTF-8). If we timeout, we expect the connection is failed at least th...",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.4.2",
+          "test": "Same as Case 6.4.1, but in 2nd frame, we send only up to and including the octet making the complete payload invalid. <br><br>MESSAGE PARTS:<br> PART1 = ceba...",
+          "expected": "The first frame is accepted, we expect to timeout on the first wait. The 2nd frame should be rejected immediately (fail fast on UTF-8). If we timeout, we expect the connection is failed at least th...",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.4.3",
+          "test": "Same as Case 6.4.1, but we send message not in 3 frames, but in 3 chops of the same message frame. <br><br>MESSAGE PARTS:<br> PART1 = cebae1bdb9cf83cebcceb5<...",
+          "expected": "The first chop is accepted, we expect to timeout on the first wait. The 2nd chop should be rejected immediately (fail fast on UTF-8). If we timeout, we expect the connection is failed at least then...",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.4.4",
+          "test": "Same as Case 6.4.2, but we send message not in 3 frames, but in 3 chops of the same message frame. <br><br>MESSAGE PARTS:<br> PART1 = cebae1bdb9cf83cebcceb5f...",
+          "expected": "The first chop is accepted, we expect to timeout on the first wait. The 2nd chop should be rejected immediately (fail fast on UTF-8). If we timeout, we expect the connection is failed at least then...",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.6.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xce",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.6.3",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xcebae1",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.6.4",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xcebae1bd",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.6.6",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xcebae1bdb9cf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.6.8",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xcebae1bdb9cf83ce",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.6.10",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xcebae1bdb9cf83cebcce",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.8.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf888808080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.8.2",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfc8480808080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.10.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf7bfbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.10.2",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfbbfbfbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.10.3",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfdbfbfbfbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.11.5",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf4908080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.12.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0x80",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.12.2",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.12.3",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0x80bf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.12.4",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0x80bf80",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.12.5",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0x80bf80bf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.12.6",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0x80bf80bf80",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.12.7",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0x80bf80bf80bf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.12.8",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0x808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f...",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.13.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xc020c120c220c320c420c520c620c720c820c920ca20cb20cc20cd20ce20cf20...",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.13.2",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xe020e120e220e320e420e520e620e720e820e920ea20eb20ec20ed20ee20",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.13.3",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf020f120f220f320f420f520f620",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.13.4",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf820f920fa20",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.13.5",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfc20",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.14.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xc0",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.14.2",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xe080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.14.3",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf08080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.14.4",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf8808080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.14.5",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfc80808080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.14.6",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xdf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.14.7",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xefbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.14.8",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf7bfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.14.9",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfbbfbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.14.10",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfdbfbfbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.15.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xc0e080f08080f8808080fc80808080dfefbff7bfbffbbfbfbffdbfbfbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.16.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfe",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.16.2",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xff",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.16.3",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfefeffff",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.17.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xc0af",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.17.2",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xe080af",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.17.3",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf08080af",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.17.4",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf8808080af",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.17.5",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfc80808080af",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.18.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xc1bf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.18.2",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xe09fbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.18.3",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf08fbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.18.4",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf887bfbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.18.5",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfc83bfbfbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.19.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xc080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.19.2",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xe08080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.19.3",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf0808080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.19.4",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf880808080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.19.5",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfc8080808080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.20.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xeda080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.20.2",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedadbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.20.3",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedae80",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.20.4",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedafbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.20.5",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedb080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.20.6",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedbe80",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.20.7",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.21.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xeda080edb080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.21.2",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xeda080edbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.21.3",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedadbfedb080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.21.4",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedadbfedbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.21.5",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedae80edb080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.21.6",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedae80edbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.21.7",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedafbfedb080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "6.21.8",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedafbfedbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: The connection was failed by the wrong endpoint"
+        },
+        {
+          "id": "7.3.2",
+          "test": "Send a close frame with payload length 1",
+          "expected": "Clean close with protocol error or drop TCP.",
+          "got": "The close code should have been 1002 or empty / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "7.5.1",
+          "test": "Send a close frame with invalid UTF8 payload",
+          "expected": "Clean close with protocol error or invalid utf8 code or dropped TCP.",
+          "got": "The close code should have been 1002,1007 or empty / close: The close code should have been 1002,1007 or empty"
+        },
+        {
+          "id": "7.9.1",
+          "test": "Send close with invalid close code 0",
+          "expected": "Clean close with protocol error code or drop TCP",
+          "got": "The close code should have been 1002 or empty / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "7.9.2",
+          "test": "Send close with invalid close code 999",
+          "expected": "Clean close with protocol error code or drop TCP",
+          "got": "The close code should have been 1002 or empty / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "7.9.3",
+          "test": "Send close with invalid close code 1004",
+          "expected": "Clean close with protocol error code or drop TCP",
+          "got": "The close code should have been 1002 or empty / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "7.9.4",
+          "test": "Send close with invalid close code 1005",
+          "expected": "Clean close with protocol error code or drop TCP",
+          "got": "The close code should have been 1002 or empty / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "7.9.5",
+          "test": "Send close with invalid close code 1006",
+          "expected": "Clean close with protocol error code or drop TCP",
+          "got": "The close code should have been 1002 or empty / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "7.9.6",
+          "test": "Send close with invalid close code 1016",
+          "expected": "Clean close with protocol error code or drop TCP",
+          "got": "The close code should have been 1002 or empty / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "7.9.7",
+          "test": "Send close with invalid close code 1100",
+          "expected": "Clean close with protocol error code or drop TCP",
+          "got": "The close code should have been 1002 or empty / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "7.9.8",
+          "test": "Send close with invalid close code 2000",
+          "expected": "Clean close with protocol error code or drop TCP",
+          "got": "The close code should have been 1002 or empty / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "7.9.9",
+          "test": "Send close with invalid close code 2999",
+          "expected": "Clean close with protocol error code or drop TCP",
+          "got": "The close code should have been 1002 or empty / close: The close code should have been 1002 or empty"
+        }
+      ]
+    }
+  }
+}

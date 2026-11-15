@@ -79,6 +79,17 @@ The probe's normalization tests send a malformed header name - `Content_Length`,
 - **`ws`**: Autobahn runs against the existing `/ws` echo.
 - **HTTP/1.1 over TLS** (port 8081) is not probed, so `/spec` is not required there.
 
+## Examples
+
+The route in a few entries, each through its framework's own routing:
+
+| Entry | Framework | Where |
+|---|---|---|
+| aspnet-minimal | ASP.NET Core minimal APIs (C#) | [`Program.cs`](https://github.com/MDA2AV/HttpArena/blob/main/frameworks/aspnet-minimal/Program.cs), [`Handlers.cs`](https://github.com/MDA2AV/HttpArena/blob/main/frameworks/aspnet-minimal/Handlers.cs) |
+| actix | actix-web (Rust) | [`src/main.rs`](https://github.com/MDA2AV/HttpArena/blob/main/frameworks/actix/src/main.rs); `actix-h2c` serves it on `:8082` |
+| genhttp | GenHTTP webservices (C#) | [`Tests/Spec.cs`](https://github.com/MDA2AV/HttpArena/blob/main/frameworks/genhttp/Tests/Spec.cs), shared with genhttp-ioxide |
+| bun | `Bun.serve` routes (TypeScript) | [`server.ts`](https://github.com/MDA2AV/HttpArena/blob/main/frameworks/bun/server.ts) |
+
 ## Try it
 
 ```bash

@@ -2,12 +2,16 @@
 """Markdown for one entry's compliance scores, for the /benchmark and /spec
 result comments.
 
-    spec_comment.py <framework dir>
+    spec_comment.py <framework dir> [<failures listed per suite>]
 
 Reads results/spec/<framework dir>.json, which scripts/spec.sh wrote during
 this run, rather than site/data/spec/: a PR branch can carry an older saved
 copy, and that must not be shown as if it had just been measured. Prints
 nothing when the entry ran no suite.
+
+A limit lists at most that many failures per suite and says how many more there
+are; 0 leaves the lists out. The workflow lowers it until a comment covering
+several entries fits GitHub's size limit, so every entry keeps its scores.
 """
 import json
 import os
@@ -18,6 +22,7 @@ LABELS = {"h1": "H/1.1", "h2": "H/2", "h3": "H/3", "ws": "WebSocket"}
 
 def main():
     fw = sys.argv[1]
+    limit = int(sys.argv[2]) if len(sys.argv) > 2 else None
     path = os.path.join("results", "spec", fw + ".json")
     if not os.path.exists(path):
         return
@@ -28,6 +33,7 @@ def main():
 
     rows = ["| Suite | Tool | Score | Failed |", "|---|---|---|---|"]
     details = []
+    hidden = 0
     for key, s in suites.items():
         label = f"{LABELS.get(key, key)} (`{key}`)"
         tool = f'{s.get("tool", "")} {s.get("version", "")}'.strip()
@@ -44,13 +50,20 @@ def main():
             score += " - **the server crashed during the suite**"
         failed = [f if isinstance(f, dict) else {"id": f} for f in s.get("failed") or []]
         rows.append(f'| {label} | {tool} | {score} | {len(failed)} |')
-        if failed:
+        if failed and limit != 0:
+            shown = failed if limit is None else failed[:limit]
+            more = len(failed) - len(shown)
             details.append(f"<details><summary>{LABELS.get(key, key)}: {len(failed)} failed</summary>\n\n"
-                           + failure_table(failed) + "\n\n</details>")
+                           + failure_table(shown) + (f"\n\nand {more} more" if more else "") + "\n\n</details>")
+        hidden += len(failed) if limit == 0 else max(0, len(failed) - (limit or len(failed)))
 
     out = "#### Compliance\n\n" + "\n".join(rows)
     if details:
         out += "\n\n" + "\n\n".join(details)
+    if hidden:
+        tests = "1 failed test is" if hidden == 1 else f"{hidden} failed tests are"
+        out += (f"\n\n{tests} not listed, to keep this comment within GitHub's size limit."
+                f" `/spec --save` commits every one to `site/data/spec/{fw}.json`, and the entry's page lists them.")
     print(out)
 
 
