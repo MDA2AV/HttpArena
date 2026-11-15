@@ -1,1 +1,1 @@
-[apex] Server listening on port 8080 (TLS: 8081) with 8 workers
+[apex] Server listening on port 8080 (TLS: 8081, H2C: 8082, H2: 8443) with 8 workers
