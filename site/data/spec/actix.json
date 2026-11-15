@@ -1,0 +1,322 @@
+{
+  "framework": "actix",
+  "dir": "actix",
+  "suites": {
+    "h1": {
+      "tool": "http11probe",
+      "version": "d50d818",
+      "passed": 120,
+      "total": 159,
+      "warnings": 11,
+      "failed": [
+        {
+          "id": "COMP-HOST-WITH-USERINFO",
+          "test": "Host header with userinfo (user@host) must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a73.2",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-HOST-WITH-PATH",
+          "test": "Host header with path component must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a73.2",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-ASTERISK-WITH-GET",
+          "test": "Asterisk-form (*) request-target with GET must be rejected",
+          "expected": "400, close, or timeout = warn",
+          "got": "404, connection left open",
+          "rfc": "RFC 9112 \u00a73.2.4",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-OPTIONS-STAR",
+          "test": "OPTIONS * is the only valid asterisk-form request",
+          "expected": "2xx or 405; close/timeout = warn",
+          "got": "404, connection left open",
+          "rfc": "RFC 9112 \u00a73.2.4",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-METHOD-CONNECT",
+          "test": "CONNECT to an origin server must be rejected",
+          "expected": "400/405/501 or close",
+          "got": "404, connection closed",
+          "rfc": "RFC 9110 \u00a79.3.6",
+          "level": "Should"
+        },
+        {
+          "id": "COMP-HOST-EMPTY-VALUE",
+          "test": "Empty Host header value must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a73.2",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-BARE-SEMICOLON",
+          "test": "Chunk size with bare semicolon and no extension name must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-EXT-INVALID-TOKEN",
+          "test": "Chunk extension with invalid token character must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-SIZE-TRAILING-OWS",
+          "test": "Chunk size with trailing whitespace before CRLF must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-LF-TRAILER",
+          "test": "Bare LF in chunked trailer termination \u2014 server MAY accept bare LF per RFC 9112 \u00a72.2",
+          "expected": "400 or 2xx",
+          "got": "no response, timed out",
+          "rfc": "RFC 9112 \u00a77.1",
+          "level": "May"
+        },
+        {
+          "id": "SMUG-MULTIPLE-HOST-COMMA",
+          "test": "Host header with comma-separated values must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9110 \u00a77.2",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-LONG-HEADER-VALUE",
+          "test": "100KB header value should be rejected with 431",
+          "expected": "400/431 or close",
+          "got": "200, connection left open",
+          "level": "Should"
+        },
+        {
+          "id": "MAL-INCOMPLETE-REQUEST",
+          "test": "Partial HTTP request \u2014 request-line and headers but no final CRLF",
+          "expected": "400/close/timeout",
+          "got": "408, timed out",
+          "level": "NotApplicable"
+        },
+        {
+          "id": "MAL-EMPTY-REQUEST",
+          "test": "Zero bytes \u2014 TCP connection established without sending any data",
+          "expected": "400/close/timeout",
+          "got": "408, timed out",
+          "level": "NotApplicable"
+        },
+        {
+          "id": "MAL-LONG-METHOD",
+          "test": "100KB method name should be rejected",
+          "expected": "400, 501 or close",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "level": "Should"
+        },
+        {
+          "id": "MAL-NON-ASCII-HEADER-NAME",
+          "test": "Non-ASCII bytes (UTF-8 \u00eb) in header name must be rejected",
+          "expected": "400 or close",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-NON-ASCII-URL",
+          "test": "Non-ASCII bytes (UTF-8 \u00e9) in URL must be rejected",
+          "expected": "400 or close",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-CL-OVERFLOW",
+          "test": "Content-Length with integer overflow value must be rejected",
+          "expected": "400 or close",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-WHITESPACE-ONLY-LINE",
+          "test": "Whitespace-only request line should be rejected or timeout",
+          "expected": "400/close/timeout",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "level": "NotApplicable"
+        },
+        {
+          "id": "MAL-NUL-IN-HEADER-VALUE",
+          "test": "NUL byte in header value should be rejected",
+          "expected": "400 or close",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-CHUNK-SIZE-OVERFLOW",
+          "test": "Chunk size with integer overflow must be rejected",
+          "expected": "400 or close",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-H2-PREFACE",
+          "test": "HTTP/2 connection preface sent to HTTP/1.1 server must be rejected",
+          "expected": "400/505/close/timeout",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "level": "NotApplicable"
+        },
+        {
+          "id": "MAL-CL-EMPTY",
+          "test": "Empty Content-Length value must be rejected",
+          "expected": "400 or close",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "rfc": "RFC 9110 \u00a78.6",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-CL-TAB-BEFORE-VALUE",
+          "test": "Content-Length with tab as OWS \u2014 valid per RFC but unusual",
+          "expected": "400 or 2xx",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "rfc": "RFC 9110 \u00a75.5",
+          "level": "May"
+        },
+        {
+          "id": "MAL-URL-BACKSLASH",
+          "test": "Backslash in URL path \u2014 not valid URI character, some servers normalize to /",
+          "expected": "400 or 2xx/404",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "level": "Should"
+        },
+        {
+          "id": "MAL-URL-OVERLONG-UTF8",
+          "test": "Overlong UTF-8 encoding of / (0xC0 0xAF) in URL must be rejected",
+          "expected": "400 or close",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-URL-PERCENT-NULL",
+          "test": "Percent-encoded NUL byte (%00) in URL \u2014 security risk from null byte injection",
+          "expected": "400 or 2xx/404",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "level": "NotApplicable"
+        },
+        {
+          "id": "MAL-URL-PERCENT-CRLF",
+          "test": "Percent-encoded CRLF (%0d%0a) in URL \u2014 header injection if server decodes during parsing",
+          "expected": "400 or 2xx/404",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "level": "NotApplicable"
+        },
+        {
+          "id": "MAL-CHUNK-EXT-64K",
+          "test": "64KB chunk extension \u2014 tests extension length limits (CVE-2023-39326 class)",
+          "expected": "400 or 2xx",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "level": "NotApplicable"
+        },
+        {
+          "id": "MAL-POST-CL-HUGE-NO-BODY",
+          "test": "POST with Content-Length: 999999999 but no body \u2014 tests timeout vs memory allocation",
+          "expected": "400/413/close/timeout",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "level": "Must"
+        },
+        {
+          "id": "NORM-UNDERSCORE-CL",
+          "test": "Underscore in Content-Length name \u2014 checks if server normalizes Content_Length to Content-Length",
+          "expected": "Reject/drop (pass), normalize (fail), preserve (warn)",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "level": "NotApplicable"
+        },
+        {
+          "id": "NORM-SP-BEFORE-COLON-CL",
+          "test": "Space before colon in Content-Length \u2014 checks if server strips whitespace before colon",
+          "expected": "Reject/drop (pass), normalize (fail), preserve (warn)",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "rfc": "RFC 9112 \u00a75",
+          "level": "Must"
+        },
+        {
+          "id": "NORM-TAB-IN-NAME",
+          "test": "Tab character in header name \u2014 checks if server normalizes Content\\tLength to Content-Length",
+          "expected": "Reject/drop (pass), normalize (fail), preserve (warn)",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "level": "Must"
+        },
+        {
+          "id": "NORM-UNDERSCORE-TE",
+          "test": "Underscore in Transfer-Encoding name \u2014 checks if server normalizes Transfer_Encoding to Transfer-Encoding",
+          "expected": "Reject/drop (pass), normalize (fail), preserve (warn)",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "level": "NotApplicable"
+        },
+        {
+          "id": "WS-UPGRADE-POST",
+          "test": "WebSocket upgrade via POST must not be accepted",
+          "expected": "!101",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "rfc": "RFC 6455 \u00a74.1",
+          "level": "Must"
+        },
+        {
+          "id": "WS-UPGRADE-MISSING-CONN",
+          "test": "Upgrade header without Connection: Upgrade must not trigger protocol switch",
+          "expected": "!101",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "rfc": "RFC 9110 \u00a77.8",
+          "level": "Must"
+        },
+        {
+          "id": "WS-UPGRADE-UNKNOWN",
+          "test": "Upgrade to unknown protocol must not return 101",
+          "expected": "!101",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "rfc": "RFC 9110 \u00a77.8",
+          "level": "Must"
+        },
+        {
+          "id": "WS-UPGRADE-INVALID-VER",
+          "test": "WebSocket upgrade with unsupported version \u2014 should return 426",
+          "expected": "non-101 (426 preferred)",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "rfc": "RFC 6455 \u00a74.4",
+          "level": "Must"
+        },
+        {
+          "id": "WS-UPGRADE-HTTP10",
+          "test": "Upgrade header in HTTP/1.0 request must be ignored",
+          "expected": "!101",
+          "got": "no response, connection error (Failed to connect: Error)",
+          "rfc": "RFC 9110 \u00a77.8",
+          "level": "Must"
+        }
+      ],
+      "crashed": true
+    },
+    "h2": {
+      "tool": "h2spec",
+      "version": "2.6.0",
+      "passed": 145,
+      "total": 145,
+      "failed": [],
+      "listeners": {
+        "tls": {
+          "passed": 145,
+          "total": 145,
+          "failed": []
+        }
+      }
+    }
+  }
+}

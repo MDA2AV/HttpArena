@@ -1,0 +1,15 @@
+[package]
+name = "httparena-ntex-ws"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+
+[dependencies]
+mimalloc = { version = "0.1", default-features = false }
+ntex = { version = "4.8", default-features = false, features = ["ws"] }
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = "thin"
+panic = "abort"

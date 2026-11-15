@@ -1,0 +1,849 @@
+{
+  "framework": "actix",
+  "dir": "actix-websocket",
+  "suites": {
+    "ws": {
+      "tool": "autobahn-testsuite",
+      "version": "25.10.1",
+      "passed": 105,
+      "total": 244,
+      "non_strict": 11,
+      "failed": [
+        {
+          "id": "3.1",
+          "test": "Send small text message with <b>RSV = 1</b>.",
+          "expected": "The connection is failed immediately (1002/protocol error), since RSV must be 0, when no extension defining RSV meaning has been negotiated.",
+          "got": "Actual events match at least one expected. / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "3.2",
+          "test": "Send small text message, then send again with <b>RSV = 2</b>, then send Ping.",
+          "expected": "Echo for first message is received, but then connection is failed immediately, since RSV must be 0, when no extension defining RSV meaning has been negotiated. The Pong is not received.",
+          "got": "Actual events match at least one expected. / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "3.3",
+          "test": "Send small text message, then send again with <b>RSV = 3</b>, then send Ping. Octets are sent in frame-wise chops. Octets are sent in octet-wise chops.",
+          "expected": "Echo for first message is received, but then connection is failed immediately, since RSV must be 0, when no extension defining RSV meaning has been negotiated. The Pong is not received.",
+          "got": "Actual events match at least one expected. / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "3.4",
+          "test": "Send small text message, then send again with <b>RSV = 4</b>, then send Ping. Octets are sent in octet-wise chops.",
+          "expected": "Echo for first message is received, but then connection is failed immediately, since RSV must be 0, when no extension defining RSV meaning has been negotiated. The Pong is not received.",
+          "got": "Actual events match at least one expected. / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "3.5",
+          "test": "Send small binary message with <b>RSV = 5</b>.",
+          "expected": "The connection is failed immediately, since RSV must be 0.",
+          "got": "Actual events match at least one expected. / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "3.6",
+          "test": "Send Ping with <b>RSV = 6</b>.",
+          "expected": "The connection is failed immediately, since RSV must be 0.",
+          "got": "Actual events match at least one expected. / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "3.7",
+          "test": "Send Close with <b>RSV = 7</b>.",
+          "expected": "The connection is failed immediately, since RSV must be 0.",
+          "got": "Actual events match at least one expected. / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "6.5.1",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0x68656c6c6f24776f726c64",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.5.2",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0x68656c6c6fc2a2776f726c64",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.5.3",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0x68656c6c6fe282ac776f726c64",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.5.4",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0x68656c6c6ff0a4ada2776f726c64",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.5.5",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xcebae1bdb9cf83cebcceb5",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.6.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xce",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.6.2",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xceba",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.6.3",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xcebae1",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.6.4",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xcebae1bd",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.6.5",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xcebae1bdb9",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.6.6",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xcebae1bdb9cf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.6.7",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xcebae1bdb9cf83",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.6.8",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xcebae1bdb9cf83ce",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.6.9",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xcebae1bdb9cf83cebc",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.6.10",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xcebae1bdb9cf83cebcce",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.6.11",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xcebae1bdb9cf83cebcceb5",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.7.1",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0x00",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.7.2",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xc280",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.7.3",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xe0a080",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.7.4",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf0908080",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.8.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf888808080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.8.2",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfc8480808080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.9.1",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0x7f",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.9.2",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xdfbf",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.9.3",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xefbfbf",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.9.4",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf48fbfbf",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.10.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf7bfbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.10.2",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfbbfbfbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.10.3",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfdbfbfbfbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.11.1",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xed9fbf",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.11.2",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xee8080",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.11.3",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xefbfbd",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.11.4",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf48fbfbf",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.11.5",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf4908080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.12.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0x80",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.12.2",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.12.3",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0x80bf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.12.4",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0x80bf80",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.12.5",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0x80bf80bf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.12.6",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0x80bf80bf80",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.12.7",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0x80bf80bf80bf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.12.8",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0x808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f...",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.13.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xc020c120c220c320c420c520c620c720c820c920ca20cb20cc20cd20ce20cf20...",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.13.2",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xe020e120e220e320e420e520e620e720e820e920ea20eb20ec20ed20ee20",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.13.3",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf020f120f220f320f420f520f620",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.13.4",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf820f920fa20",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.13.5",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfc20",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.14.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xc0",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.14.2",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xe080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.14.3",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf08080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.14.4",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf8808080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.14.5",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfc80808080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.14.6",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xdf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.14.7",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xefbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.14.8",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf7bfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.14.9",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfbbfbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.14.10",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfdbfbfbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.15.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xc0e080f08080f8808080fc80808080dfefbff7bfbffbbfbfbffdbfbfbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.16.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfe",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.16.2",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xff",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.16.3",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfefeffff",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.17.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xc0af",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.17.2",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xe080af",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.17.3",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf08080af",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.17.4",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf8808080af",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.17.5",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfc80808080af",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.18.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xc1bf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.18.2",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xe09fbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.18.3",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf08fbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.18.4",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf887bfbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.18.5",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfc83bfbfbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.19.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xc080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.19.2",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xe08080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.19.3",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf0808080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.19.4",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xf880808080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.19.5",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xfc8080808080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.20.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xeda080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.20.2",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedadbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.20.3",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedae80",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.20.4",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedafbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.20.5",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedb080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.20.6",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedbe80",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.20.7",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.21.1",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xeda080edb080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.21.2",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xeda080edbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.21.3",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedadbfedb080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.21.4",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedadbfedbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.21.5",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedae80edb080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.21.6",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedae80edbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.21.7",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedafbfedb080",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.21.8",
+          "test": "Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>Payload: 0xedafbfedbfbf",
+          "expected": "The connection is failed immediately, since the payload is not valid UTF-8.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.1",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xefbfbe",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.2",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xefbfbf",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.3",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf09fbfbe",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.4",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf09fbfbf",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.5",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf0afbfbe",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.6",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf0afbfbf",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.7",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf0bfbfbe",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.8",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf0bfbfbf",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.9",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf18fbfbe",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.10",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf18fbfbf",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.11",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf19fbfbe",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.12",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf19fbfbf",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.13",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf1afbfbe",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.14",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf1afbfbf",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.15",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf1bfbfbe",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.16",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf1bfbfbf",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.17",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf28fbfbe",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.18",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf28fbfbf",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.19",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf29fbfbe",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.20",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf29fbfbf",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.21",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf2afbfbe",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.22",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf2afbfbf",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.23",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf2bfbfbe",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.24",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf2bfbfbf",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.25",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf38fbfbe",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.26",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf38fbfbf",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.27",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf39fbfbe",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.28",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf39fbfbf",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.29",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf3afbfbe",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.30",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf3afbfbf",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.31",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf3bfbfbe",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.32",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf3bfbfbf",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.33",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf48fbfbe",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.22.34",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xf48fbfbf",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.23.1",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xefbfb9",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.23.2",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xefbfba",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.23.3",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xefbfbb",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.23.4",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xefbfbc",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.23.5",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xefbfbd",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.23.6",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xefbfbe",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        },
+        {
+          "id": "6.23.7",
+          "test": "Send a text message with payload which is valid UTF-8 in one fragment.<br><br>Payload: 0xefbfbf",
+          "expected": "The message is echo'ed back to us.",
+          "got": "Actual events match at least one expected. / close: It is preferred that the server close the TCP connection"
+        }
+      ]
+    }
+  }
+}

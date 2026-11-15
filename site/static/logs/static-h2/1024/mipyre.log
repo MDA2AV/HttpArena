@@ -7,13 +7,13 @@
   extra_tls_ports=8081,8443 (MIPYRE_EXTRA_TLS_PORTS)
   extra_plain_ports=8082 (MIPYRE_EXTRA_PLAIN_PORTS)
 
-  Mipyre v4.0.0
+  Mipyre v4.1.0
   Listening on http://0.0.0.0:8080
   Listening on https://0.0.0.0:8081
   Listening on https://0.0.0.0:8443
   Listening on http://0.0.0.0:8082
   TPC threads: 32 (CPUs: 64, pinned)
-  Async workers: 16 (async def routes)
+  Async def: on each TPC thread's loop, at most 40000 per thread (2500 with large bodies)
   Routes: 10 sub-interp + 0 main + 0 process + 1 async
 
-{"timestamp":"2026-11-09T16:20:13.824516Z","level":"WARN","fields":{"message":"TLS handshake failed","error":"tls handshake eof","held":0},"target":"mipyre_transport::tls"}
+{"timestamp":"2026-11-13T19:48:42.111168Z","level":"WARN","fields":{"message":"TLS handshake failed","error":"tls handshake eof","held":0},"target":"mipyre_transport::tls"}

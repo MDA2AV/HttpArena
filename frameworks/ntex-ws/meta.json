@@ -1,0 +1,16 @@
+{
+  "display_name": "ntex",
+  "language": "Rust",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "ntex",
+  "description": "ntex 4 on its native runtime. /ws upgraded through ntex::web::ws::start",
+  "repo": "https://github.com/ntex-rs/ntex",
+  "enabled": true,
+  "tests": [
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited"
+  ],
+  "maintainers": []
+}

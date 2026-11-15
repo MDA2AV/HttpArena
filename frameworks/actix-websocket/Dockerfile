@@ -4,7 +4,8 @@ WORKDIR /app
 COPY Cargo.toml Cargo.lock* ./
 COPY src/ src/
 
-RUN cargo build --release
+# Build on the benchmark host, or a CPU with compatible instruction sets.
+RUN RUSTFLAGS="-C target-cpu=native" cargo build --release
 
 FROM debian:trixie-slim
 WORKDIR /app

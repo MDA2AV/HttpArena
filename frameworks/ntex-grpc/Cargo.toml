@@ -1,0 +1,17 @@
+[package]
+name = "httparena-ntex-grpc"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+
+[dependencies]
+mimalloc = { version = "0.1", default-features = false }
+ntex = { version = "4.8", default-features = false, features = ["rustls"] }
+ntex-grpc = "4.1"
+rustls = { version = "0.23", default-features = false, features = ["ring", "logging", "std", "tls12"] }
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = "thin"
+panic = "abort"

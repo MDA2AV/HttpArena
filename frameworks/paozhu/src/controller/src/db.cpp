@@ -10,6 +10,7 @@
 #include <charconv>
 #include <chrono>
 #include <cstdlib>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -60,14 +61,18 @@ namespace
         }
     };
 
-    // The framework splits orm.conf's maxpool budget across io_context slots
-    // (per-slot quota = budget / slot count). Cap global in-flight queries at
-    // the smallest slot quota so even a fully skewed request distribution
-    // never pushes a slot into the pool's wait-timeout path; the env-derived
-    // budget stays as the ceiling and as the fallback when no pool exists.
-    // Waiting uses an asio timer, never a blocking semaphore: blocking an io
-    // thread can deadlock the coroutine that holds a ticket.
-    class db_ticket
+    // paozhu's ORM pool already enforces per-slot quotas with asynchronous
+    // backoff in async_get_pg_select_conn(). What the handlers still need is a
+    // process-wide ceiling under Postgres' max_connections: the pool's TOTAL
+    // select quota (parsed from orm.conf) minus 24 backends reserved for the
+    // edit pool, readiness probes and PG maintenance. Never use the smallest
+    // per-slot quota here: budget/slots shrinks as orm_ioc_num grows
+    // (4 slots -> 63, 16 -> 15, 64 -> 3), so adding io threads would lower the
+    // cap while the pool itself can still serve 255 queries.
+    // Waiting must be a coroutine on the request's own executor: paozhu runs
+    // one thread per io_context, so a blocking semaphore would pin that thread
+    // and the coroutine holding a ticket could never resume to release it.
+    class db_gate
     {
         static std::atomic<int> &in_flight()
         {
@@ -78,26 +83,36 @@ namespace
         static int limit()
         {
             static const int value = [] {
+                // Single source of truth: the pool's parsed quota, i.e. the
+                // maxpool that entrypoint.sh rendered into orm.conf. The pool
+                // splits it across slots, so sum the slots back up instead of
+                // copying one slot's quota (which would scale the cap down as
+                // orm_ioc_num grows). DATABASE_MAX_CONN is only a fallback for
+                // a process started without orm.conf (no DB profile).
                 const char *env = std::getenv("DATABASE_MAX_CONN");
-                int n = env ? std::atoi(env) : 256;
-                if (n < 8) n = 8;
-                if (n > 256) n = 256;
-                int cap = n > 24 ? n - 24 : n;
+                int fallback = std::clamp(env ? std::atoi(env) : 256, 8, 256);
+                int cap = fallback > 24 ? fallback - 24 : fallback;
 
                 auto &pools = orm::get_orm_conn_pool_obj();
                 auto it     = pools.find("pg");
                 if (it != pools.end() && it->second && !it->second->slots.empty())
                 {
                     const auto &pool = *it->second;
-                    unsigned int smallest = pool.slot_max_of(1, 0);// 1 = select role
-                    for (unsigned int i = 1; i < pool.slots.size(); ++i)
+                    long long total = 0;
+                    for (std::size_t i = 0; i < pool.slots.size(); ++i)
                     {
-                        const unsigned int q = pool.slot_max_of(1, i);
-                        if (q < smallest) smallest = q;
+                        total += pool.slot_max_of(1, static_cast<unsigned int>(i));// 1 = select role
                     }
-                    if (smallest >= 1 && static_cast<int>(smallest) < cap)
+                    if (total > 0)
                     {
-                        cap = static_cast<int>(smallest);
+                        // Leave 24 backends for the edit pool, readiness probes
+                        // and PG maintenance: orm.conf's 255 would otherwise
+                        // consume all of max_connections=256.
+                        const long long usable = total > 24 ? total - 24 : total;
+                        if (usable < cap)
+                        {
+                            cap = static_cast<int>(usable);
+                        }
                     }
                 }
                 return cap;
@@ -105,21 +120,7 @@ namespace
             return value;
         }
 
-        bool owns_ = false;
-
-      public:
-        db_ticket() = default;
-        db_ticket(const db_ticket &) = delete;
-        db_ticket &operator=(const db_ticket &) = delete;
-        ~db_ticket()
-        {
-            if (owns_)
-            {
-                in_flight().fetch_sub(1, std::memory_order_relaxed);
-            }
-        }
-
-        bool try_enter()
+        static bool try_acquire()
         {
             int current = in_flight().load(std::memory_order_relaxed);
             while (current < limit())
@@ -127,32 +128,120 @@ namespace
                 if (in_flight().compare_exchange_weak(current, current + 1,
                                                       std::memory_order_relaxed))
                 {
-                    owns_ = true;
                     return true;
                 }
             }
             return false;
         }
-    };
 
-    asio::awaitable<bool> enter_db_gate(db_ticket &ticket)
-    {
-        if (ticket.try_enter())
+        static void release()
         {
-            co_return true;
+            in_flight().fetch_sub(1, std::memory_order_relaxed);
         }
-        auto executor = co_await asio::this_coro::executor;
-        for (unsigned attempt = 0; attempt < 250; ++attempt)
+
+      public:
+        class ticket
         {
-            asio::steady_timer timer(executor);
-            timer.expires_after(std::chrono::milliseconds(2));
-            co_await timer.async_wait(asio::use_awaitable);
-            if (ticket.try_enter())
+            bool owns_ = false;
+
+          public:
+            ticket() = default;
+            ticket(const ticket &) = delete;
+            ticket &operator=(const ticket &) = delete;
+            ~ticket()
+            {
+                if (owns_)
+                {
+                    db_gate::release();
+                }
+            }
+
+            bool try_acquire()
+            {
+                if (!db_gate::try_acquire())
+                {
+                    return false;
+                }
+                owns_ = true;
+                return true;
+            }
+        };
+
+        // Bounded wait with 1..8 ms backoff. A single timer is reused so a
+        // suspended request owns no per-attempt allocation. 500 ms is the same
+        // ceiling as the old fixed 250 x 2 ms loop, but short waits now resolve
+        // quickly instead of always paying a full 2 ms slot.
+        static asio::awaitable<bool> enter(ticket &t)
+        {
+            if (t.try_acquire())
             {
                 co_return true;
             }
+            auto executor = co_await asio::this_coro::executor;
+            const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
+            std::chrono::milliseconds backoff{1};
+            asio::steady_timer timer(executor);
+            for (;;)
+            {
+                const auto now = std::chrono::steady_clock::now();
+                if (now >= deadline)
+                {
+                    co_return false;
+                }
+                auto remain = std::chrono::duration_cast<std::chrono::milliseconds>(deadline - now);
+                const auto wait = std::min(backoff, std::max(remain, std::chrono::milliseconds{1}));
+                timer.expires_after(wait);
+                co_await timer.async_wait(asio::use_awaitable);
+                if (t.try_acquire())
+                {
+                    co_return true;
+                }
+                backoff = std::min(backoff * 2, std::chrono::milliseconds{8});
+            }
         }
-        co_return false;
+    };
+
+    void respond_db_error(const std::shared_ptr<http::httppeer> &peer, std::string_view message)
+    {
+        peer->type("text/plain; charset=utf-8");
+        peer->status(503);
+        peer->output = std::string(message);
+    }
+
+    // One query path for both DB routes: gate -> driver -> explicit failure.
+    // pg_async_query_vec_impl() catches driver exceptions into error_msg and
+    // returns 0 rows, so checking rows.empty() would mistake a legitimate
+    // empty /async-db result for an error; iserror / error_msg are the signal.
+    template <typename Row>
+    asio::awaitable<bool> fetch_rows(const std::shared_ptr<http::httppeer> &peer,
+                                     const std::string &sql,
+                                     std::vector<Row> &rows)
+    {
+        db_gate::ticket ticket;
+        if (!co_await db_gate::enter(ticket))
+        {
+            respond_db_error(peer, "database busy");
+            co_return false;
+        }
+
+        try
+        {
+            auto link = std::make_unique<orm::db_conn>("pg");
+            co_await link->async_query(sql, rows);
+            if (link->iserror || !link->error_msg.empty())
+            {
+                rows.clear();
+                respond_db_error(peer, "database query failed");
+                co_return false;
+            }
+        }
+        catch (const std::exception &)
+        {
+            rows.clear();
+            respond_db_error(peer, "database query failed");
+            co_return false;
+        }
+        co_return true;
     }
 
     long long to_int(std::string_view value, long long fallback = 0)
@@ -228,18 +317,31 @@ namespace
 
     void append_html_escaped(std::string &out, std::string_view value)
     {
-        for (char ch : value)
+        if (value.empty())
         {
-            switch (ch)
-            {
-                case '&':  out += "&amp;"; break;
-                case '<':  out += "&lt;"; break;
-                case '>':  out += "&gt;"; break;
-                case '"':  out += "&quot;"; break;
-                case '\'': out += "&#39;"; break;
-                default:   out.push_back(ch);
-            }
+            return;
         }
+        // Copy the plain runs in bulk; only the five escaped bytes need per-
+        // character work. The seed puts &, ', " and multi-byte UTF-8 in almost
+        // every row, so this is the hot loop of /fortunes.
+        std::size_t plain_begin = 0;
+        for (std::size_t i = 0; i < value.size(); ++i)
+        {
+            const char *escaped = nullptr;
+            switch (value[i])
+            {
+                case '&':  escaped = "&amp;";  break;
+                case '<':  escaped = "&lt;";   break;
+                case '>':  escaped = "&gt;";   break;
+                case '"':  escaped = "&quot;"; break;
+                case '\'': escaped = "&#39;";  break;
+                default:   continue;
+            }
+            out.append(value.data() + plain_begin, i - plain_begin);
+            out += escaped;
+            plain_begin = i + 1;
+        }
+        out.append(value.data() + plain_begin, value.size() - plain_begin);
     }
 
     std::string render_items(const std::vector<item_row> &rows)
@@ -325,27 +427,18 @@ asio::awaitable<std::string> arena_async_db(std::shared_ptr<httppeer> peer)
     if (limit < 1) limit = 1;
     if (limit > 50) limit = 50;
 
-    db_ticket ticket;
-    std::vector<item_row> rows;
-    if (co_await enter_db_gate(ticket))
-    {
-        try
-        {
-            std::string sql = "SELECT id,name,category,price,quantity,active,tags,rating_score,rating_count FROM items WHERE price BETWEEN ";
-            sql += std::to_string(min_price);
-            sql += " AND ";
-            sql += std::to_string(max_price);
-            sql += " LIMIT ";
-            sql += std::to_string(limit);
+    std::string sql = "SELECT id,name,category,price,quantity,active,tags,rating_score,rating_count FROM items WHERE price BETWEEN ";
+    sql += std::to_string(min_price);
+    sql += " AND ";
+    sql += std::to_string(max_price);
+    sql += " LIMIT ";
+    sql += std::to_string(limit);
 
-            auto link = std::make_unique<orm::db_conn>("pg");
-            rows.reserve(static_cast<std::size_t>(limit));
-            co_await link->async_query(sql, rows);
-        }
-        catch (const std::exception &)
-        {
-            rows.clear();
-        }
+    std::vector<item_row> rows;
+    rows.reserve(static_cast<std::size_t>(limit));
+    if (!co_await fetch_rows(peer, sql, rows))
+    {
+        co_return "";
     }
 
     peer->output = render_items(rows);
@@ -357,24 +450,20 @@ asio::awaitable<std::string> arena_fortunes(std::shared_ptr<httppeer> peer)
 {
     peer->type("text/html; charset=utf-8");
 
-    db_ticket ticket;
+    // 201 = 200 seeded rows + the runtime row appended by render_fortunes().
+    // The seed is this repo's own: 12 TechEmpower rows plus
+    // generate_series(13,200) in data/pgdb-seed.sql, not the 12-row TE
+    // contract; reserve() only sets capacity either way.
     std::vector<fortune_row> rows;
-    if (co_await enter_db_gate(ticket))
+    rows.reserve(201);
+    if (!co_await fetch_rows(peer, "SELECT id,message FROM fortune", rows))
     {
-        try
-        {
-            auto link = std::make_unique<orm::db_conn>("pg");
-            // 201 = 200 seeded rows + the runtime row appended below. The seed is
-            // this repo's own: 12 TechEmpower rows plus generate_series(13,200) in
-            // data/pgdb-seed.sql. It is not the 12-row TE contract, so revisit this
-            // if the seed changes; reserve() only sets capacity either way.
-            rows.reserve(201);
-            co_await link->async_query("SELECT id,message FROM fortune", rows);
-        }
-        catch (const std::exception &)
-        {
-            rows.clear();
-        }
+        co_return "";
+    }
+    if (rows.empty())
+    {
+        respond_db_error(peer, "fortune table is empty");
+        co_return "";
     }
 
     peer->output = render_fortunes(rows);
