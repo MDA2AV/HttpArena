@@ -57,6 +57,9 @@ def entry_section(fw):
         if a.get("verdict") == "error":
             lines.append(f"| `{name}` | — | ❓ {cell(a.get('error', 'not measured'))} | — | — | — | — |")
             continue
+        if a.get("verdict") == "no-endpoint":
+            lines.append(f"| `{name}` | {cell(a.get('resource'))} | 🔌 no endpoint | — | — | — | — |")
+            continue
         emoji, label = VERDICT.get(a["verdict"], ("", a["verdict"]))
         peak, lim = a.get("peak_mem_mb"), a.get("mem_limit_mb")
         if peak is not None and lim:
@@ -68,9 +71,14 @@ def entry_section(fw):
         rec = a.get("recovery_s")
         rec_cell = f"{rec:g}s" if isinstance(rec, (int, float)) else ("dead" if a["verdict"] in ("hung", "crashed", "oom-killed") else "—")
         c = a.get("client") or {}
+        clients = f"{c.get('established', '—')} / {c.get('reaped', '—')}"
+        # Flag an attack that never reached the server (wrong port / no endpoint):
+        # est 0 + connect errors means the result is "didn't land", not "survived".
+        ce = c.get("connect_errors") or 0
+        if ce and not c.get("established"):
+            clients += f" ⚠️ {ce} no-connect"
         lines.append(f"| `{name}` | {cell(a.get('resource'))} | {emoji} {label} | {peak_cell} | "
-                     f"{pct(a.get('liveness_fail_pct'))} | {rec_cell} | "
-                     f"{c.get('established', '—')} / {c.get('reaped', '—')} |")
+                     f"{pct(a.get('liveness_fail_pct'))} | {rec_cell} | {clients} |")
 
     det = ["<details><summary>What each attack does</summary>", ""]
     for name, a in attacks.items():
@@ -85,8 +93,9 @@ def main():
     if not sections:
         return
     legend = ("✅ survived · ⚠️ degraded (shed load, then recovered) · 🟠 hung · "
-              "💀 crashed · 💥 OOM-killed. A connection the server **reaped** is the "
-              "correct defense — a read-timeout or a size cap fired.")
+              "💀 crashed · 💥 OOM-killed · 🔌 no endpoint (entry doesn't implement "
+              "the endpoint the attack needs — not scored). A connection the server "
+              "**reaped** is the correct defense — a read-timeout or a size cap fired.")
     out = ["## 🛡️ Resilience Report", "",
            "Adversarial load against each opted-in entry in a fixed memory/CPU box — does it "
            "survive, shed load, hang, or run out of memory? Verdicts are not scored into the "

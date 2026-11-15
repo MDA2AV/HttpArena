@@ -109,9 +109,12 @@ framework_start() {
             ;;
     esac
 
-    # Profile-declared CPU limit.
+    # Profile-declared CPU limit. A cpuset is anything with a dash OR a comma
+    # ("0-1", "0,64" for a core + its SMT sibling, "0-31,64-95") → --cpuset-cpus;
+    # a bare number ("2") → --cpus. Without the comma, "0,64" fell through to
+    # --cpus="0,64", which Docker rejects ("not a rational number").
     if [ -n "$cpu_limit" ]; then
-        if [[ "$cpu_limit" == *-* ]]; then
+        if [[ "$cpu_limit" == *[-,]* ]]; then
             local max_cpu
             max_cpu=$(($(nproc)-1))
             # Extract the largest CPU index from the cpuset string (e.g. "95" from "0-31,64-95")
