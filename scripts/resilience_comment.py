@@ -68,9 +68,14 @@ def entry_section(fw):
         rec = a.get("recovery_s")
         rec_cell = f"{rec:g}s" if isinstance(rec, (int, float)) else ("dead" if a["verdict"] in ("hung", "crashed", "oom-killed") else "—")
         c = a.get("client") or {}
+        clients = f"{c.get('established', '—')} / {c.get('reaped', '—')}"
+        # Flag an attack that never reached the server (wrong port / no endpoint):
+        # est 0 + connect errors means the result is "didn't land", not "survived".
+        ce = c.get("connect_errors") or 0
+        if ce and not c.get("established"):
+            clients += f" ⚠️ {ce} no-connect"
         lines.append(f"| `{name}` | {cell(a.get('resource'))} | {emoji} {label} | {peak_cell} | "
-                     f"{pct(a.get('liveness_fail_pct'))} | {rec_cell} | "
-                     f"{c.get('established', '—')} / {c.get('reaped', '—')} |")
+                     f"{pct(a.get('liveness_fail_pct'))} | {rec_cell} | {clients} |")
 
     det = ["<details><summary>What each attack does</summary>", ""]
     for name, a in attacks.items():
