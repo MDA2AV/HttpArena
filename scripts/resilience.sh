@@ -330,6 +330,24 @@ run_attack() {
     local cid baseline_mem peak_file live_file sampler_pid=""
     cid=$(docker inspect -f '{{.Id}}' "$CONTAINER_NAME" 2>/dev/null || echo "")
     baseline_mem=$(read_mem "$cid")
+
+    # Once per run, report which cgroup memory source we resolved — so the first
+    # run on a new box isn't a silent "every peak is 0". Peak RSS and OOM reads
+    # assume cgroup v2 with host-readable files; say loudly when that is not met.
+    if [ -z "${RES_CG_LOGGED:-}" ]; then
+        RES_CG_LOGGED=1
+        local _src
+        if _src=$(_cgfile "$cid" memory.peak); then
+            info "memory source: $_src (cgroup v2 memory.peak — true high-water)"
+        elif _src=$(_cgfile "$cid" memory.max_usage_in_bytes); then
+            info "memory source: $_src (cgroup v1 max_usage — true high-water)"
+        elif _cgfile "$cid" memory.current >/dev/null 2>&1 || _cgfile "$cid" memory.usage_in_bytes >/dev/null 2>&1; then
+            warn "no high-water cgroup file found — using the memory.current sampler only; a fast spike may be undercounted"
+        else
+            warn "no readable cgroup memory file for this container — peak RSS will read 0. Is this cgroup v2, and are /sys/fs/cgroup files readable by $(id -un)?"
+        fi
+    fi
+
     peak_file="$WORK/$name.peak"
     live_file="$WORK/$name.liveness"
     : > "$live_file"
