@@ -1,67 +1,7 @@
-#include "common.h"
-#include "http.h"
-#include "router.h"
-#include "dataset.h"
-#include "timer.h"
+#include "server.h"
 #include "tls.h"
 #include "static_files.h"
-
-typedef struct conn_s conn_t;
-
-struct conn_s {
-    int         fd;
-    uint32_t    gen;
-    bool        is_tls;
-    SSL        *ssl;
-    bool        tls_handshake_done;
-
-    char       *read_buf;
-    size_t      read_cap;
-    size_t      read_pos;
-    char        inline_read_buf[16384];
-
-    char       *pending_write;
-    size_t      pending_write_len;
-    size_t      pending_write_sent;
-
-    char        scratch[64];
-
-    bool        parked_in_timer;
-    uint64_t    timer_expire_us;
-    int64_t     timer_val_ms;
-
-    bool        keep_alive;
-    bool        closing;
-
-    uint64_t    last_active_ms;
-    conn_t     *active_prev;
-    conn_t     *active_next;
-
-    conn_t     *next_free;
-};
-
-typedef struct {
-    int               id;
-    int               cpu_id;
-    pthread_t         thread;
-    int               epoll_fd;
-    int               listen_h1_fd;
-    int               listen_tls_fd;
-    SSL_CTX          *ssl_ctx;
-    router_t          router;
-    worker_compress_t compress;
-    timer_heap_t      timers;
-    conn_t           *free_conns;
-    conn_t           *active_head;
-    conn_t           *active_tail;
-    uint64_t          last_trim_ms;
-
-    int               token_h1;
-    int               token_tls;
-
-    char              write_buf[WRITE_BUF_SIZE];
-    char              chunk_buf[128 * 1024];
-} worker_t;
+#include "h2.h"
 
 static volatile bool g_running = true;
 static int           g_num_workers = 1;
@@ -127,6 +67,8 @@ static conn_t* alloc_conn(worker_t *w, int fd, bool is_tls, SSL *ssl) {
     c->pending_write = NULL;
     c->pending_write_len = 0;
     c->pending_write_sent = 0;
+    c->is_h2 = false;
+    c->h2 = NULL;
     c->parked_in_timer = false;
     c->keep_alive = true;
     c->closing = false;
@@ -138,8 +80,12 @@ static conn_t* alloc_conn(worker_t *w, int fd, bool is_tls, SSL *ssl) {
     return c;
 }
 
-static void close_conn(worker_t *w, conn_t *c) {
+void close_conn(worker_t *w, conn_t *c) {
     conn_list_remove(w, c);
+    if (c->is_h2) {
+        h2_conn_free(c);
+        c->is_h2 = false;
+    }
     if (c->fd >= 0) {
         epoll_ctl(w->epoll_fd, EPOLL_CTL_DEL, c->fd, NULL);
         close(c->fd);
@@ -323,7 +269,7 @@ static bool flush_pending_write(worker_t *w, conn_t *c) {
     return true;
 }
 
-static void flush_data(worker_t *w, conn_t *c, const char *data, size_t len) {
+void flush_data(worker_t *w, conn_t *c, const char *data, size_t len) {
     if (len == 0) return;
     size_t sent = 0;
 
@@ -377,6 +323,42 @@ static void flush_data(worker_t *w, conn_t *c, const char *data, size_t len) {
     }
 }
 
+static inline int64_t fast_parse_int(const char *p, size_t len) {
+    const char *end = p + len;
+    while (p < end && (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')) p++;
+    int neg = 0;
+    if (p < end && *p == '-') { neg = 1; p++; }
+    int64_t n = 0;
+    while (p < end && *p >= '0' && *p <= '9') {
+        n = n * 10 + (*p - '0');
+        p++;
+    }
+    return neg ? -n : n;
+}
+
+static inline int64_t fast_sum_query(const char *p, size_t len) {
+    const char *end = p + len;
+    int64_t sum = 0;
+    while (p < end) {
+        const char *eq = memchr(p, '=', (size_t)(end - p));
+        if (!eq) break;
+        const char *v = eq + 1;
+        const char *amp = memchr(v, '&', (size_t)(end - v));
+        const char *ve = amp ? amp : end;
+        while (v < ve && (*v == ' ' || *v == '\t')) v++;
+        int neg = 0;
+        if (v < ve && *v == '-') { neg = 1; v++; }
+        int64_t n = 0;
+        while (v < ve && *v >= '0' && *v <= '9') {
+            n = n * 10 + (*v - '0');
+            v++;
+        }
+        sum += neg ? -n : n;
+        p = amp ? amp + 1 : end;
+    }
+    return sum;
+}
+
 static void process_requests(worker_t *w, conn_t *c) {
     size_t write_pos = 0;
     size_t read_offset = 0;
@@ -395,6 +377,117 @@ static void process_requests(worker_t *w, conn_t *c) {
         }
 
         c->keep_alive = req.keep_alive;
+
+        // ── Ultra-fast path for /pipeline ──
+        if (__builtin_expect(req.path.len == 9 && memcmp(req.path.ptr, "/pipeline", 9) == 0, 0)) {
+            if (sizeof(w->write_buf) - write_pos < 128) {
+                if (write_pos > 0) {
+                    flush_data(w, c, w->write_buf, write_pos);
+                    write_pos = 0;
+                }
+            }
+            char *p = w->write_buf + write_pos;
+            if (__builtin_expect(c->keep_alive, 1)) {
+                static const char pipeline_res[] = 
+                    "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: keep-alive\r\nContent-Length: 2\r\n\r\nok";
+                memcpy(p, pipeline_res, sizeof(pipeline_res) - 1);
+                p += sizeof(pipeline_res) - 1;
+            } else {
+                static const char pipeline_res_close[] = 
+                    "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\nContent-Length: 2\r\n\r\nok";
+                memcpy(p, pipeline_res_close, sizeof(pipeline_res_close) - 1);
+                p += sizeof(pipeline_res_close) - 1;
+                c->closing = true;
+            }
+            write_pos = (size_t)(p - w->write_buf);
+            read_offset += consumed;
+            continue;
+        }
+
+        // ── Ultra-fast path for /baseline11 ──
+        if (__builtin_expect(req.path.len == 11 && memcmp(req.path.ptr, "/baseline11", 11) == 0, 0)) {
+            int64_t sum = req.query.len > 0 ? fast_sum_query(req.query.ptr, req.query.len) : 0;
+            if (req.method == HTTP_METHOD_POST && req.body.len > 0) {
+                sum += fast_parse_int(req.body.ptr, req.body.len);
+            }
+
+            char num_buf[32];
+            size_t num_len = (size_t)format_i64(num_buf, sum);
+
+            if (sizeof(w->write_buf) - write_pos < 128) {
+                if (write_pos > 0) {
+                    flush_data(w, c, w->write_buf, write_pos);
+                    write_pos = 0;
+                }
+            }
+
+            char *p = w->write_buf + write_pos;
+            if (__builtin_expect(c->keep_alive, 1)) {
+                static const char h_ka[] = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: keep-alive\r\nContent-Length: ";
+                memcpy(p, h_ka, sizeof(h_ka) - 1);
+                p += sizeof(h_ka) - 1;
+                p += format_i64(p, (int64_t)num_len);
+                *p++ = '\r'; *p++ = '\n';
+                *p++ = '\r'; *p++ = '\n';
+                memcpy(p, num_buf, num_len);
+                p += num_len;
+            } else {
+                static const char h_cl[] = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\nContent-Length: ";
+                memcpy(p, h_cl, sizeof(h_cl) - 1);
+                p += sizeof(h_cl) - 1;
+                p += format_i64(p, (int64_t)num_len);
+                *p++ = '\r'; *p++ = '\n';
+                *p++ = '\r'; *p++ = '\n';
+                memcpy(p, num_buf, num_len);
+                p += num_len;
+                c->closing = true;
+            }
+
+            write_pos = (size_t)(p - w->write_buf);
+            read_offset += consumed;
+            continue;
+        }
+
+        // ── Ultra-fast path for /baseline2 ──
+        if (__builtin_expect(req.path.len == 10 && memcmp(req.path.ptr, "/baseline2", 10) == 0, 0)) {
+            int64_t sum = req.query.len > 0 ? fast_sum_query(req.query.ptr, req.query.len) : 0;
+            char num_buf[32];
+            size_t num_len = (size_t)format_i64(num_buf, sum);
+
+            if (sizeof(w->write_buf) - write_pos < 128) {
+                if (write_pos > 0) {
+                    flush_data(w, c, w->write_buf, write_pos);
+                    write_pos = 0;
+                }
+            }
+
+            char *p = w->write_buf + write_pos;
+            if (__builtin_expect(c->keep_alive, 1)) {
+                static const char h_ka[] = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: keep-alive\r\nContent-Length: ";
+                memcpy(p, h_ka, sizeof(h_ka) - 1);
+                p += sizeof(h_ka) - 1;
+                p += format_i64(p, (int64_t)num_len);
+                *p++ = '\r'; *p++ = '\n';
+                *p++ = '\r'; *p++ = '\n';
+                memcpy(p, num_buf, num_len);
+                p += num_len;
+            } else {
+                static const char h_cl[] = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\nContent-Length: ";
+                memcpy(p, h_cl, sizeof(h_cl) - 1);
+                p += sizeof(h_cl) - 1;
+                p += format_i64(p, (int64_t)num_len);
+                *p++ = '\r'; *p++ = '\n';
+                *p++ = '\r'; *p++ = '\n';
+                memcpy(p, num_buf, num_len);
+                p += num_len;
+                c->closing = true;
+            }
+
+            write_pos = (size_t)(p - w->write_buf);
+            read_offset += consumed;
+            continue;
+        }
+
         response_t res;
         res_init(&res, c->keep_alive);
 
@@ -643,6 +736,53 @@ static void* worker_main(void *arg) {
                 continue;
             }
 
+            if (w->listen_h2c_fd >= 0 && ptr == &w->token_h2c) {
+                while (true) {
+                    int cfd = accept4(w->listen_h2c_fd, NULL, NULL, SOCK_NONBLOCK | SOCK_CLOEXEC);
+                    if (cfd < 0) break;
+
+                    set_sock_opts(cfd);
+                    conn_t *c = alloc_conn(w, cfd, false, NULL);
+                    if (!c) { close(cfd); continue; }
+
+                    c->is_h2 = true;
+                    if (!h2_conn_init(c, w)) {
+                        close_conn(w, c);
+                        continue;
+                    }
+
+                    struct epoll_event ev = {
+                        .events = EPOLLIN | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
+                        .data.ptr = c
+                    };
+                    epoll_ctl(w->epoll_fd, EPOLL_CTL_ADD, cfd, &ev);
+                }
+                continue;
+            }
+
+            if (w->listen_h2_fd >= 0 && ptr == &w->token_h2) {
+                while (true) {
+                    int cfd = accept4(w->listen_h2_fd, NULL, NULL, SOCK_NONBLOCK | SOCK_CLOEXEC);
+                    if (cfd < 0) break;
+
+                    set_sock_opts(cfd);
+                    SSL *ssl = SSL_new(w->ssl_ctx_h2);
+                    if (!ssl) { close(cfd); continue; }
+                    SSL_set_fd(ssl, cfd);
+                    SSL_set_accept_state(ssl);
+
+                    conn_t *c = alloc_conn(w, cfd, true, ssl);
+                    if (!c) { SSL_free(ssl); close(cfd); continue; }
+
+                    struct epoll_event ev = {
+                        .events = EPOLLIN | EPOLLOUT | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
+                        .data.ptr = c
+                    };
+                    epoll_ctl(w->epoll_fd, EPOLL_CTL_ADD, cfd, &ev);
+                }
+                continue;
+            }
+
             conn_t *c = (conn_t*)ptr;
             if (!c || c->fd < 0) continue;
 
@@ -664,6 +804,18 @@ static void* worker_main(void *arg) {
                     continue;
                 }
                 c->tls_handshake_done = true;
+
+                const unsigned char *alpn = NULL;
+                unsigned int alpn_len = 0;
+                SSL_get0_alpn_selected(c->ssl, &alpn, &alpn_len);
+                if (alpn && alpn_len == 2 && memcmp(alpn, "h2", 2) == 0) {
+                    c->is_h2 = true;
+                    if (!h2_conn_init(c, w)) {
+                        close_conn(w, c);
+                        continue;
+                    }
+                }
+
                 struct epoll_event ev = {
                     .events = EPOLLIN | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
                     .data.ptr = c
@@ -680,6 +832,43 @@ static void* worker_main(void *arg) {
             }
 
             if (evs & EPOLLIN) {
+                if (c->is_h2) {
+                    char h2_in[65536];
+                    while (true) {
+                        ssize_t n = 0;
+                        if (c->is_tls) {
+                            int ret = SSL_read(c->ssl, h2_in, sizeof(h2_in));
+                            if (ret <= 0) {
+                                int err = SSL_get_error(c->ssl, ret);
+                                if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
+                                    break;
+                                }
+                                close_conn(w, c);
+                                break;
+                            }
+                            n = ret;
+                        } else {
+                            n = recv(c->fd, h2_in, sizeof(h2_in), MSG_DONTWAIT);
+                            if (n < 0) {
+                                if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                                    break;
+                                }
+                                close_conn(w, c);
+                                break;
+                            }
+                            if (n == 0) {
+                                close_conn(w, c);
+                                break;
+                            }
+                        }
+                        if (!h2_conn_process(c, w, h2_in, (size_t)n)) {
+                            close_conn(w, c);
+                            break;
+                        }
+                    }
+                    continue;
+                }
+
                 while (true) {
                     if (c->read_pos == c->read_cap) {
                         size_t new_cap = c->read_cap * 2;
@@ -860,9 +1049,14 @@ int main(void) {
     const char *key_file = getenv("TLS_KEY");
     if (!key_file) key_file = "/certs/server.key";
 
-    SSL_CTX *shared_ssl_ctx = tls_init_server_ctx(cert_file, key_file);
+    SSL_CTX *shared_ssl_ctx = tls_init_server_ctx(cert_file, key_file, false);
     if (!shared_ssl_ctx) {
-        shared_ssl_ctx = tls_init_server_ctx("./certs/server.crt", "./certs/server.key");
+        shared_ssl_ctx = tls_init_server_ctx("./certs/server.crt", "./certs/server.key", false);
+    }
+
+    SSL_CTX *shared_ssl_ctx_h2 = tls_init_server_ctx(cert_file, key_file, true);
+    if (!shared_ssl_ctx_h2) {
+        shared_ssl_ctx_h2 = tls_init_server_ctx("./certs/server.crt", "./certs/server.key", true);
     }
 
     g_workers = calloc((size_t)g_num_workers, sizeof(worker_t));
@@ -885,11 +1079,27 @@ int main(void) {
         if (p > 0) port_tls = p;
     }
 
+    int port_h2c = 8082;
+    const char *h2c_port_env = getenv("H2C_PORT");
+    if (h2c_port_env) {
+        int p = atoi(h2c_port_env);
+        if (p > 0) port_h2c = p;
+    }
+
+    int port_h2 = 8443;
+    const char *h2_port_env = getenv("H2_PORT");
+    if (!h2_port_env) h2_port_env = getenv("H2PORT");
+    if (h2_port_env) {
+        int p = atoi(h2_port_env);
+        if (p > 0) port_h2 = p;
+    }
+
     for (int i = 0; i < g_num_workers; i++) {
         worker_t *w = &g_workers[i];
         w->id = i;
         w->cpu_id = allowed_cpus[i];
         w->ssl_ctx = shared_ssl_ctx;
+        w->ssl_ctx_h2 = shared_ssl_ctx_h2;
 
         router_init(&w->router);
         router_add(&w->router, HTTP_METHOD_GET, "/", pipeline_handler);
@@ -900,6 +1110,8 @@ int main(void) {
         router_add(&w->router, HTTP_METHOD_GET, "/json/:count", json_handler);
         router_add(&w->router, HTTP_METHOD_POST, "/echo", echo_handler);
         router_add(&w->router, HTTP_METHOD_GET, "/static/", static_file_handler);
+        router_add(&w->router, HTTP_METHOD_HEAD, "/static/", static_file_handler);
+        router_add(&w->router, HTTP_METHOD_HEAD, "/", pipeline_handler);
 
         compress_worker_init(&w->compress);
         timer_heap_init(&w->timers, 16384);
@@ -933,11 +1145,29 @@ int main(void) {
             w->listen_tls_fd = -1;
         }
 
+        w->listen_h2c_fd = create_listen_socket(port_h2c);
+        if (w->listen_h2c_fd >= 0) {
+            w->token_h2c = 3;
+            struct epoll_event ev3 = { .events = EPOLLIN, .data.ptr = &w->token_h2c };
+            epoll_ctl(w->epoll_fd, EPOLL_CTL_ADD, w->listen_h2c_fd, &ev3);
+        }
+
+        if (w->ssl_ctx_h2) {
+            w->listen_h2_fd = create_listen_socket(port_h2);
+            if (w->listen_h2_fd >= 0) {
+                w->token_h2 = 4;
+                struct epoll_event ev4 = { .events = EPOLLIN, .data.ptr = &w->token_h2 };
+                epoll_ctl(w->epoll_fd, EPOLL_CTL_ADD, w->listen_h2_fd, &ev4);
+            }
+        } else {
+            w->listen_h2_fd = -1;
+        }
+
         pthread_create(&w->thread, NULL, worker_main, w);
     }
 
-    printf("[apex] Server listening on port %d (TLS: %d) with %d workers\n",
-           port_h1, shared_ssl_ctx ? port_tls : -1, g_num_workers);
+    printf("[apex] Server listening on port %d (TLS: %d, H2C: %d, H2: %d) with %d workers\n",
+           port_h1, shared_ssl_ctx ? port_tls : -1, port_h2c, shared_ssl_ctx_h2 ? port_h2 : -1, g_num_workers);
     fflush(stdout);
 
     for (int i = 0; i < g_num_workers; i++) {
@@ -946,6 +1176,9 @@ int main(void) {
 
     if (shared_ssl_ctx) {
         tls_free_server_ctx(shared_ssl_ctx);
+    }
+    if (shared_ssl_ctx_h2) {
+        tls_free_server_ctx(shared_ssl_ctx_h2);
     }
 
     free(g_workers);

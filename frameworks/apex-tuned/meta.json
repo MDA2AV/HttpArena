@@ -17,7 +17,11 @@
     "json-comp",
     "json-tls",
     "8gbit",
-    "static-tls"
+    "static-tls",
+    "baseline-h2c",
+    "baseline-h2",
+    "json-h2c",
+    "static-h2"
   ],
   "maintainers": [
     "xdearboy"

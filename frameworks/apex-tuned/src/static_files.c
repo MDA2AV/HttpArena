@@ -13,7 +13,7 @@ static const char* guess_mime_type(const char *path) {
     if (!dot) return "application/octet-stream";
     if (strcmp(dot, ".html") == 0 || strcmp(dot, ".htm") == 0) return "text/html; charset=utf-8";
     if (strcmp(dot, ".css") == 0) return "text/css";
-    if (strcmp(dot, ".js") == 0) return "text/javascript";
+    if (strcmp(dot, ".js") == 0) return "application/javascript";
     if (strcmp(dot, ".json") == 0) return "application/json";
     if (strcmp(dot, ".png") == 0) return "image/png";
     if (strcmp(dot, ".jpg") == 0 || strcmp(dot, ".jpeg") == 0) return "image/jpeg";
