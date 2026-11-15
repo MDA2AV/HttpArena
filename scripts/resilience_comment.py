@@ -48,7 +48,7 @@ def entry_section(fw):
     limit_mb = next((a.get("mem_limit_mb") for a in attacks.values() if a.get("mem_limit_mb")), None)
     box = f"{limit_mb / 1024:g} GiB / 2 CPU" if limit_mb else "a fixed memory/CPU box"
 
-    lines = [f"### {mark} `{data.get('framework', fw)}` — survived {passed}/{total}",
+    lines = [f"### {mark} `{data.get('framework', fw)}` — score {passed}/{total} (survived=1, degraded=½)",
              f"Box: **{box}**, a fresh container per attack.",
              "",
              "| Attack | Exhausts | Verdict | Peak RSS | Liveness fail | Recovery | Client est./reaped | Load (req/s · CPU L→S) |",
@@ -101,7 +101,7 @@ def main():
     sections = [s for s in (entry_section(fw) for fw in sys.argv[1:]) if s]
     if not sections:
         return
-    legend = ("✅ survived · ⚠️ degraded (shed load, then recovered) · 🟠 hung · "
+    legend = ("✅ survived (1 pt) · ⚠️ degraded (shed load, then recovered — ½ pt) · 🟠 hung · "
               "💀 crashed · 💥 OOM-killed · 🔌 no endpoint (entry doesn't implement "
               "the endpoint the attack needs — not scored). A connection the server "
               "**reaped** is the correct defense — a read-timeout or a size cap fired. "

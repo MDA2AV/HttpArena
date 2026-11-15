@@ -223,7 +223,13 @@ def main():
             scored[name] = score_attack(json.load(f))
 
     # no-endpoint attacks have passed=None — not a pass, not a fail, not counted.
-    passed = sum(1 for a in scored.values() if a.get("passed") is True)
+    # Score: survived = 1 point, degraded (shed load but recovered) = ½ point,
+    # hung/crashed/oom-killed/error = 0. no-endpoint (passed is None) is excluded
+    # from both the score and the total. Keep it an int when whole (33, not 33.0).
+    def _weight(a):
+        return {"survived": 1.0, "degraded": 0.5}.get(a.get("verdict"), 0.0)
+    passed = sum(_weight(a) for a in scored.values() if a.get("passed") is not None)
+    passed = int(passed) if passed == int(passed) else passed
     result = {
         "framework": display,
         "dir": entry,
