@@ -45,8 +45,12 @@ done
 
 # ── Knobs (all env-overridable) ──────────────────────────────────────────────
 RES_MEM="${RES_MEM:-8g}"             # the box the entry runs in
-RES_CPUSET="${RES_CPUSET:-0-1}"      # 2 CPUs, pinned away from the attack client
-RES_DURATION="${RES_DURATION:-60}"   # seconds per attack
+# One physical core + its SMT sibling — a tight "2 hardware threads on 1 core" box,
+# read from the CPU topology. A blind "0-1" is wrong on CPUs whose thread siblings
+# aren't adjacent (e.g. 0,16): it would hand the server two SEPARATE physical cores,
+# twice the compute we intend. Override RES_CPUSET to pin a specific set.
+RES_CPUSET="${RES_CPUSET:-$(cat /sys/devices/system/cpu/cpu0/topology/thread_siblings_list 2>/dev/null || echo 0-1)}"
+RES_DURATION="${RES_DURATION:-25}"   # seconds per attack (verdicts are clear well inside this; the attack ends early if the server dies)
 RES_CONNS="${RES_CONNS:-4000}"       # connections the slow attacks hold (< the 28k ephemeral-port ceiling)
 RES_BODY_SIZE="${RES_BODY_SIZE:-104857600}"  # 100 MiB declared body for slow-body (pre-alloc pressure)
 RES_DRIP="${RES_DRIP:-1.0}"          # seconds between drips
@@ -83,9 +87,21 @@ RES_BIGNUM_DIGITS="${RES_BIGNUM_DIGITS:-100000}"    # digits in the JSON number 
 RES_WS_FRAME_LEN="${RES_WS_FRAME_LEN:-9223372036854775552}"  # declared WS frame length (ws-giant-frame)
 RES_WS_FRAG_SIZE="${RES_WS_FRAG_SIZE:-4096}"        # bytes per WS fragment (ws-fragment-bomb)
 RES_RECOVERY="${RES_RECOVERY:-15}"   # seconds to wait for the server to serve again
-# The attack client runs on the load-generator cores so it never steals CPU from
-# the (deliberately CPU-starved) server.
-ATTACK_CPUS="${ATTACK_CPUS:-$GCANNON_CPUS}"
+# The attack client gets EVERY logical CPU except the server's core+sibling, so it
+# never shares a physical core with the (deliberately CPU-starved) server and has
+# maximum firepower. Derived from RES_CPUSET — GCANNON_CPUS (half the box) could
+# overlap the server's SMT sibling on a non-adjacent-sibling CPU.
+ATTACK_CPUS="${ATTACK_CPUS:-$(python3 -c '
+import os, sys
+srv = set()
+for p in sys.argv[1].replace(" ", "").split(","):
+    if "-" in p:
+        a, b = p.split("-"); srv.update(range(int(a), int(b) + 1))
+    elif p:
+        srv.add(int(p))
+rest = [c for c in range(os.cpu_count() or 2) if c not in srv]
+print(",".join(map(str, rest)) or "0")
+' "$RES_CPUSET" 2>/dev/null || echo "$GCANNON_CPUS")}"
 ATTACK_PY="$SCRIPT_DIR/resilience/attack.py"
 
 # ── Entry ────────────────────────────────────────────────────────────────────
@@ -301,7 +317,23 @@ run_attack() {
         --percent-count "$RES_PERCENT_COUNT" --range-count "$RES_RANGE_COUNT" \
         --bignum-digits "$RES_BIGNUM_DIGITS" --ws-frame-len "$RES_WS_FRAME_LEN" \
         --ws-frag-size "$RES_WS_FRAG_SIZE" "${tls_flag[@]}" \
-        > "$WORK/$name.client.json" 2> "$WORK/$name.client.log" || \
+        > "$WORK/$name.client.json" 2> "$WORK/$name.client.log" &
+    local attack_pid=$! killed_early=0
+    # Early-exit: once the server is dead (OOM / crash) there's nothing left to
+    # measure, so stop the attack instead of flooding a dead container for the rest
+    # of the duration. Poll the container every 2s while the client is still running.
+    while kill -0 "$attack_pid" 2>/dev/null; do
+        if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_NAME" 2>/dev/null || echo false)" != "true" ]; then
+            info "$name: server stopped running — ending the attack early"
+            kill "$attack_pid" 2>/dev/null || true
+            killed_early=1
+            break
+        fi
+        sleep 2
+    done
+    local arc=0
+    wait "$attack_pid" 2>/dev/null || arc=$?
+    [ "$killed_early" = 0 ] && [ "$arc" -ne 0 ] && \
         warn "attack client exited non-zero (see $name.client.log)"
 
     kill "$live_pid" 2>/dev/null || true; wait "$live_pid" 2>/dev/null || true
