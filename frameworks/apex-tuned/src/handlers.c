@@ -17,10 +17,19 @@ void baseline_handler(context_t *context) {
     conn_t *connection = (conn_t *)context->user_data;
 
     int64_t accumulated_sum = 0;
-    for (size_t param_index = 0; param_index < request->num_params; param_index++) {
-        int64_t parameter_value = 0;
-        if (parse_i64(request->params[param_index].val.ptr, request->params[param_index].val.len, &parameter_value)) {
-            accumulated_sum += parameter_value;
+    if (__builtin_expect(request->num_params == 2, 1)) {
+        int64_t first_param_value = 0;
+        int64_t second_param_value = 0;
+        parse_i64(request->params[0].val.ptr, request->params[0].val.len, &first_param_value);
+        parse_i64(request->params[1].val.ptr, request->params[1].val.len, &second_param_value);
+        accumulated_sum = first_param_value + second_param_value;
+    } else {
+        for (size_t param_index = 0; param_index < request->num_params; param_index++) {
+            int64_t parameter_value = 0;
+            if (parse_i64(request->params[param_index].val.ptr, request->params[param_index].val.len,
+                          &parameter_value)) {
+                accumulated_sum += parameter_value;
+            }
         }
     }
 
@@ -60,8 +69,6 @@ void delay_handler(context_t *context) {
         return;
     }
 
-    connection->parked_in_timer = true;
-    connection->timer_expire_us = clock_monotonic_us() + (uint64_t)delay_milliseconds * 1000ULL;
     connection->timer_val_ms = delay_milliseconds;
     connection->keep_alive = request->keep_alive;
     context->async_parked = true;

@@ -60,7 +60,7 @@ void handle_accept_http1(worker_t *worker) {
             continue;
         }
 
-        struct epoll_event event = {.events = EPOLLIN | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
+        struct epoll_event event = {.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
                                     .data.ptr = connection};
         epoll_ctl(worker->epoll_fd, EPOLL_CTL_ADD, client_fd, &event);
     }
@@ -89,7 +89,7 @@ void handle_accept_tls(worker_t *worker) {
             continue;
         }
 
-        struct epoll_event event = {.events = EPOLLIN | EPOLLOUT | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
+        struct epoll_event event = {.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
                                     .data.ptr = connection};
         epoll_ctl(worker->epoll_fd, EPOLL_CTL_ADD, client_fd, &event);
     }
@@ -115,7 +115,7 @@ void handle_accept_h2c(worker_t *worker) {
             continue;
         }
 
-        struct epoll_event event = {.events = EPOLLIN | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
+        struct epoll_event event = {.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
                                     .data.ptr = connection};
         epoll_ctl(worker->epoll_fd, EPOLL_CTL_ADD, client_fd, &event);
     }
@@ -144,7 +144,7 @@ void handle_accept_h2(worker_t *worker) {
             continue;
         }
 
-        struct epoll_event event = {.events = EPOLLIN | EPOLLOUT | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
+        struct epoll_event event = {.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
                                     .data.ptr = connection};
         epoll_ctl(worker->epoll_fd, EPOLL_CTL_ADD, client_fd, &event);
     }

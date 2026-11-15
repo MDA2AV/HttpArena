@@ -4,7 +4,7 @@
 #include <stddef.h>
 
 #define BUFFER_POOL_SLAB_SIZE 16384
-#define BUFFER_POOL_DEFAULT_CAPACITY 256
+#define BUFFER_POOL_DEFAULT_CAPACITY 2048
 
 typedef struct buffer_pool_s {
     char **slabs;

@@ -21,6 +21,9 @@ typedef struct h2_stream_slot_s {
     char *dynamic_response_buffer;
     size_t dynamic_response_length;
     bool is_dynamic_buffer_static_memory;
+    bool is_head;
+    bool accept_br;
+    bool accept_gzip;
 } h2_stream_slot_t;
 
 typedef struct h2_connection_s {

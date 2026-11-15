@@ -165,8 +165,8 @@ void process_requests(worker_t *worker, conn_t *connection) {
         }
 
         if (is_async_parked) {
-            timer_heap_push(&worker->timers, connection->timer_expire_us, connection, connection->gen,
-                            connection->timer_val_ms);
+            uint64_t now_ms = clock_monotonic_ms();
+            timer_wheel_schedule(&worker->timers, connection, now_ms + (uint64_t)connection->timer_val_ms);
             read_offset += consumed_bytes;
             break;
         }
@@ -174,7 +174,7 @@ void process_requests(worker_t *worker, conn_t *connection) {
         size_t remaining_space = sizeof(worker->write_buf) - write_pos;
         size_t bytes_written = res_serialize(&response, worker->write_buf + write_pos, remaining_space);
         if (response.body_needs_free && response.body) {
-            free((void *)response.body);
+            free((void *)(uintptr_t)response.body);
         }
 
         if (bytes_written == 0) {
@@ -229,13 +229,13 @@ void *worker_thread_main(void *thread_argument) {
     CPU_SET(worker->cpu_id, &cpu_set);
     pthread_setaffinity_np(pthread_self(), sizeof(cpu_set), &cpu_set);
 
-    buffer_pool_init(&worker->buffer_pool, 256);
+    buffer_pool_init(&worker->buffer_pool, 2048);
     register_application_routes(worker);
     compress_worker_init(&worker->compress);
-    timer_heap_init(&worker->timers, 16384);
+    timer_wheel_init(&worker->timers, clock_monotonic_ms());
     worker->free_conns = NULL;
 
-    for (int pool_index = 0; pool_index < 256; pool_index++) {
+    for (int pool_index = 0; pool_index < 2048; pool_index++) {
         conn_t *preallocated_conn = calloc(1, sizeof(conn_t));
         if (preallocated_conn) {
             preallocated_conn->fd = -1;
@@ -247,68 +247,16 @@ void *worker_thread_main(void *thread_argument) {
     struct epoll_event epoll_events[MAX_EVENTS];
 
     while (g_running) {
-        uint64_t current_time_us = clock_monotonic_us();
+        uint64_t current_time_ms = clock_monotonic_ms();
 
-        if (worker->timers.count > 0) {
-            timer_entry_t timer_entry;
-            while (timer_heap_peek(&worker->timers, &timer_entry)) {
-                if (timer_entry.expire_at_us > current_time_us) {
-                    break;
-                }
-                timer_heap_pop(&worker->timers, &timer_entry);
-                conn_t *connection = (conn_t *)timer_entry.conn_ptr;
-                if (connection && connection->gen == timer_entry.conn_gen && connection->parked_in_timer) {
-                    handle_timer_expiration(worker, connection, timer_entry.delay_ms);
-                }
-            }
+        timer_wheel_process_expired(&worker->timers, worker, current_time_ms);
+
+        int timeout_ms = timer_wheel_next_timeout_ms(&worker->timers, current_time_ms);
+        if (timeout_ms < 0 || timeout_ms > 1000) {
+            timeout_ms = 1000;
         }
 
-        int64_t timeout_us = timer_heap_next_timeout_us(&worker->timers, current_time_us);
-        if (timeout_us < 0 || timeout_us > 1000000) {
-            timeout_us = 1000000;
-        }
-        int num_ready_descriptors = 0;
-
-        if (timeout_us <= 350) {
-            uint64_t target_time_us = current_time_us + (uint64_t)timeout_us;
-            while (true) {
-                num_ready_descriptors = epoll_wait(worker->epoll_fd, epoll_events, MAX_EVENTS, 0);
-                if (num_ready_descriptors != 0) {
-                    break;
-                }
-                current_time_us = clock_monotonic_us();
-                if (current_time_us >= target_time_us) {
-                    break;
-                }
-                for (int spin_count = 0; spin_count < 16; spin_count++) {
-#if defined(__x86_64__) || defined(_M_X64)
-                    __builtin_ia32_pause();
-#elif defined(__aarch64__)
-                    asm volatile("yield" ::: "memory");
-#endif
-                }
-            }
-        } else {
-            int64_t sleep_us = timeout_us - 250;
-#if defined(__linux__)
-            struct timespec timeout_timespec = {.tv_sec = (time_t)(sleep_us / 1000000),
-                                                .tv_nsec = (long)((sleep_us % 1000000) * 1000)};
-            num_ready_descriptors = epoll_pwait2(worker->epoll_fd, epoll_events, MAX_EVENTS, &timeout_timespec, NULL);
-            if (num_ready_descriptors < 0 && errno == ENOSYS) {
-                int timeout_ms = (int)(sleep_us / 1000);
-                if (timeout_ms < 1) {
-                    timeout_ms = 1;
-                }
-                num_ready_descriptors = epoll_wait(worker->epoll_fd, epoll_events, MAX_EVENTS, timeout_ms);
-            }
-#else
-            int timeout_ms = (int)(sleep_us / 1000);
-            if (timeout_ms < 1) {
-                timeout_ms = 1;
-            }
-            num_ready_descriptors = epoll_wait(worker->epoll_fd, epoll_events, MAX_EVENTS, timeout_ms);
-#endif
-        }
+        int num_ready_descriptors = epoll_wait(worker->epoll_fd, epoll_events, MAX_EVENTS, timeout_ms);
 
         if (num_ready_descriptors < 0) {
             if (errno == EINTR) {
@@ -317,7 +265,7 @@ void *worker_thread_main(void *thread_argument) {
             break;
         }
 
-        uint64_t current_time_ms = clock_monotonic_ms();
+        current_time_ms = clock_monotonic_ms();
         trim_inactive_connections(worker, current_time_ms);
 
 #if defined(__linux__)
@@ -327,20 +275,7 @@ void *worker_thread_main(void *thread_argument) {
         }
 #endif
 
-        if (worker->timers.count > 0) {
-            current_time_us = clock_monotonic_us();
-            timer_entry_t timer_entry;
-            while (timer_heap_peek(&worker->timers, &timer_entry)) {
-                if (timer_entry.expire_at_us > current_time_us) {
-                    break;
-                }
-                timer_heap_pop(&worker->timers, &timer_entry);
-                conn_t *connection = (conn_t *)timer_entry.conn_ptr;
-                if (connection && connection->gen == timer_entry.conn_gen && connection->parked_in_timer) {
-                    handle_timer_expiration(worker, connection, timer_entry.delay_ms);
-                }
-            }
-        }
+        timer_wheel_process_expired(&worker->timers, worker, current_time_ms);
 
         for (int event_index = 0; event_index < num_ready_descriptors; event_index++) {
             void *event_data_ptr = epoll_events[event_index].data.ptr;
@@ -385,6 +320,10 @@ void *worker_thread_main(void *thread_argument) {
                     if (ssl_error == SSL_ERROR_WANT_READ || ssl_error == SSL_ERROR_WANT_WRITE) {
                         continue;
                     }
+                    if (ssl_error == SSL_ERROR_SYSCALL &&
+                        (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)) {
+                        continue;
+                    }
                     close_conn(worker, connection);
                     continue;
                 }
@@ -401,7 +340,7 @@ void *worker_thread_main(void *thread_argument) {
                     }
                 }
 
-                struct epoll_event event = {.events = EPOLLIN | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
+                struct epoll_event event = {.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
                                             .data.ptr = connection};
                 epoll_ctl(worker->epoll_fd, EPOLL_CTL_MOD, connection->fd, &event);
             }
@@ -414,7 +353,9 @@ void *worker_thread_main(void *thread_argument) {
                 }
             }
 
-            if (event_flags & EPOLLIN) {
+            bool has_tls_pending = (connection->is_tls && connection->tls_handshake_done &&
+                                    (SSL_pending(connection->ssl) > 0 || SSL_has_pending(connection->ssl)));
+            if ((event_flags & EPOLLIN) || has_tls_pending) {
                 if (connection->is_h2) {
                     char h2_read_buffer[65536];
                     while (true) {
@@ -424,6 +365,10 @@ void *worker_thread_main(void *thread_argument) {
                             if (read_status <= 0) {
                                 int ssl_error = SSL_get_error(connection->ssl, read_status);
                                 if (ssl_error == SSL_ERROR_WANT_READ || ssl_error == SSL_ERROR_WANT_WRITE) {
+                                    break;
+                                }
+                                if (ssl_error == SSL_ERROR_SYSCALL &&
+                                    (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)) {
                                     break;
                                 }
                                 close_conn(worker, connection);
@@ -504,6 +449,10 @@ void *worker_thread_main(void *thread_argument) {
                             if (ssl_error == SSL_ERROR_WANT_READ || ssl_error == SSL_ERROR_WANT_WRITE) {
                                 break;
                             }
+                            if (ssl_error == SSL_ERROR_SYSCALL &&
+                                (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)) {
+                                break;
+                            }
                             close_conn(worker, connection);
                             break;
                         }
@@ -556,7 +505,8 @@ void *worker_thread_main(void *thread_argument) {
                     process_requests(worker, connection);
                 }
                 if (connection->is_tls) {
-                    while (connection->fd >= 0 && !connection->closing && SSL_pending(connection->ssl) > 0) {
+                    while (connection->fd >= 0 && !connection->closing &&
+                           (SSL_pending(connection->ssl) > 0 || SSL_has_pending(connection->ssl))) {
                         if (!connection->read_buf) {
                             connection->read_buf = buffer_pool_acquire(&worker->buffer_pool);
                             if (!connection->read_buf) {
@@ -596,7 +546,7 @@ void *worker_thread_main(void *thread_argument) {
         close(worker->listen_h2_fd);
     }
     compress_worker_destroy(&worker->compress);
-    timer_heap_destroy(&worker->timers);
+    timer_wheel_destroy(&worker->timers);
     buffer_pool_destroy(&worker->buffer_pool);
 
     conn_t *current_connection = worker->free_conns;

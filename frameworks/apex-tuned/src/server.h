@@ -42,8 +42,10 @@ struct conn_s {
     size_t pending_write_sent;
 
     bool parked_in_timer;
-    uint64_t timer_expire_us;
+    uint64_t timer_expire_ms;
     int64_t timer_val_ms;
+    conn_t *timer_prev;
+    conn_t *timer_next;
 
     bool keep_alive;
     bool closing;
@@ -69,7 +71,7 @@ struct worker_s {
     SSL_CTX *ssl_ctx_h2;
     router_t router;
     worker_compress_t compress;
-    timer_heap_t timers;
+    timer_wheel_t timers;
     buffer_pool_t buffer_pool;
     conn_t *free_conns;
     conn_t *active_head;

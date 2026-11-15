@@ -66,6 +66,9 @@ conn_t *alloc_conn(worker_t *worker, int client_fd, bool is_tls, SSL *ssl_sessio
     connection->is_h2 = false;
     connection->h2 = NULL;
     connection->parked_in_timer = false;
+    connection->timer_prev = NULL;
+    connection->timer_next = NULL;
+    connection->timer_expire_ms = 0;
     connection->keep_alive = true;
     connection->closing = false;
     connection->next_free = NULL;
@@ -79,6 +82,10 @@ conn_t *alloc_conn(worker_t *worker, int client_fd, bool is_tls, SSL *ssl_sessio
 
 void close_conn(worker_t *worker, conn_t *connection) {
     conn_list_remove(worker, connection);
+
+    if (connection->parked_in_timer) {
+        timer_wheel_cancel(&worker->timers, connection);
+    }
 
     if (connection->is_h2) {
         h2_connection_destroy(connection);
@@ -116,6 +123,8 @@ void close_conn(worker_t *worker, conn_t *connection) {
     connection->pending_write_len = 0;
     connection->pending_write_sent = 0;
     connection->parked_in_timer = false;
+    connection->timer_prev = NULL;
+    connection->timer_next = NULL;
     connection->closing = false;
     connection->gen++;
 

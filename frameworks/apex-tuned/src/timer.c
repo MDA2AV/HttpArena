@@ -1,104 +1,157 @@
 #include "timer.h"
+#include "handlers.h"
+#include "server.h"
 
-void timer_heap_init(timer_heap_t *heap, size_t initial_capacity) {
-    if (initial_capacity < 64) {
-        initial_capacity = 64;
-    }
-    heap->entries = malloc(sizeof(timer_entry_t) * initial_capacity);
-    heap->count = 0;
-    heap->capacity = initial_capacity;
+#include <string.h>
+
+void timer_wheel_init(timer_wheel_t *wheel, uint64_t initial_time_ms) {
+    memset(wheel->buckets, 0, sizeof(wheel->buckets));
+    wheel->current_wheel_ms = initial_time_ms;
+    wheel->active_count = 0;
 }
 
-void timer_heap_destroy(timer_heap_t *heap) {
-    if (heap->entries) {
-        free(heap->entries);
-        heap->entries = NULL;
+void timer_wheel_destroy(timer_wheel_t *wheel) {
+    for (size_t bucket_index = 0; bucket_index < TIMER_WHEEL_SIZE; bucket_index++) {
+        conn_t *current_conn = wheel->buckets[bucket_index];
+        while (current_conn != NULL) {
+            conn_t *next_conn = current_conn->timer_next;
+            current_conn->timer_prev = NULL;
+            current_conn->timer_next = NULL;
+            current_conn->parked_in_timer = false;
+            current_conn = next_conn;
+        }
+        wheel->buckets[bucket_index] = NULL;
     }
-    heap->count = 0;
-    heap->capacity = 0;
+    wheel->active_count = 0;
 }
 
-bool timer_heap_push(timer_heap_t *heap, uint64_t expire_at_us, void *conn_ptr, uint32_t conn_gen, int64_t delay_ms) {
-    if (heap->count >= heap->capacity) {
-        size_t new_capacity = heap->capacity * 2;
-        timer_entry_t *reallocated_entries = realloc(heap->entries, sizeof(timer_entry_t) * new_capacity);
-        if (!reallocated_entries) {
-            return false;
-        }
-        heap->entries = reallocated_entries;
-        heap->capacity = new_capacity;
+void timer_wheel_schedule(timer_wheel_t *wheel, conn_t *connection, uint64_t expire_ms) {
+    if (connection->parked_in_timer) {
+        timer_wheel_cancel(wheel, connection);
     }
 
-    size_t current_index = heap->count++;
-    timer_entry_t item = {
-        .expire_at_us = expire_at_us, .conn_ptr = conn_ptr, .conn_gen = conn_gen, .delay_ms = delay_ms};
+    connection->parked_in_timer = true;
+    connection->timer_expire_ms = expire_ms;
 
-    while (current_index > 0) {
-        size_t parent_index = (current_index - 1) / 2;
-        if (heap->entries[parent_index].expire_at_us <= item.expire_at_us) {
-            break;
-        }
-        heap->entries[current_index] = heap->entries[parent_index];
-        current_index = parent_index;
+    size_t slot_index = (size_t)(expire_ms & TIMER_WHEEL_MASK);
+    connection->timer_prev = NULL;
+    connection->timer_next = wheel->buckets[slot_index];
+    if (wheel->buckets[slot_index] != NULL) {
+        wheel->buckets[slot_index]->timer_prev = connection;
     }
-    heap->entries[current_index] = item;
-
-    return true;
+    wheel->buckets[slot_index] = connection;
+    wheel->active_count++;
 }
 
-bool timer_heap_peek(const timer_heap_t *heap, timer_entry_t *out_entry) {
-    if (heap->count == 0) {
-        return false;
+void timer_wheel_cancel(timer_wheel_t *wheel, conn_t *connection) {
+    if (!connection->parked_in_timer) {
+        return;
     }
-    *out_entry = heap->entries[0];
-    return true;
+
+    size_t slot_index = (size_t)(connection->timer_expire_ms & TIMER_WHEEL_MASK);
+    if (connection->timer_prev != NULL) {
+        connection->timer_prev->timer_next = connection->timer_next;
+    } else if (wheel->buckets[slot_index] == connection) {
+        wheel->buckets[slot_index] = connection->timer_next;
+    }
+
+    if (connection->timer_next != NULL) {
+        connection->timer_next->timer_prev = connection->timer_prev;
+    }
+
+    connection->timer_prev = NULL;
+    connection->timer_next = NULL;
+    connection->parked_in_timer = false;
+    if (wheel->active_count > 0) {
+        wheel->active_count--;
+    }
 }
 
-bool timer_heap_pop(timer_heap_t *heap, timer_entry_t *out_entry) {
-    if (heap->count == 0) {
-        return false;
-    }
-    *out_entry = heap->entries[0];
-
-    heap->count--;
-    if (heap->count == 0) {
-        return true;
+void timer_wheel_process_expired(timer_wheel_t *wheel, worker_t *worker, uint64_t current_time_ms) {
+    if (wheel->active_count == 0) {
+        wheel->current_wheel_ms = current_time_ms;
+        return;
     }
 
-    timer_entry_t item = heap->entries[heap->count];
-    size_t current_index = 0;
-    while (true) {
-        size_t left_child_index = 2 * current_index + 1;
-        size_t right_child_index = 2 * current_index + 2;
-        size_t smallest_index = current_index;
-
-        if (left_child_index < heap->count && heap->entries[left_child_index].expire_at_us < item.expire_at_us) {
-            smallest_index = left_child_index;
-        }
-        if (right_child_index < heap->count &&
-            heap->entries[right_child_index].expire_at_us <
-                (smallest_index == current_index ? item.expire_at_us : heap->entries[smallest_index].expire_at_us)) {
-            smallest_index = right_child_index;
-        }
-        if (smallest_index == current_index) {
-            break;
-        }
-
-        heap->entries[current_index] = heap->entries[smallest_index];
-        current_index = smallest_index;
+    if (current_time_ms < wheel->current_wheel_ms) {
+        return;
     }
-    heap->entries[current_index] = item;
 
-    return true;
+    if (current_time_ms - wheel->current_wheel_ms >= TIMER_WHEEL_SIZE) {
+        if (current_time_ms >= (TIMER_WHEEL_SIZE - 1)) {
+            wheel->current_wheel_ms = current_time_ms - (TIMER_WHEEL_SIZE - 1);
+        } else {
+            wheel->current_wheel_ms = 0;
+        }
+    }
+
+    while (wheel->current_wheel_ms <= current_time_ms) {
+        size_t slot_index = (size_t)(wheel->current_wheel_ms & TIMER_WHEEL_MASK);
+        conn_t *current_conn = wheel->buckets[slot_index];
+        wheel->buckets[slot_index] = NULL;
+        conn_t *unexpired_head = NULL;
+
+        while (current_conn != NULL) {
+            conn_t *next_conn = current_conn->timer_next;
+            if (current_conn->timer_expire_ms <= current_time_ms) {
+                current_conn->timer_prev = NULL;
+                current_conn->timer_next = NULL;
+                current_conn->parked_in_timer = false;
+                if (wheel->active_count > 0) {
+                    wheel->active_count--;
+                }
+                handle_timer_expiration(worker, current_conn, current_conn->timer_val_ms);
+            } else {
+                current_conn->timer_prev = NULL;
+                current_conn->timer_next = unexpired_head;
+                if (unexpired_head != NULL) {
+                    unexpired_head->timer_prev = current_conn;
+                }
+                unexpired_head = current_conn;
+            }
+            current_conn = next_conn;
+        }
+
+        if (unexpired_head != NULL) {
+            if (wheel->buckets[slot_index] == NULL) {
+                wheel->buckets[slot_index] = unexpired_head;
+            } else {
+                conn_t *tail = unexpired_head;
+                while (tail->timer_next != NULL) {
+                    tail = tail->timer_next;
+                }
+                tail->timer_next = wheel->buckets[slot_index];
+                wheel->buckets[slot_index]->timer_prev = tail;
+                wheel->buckets[slot_index] = unexpired_head;
+            }
+        }
+
+        wheel->current_wheel_ms++;
+    }
 }
 
-int64_t timer_heap_next_timeout_us(const timer_heap_t *heap, uint64_t current_time_us) {
-    if (heap->count == 0) {
-        return -1;
+int timer_wheel_next_timeout_ms(const timer_wheel_t *wheel, uint64_t current_time_ms) {
+    if (wheel->active_count == 0) {
+        return 1000;
     }
-    uint64_t next_expire_us = heap->entries[0].expire_at_us;
-    if (next_expire_us <= current_time_us) {
+    if (wheel->current_wheel_ms <= current_time_ms) {
         return 0;
     }
-    return (int64_t)(next_expire_us - current_time_us);
+
+    uint64_t min_timeout = 1000;
+    for (size_t offset = 1; offset < min_timeout && offset < TIMER_WHEEL_SIZE; offset++) {
+        size_t slot_index = (size_t)((current_time_ms + offset) & TIMER_WHEEL_MASK);
+        conn_t *connection = wheel->buckets[slot_index];
+        while (connection != NULL) {
+            if (connection->timer_expire_ms > current_time_ms) {
+                uint64_t diff = connection->timer_expire_ms - current_time_ms;
+                if (diff < min_timeout) {
+                    min_timeout = diff;
+                }
+            }
+            connection = connection->timer_next;
+        }
+    }
+
+    return (int)min_timeout;
 }

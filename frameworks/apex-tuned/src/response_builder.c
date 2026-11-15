@@ -157,6 +157,9 @@ bool flush_pending_write(worker_t *worker, conn_t *connection) {
                 if (ssl_error == SSL_ERROR_WANT_WRITE || ssl_error == SSL_ERROR_WANT_READ) {
                     return false;
                 }
+                if (ssl_error == SSL_ERROR_SYSCALL && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)) {
+                    return false;
+                }
                 close_conn(worker, connection);
                 return false;
             }
@@ -180,7 +183,8 @@ bool flush_pending_write(worker_t *worker, conn_t *connection) {
     connection->pending_write_len = 0;
     connection->pending_write_sent = 0;
 
-    struct epoll_event event_config = {.events = EPOLLIN | EPOLLET, .data.ptr = connection};
+    struct epoll_event event_config = {.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
+                                       .data.ptr = connection};
     epoll_ctl(worker->epoll_fd, EPOLL_CTL_MOD, connection->fd, &event_config);
 
     if (connection->closing) {
@@ -223,6 +227,9 @@ void flush_data(worker_t *worker, conn_t *connection, const char *data, size_t l
                 if (ssl_error == SSL_ERROR_WANT_WRITE || ssl_error == SSL_ERROR_WANT_READ) {
                     break;
                 }
+                if (ssl_error == SSL_ERROR_SYSCALL && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)) {
+                    break;
+                }
                 close_conn(worker, connection);
                 return;
             }
@@ -251,7 +258,8 @@ void flush_data(worker_t *worker, conn_t *connection, const char *data, size_t l
         connection->pending_write_len = unsent_bytes;
         connection->pending_write_sent = 0;
 
-        struct epoll_event event_config = {.events = EPOLLIN | EPOLLOUT | EPOLLET, .data.ptr = connection};
+        struct epoll_event event_config = {
+            .events = EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLHUP | EPOLLERR, .data.ptr = connection};
         epoll_ctl(worker->epoll_fd, EPOLL_CTL_MOD, connection->fd, &event_config);
     } else if (connection->closing) {
         close_conn(worker, connection);

@@ -71,6 +71,19 @@ static ssize_t h2_data_read_callback(nghttp2_session *session, int32_t stream_id
     return (ssize_t)payload_length;
 }
 
+static inline bool header_contains_token(const uint8_t *header_value, size_t value_length,
+                                          const char *token, size_t token_length) {
+    if (value_length < token_length) {
+        return false;
+    }
+    for (size_t offset = 0; offset <= value_length - token_length; offset++) {
+        if (memcmp(header_value + offset, token, token_length) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static int h2_on_header_callback(nghttp2_session *session, const nghttp2_frame *frame, const uint8_t *header_name,
                                  size_t name_length, const uint8_t *header_value, size_t value_length, uint8_t flags,
                                  void *user_data) {
@@ -88,6 +101,17 @@ static int h2_on_header_callback(nghttp2_session *session, const nghttp2_frame *
             memcpy(slot->request_path, header_value, copy_length);
             slot->request_path[copy_length] = '\0';
             slot->request_path_length = copy_length;
+        } else if (name_length == 7 && memcmp(header_name, ":method", 7) == 0) {
+            if (value_length == 4 && memcmp(header_value, "HEAD", 4) == 0) {
+                slot->is_head = true;
+            }
+        } else if (name_length == 15 && memcmp(header_name, "accept-encoding", 15) == 0) {
+            if (header_contains_token(header_value, value_length, "br", 2)) {
+                slot->accept_br = true;
+            }
+            if (header_contains_token(header_value, value_length, "gzip", 4)) {
+                slot->accept_gzip = true;
+            }
         }
     }
 
@@ -114,6 +138,9 @@ static int h2_on_stream_close_callback(nghttp2_session *session, int32_t stream_
 
     slot->inline_response_length = 0;
     slot->request_path_length = 0;
+    slot->is_head = false;
+    slot->accept_br = false;
+    slot->accept_gzip = false;
     return 0;
 }
 
@@ -158,39 +185,6 @@ static int64_t parse_query_sum(const char *query_string) {
     return accumulated_sum;
 }
 
-static const char *determine_static_mime_type(const char *file_name) {
-    const char *extension_dot = strrchr(file_name, '.');
-    if (!extension_dot) {
-        return "application/octet-stream";
-    }
-
-    if (strcmp(extension_dot, ".html") == 0 || strcmp(extension_dot, ".htm") == 0) {
-        return "text/html; charset=utf-8";
-    }
-    if (strcmp(extension_dot, ".css") == 0) {
-        return "text/css";
-    }
-    if (strcmp(extension_dot, ".js") == 0) {
-        return "application/javascript";
-    }
-    if (strcmp(extension_dot, ".json") == 0) {
-        return "application/json";
-    }
-    if (strcmp(extension_dot, ".png") == 0) {
-        return "image/png";
-    }
-    if (strcmp(extension_dot, ".jpg") == 0 || strcmp(extension_dot, ".jpeg") == 0) {
-        return "image/jpeg";
-    }
-    if (strcmp(extension_dot, ".txt") == 0) {
-        return "text/plain";
-    }
-    if (strcmp(extension_dot, ".svg") == 0) {
-        return "image/svg+xml";
-    }
-
-    return "application/octet-stream";
-}
 
 static int handle_h2_baseline_request(nghttp2_session *session, h2_connection_t *h2_conn, int32_t stream_id,
                                       const char *request_path) {
@@ -213,7 +207,8 @@ static int handle_h2_baseline_request(nghttp2_session *session, h2_connection_t 
 
     nghttp2_data_provider data_provider = {.source.ptr = h2_conn, .read_callback = h2_data_read_callback};
 
-    return nghttp2_submit_response(session, stream_id, response_headers, 2, &data_provider);
+    return nghttp2_submit_response(session, stream_id, response_headers, 2,
+                                   slot->is_head ? NULL : &data_provider);
 }
 
 static int handle_h2_json_request(nghttp2_session *session, h2_connection_t *h2_conn, int32_t stream_id,
@@ -255,7 +250,8 @@ static int handle_h2_json_request(nghttp2_session *session, h2_connection_t *h2_
 
     nghttp2_data_provider data_provider = {.source.ptr = h2_conn, .read_callback = h2_data_read_callback};
 
-    return nghttp2_submit_response(session, stream_id, response_headers, 2, &data_provider);
+    return nghttp2_submit_response(session, stream_id, response_headers, 2,
+                                   slot->is_head ? NULL : &data_provider);
 }
 
 static int handle_h2_pipeline_request(nghttp2_session *session, h2_connection_t *h2_conn, int32_t stream_id) {
@@ -271,7 +267,8 @@ static int handle_h2_pipeline_request(nghttp2_session *session, h2_connection_t 
 
     nghttp2_data_provider data_provider = {.source.ptr = h2_conn, .read_callback = h2_data_read_callback};
 
-    return nghttp2_submit_response(session, stream_id, response_headers, 2, &data_provider);
+    return nghttp2_submit_response(session, stream_id, response_headers, 2,
+                                   slot->is_head ? NULL : &data_provider);
 }
 
 static int handle_h2_static_request(nghttp2_session *session, h2_connection_t *h2_conn, int32_t stream_id,
@@ -284,59 +281,42 @@ static int handle_h2_static_request(nghttp2_session *session, h2_connection_t *h
         return -1;
     }
 
-    const char *static_root_directory = getenv("STATIC_ROOT");
-    if (!static_root_directory || !*static_root_directory) {
-        static_root_directory = "/data/static";
-    }
-
-    char absolute_file_path[512];
-    snprintf(absolute_file_path, sizeof(absolute_file_path), "%s/%s", static_root_directory, relative_file_path);
-
-    int file_descriptor = open(absolute_file_path, O_RDONLY);
-    if (file_descriptor < 0) {
-        snprintf(absolute_file_path, sizeof(absolute_file_path), "./data/static/%s", relative_file_path);
-        file_descriptor = open(absolute_file_path, O_RDONLY);
-    }
-
-    if (file_descriptor < 0) {
+    static_file_result_t file_result;
+    if (!static_cache_lookup(relative_file_path, slot->accept_br, slot->accept_gzip, &file_result)) {
         return -1;
     }
 
-    struct stat file_status;
-    if (fstat(file_descriptor, &file_status) != 0 || !S_ISREG(file_status.st_mode) || file_status.st_size <= 0 ||
-        file_status.st_size > 10 * 1024 * 1024) {
-        close(file_descriptor);
-        return -1;
+    slot->dynamic_response_buffer = (char *)(uintptr_t)file_result.data;
+    slot->dynamic_response_length = file_result.size;
+    slot->is_dynamic_buffer_static_memory = true;
+
+    char content_length_str[32];
+    int cl_len = snprintf(content_length_str, sizeof(content_length_str), "%zu", file_result.size);
+
+    nghttp2_nv response_headers[5];
+    size_t header_count = 0;
+
+    response_headers[header_count++] = (nghttp2_nv){
+        (uint8_t *)":status", (uint8_t *)"200", 7, 3, NGHTTP2_NV_FLAG_NONE};
+    response_headers[header_count++] = (nghttp2_nv){
+        (uint8_t *)"content-type", (uint8_t *)(uintptr_t)file_result.mime_type, 12,
+        strlen(file_result.mime_type), NGHTTP2_NV_FLAG_NONE};
+    response_headers[header_count++] = (nghttp2_nv){
+        (uint8_t *)"content-length", (uint8_t *)content_length_str, 14,
+        (size_t)cl_len, NGHTTP2_NV_FLAG_NONE};
+
+    if (file_result.content_encoding != NULL) {
+        response_headers[header_count++] = (nghttp2_nv){
+            (uint8_t *)"content-encoding", (uint8_t *)(uintptr_t)file_result.content_encoding, 16,
+            strlen(file_result.content_encoding), NGHTTP2_NV_FLAG_NONE};
+        response_headers[header_count++] = (nghttp2_nv){
+            (uint8_t *)"vary", (uint8_t *)"accept-encoding", 4, 15, NGHTTP2_NV_FLAG_NONE};
     }
-
-    size_t file_size = (size_t)file_status.st_size;
-    char *file_buffer = malloc(file_size);
-    if (!file_buffer) {
-        close(file_descriptor);
-        return -1;
-    }
-
-    ssize_t bytes_read = read(file_descriptor, file_buffer, file_size);
-    close(file_descriptor);
-
-    if (bytes_read != (ssize_t)file_size) {
-        free(file_buffer);
-        return -1;
-    }
-
-    slot->dynamic_response_buffer = file_buffer;
-    slot->dynamic_response_length = file_size;
-    slot->is_dynamic_buffer_static_memory = false;
-
-    const char *content_mime_type = determine_static_mime_type(relative_file_path);
-
-    nghttp2_nv response_headers[] = {
-        {(uint8_t *)":status", (uint8_t *)"200", 7, 3, NGHTTP2_NV_FLAG_NONE},
-        {(uint8_t *)"content-type", (uint8_t *)content_mime_type, 12, strlen(content_mime_type), NGHTTP2_NV_FLAG_NONE}};
 
     nghttp2_data_provider data_provider = {.source.ptr = h2_conn, .read_callback = h2_data_read_callback};
 
-    return nghttp2_submit_response(session, stream_id, response_headers, 2, &data_provider);
+    return nghttp2_submit_response(session, stream_id, response_headers, (int)header_count,
+                                   slot->is_head ? NULL : &data_provider);
 }
 
 static int handle_h2_not_found(nghttp2_session *session, h2_connection_t *h2_conn, int32_t stream_id) {
@@ -352,7 +332,8 @@ static int handle_h2_not_found(nghttp2_session *session, h2_connection_t *h2_con
 
     nghttp2_data_provider data_provider = {.source.ptr = h2_conn, .read_callback = h2_data_read_callback};
 
-    return nghttp2_submit_response(session, stream_id, response_headers, 2, &data_provider);
+    return nghttp2_submit_response(session, stream_id, response_headers, 2,
+                                   slot->is_head ? NULL : &data_provider);
 }
 
 static int h2_on_frame_recv_callback(nghttp2_session *session, const nghttp2_frame *frame, void *user_data) {
