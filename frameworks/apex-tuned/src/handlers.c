@@ -137,17 +137,21 @@ void handle_timer_expiration(worker_t *worker, conn_t *connection, int64_t delay
     static const size_t response_delay_10_length = sizeof(response_delay_10) - 1;
 
     if (__builtin_expect(delay_milliseconds == 10 && connection->keep_alive, 1)) {
-        ssize_t bytes_sent =
-            send(connection->fd, response_delay_10, response_delay_10_length, MSG_NOSIGNAL | MSG_DONTWAIT);
-        if (__builtin_expect(bytes_sent == (ssize_t)response_delay_10_length, 1)) {
-        } else if (bytes_sent > 0) {
-            flush_data(worker, connection, response_delay_10 + bytes_sent,
-                       response_delay_10_length - (size_t)bytes_sent);
-        } else if (bytes_sent < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-            flush_data(worker, connection, response_delay_10, response_delay_10_length);
+        if (__builtin_expect(!connection->is_tls, 1)) {
+            ssize_t bytes_sent =
+                send(connection->fd, response_delay_10, response_delay_10_length, MSG_NOSIGNAL | MSG_DONTWAIT);
+            if (__builtin_expect(bytes_sent == (ssize_t)response_delay_10_length, 1)) {
+            } else if (bytes_sent > 0) {
+                flush_data(worker, connection, response_delay_10 + bytes_sent,
+                           response_delay_10_length - (size_t)bytes_sent);
+            } else if (bytes_sent < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+                flush_data(worker, connection, response_delay_10, response_delay_10_length);
+            } else {
+                close_conn(worker, connection);
+                return;
+            }
         } else {
-            close_conn(worker, connection);
-            return;
+            flush_data(worker, connection, response_delay_10, response_delay_10_length);
         }
     } else {
         response_t response;
