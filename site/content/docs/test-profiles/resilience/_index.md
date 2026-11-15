@@ -34,7 +34,7 @@ The suite has **41 attacks** across four protocol surfaces. The most valuable fo
 | `duplicate-header-merge` | CPU | the same header name ×N → O(n²) join before dispatch |
 | `pipelining-flood` | memory | thousands of pipelined requests, responses unread ([CVE-2026-54273](https://nvd.nist.gov/vuln/detail/CVE-2026-54273)) |
 
-**HTTP/1.1 parser-differential — only bite an entry that parses that input** (minimal handler → clean `survived`):
+**HTTP/1.1 parser-differential — run against the `POST /parse` endpoint.** An entry that implements `/parse` parses the request body with its standard facilities (JSON, form/multipart, request decompression) — so these measure the framework's real parser limits. An entry that does **not** implement `/parse` (returns 404/405) shows **🔌 no-endpoint** and is **not scored** (neither pass nor fail):
 
 | Attack | Exhausts | What it does |
 |---|---|---|
@@ -79,6 +79,21 @@ The suite has **41 attacks** across four protocol surfaces. The most valuable fo
 
 A connection the server **reaps** (closes on the client) is the *correct* defense. The **memory** attacks give the cleanest verdict (OOM-kill → exit 137) and `chunk-size-overflow` aims for a **crash**; the **CPU** attacks don't OOM, so they surface as `hung`/`degraded` through the liveness probe. Many reaped connections with flat memory and green liveness means the server defended itself.
 
+### The `/parse` endpoint
+
+The six parser-differential attacks need a route that actually **parses** the request body — benchmark handlers like `/echo` just stream bytes back, so the attack never reaches a parser and would falsely read `survived`. An entry opts into these attacks by implementing:
+
+```
+POST /parse   — parse the request body with the framework's standard facilities:
+                application/json      → the JSON parser (depth / number limits)
+                x-www-form-urlencoded → the form parser (key count / hashing)
+                multipart/form-data   → the multipart parser (part count)
+                other (+ Content-Encoding) → request decompression + buffering
+              Return 200 with anything (the body content is not checked).
+```
+
+If an entry doesn't implement `/parse` (returns 404/405), those six attacks report **🔌 no-endpoint** and drop out of its score — honest, rather than a phantom `survived`. `aspnet-minimal` implements it as the reference (System.Text.Json + `ReadFormAsync` + `UseRequestDecompression`).
+
 ## The verdict
 
 For each attack the runner records a verdict from the server-side signal, plus peak RSS (vs. the idle baseline), the share of liveness probes that failed *during* the attack, and how long the server took to serve again *after* it:
@@ -115,7 +130,7 @@ To run **only** the suite, without a benchmark, comment **`/resilience -f <entry
 
 `<entry>` is the directory under `frameworks/`, not the display name — entries that share a display name each keep their own file, the way `site/data/spec/<entry>.json` does. Without the flag and without a named attack, the runner is a no-op.
 
-The box and the run are env-overridable: `RES_MEM` (default `8g`), `RES_CPUSET` (`0-1`), `RES_DURATION` (`60`s), `RES_CONNS` (`4000` slow-attack connections, held below the ~28k ephemeral-port ceiling), `RES_BODY_SIZE` (100 MiB), `RES_DRIP_BYTES` (`256` B per drip), per-surface connection counts `RES_H2_CONNS` (`256`), `RES_DECOMP_CONNS` (`64`, H1 payload/parser floods), `RES_WS_CONNS` (`256`), `RES_TLS_CONNS` (`128`); and a size knob per attack — `RES_BOMB_SIZE`, `RES_CL_DECLARE`, `RES_UPLOAD_SIZE`, `RES_CHUNK_COUNT`, `RES_CHUNK_EXT_SIZE`, `RES_HEADER_VALUE_SIZE`, `RES_HEADER_COUNT`, `RES_DUP_HEADERS`, `RES_PIPELINE_DEPTH`, `RES_QVALUE_COUNT`, `RES_COOKIE_PAIRS`, `RES_PERCENT_COUNT`, `RES_RANGE_COUNT`, `RES_BIGNUM_DIGITS`, `RES_WS_FRAME_LEN`, `RES_WS_FRAG_SIZE`, `RES_HASHDOS_KEYS`, `RES_JSON_DEPTH`, `RES_MULTIPART_PARTS`, `RES_REDOS_PAD`, `RES_STALL_COUNT`/`RES_STALL_STREAMS` — plus `RES_RECOVERY` (`15`s). The attack client runs on the load-generator cores so it never steals CPU from the deliberately CPU-starved server.
+The box and the run are env-overridable: `RES_MEM` (default `8g`), `RES_CPUSET` (one physical core + its SMT sibling, read from the CPU topology — a tight "2 threads on 1 core" box), `RES_DURATION` (`25`s; an attack also ends early the moment the server OOM-kills/crashes), `RES_CONNS` (`4000` slow-attack connections, held below the ~28k ephemeral-port ceiling), `RES_BODY_SIZE` (100 MiB), `RES_DRIP_BYTES` (`256` B per drip), per-surface connection counts `RES_H2_CONNS` (`256`), `RES_DECOMP_CONNS` (`64`, H1 payload/parser floods), `RES_WS_CONNS` (`256`), `RES_TLS_CONNS` (`128`); and a size knob per attack — `RES_BOMB_SIZE`, `RES_CL_DECLARE`, `RES_UPLOAD_SIZE`, `RES_CHUNK_COUNT`, `RES_CHUNK_EXT_SIZE`, `RES_HEADER_VALUE_SIZE`, `RES_HEADER_COUNT`, `RES_DUP_HEADERS`, `RES_PIPELINE_DEPTH`, `RES_QVALUE_COUNT`, `RES_COOKIE_PAIRS`, `RES_PERCENT_COUNT`, `RES_RANGE_COUNT`, `RES_BIGNUM_DIGITS`, `RES_WS_FRAME_LEN`, `RES_WS_FRAG_SIZE`, `RES_HASHDOS_KEYS`, `RES_JSON_DEPTH`, `RES_MULTIPART_PARTS`, `RES_REDOS_PAD`, `RES_STALL_COUNT`/`RES_STALL_STREAMS` — plus `RES_RECOVERY` (`15`s). The attack client runs on every logical CPU *except* the server's core + sibling, so it never shares a physical core with the deliberately CPU-starved server and gets maximum firepower.
 
 ## The scores
 
