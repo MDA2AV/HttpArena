@@ -1,4 +1,5 @@
 #include "h2.h"
+#include "connection.h"
 #include "dataset.h"
 #include "static_files.h"
 
@@ -139,6 +140,9 @@ static int h2_on_stream_close_callback(nghttp2_session *session, int32_t stream_
         slot->is_pooled_buffer = false;
         if (h2_conn->active_dynamic_streams > 0) {
             h2_conn->active_dynamic_streams--;
+            if (h2_conn->active_dynamic_streams == 0) {
+                conn_unmark_stalled(h2_conn->worker, h2_conn->connection);
+            }
         }
     }
 
@@ -240,7 +244,8 @@ static int handle_h2_json_request(nghttp2_session *session, h2_connection_t *h2_
     }
 
     int remote_window = nghttp2_session_get_stream_remote_window_size(session, stream_id);
-    if (__builtin_expect(remote_window <= 0, 0)) {
+    int session_window = nghttp2_session_get_remote_window_size(session);
+    if (__builtin_expect(remote_window <= 0 || session_window <= 0, 0)) {
         nghttp2_submit_rst_stream(session, NGHTTP2_FLAG_NONE, stream_id, NGHTTP2_FLOW_CONTROL_ERROR);
         return 0;
     }
@@ -261,6 +266,9 @@ static int handle_h2_json_request(nghttp2_session *session, h2_connection_t *h2_
         return 0;
     }
 
+    if (h2_conn->active_dynamic_streams == 0) {
+        conn_mark_stalled(h2_conn->worker, h2_conn->connection);
+    }
     h2_conn->active_dynamic_streams++;
     size_t json_serialized_length = json_serialize((size_t)item_count, multiplier, json_serialized_buffer, 16384);
 

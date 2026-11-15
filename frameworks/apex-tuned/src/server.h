@@ -50,6 +50,11 @@ struct conn_s {
     bool keep_alive;
     bool closing;
 
+    bool in_stalled_list;
+    uint64_t stalled_since_ms;
+    conn_t *stalled_prev;
+    conn_t *stalled_next;
+
     uint64_t last_active_ms;
     conn_t *active_prev;
     conn_t *active_next;
@@ -76,6 +81,8 @@ struct worker_s {
     conn_t *free_conns;
     conn_t *active_head;
     conn_t *active_tail;
+    conn_t *stalled_head;
+    conn_t *stalled_tail;
     uint64_t last_trim_ms;
     uint64_t last_malloc_trim_ms;
 

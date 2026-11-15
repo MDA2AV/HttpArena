@@ -77,14 +77,57 @@ conn_t *alloc_conn(worker_t *worker, int client_fd, bool is_tls, SSL *ssl_sessio
     connection->next_free = NULL;
     connection->active_prev = NULL;
     connection->active_next = NULL;
+    connection->in_stalled_list = false;
+    connection->stalled_since_ms = 0;
+    connection->stalled_prev = NULL;
+    connection->stalled_next = NULL;
     connection->last_active_ms = clock_monotonic_ms();
 
     conn_list_insert_tail(worker, connection);
     return connection;
 }
 
+void conn_mark_stalled(worker_t *worker, conn_t *connection) {
+    if (connection->in_stalled_list) {
+        return;
+    }
+    connection->in_stalled_list = true;
+    connection->stalled_since_ms = clock_monotonic_ms();
+    connection->stalled_next = NULL;
+    connection->stalled_prev = worker->stalled_tail;
+    if (worker->stalled_tail) {
+        worker->stalled_tail->stalled_next = connection;
+    } else {
+        worker->stalled_head = connection;
+    }
+    worker->stalled_tail = connection;
+}
+
+void conn_unmark_stalled(worker_t *worker, conn_t *connection) {
+    if (!connection->in_stalled_list) {
+        return;
+    }
+    if (connection->stalled_prev) {
+        connection->stalled_prev->stalled_next = connection->stalled_next;
+    } else if (worker->stalled_head == connection) {
+        worker->stalled_head = connection->stalled_next;
+    }
+
+    if (connection->stalled_next) {
+        connection->stalled_next->stalled_prev = connection->stalled_prev;
+    } else if (worker->stalled_tail == connection) {
+        worker->stalled_tail = connection->stalled_prev;
+    }
+
+    connection->in_stalled_list = false;
+    connection->stalled_since_ms = 0;
+    connection->stalled_prev = NULL;
+    connection->stalled_next = NULL;
+}
+
 void close_conn(worker_t *worker, conn_t *connection) {
     conn_list_remove(worker, connection);
+    conn_unmark_stalled(worker, connection);
 
     if (connection->parked_in_timer) {
         timer_wheel_cancel(&worker->timers, connection);
@@ -140,6 +183,15 @@ void trim_inactive_connections(worker_t *worker, uint64_t current_time_ms) {
         return;
     }
     worker->last_trim_ms = current_time_ms;
+
+    conn_t *stalled_curr = worker->stalled_head;
+    while (stalled_curr) {
+        conn_t *stalled_next = stalled_curr->stalled_next;
+        if (current_time_ms - stalled_curr->stalled_since_ms > 5000) {
+            close_conn(worker, stalled_curr);
+        }
+        stalled_curr = stalled_next;
+    }
 
     while (worker->active_head) {
         conn_t *oldest_connection = worker->active_head;

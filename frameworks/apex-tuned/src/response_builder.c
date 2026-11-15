@@ -182,6 +182,7 @@ bool flush_pending_write(worker_t *worker, conn_t *connection) {
     connection->pending_write = NULL;
     connection->pending_write_len = 0;
     connection->pending_write_sent = 0;
+    conn_unmark_stalled(worker, connection);
 
     struct epoll_event event_config = {.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
                                        .data.ptr = connection};
@@ -265,6 +266,7 @@ void flush_data(worker_t *worker, conn_t *connection, const char *data, size_t l
         memcpy(connection->pending_write, data + sent_bytes, unsent_bytes);
         connection->pending_write_len = unsent_bytes;
         connection->pending_write_sent = 0;
+        conn_mark_stalled(worker, connection);
 
         struct epoll_event event_config = {
             .events = EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLHUP | EPOLLERR, .data.ptr = connection};

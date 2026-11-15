@@ -311,6 +311,11 @@ void *worker_thread_main(void *thread_argument) {
                 continue;
             }
 
+            if (connection->in_stalled_list && (current_time_ms - connection->stalled_since_ms > 5000)) {
+                close_conn(worker, connection);
+                continue;
+            }
+
             conn_touch(worker, connection, current_time_ms);
 
             if (connection->is_tls && !connection->tls_handshake_done) {
