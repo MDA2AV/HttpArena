@@ -268,13 +268,6 @@ void *worker_thread_main(void *thread_argument) {
         current_time_ms = clock_monotonic_ms();
         trim_inactive_connections(worker, current_time_ms);
 
-#if defined(__linux__)
-        if (worker->id == 0 && (current_time_ms - worker->last_trim_ms >= 5000)) {
-            worker->last_trim_ms = current_time_ms;
-            malloc_trim(0);
-        }
-#endif
-
         timer_wheel_process_expired(&worker->timers, worker, current_time_ms);
 
         for (int event_index = 0; event_index < num_ready_descriptors; event_index++) {

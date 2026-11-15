@@ -24,11 +24,6 @@ static void handle_sig(int sig) {
 }
 
 int main(void) {
-#if defined(__linux__) && defined(__GLIBC__)
-    mallopt(M_TRIM_THRESHOLD, 64 * 1024);
-    mallopt(M_MMAP_THRESHOLD, 64 * 1024);
-#endif
-
     signal(SIGINT, handle_sig);
     signal(SIGTERM, handle_sig);
     signal(SIGPIPE, SIG_IGN);
