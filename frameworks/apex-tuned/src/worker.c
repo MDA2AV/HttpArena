@@ -424,8 +424,37 @@ void *worker_thread_main(void *thread_argument) {
                     }
 
                     if (connection->read_pos == connection->read_cap) {
-                        close_conn(worker, connection);
-                        break;
+                        const char *header_end = memmem(connection->read_buf, connection->read_pos, "\r\n\r\n", 4);
+                        if (!header_end && connection->read_cap >= 16384) {
+                            close_conn(worker, connection);
+                            break;
+                        }
+                        size_t new_capacity = connection->read_cap * 2;
+                        if (new_capacity < 65536) {
+                            new_capacity = 65536;
+                        }
+                        if (new_capacity > 256 * 1024) {
+                            new_capacity = 256 * 1024;
+                        }
+                        if (new_capacity > connection->read_cap) {
+                            char *new_buffer = malloc(new_capacity);
+                            if (!new_buffer) {
+                                close_conn(worker, connection);
+                                break;
+                            }
+                            memcpy(new_buffer, connection->read_buf, connection->read_pos);
+                            if (connection->has_pooled_buffer) {
+                                buffer_pool_release(&worker->buffer_pool, connection->read_buf);
+                                connection->has_pooled_buffer = false;
+                            } else {
+                                free(connection->read_buf);
+                            }
+                            connection->read_buf = new_buffer;
+                            connection->read_cap = new_capacity;
+                        } else {
+                            close_conn(worker, connection);
+                            break;
+                        }
                     }
 
                     size_t available_space = connection->read_cap - connection->read_pos;
