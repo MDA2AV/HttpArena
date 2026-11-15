@@ -60,7 +60,14 @@ variants are already on disk.
   default quality 4 and ~26 us at quality 0, for 1489 -> 1944 bytes on the wire.
 - A coded body that is no shorter is sent as it was, and every response that could have been
   coded carries `Vary: Accept-Encoding`.
-- Writers are recycled through `sync.Pool`, and the coded body is copied out of a pooled buffer
-  at its exact length; one zstd encoder serves every request through `EncodeAll`, and brotli
-  goes through go-brrr's one-shot `Compress`, which keeps its own encoders per quality. On 8
-  CPUs go-brrr took `json-comp` from 115k to 202k req/s against andybalholm/brotli.
+- Writers are recycled through `sync.Pool` (go-brrr's `Writer`, reset with the body's length
+  as its size hint, as its one-shot `Compress` is told it), and one zstd encoder serves every
+  request through `EncodeAll`. On 8 CPUs go-brrr took `json-comp` from 115k to 202k req/s
+  against andybalholm/brotli.
+- The coded body is written into a pooled buffer, which goes back to the pool from an
+  `OnFinish` hook. Only on HTTP/1, and only for a coded body of 4 KiB or less: fib v1.8.0's
+  HTTP/1 send copies a body that short into the connection's buffer, and sends a longer one
+  from the array itself, as HTTP/2 and HTTP/3 do every body, so those arrays are left to the
+  collector. A coded `/json/50` is under 2 KB in every coding.
+- `Accept-Encoding` is parsed once per distinct value: the last one and the coding it chose
+  are kept, so the `gzip, br` every `json-comp` request sends is answered by one comparison.
