@@ -51,7 +51,7 @@ type stats struct {
 	FramesSent      int64   `json:"frames_sent,omitempty"`
 	BytesSent       int64   `json:"bytes_sent,omitempty"`
 	DripSentBytes   int64   `json:"drip_sent_bytes,omitempty"`  // slow/drip engines (scorer reads this, not bytes_sent)
-	EndpointMissing bool    `json:"endpoint_missing,omitempty"` // parser attack: the entry has no /parse → no-endpoint verdict
+	EndpointMissing int32   `json:"endpoint_missing,omitempty"` // atomic 0/1: parser attack, entry has no /parse → no-endpoint verdict
 	ElapsedS        float64 `json:"elapsed_s"`
 	Client          string  `json:"client"`
 }
@@ -889,7 +889,7 @@ func main() {
 				FramesSent:      atomic.LoadInt64(&st.FramesSent),
 				BytesSent:       atomic.LoadInt64(&st.BytesSent),
 				DripSentBytes:   atomic.LoadInt64(&st.DripSentBytes),
-				EndpointMissing: st.EndpointMissing,
+				EndpointMissing: atomic.LoadInt32(&st.EndpointMissing),
 				ElapsedS:        time.Since(start).Seconds(),
 			}
 			// Connections still held when the attack ended (not reaped) — the

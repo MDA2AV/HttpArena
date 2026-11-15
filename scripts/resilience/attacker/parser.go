@@ -86,7 +86,7 @@ func endpointPresent(c *config, path string) bool {
 // reports no-endpoint instead of a meaningless "survived".
 func h1RequestFlood(c *config, st *stats, req []byte, requireEndpoint string) {
 	if requireEndpoint != "" && !endpointPresent(c, requireEndpoint) {
-		st.EndpointMissing = true
+		atomic.StoreInt32(&st.EndpointMissing, 1)
 		return
 	}
 	alpn := h1ALPN(c)
