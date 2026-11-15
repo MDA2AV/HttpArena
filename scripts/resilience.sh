@@ -4,7 +4,7 @@
 #
 #   ./scripts/resilience.sh <framework> [--save] [attack ...]
 #
-# The entry runs in a fixed box (RES_MEM / RES_CPUSET, default 8g / 2 CPUs) so an
+# The entry runs in a fixed box (RES_MEM / RES_CPUSET, default 4g / 2 CPUs) so an
 # attack that exhausts memory OOM-kills the container — a signal we can read —
 # instead of taking the host down. Each attack gets a FRESH container (a crash in
 # one must not cost another its verdict), reusing the normal entry launch path
@@ -44,7 +44,7 @@ done
 [ -n "${POSITIONAL[0]:-}" ] || fail "usage: resilience.sh <framework> [--save] [attack ...]"
 
 # ── Knobs (all env-overridable) ──────────────────────────────────────────────
-RES_MEM="${RES_MEM:-8g}"             # the box the entry runs in
+RES_MEM="${RES_MEM:-4g}"             # the box the entry runs in
 # One physical core + its SMT sibling — a tight "2 hardware threads on 1 core" box,
 # read from the CPU topology. A blind "0-1" is wrong on CPUs whose thread siblings
 # aren't adjacent (e.g. 0,16): it would hand the server two SEPARATE physical cores,
