@@ -218,21 +218,18 @@ jobs:
               fi
               echo "::endgroup::"
             fi
-            # The resilience suite, for entries that opt in with "resilience":
-            # true in meta.json (scripts/resilience.sh). It is destructive and
-            # needs the whole machine, so it rides this exclusive slot: on a full
-            # benchmark (no -t) that succeeded, or on its own via /resilience
-            # (RESILIENCE_ONLY, which builds the image itself since no benchmark
-            # did). resilience.sh self-gates on the flag too, so this is a quick
-            # no-op for an entry that did not opt in. Verdicts go to disk, commit
-            # only on --save.
-            if [ "$SPEC_ONLY" != "true" ] && { [ "$RESILIENCE_ONLY" = "true" ] || { [ -z "$PROFILE" ] && $bench_ok; }; }; then
+            # The resilience suite (scripts/resilience.sh), for entries that opt in
+            # with "resilience": true in meta.json. Destructive and needs the whole
+            # machine, so it runs ONLY on its own via /resilience (RESILIENCE_ONLY) —
+            # a normal /benchmark never triggers it. It builds the image itself
+            # (nothing else did). resilience.sh self-gates on the meta flag too, so
+            # this is a quick no-op for an entry that did not opt in. Verdicts go to
+            # disk, committed only on --save.
+            if [ "$RESILIENCE_ONLY" = "true" ]; then
               res_on=$(python3 -c "import json,sys;print('1' if json.load(open('frameworks/%s/meta.json'%sys.argv[1])).get('resilience') else '0')" "$fw" 2>/dev/null || echo 0)
               if [ "$res_on" = "1" ]; then
                 echo "::group::resilience $fw"
-                res_skip_build=1
-                [ "$RESILIENCE_ONLY" = "true" ] && res_skip_build=0
-                if ! RES_SKIP_BUILD=$res_skip_build ./scripts/resilience.sh "$fw" --save 2>&1 | tee "/tmp/bench_logs/$fw.resilience.log"; then
+                if ! RES_SKIP_BUILD=0 ./scripts/resilience.sh "$fw" --save 2>&1 | tee "/tmp/bench_logs/$fw.resilience.log"; then
                   echo "::error::resilience.sh failed for $fw"
                   case " $FAILED " in
                     *" $fw "*) ;;
@@ -550,7 +547,7 @@ jobs:
           rm -rf /tmp/bench_logs /tmp/bench_body.txt /tmp/bench_full.txt /tmp/bench_table.txt /tmp/bench_comparison.md /tmp/pr_site_data /tmp/main_site_data /tmp/bench_site_data 2>/dev/null || true
 
       - name: Post resilience report to PR
-        if: always() && inputs.spec_only != 'true'
+        if: always() && inputs.resilience_only == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LIST: ${{ steps.resolve.outputs.list }}
