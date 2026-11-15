@@ -19,6 +19,7 @@ typedef struct h2_stream_slot_s {
     char request_path[H2_MAX_PATH_LENGTH];
     char inline_response_buffer[H2_INLINE_RESPONSE_BUFFER_SIZE];
     bool is_dynamic_buffer_static_memory;
+    bool is_pooled_buffer;
     bool is_head;
     bool accept_br;
     bool accept_gzip;
@@ -28,6 +29,7 @@ typedef struct h2_connection_s {
     conn_t *connection;
     worker_t *worker;
     nghttp2_session *session;
+    uint16_t active_dynamic_streams;
     h2_stream_slot_t stream_slots[H2_MAX_CONCURRENT_STREAMS];
 } h2_connection_t;
 

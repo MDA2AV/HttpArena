@@ -128,12 +128,18 @@ static int h2_on_stream_close_callback(nghttp2_session *session, int32_t stream_
     h2_stream_slot_t *slot = &h2_conn->stream_slots[stream_slot_index];
 
     if (slot->dynamic_response_buffer != NULL) {
-        if (!slot->is_dynamic_buffer_static_memory) {
+        if (slot->is_pooled_buffer) {
+            buffer_pool_release(&h2_conn->worker->buffer_pool, slot->dynamic_response_buffer);
+        } else if (!slot->is_dynamic_buffer_static_memory) {
             free(slot->dynamic_response_buffer);
         }
         slot->dynamic_response_buffer = NULL;
         slot->dynamic_response_length = 0;
         slot->is_dynamic_buffer_static_memory = false;
+        slot->is_pooled_buffer = false;
+        if (h2_conn->active_dynamic_streams > 0) {
+            h2_conn->active_dynamic_streams--;
+        }
     }
 
     slot->inline_response_length = 0;
@@ -233,16 +239,35 @@ static int handle_h2_json_request(nghttp2_session *session, h2_connection_t *h2_
             multiplier = 1;
     }
 
-    char *json_serialized_buffer = malloc(16384);
-    if (!json_serialized_buffer) {
-        return -1;
+    int remote_window = nghttp2_session_get_stream_remote_window_size(session, stream_id);
+    if (__builtin_expect(remote_window <= 0, 0)) {
+        nghttp2_submit_rst_stream(session, NGHTTP2_FLAG_NONE, stream_id, NGHTTP2_FLOW_CONTROL_ERROR);
+        return 0;
     }
 
+    if (__builtin_expect(h2_conn->active_dynamic_streams >= 64, 0)) {
+        nghttp2_submit_rst_stream(session, NGHTTP2_FLAG_NONE, stream_id, NGHTTP2_REFUSED_STREAM);
+        return 0;
+    }
+
+    char *json_serialized_buffer = buffer_pool_acquire(&h2_conn->worker->buffer_pool);
+    bool is_pooled = true;
+    if (!json_serialized_buffer) {
+        json_serialized_buffer = malloc(16384);
+        is_pooled = false;
+    }
+    if (!json_serialized_buffer) {
+        nghttp2_submit_rst_stream(session, NGHTTP2_FLAG_NONE, stream_id, NGHTTP2_INTERNAL_ERROR);
+        return 0;
+    }
+
+    h2_conn->active_dynamic_streams++;
     size_t json_serialized_length = json_serialize((size_t)item_count, multiplier, json_serialized_buffer, 16384);
 
     slot->dynamic_response_buffer = json_serialized_buffer;
     slot->dynamic_response_length = json_serialized_length;
     slot->is_dynamic_buffer_static_memory = false;
+    slot->is_pooled_buffer = is_pooled;
 
     nghttp2_nv response_headers[] = {
         {(uint8_t *)":status", (uint8_t *)"200", 7, 3, NGHTTP2_NV_FLAG_NONE},
@@ -451,9 +476,14 @@ void h2_connection_destroy(conn_t *connection) {
 
     for (int slot_index = 0; slot_index < H2_MAX_CONCURRENT_STREAMS; slot_index++) {
         h2_stream_slot_t *slot = &h2_conn->stream_slots[slot_index];
-        if (slot->dynamic_response_buffer != NULL && !slot->is_dynamic_buffer_static_memory) {
-            free(slot->dynamic_response_buffer);
+        if (slot->dynamic_response_buffer != NULL) {
+            if (slot->is_pooled_buffer) {
+                buffer_pool_release(&h2_conn->worker->buffer_pool, slot->dynamic_response_buffer);
+            } else if (!slot->is_dynamic_buffer_static_memory) {
+                free(slot->dynamic_response_buffer);
+            }
             slot->dynamic_response_buffer = NULL;
+            slot->is_pooled_buffer = false;
         }
     }
 

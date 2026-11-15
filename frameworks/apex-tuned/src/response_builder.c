@@ -203,6 +203,10 @@ void flush_data(worker_t *worker, conn_t *connection, const char *data, size_t l
     if (connection->pending_write) {
         size_t existing_remaining = connection->pending_write_len - connection->pending_write_sent;
         size_t new_total = existing_remaining + length;
+        if (__builtin_expect(new_total > 65536, 0)) {
+            close_conn(worker, connection);
+            return;
+        }
         char *reallocated_buffer = malloc(new_total);
         if (!reallocated_buffer) {
             close_conn(worker, connection);
@@ -249,6 +253,10 @@ void flush_data(worker_t *worker, conn_t *connection, const char *data, size_t l
 
     if (sent_bytes < length) {
         size_t unsent_bytes = length - sent_bytes;
+        if (__builtin_expect(unsent_bytes > 65536, 0)) {
+            close_conn(worker, connection);
+            return;
+        }
         connection->pending_write = malloc(unsent_bytes);
         if (!connection->pending_write) {
             close_conn(worker, connection);

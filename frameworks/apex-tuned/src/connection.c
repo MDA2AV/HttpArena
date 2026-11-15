@@ -144,7 +144,8 @@ void trim_inactive_connections(worker_t *worker, uint64_t current_time_ms) {
     while (worker->active_head) {
         conn_t *oldest_connection = worker->active_head;
         if (oldest_connection->parked_in_timer) {
-            break;
+            conn_touch(worker, oldest_connection, current_time_ms);
+            continue;
         }
 
         if (current_time_ms - oldest_connection->last_active_ms < IDLE_TIMEOUT_MS) {
