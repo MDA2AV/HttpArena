@@ -4,15 +4,15 @@
 
 typedef struct {
     uint64_t expire_at_us;
-    void    *conn_ptr;
+    void *conn_ptr;
     uint32_t conn_gen;
-    int64_t  delay_ms;
+    int64_t delay_ms;
 } timer_entry_t;
 
 typedef struct {
     timer_entry_t *entries;
-    size_t         count;
-    size_t         capacity;
+    size_t count;
+    size_t capacity;
 } timer_heap_t;
 
 void timer_heap_init(timer_heap_t *th, size_t initial_cap);

@@ -4,621 +4,654 @@
 #include "h2.h"
 
 static volatile bool g_running = true;
-static int           g_num_workers = 1;
-static worker_t     *g_workers = NULL;
+static int g_num_workers = 1;
+static worker_t *g_workers = NULL;
 static __thread worker_t *t_worker = NULL;
 
-static void handle_sig(int sig) {
-    (void)sig;
+static void handle_sig(int signal_number) {
+    (void)signal_number;
     _exit(0);
 }
 
-static inline void conn_list_insert_tail(worker_t *w, conn_t *c) {
-    c->active_prev = w->active_tail;
-    c->active_next = NULL;
-    if (w->active_tail) {
-        w->active_tail->active_next = c;
+static inline void conn_list_insert_tail(worker_t *worker, conn_t *connection) {
+    connection->active_prev = worker->active_tail;
+    connection->active_next = NULL;
+    if (worker->active_tail) {
+        worker->active_tail->active_next = connection;
     } else {
-        w->active_head = c;
+        worker->active_head = connection;
     }
-    w->active_tail = c;
+    worker->active_tail = connection;
 }
 
-static inline void conn_list_remove(worker_t *w, conn_t *c) {
-    if (c->active_prev || c->active_next || w->active_head == c || w->active_tail == c) {
-        if (c->active_prev) {
-            c->active_prev->active_next = c->active_next;
-        } else if (w->active_head == c) {
-            w->active_head = c->active_next;
+static inline void conn_list_remove(worker_t *worker, conn_t *connection) {
+    if (connection->active_prev || connection->active_next || worker->active_head == connection ||
+        worker->active_tail == connection) {
+        if (connection->active_prev) {
+            connection->active_prev->active_next = connection->active_next;
+        } else if (worker->active_head == connection) {
+            worker->active_head = connection->active_next;
         }
-        if (c->active_next) {
-            c->active_next->active_prev = c->active_prev;
-        } else if (w->active_tail == c) {
-            w->active_tail = c->active_prev;
+        if (connection->active_next) {
+            connection->active_next->active_prev = connection->active_prev;
+        } else if (worker->active_tail == connection) {
+            worker->active_tail = connection->active_prev;
         }
-        c->active_prev = NULL;
-        c->active_next = NULL;
+        connection->active_prev = NULL;
+        connection->active_next = NULL;
     }
 }
 
-static inline void conn_touch(worker_t *w, conn_t *c, uint64_t now_ms) {
-    c->last_active_ms = now_ms;
-    if (w->active_tail == c) return;
-    conn_list_remove(w, c);
-    conn_list_insert_tail(w, c);
+static inline void conn_touch(worker_t *worker, conn_t *connection, uint64_t current_time_ms) {
+    connection->last_active_ms = current_time_ms;
+    if (worker->active_tail == connection) {
+        return;
+    }
+    conn_list_remove(worker, connection);
+    conn_list_insert_tail(worker, connection);
 }
 
-static conn_t* alloc_conn(worker_t *w, int fd, bool is_tls, SSL *ssl) {
-    conn_t *c = w->free_conns;
-    if (c) {
-        w->free_conns = c->next_free;
+static conn_t *alloc_conn(worker_t *worker, int client_fd, bool is_tls, SSL *ssl_session) {
+    conn_t *connection = worker->free_conns;
+    if (connection) {
+        worker->free_conns = connection->next_free;
     } else {
-        c = calloc(1, sizeof(conn_t));
-        if (!c) return NULL;
-        c->read_buf = c->inline_read_buf;
-        c->read_cap = sizeof(c->inline_read_buf);
+        connection = calloc(1, sizeof(conn_t));
+        if (!connection) {
+            return NULL;
+        }
+        connection->read_buf = connection->inline_read_buf;
+        connection->read_cap = sizeof(connection->inline_read_buf);
     }
-    c->fd = fd;
-    c->gen++;
-    c->is_tls = is_tls;
-    c->ssl = ssl;
-    c->tls_handshake_done = false;
-    c->read_pos = 0;
-    c->pending_write = NULL;
-    c->pending_write_len = 0;
-    c->pending_write_sent = 0;
-    c->is_h2 = false;
-    c->h2 = NULL;
-    c->parked_in_timer = false;
-    c->keep_alive = true;
-    c->closing = false;
-    c->next_free = NULL;
-    c->active_prev = NULL;
-    c->active_next = NULL;
-    c->last_active_ms = clock_monotonic_ms();
-    conn_list_insert_tail(w, c);
-    return c;
+    connection->fd = client_fd;
+    connection->gen++;
+    connection->is_tls = is_tls;
+    connection->ssl = ssl_session;
+    connection->tls_handshake_done = false;
+    connection->read_pos = 0;
+    connection->pending_write = NULL;
+    connection->pending_write_len = 0;
+    connection->pending_write_sent = 0;
+    connection->is_h2 = false;
+    connection->h2 = NULL;
+    connection->parked_in_timer = false;
+    connection->keep_alive = true;
+    connection->closing = false;
+    connection->next_free = NULL;
+    connection->active_prev = NULL;
+    connection->active_next = NULL;
+    connection->last_active_ms = clock_monotonic_ms();
+    conn_list_insert_tail(worker, connection);
+    return connection;
 }
 
-void close_conn(worker_t *w, conn_t *c) {
-    conn_list_remove(w, c);
-    if (c->is_h2) {
-        h2_conn_free(c);
-        c->is_h2 = false;
+void close_conn(worker_t *worker, conn_t *connection) {
+    conn_list_remove(worker, connection);
+    if (connection->is_h2) {
+        h2_connection_destroy(connection);
+        connection->is_h2 = false;
     }
-    if (c->fd >= 0) {
-        epoll_ctl(w->epoll_fd, EPOLL_CTL_DEL, c->fd, NULL);
-        close(c->fd);
-        c->fd = -1;
+    if (connection->fd >= 0) {
+        epoll_ctl(worker->epoll_fd, EPOLL_CTL_DEL, connection->fd, NULL);
+        close(connection->fd);
+        connection->fd = -1;
     }
-    if (c->ssl) {
-        SSL_free(c->ssl);
-        c->ssl = NULL;
+    if (connection->ssl) {
+        SSL_free(connection->ssl);
+        connection->ssl = NULL;
     }
-    if (c->pending_write) {
-        free(c->pending_write);
-        c->pending_write = NULL;
+    if (connection->pending_write) {
+        free(connection->pending_write);
+        connection->pending_write = NULL;
     }
-    if (c->read_buf != c->inline_read_buf) {
-        free(c->read_buf);
-        c->read_buf = c->inline_read_buf;
-        c->read_cap = sizeof(c->inline_read_buf);
+    if (connection->read_buf != connection->inline_read_buf) {
+        free(connection->read_buf);
+        connection->read_buf = connection->inline_read_buf;
+        connection->read_cap = sizeof(connection->inline_read_buf);
     }
-    c->read_pos = 0;
-    c->pending_write_len = 0;
-    c->pending_write_sent = 0;
-    c->parked_in_timer = false;
-    c->closing = false;
-    c->gen++;
+    connection->read_pos = 0;
+    connection->pending_write_len = 0;
+    connection->pending_write_sent = 0;
+    connection->parked_in_timer = false;
+    connection->closing = false;
+    connection->gen++;
 
-    c->next_free = w->free_conns;
-    w->free_conns = c;
+    connection->next_free = worker->free_conns;
+    worker->free_conns = connection;
 }
 
-static void baseline_handler(context_t *ctx) {
-    request_t *req = ctx->req;
-    response_t *res = ctx->res;
-    conn_t *c = (conn_t*)ctx->user_data;
+static void baseline_handler(context_t *context) {
+    request_t *request = context->req;
+    response_t *response = context->res;
+    conn_t *connection = (conn_t *)context->user_data;
 
-    int64_t sum = 0;
-    for (size_t i = 0; i < req->num_params; i++) {
-        int64_t v = 0;
-        if (parse_i64(req->params[i].val.ptr, req->params[i].val.len, &v)) {
-            sum += v;
+    int64_t accumulated_sum = 0;
+    for (size_t i = 0; i < request->num_params; i++) {
+        int64_t parameter_value = 0;
+        if (parse_i64(request->params[i].val.ptr, request->params[i].val.len, &parameter_value)) {
+            accumulated_sum += parameter_value;
         }
     }
 
-    if (req->method == HTTP_METHOD_POST && req->body.len > 0) {
-        int64_t body_val = 0;
-        if (parse_i64(req->body.ptr, req->body.len, &body_val)) {
-            sum += body_val;
+    if (request->method == HTTP_METHOD_POST && request->body.len > 0) {
+        int64_t body_value = 0;
+        if (parse_i64(request->body.ptr, request->body.len, &body_value)) {
+            accumulated_sum += body_value;
         }
     }
 
-    size_t len = format_i64(c->scratch, sum);
-    res_set_text(res, c->scratch, len);
+    size_t formatted_length = format_i64(connection->scratch, accumulated_sum);
+    res_set_text(response, connection->scratch, formatted_length);
 }
 
-static void pipeline_handler(context_t *ctx) {
-    res_set_text(ctx->res, "ok", 2);
+static void pipeline_handler(context_t *context) {
+    res_set_text(context->res, "ok", 2);
 }
 
-static void delay_handler(context_t *ctx) {
-    request_t *req = ctx->req;
-    response_t *res = ctx->res;
-    conn_t *c = (conn_t*)ctx->user_data;
+static void delay_handler(context_t *context) {
+    request_t *request = context->req;
+    response_t *response = context->res;
+    conn_t *connection = (conn_t *)context->user_data;
 
-    int64_t ms = 0;
-    if (req->num_route_params > 0) {
-        str_view_t rp = req->route_params[0];
-        if (rp.len == 2 && rp.ptr[0] == '1' && rp.ptr[1] == '0') {
-            ms = 10;
+    int64_t delay_milliseconds = 0;
+    if (request->num_route_params > 0) {
+        str_view_t route_parameter = request->route_params[0];
+        if (route_parameter.len == 2 && route_parameter.ptr[0] == '1' && route_parameter.ptr[1] == '0') {
+            delay_milliseconds = 10;
         } else {
-            parse_i64(rp.ptr, rp.len, &ms);
+            parse_i64(route_parameter.ptr, route_parameter.len, &delay_milliseconds);
         }
     }
 
-    if (ms <= 0) {
-        size_t len = format_i64(c->scratch, 0);
-        res_set_text(res, c->scratch, len);
+    if (delay_milliseconds <= 0) {
+        size_t formatted_length = format_i64(connection->scratch, 0);
+        res_set_text(response, connection->scratch, formatted_length);
         return;
     }
 
-    c->parked_in_timer = true;
-    c->timer_expire_us = clock_monotonic_us() + (uint64_t)ms * 1000ULL;
-    c->timer_val_ms = ms;
-    c->keep_alive = req->keep_alive;
-    ctx->async_parked = true;
+    connection->parked_in_timer = true;
+    connection->timer_expire_us = clock_monotonic_us() + (uint64_t)delay_milliseconds * 1000ULL;
+    connection->timer_val_ms = delay_milliseconds;
+    connection->keep_alive = request->keep_alive;
+    context->async_parked = true;
 }
 
-static void json_handler(context_t *ctx) {
-    request_t *req = ctx->req;
-    response_t *res = ctx->res;
-    worker_t *w = t_worker;
+static void json_handler(context_t *context) {
+    request_t *request = context->req;
+    response_t *response = context->res;
+    worker_t *worker = t_worker;
 
-    int64_t count = 50;
-    if (req->num_route_params > 0) {
-        parse_i64(req->route_params[0].ptr, req->route_params[0].len, &count);
+    int64_t item_count = 50;
+    if (request->num_route_params > 0) {
+        parse_i64(request->route_params[0].ptr, request->route_params[0].len, &item_count);
     }
-    if (count < 1) count = 1;
-    if (count > 50) count = 50;
-
-    int64_t mult = 1;
-    str_view_t m_val;
-    if (req_get_query_param(req, "m", &m_val)) {
-        parse_i64(m_val.ptr, m_val.len, &mult);
+    if (item_count < 1) {
+        item_count = 1;
+    }
+    if (item_count > 50) {
+        item_count = 50;
     }
 
-    size_t json_len = json_serialize((size_t)count, mult, w->compress.json_buf, sizeof(w->compress.json_buf));
+    int64_t multiplier = 1;
+    str_view_t multiplier_parameter;
+    if (req_get_query_param(request, "m", &multiplier_parameter)) {
+        parse_i64(multiplier_parameter.ptr, multiplier_parameter.len, &multiplier);
+    }
 
-    bool can_br = (req->accept_encoding.ptr && strcasestr(req->accept_encoding.ptr, "br") != NULL);
-    bool can_gz = (req->accept_encoding.ptr && strcasestr(req->accept_encoding.ptr, "gzip") != NULL);
+    size_t json_length =
+        json_serialize((size_t)item_count, multiplier, worker->compress.json_buf, sizeof(worker->compress.json_buf));
 
-    if (can_gz) {
-        size_t comp_len = 0;
-        if (compress_gzip(&w->compress, w->compress.json_buf, json_len, w->compress.comp_buf, sizeof(w->compress.comp_buf), &comp_len) == 0) {
-            res_set_json(res, w->compress.comp_buf, comp_len);
-            res->content_encoding = "gzip";
+    bool client_accepts_brotli =
+        (request->accept_encoding.ptr && strcasestr(request->accept_encoding.ptr, "br") != NULL);
+    bool client_accepts_gzip =
+        (request->accept_encoding.ptr && strcasestr(request->accept_encoding.ptr, "gzip") != NULL);
+
+    if (client_accepts_gzip) {
+        size_t compressed_length = 0;
+        if (compress_gzip(&worker->compress, worker->compress.json_buf, json_length, worker->compress.comp_buf,
+                          sizeof(worker->compress.comp_buf), &compressed_length) == 0) {
+            res_set_json(response, worker->compress.comp_buf, compressed_length);
+            response->content_encoding = "gzip";
             return;
         }
     }
 
-    if (can_br) {
-        size_t comp_len = 0;
-        if (compress_brotli(w->compress.json_buf, json_len, w->compress.comp_buf, sizeof(w->compress.comp_buf), &comp_len) == 0) {
-            res_set_json(res, w->compress.comp_buf, comp_len);
-            res->content_encoding = "br";
+    if (client_accepts_brotli) {
+        size_t compressed_length = 0;
+        if (compress_brotli(worker->compress.json_buf, json_length, worker->compress.comp_buf,
+                            sizeof(worker->compress.comp_buf), &compressed_length) == 0) {
+            res_set_json(response, worker->compress.comp_buf, compressed_length);
+            response->content_encoding = "br";
             return;
         }
     }
 
-    res_set_json(res, w->compress.json_buf, json_len);
-    res->content_encoding = NULL;
+    res_set_json(response, worker->compress.json_buf, json_length);
+    response->content_encoding = NULL;
 }
 
-static void echo_handler(context_t *ctx) {
-    request_t *req = ctx->req;
-    response_t *res = ctx->res;
-    res_set_binary(res, req->body.ptr, req->body.len, "application/octet-stream");
+static void echo_handler(context_t *context) {
+    request_t *request = context->req;
+    response_t *response = context->res;
+    res_set_binary(response, request->body.ptr, request->body.len, "application/octet-stream");
 }
 
-static bool flush_pending_write(worker_t *w, conn_t *c) {
-    while (c->pending_write_sent < c->pending_write_len) {
-        size_t remaining = c->pending_write_len - c->pending_write_sent;
-        ssize_t n = 0;
-        if (c->is_tls) {
-            int ret = SSL_write(c->ssl, c->pending_write + c->pending_write_sent, (int)remaining);
-            if (ret <= 0) {
-                int err = SSL_get_error(c->ssl, ret);
-                if (err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_READ) {
+static bool flush_pending_write(worker_t *worker, conn_t *connection) {
+    while (connection->pending_write_sent < connection->pending_write_len) {
+        size_t remaining_bytes = connection->pending_write_len - connection->pending_write_sent;
+        ssize_t bytes_sent = 0;
+        if (connection->is_tls) {
+            int write_status = SSL_write(connection->ssl, connection->pending_write + connection->pending_write_sent,
+                                         (int)remaining_bytes);
+            if (write_status <= 0) {
+                int ssl_error = SSL_get_error(connection->ssl, write_status);
+                if (ssl_error == SSL_ERROR_WANT_WRITE || ssl_error == SSL_ERROR_WANT_READ) {
                     return false;
                 }
-                close_conn(w, c);
+                close_conn(worker, connection);
                 return false;
             }
-            n = ret;
+            bytes_sent = write_status;
         } else {
-            n = send(c->fd, c->pending_write + c->pending_write_sent, remaining, MSG_NOSIGNAL | MSG_DONTWAIT);
-            if (n < 0) {
+            bytes_sent = send(connection->fd, connection->pending_write + connection->pending_write_sent,
+                              remaining_bytes, MSG_NOSIGNAL | MSG_DONTWAIT);
+            if (bytes_sent < 0) {
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
                     return false;
                 }
-                close_conn(w, c);
+                close_conn(worker, connection);
                 return false;
             }
         }
-        c->pending_write_sent += (size_t)n;
+        connection->pending_write_sent += (size_t)bytes_sent;
     }
 
-    free(c->pending_write);
-    c->pending_write = NULL;
-    c->pending_write_len = 0;
-    c->pending_write_sent = 0;
+    free(connection->pending_write);
+    connection->pending_write = NULL;
+    connection->pending_write_len = 0;
+    connection->pending_write_sent = 0;
 
-    struct epoll_event ev = {
-        .events = EPOLLIN | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
-        .data.ptr = c
-    };
-    epoll_ctl(w->epoll_fd, EPOLL_CTL_MOD, c->fd, &ev);
+    struct epoll_event event = {.events = EPOLLIN | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR, .data.ptr = connection};
+    epoll_ctl(worker->epoll_fd, EPOLL_CTL_MOD, connection->fd, &event);
 
-    if (c->closing || !c->keep_alive) {
-        close_conn(w, c);
+    if (connection->closing || !connection->keep_alive) {
+        close_conn(worker, connection);
         return false;
     }
 
     return true;
 }
 
-void flush_data(worker_t *w, conn_t *c, const char *data, size_t len) {
-    if (len == 0) return;
-    size_t sent = 0;
+void flush_data(worker_t *worker, conn_t *connection, const char *data, size_t length) {
+    if (length == 0) {
+        return;
+    }
+    size_t total_sent_bytes = 0;
 
-    while (sent < len) {
-        ssize_t n = 0;
-        if (c->is_tls) {
-            int ret = SSL_write(c->ssl, data + sent, (int)(len - sent));
-            if (ret <= 0) {
-                int err = SSL_get_error(c->ssl, ret);
-                if (err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_READ) {
+    while (total_sent_bytes < length) {
+        ssize_t bytes_sent = 0;
+        if (connection->is_tls) {
+            int write_status = SSL_write(connection->ssl, data + total_sent_bytes, (int)(length - total_sent_bytes));
+            if (write_status <= 0) {
+                int ssl_error = SSL_get_error(connection->ssl, write_status);
+                if (ssl_error == SSL_ERROR_WANT_WRITE || ssl_error == SSL_ERROR_WANT_READ) {
                     break;
                 }
-                close_conn(w, c);
+                close_conn(worker, connection);
                 return;
             }
-            n = ret;
+            bytes_sent = write_status;
         } else {
-            n = send(c->fd, data + sent, len - sent, MSG_NOSIGNAL | MSG_DONTWAIT);
-            if (n < 0) {
+            bytes_sent =
+                send(connection->fd, data + total_sent_bytes, length - total_sent_bytes, MSG_NOSIGNAL | MSG_DONTWAIT);
+            if (bytes_sent < 0) {
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
                     break;
                 }
-                close_conn(w, c);
+                close_conn(worker, connection);
                 return;
             }
         }
-        sent += (size_t)n;
+        total_sent_bytes += (size_t)bytes_sent;
     }
 
-    if (sent < len) {
-        size_t rem = len - sent;
-        c->pending_write = malloc(rem);
-        if (!c->pending_write) {
-            close_conn(w, c);
+    if (total_sent_bytes < length) {
+        size_t unsent_bytes = length - total_sent_bytes;
+        connection->pending_write = malloc(unsent_bytes);
+        if (!connection->pending_write) {
+            close_conn(worker, connection);
             return;
         }
-        memcpy(c->pending_write, data + sent, rem);
-        c->pending_write_len = rem;
-        c->pending_write_sent = 0;
+        memcpy(connection->pending_write, data + total_sent_bytes, unsent_bytes);
+        connection->pending_write_len = unsent_bytes;
+        connection->pending_write_sent = 0;
 
-        struct epoll_event ev = {
-            .events = EPOLLIN | EPOLLOUT | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
-            .data.ptr = c
-        };
-        epoll_ctl(w->epoll_fd, EPOLL_CTL_MOD, c->fd, &ev);
+        struct epoll_event event = {.events = EPOLLIN | EPOLLOUT | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
+                                    .data.ptr = connection};
+        epoll_ctl(worker->epoll_fd, EPOLL_CTL_MOD, connection->fd, &event);
         return;
     }
 
-    if (c->closing || !c->keep_alive) {
-        close_conn(w, c);
+    if (connection->closing || !connection->keep_alive) {
+        close_conn(worker, connection);
     }
 }
 
-static inline int64_t fast_parse_int(const char *p, size_t len) {
-    const char *end = p + len;
-    while (p < end && (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')) p++;
-    int neg = 0;
-    if (p < end && *p == '-') { neg = 1; p++; }
-    int64_t n = 0;
-    while (p < end && *p >= '0' && *p <= '9') {
-        n = n * 10 + (*p - '0');
-        p++;
+static inline int64_t parse_integer_fast(const char *buffer, size_t length) {
+    const char *cursor = buffer;
+    const char *end_cursor = buffer + length;
+    while (cursor < end_cursor && (*cursor == ' ' || *cursor == '\t' || *cursor == '\r' || *cursor == '\n')) {
+        cursor++;
     }
-    return neg ? -n : n;
+    int sign_multiplier = 1;
+    if (cursor < end_cursor && *cursor == '-') {
+        sign_multiplier = -1;
+        cursor++;
+    }
+    int64_t accumulated_value = 0;
+    while (cursor < end_cursor && *cursor >= '0' && *cursor <= '9') {
+        accumulated_value = accumulated_value * 10 + (*cursor - '0');
+        cursor++;
+    }
+    return sign_multiplier * accumulated_value;
 }
 
-static inline int64_t fast_sum_query(const char *p, size_t len) {
-    const char *end = p + len;
-    int64_t sum = 0;
-    while (p < end) {
-        const char *eq = memchr(p, '=', (size_t)(end - p));
-        if (!eq) break;
-        const char *v = eq + 1;
-        const char *amp = memchr(v, '&', (size_t)(end - v));
-        const char *ve = amp ? amp : end;
-        while (v < ve && (*v == ' ' || *v == '\t')) v++;
-        int neg = 0;
-        if (v < ve && *v == '-') { neg = 1; v++; }
-        int64_t n = 0;
-        while (v < ve && *v >= '0' && *v <= '9') {
-            n = n * 10 + (*v - '0');
-            v++;
+static inline int64_t calculate_query_integer_sum_fast(const char *query_buffer, size_t query_length) {
+    const char *cursor = query_buffer;
+    const char *end_cursor = query_buffer + query_length;
+    int64_t accumulated_sum = 0;
+
+    while (cursor < end_cursor) {
+        const char *equals_separator = memchr(cursor, '=', (size_t)(end_cursor - cursor));
+        if (!equals_separator) {
+            break;
         }
-        sum += neg ? -n : n;
-        p = amp ? amp + 1 : end;
+        const char *value_cursor = equals_separator + 1;
+        const char *ampersand_separator = memchr(value_cursor, '&', (size_t)(end_cursor - value_cursor));
+        const char *value_end = ampersand_separator ? ampersand_separator : end_cursor;
+
+        while (value_cursor < value_end && (*value_cursor == ' ' || *value_cursor == '\t')) {
+            value_cursor++;
+        }
+        int sign_multiplier = 1;
+        if (value_cursor < value_end && *value_cursor == '-') {
+            sign_multiplier = -1;
+            value_cursor++;
+        }
+        int64_t integer_value = 0;
+        while (value_cursor < value_end && *value_cursor >= '0' && *value_cursor <= '9') {
+            integer_value = integer_value * 10 + (*value_cursor - '0');
+            value_cursor++;
+        }
+        accumulated_sum += sign_multiplier * integer_value;
+        cursor = ampersand_separator ? ampersand_separator + 1 : end_cursor;
     }
-    return sum;
+    return accumulated_sum;
 }
 
-static void process_requests(worker_t *w, conn_t *c) {
+static inline size_t format_plain_text_pipeline_response(char *destination_buffer, bool is_keep_alive,
+                                                         bool *out_is_closing_requested) {
+    if (__builtin_expect(is_keep_alive, 1)) {
+        static const char response_pipeline_keep_alive[] =
+            "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: keep-alive\r\nContent-Length: 2\r\n\r\nok";
+        memcpy(destination_buffer, response_pipeline_keep_alive, sizeof(response_pipeline_keep_alive) - 1);
+        return sizeof(response_pipeline_keep_alive) - 1;
+    } else {
+        static const char response_pipeline_close[] =
+            "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\nContent-Length: 2\r\n\r\nok";
+        memcpy(destination_buffer, response_pipeline_close, sizeof(response_pipeline_close) - 1);
+        *out_is_closing_requested = true;
+        return sizeof(response_pipeline_close) - 1;
+    }
+}
+
+static inline size_t format_plain_text_baseline_response(char *destination_buffer, int64_t sum_value,
+                                                         bool is_keep_alive, bool *out_is_closing_requested) {
+    char number_buffer[32];
+    size_t number_length = (size_t)format_i64(number_buffer, sum_value);
+    char *cursor = destination_buffer;
+
+    if (__builtin_expect(is_keep_alive, 1)) {
+        static const char header_keep_alive[] =
+            "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: keep-alive\r\nContent-Length: ";
+        memcpy(cursor, header_keep_alive, sizeof(header_keep_alive) - 1);
+        cursor += sizeof(header_keep_alive) - 1;
+        cursor += format_i64(cursor, (int64_t)number_length);
+        *cursor++ = '\r';
+        *cursor++ = '\n';
+        *cursor++ = '\r';
+        *cursor++ = '\n';
+        memcpy(cursor, number_buffer, number_length);
+        cursor += number_length;
+    } else {
+        static const char header_close[] =
+            "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\nContent-Length: ";
+        memcpy(cursor, header_close, sizeof(header_close) - 1);
+        cursor += sizeof(header_close) - 1;
+        cursor += format_i64(cursor, (int64_t)number_length);
+        *cursor++ = '\r';
+        *cursor++ = '\n';
+        *cursor++ = '\r';
+        *cursor++ = '\n';
+        memcpy(cursor, number_buffer, number_length);
+        cursor += number_length;
+        *out_is_closing_requested = true;
+    }
+    return (size_t)(cursor - destination_buffer);
+}
+
+static void process_requests(worker_t *worker, conn_t *connection) {
     size_t write_pos = 0;
     size_t read_offset = 0;
 
-    while (c->read_pos > read_offset && !c->parked_in_timer && !c->closing) {
-        request_t req;
-        size_t consumed = 0;
-        int rc = parse_http_request(c->read_buf + read_offset, c->read_pos - read_offset, &req, w->chunk_buf, sizeof(w->chunk_buf), &consumed);
+    while (connection->read_pos > read_offset && !connection->parked_in_timer && !connection->closing) {
+        request_t request;
+        size_t consumed_bytes = 0;
+        int parse_status = parse_http_request(connection->read_buf + read_offset, connection->read_pos - read_offset,
+                                              &request, worker->chunk_buf, sizeof(worker->chunk_buf), &consumed_bytes);
 
-        if (rc == 0) {
+        if (parse_status == 0) {
             break;
         }
-        if (rc < 0) {
-            close_conn(w, c);
+        if (parse_status < 0) {
+            close_conn(worker, connection);
             return;
         }
 
-        c->keep_alive = req.keep_alive;
+        connection->keep_alive = request.keep_alive;
 
         // ── Ultra-fast path for /pipeline ──
-        if (__builtin_expect(req.path.len == 9 && memcmp(req.path.ptr, "/pipeline", 9) == 0, 0)) {
-            if (sizeof(w->write_buf) - write_pos < 128) {
+        if (__builtin_expect(request.path.len == 9 && memcmp(request.path.ptr, "/pipeline", 9) == 0, 0)) {
+            if (sizeof(worker->write_buf) - write_pos < 128) {
                 if (write_pos > 0) {
-                    flush_data(w, c, w->write_buf, write_pos);
+                    flush_data(worker, connection, worker->write_buf, write_pos);
                     write_pos = 0;
                 }
             }
-            char *p = w->write_buf + write_pos;
-            if (__builtin_expect(c->keep_alive, 1)) {
-                static const char pipeline_res[] = 
-                    "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: keep-alive\r\nContent-Length: 2\r\n\r\nok";
-                memcpy(p, pipeline_res, sizeof(pipeline_res) - 1);
-                p += sizeof(pipeline_res) - 1;
-            } else {
-                static const char pipeline_res_close[] = 
-                    "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\nContent-Length: 2\r\n\r\nok";
-                memcpy(p, pipeline_res_close, sizeof(pipeline_res_close) - 1);
-                p += sizeof(pipeline_res_close) - 1;
-                c->closing = true;
-            }
-            write_pos = (size_t)(p - w->write_buf);
-            read_offset += consumed;
+            write_pos += format_plain_text_pipeline_response(worker->write_buf + write_pos, connection->keep_alive,
+                                                             &connection->closing);
+            read_offset += consumed_bytes;
             continue;
         }
 
         // ── Ultra-fast path for /baseline11 ──
-        if (__builtin_expect(req.path.len == 11 && memcmp(req.path.ptr, "/baseline11", 11) == 0, 0)) {
-            int64_t sum = req.query.len > 0 ? fast_sum_query(req.query.ptr, req.query.len) : 0;
-            if (req.method == HTTP_METHOD_POST && req.body.len > 0) {
-                sum += fast_parse_int(req.body.ptr, req.body.len);
+        if (__builtin_expect(request.path.len == 11 && memcmp(request.path.ptr, "/baseline11", 11) == 0, 0)) {
+            int64_t accumulated_sum =
+                request.query.len > 0 ? calculate_query_integer_sum_fast(request.query.ptr, request.query.len) : 0;
+            if (request.method == HTTP_METHOD_POST && request.body.len > 0) {
+                accumulated_sum += parse_integer_fast(request.body.ptr, request.body.len);
             }
 
-            char num_buf[32];
-            size_t num_len = (size_t)format_i64(num_buf, sum);
-
-            if (sizeof(w->write_buf) - write_pos < 128) {
+            if (sizeof(worker->write_buf) - write_pos < 128) {
                 if (write_pos > 0) {
-                    flush_data(w, c, w->write_buf, write_pos);
+                    flush_data(worker, connection, worker->write_buf, write_pos);
                     write_pos = 0;
                 }
             }
 
-            char *p = w->write_buf + write_pos;
-            if (__builtin_expect(c->keep_alive, 1)) {
-                static const char h_ka[] = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: keep-alive\r\nContent-Length: ";
-                memcpy(p, h_ka, sizeof(h_ka) - 1);
-                p += sizeof(h_ka) - 1;
-                p += format_i64(p, (int64_t)num_len);
-                *p++ = '\r'; *p++ = '\n';
-                *p++ = '\r'; *p++ = '\n';
-                memcpy(p, num_buf, num_len);
-                p += num_len;
-            } else {
-                static const char h_cl[] = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\nContent-Length: ";
-                memcpy(p, h_cl, sizeof(h_cl) - 1);
-                p += sizeof(h_cl) - 1;
-                p += format_i64(p, (int64_t)num_len);
-                *p++ = '\r'; *p++ = '\n';
-                *p++ = '\r'; *p++ = '\n';
-                memcpy(p, num_buf, num_len);
-                p += num_len;
-                c->closing = true;
-            }
-
-            write_pos = (size_t)(p - w->write_buf);
-            read_offset += consumed;
+            write_pos += format_plain_text_baseline_response(worker->write_buf + write_pos, accumulated_sum,
+                                                             connection->keep_alive, &connection->closing);
+            read_offset += consumed_bytes;
             continue;
         }
 
         // ── Ultra-fast path for /baseline2 ──
-        if (__builtin_expect(req.path.len == 10 && memcmp(req.path.ptr, "/baseline2", 10) == 0, 0)) {
-            int64_t sum = req.query.len > 0 ? fast_sum_query(req.query.ptr, req.query.len) : 0;
-            char num_buf[32];
-            size_t num_len = (size_t)format_i64(num_buf, sum);
+        if (__builtin_expect(request.path.len == 10 && memcmp(request.path.ptr, "/baseline2", 10) == 0, 0)) {
+            int64_t accumulated_sum =
+                request.query.len > 0 ? calculate_query_integer_sum_fast(request.query.ptr, request.query.len) : 0;
 
-            if (sizeof(w->write_buf) - write_pos < 128) {
+            if (sizeof(worker->write_buf) - write_pos < 128) {
                 if (write_pos > 0) {
-                    flush_data(w, c, w->write_buf, write_pos);
+                    flush_data(worker, connection, worker->write_buf, write_pos);
                     write_pos = 0;
                 }
             }
 
-            char *p = w->write_buf + write_pos;
-            if (__builtin_expect(c->keep_alive, 1)) {
-                static const char h_ka[] = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: keep-alive\r\nContent-Length: ";
-                memcpy(p, h_ka, sizeof(h_ka) - 1);
-                p += sizeof(h_ka) - 1;
-                p += format_i64(p, (int64_t)num_len);
-                *p++ = '\r'; *p++ = '\n';
-                *p++ = '\r'; *p++ = '\n';
-                memcpy(p, num_buf, num_len);
-                p += num_len;
-            } else {
-                static const char h_cl[] = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\nContent-Length: ";
-                memcpy(p, h_cl, sizeof(h_cl) - 1);
-                p += sizeof(h_cl) - 1;
-                p += format_i64(p, (int64_t)num_len);
-                *p++ = '\r'; *p++ = '\n';
-                *p++ = '\r'; *p++ = '\n';
-                memcpy(p, num_buf, num_len);
-                p += num_len;
-                c->closing = true;
-            }
-
-            write_pos = (size_t)(p - w->write_buf);
-            read_offset += consumed;
+            write_pos += format_plain_text_baseline_response(worker->write_buf + write_pos, accumulated_sum,
+                                                             connection->keep_alive, &connection->closing);
+            read_offset += consumed_bytes;
             continue;
         }
 
-        response_t res;
-        res_init(&res, c->keep_alive);
+        response_t response;
+        res_init(&response, connection->keep_alive);
 
-        bool async_parked = false;
-        if (!router_dispatch(&w->router, &req, &res, c, &async_parked)) {
-            res_set_status(&res, 404);
-            res_set_text(&res, "Not Found", 9);
+        bool is_async_parked = false;
+        if (!router_dispatch(&worker->router, &request, &response, connection, &is_async_parked)) {
+            res_set_status(&response, 404);
+            res_set_text(&response, "Not Found", 9);
         }
 
-        if (async_parked) {
-            timer_heap_push(&w->timers, c->timer_expire_us, c, c->gen, c->timer_val_ms);
-            read_offset += consumed;
+        if (is_async_parked) {
+            timer_heap_push(&worker->timers, connection->timer_expire_us, connection, connection->gen,
+                            connection->timer_val_ms);
+            read_offset += consumed_bytes;
             break;
         }
 
-        size_t remaining_space = sizeof(w->write_buf) - write_pos;
-        size_t written = res_serialize(&res, w->write_buf + write_pos, remaining_space);
-        if (res.body_needs_free && res.body) {
-            free((void*)res.body);
+        size_t remaining_space = sizeof(worker->write_buf) - write_pos;
+        size_t bytes_written = res_serialize(&response, worker->write_buf + write_pos, remaining_space);
+        if (response.body_needs_free && response.body) {
+            free((void *)response.body);
         }
 
-        if (written == 0) {
-            close_conn(w, c);
+        if (bytes_written == 0) {
+            close_conn(worker, connection);
             return;
         }
 
-        write_pos += written;
-        read_offset += consumed;
+        write_pos += bytes_written;
+        read_offset += consumed_bytes;
 
-        if (!c->keep_alive) {
-            c->closing = true;
+        if (!connection->keep_alive) {
+            connection->closing = true;
         }
     }
 
     if (read_offset > 0) {
-        if (read_offset < c->read_pos) {
-            memmove(c->read_buf, c->read_buf + read_offset, c->read_pos - read_offset);
-            c->read_pos -= read_offset;
+        if (read_offset < connection->read_pos) {
+            memmove(connection->read_buf, connection->read_buf + read_offset, connection->read_pos - read_offset);
+            connection->read_pos -= read_offset;
         } else {
-            c->read_pos = 0;
+            connection->read_pos = 0;
         }
     }
 
     if (write_pos > 0) {
-        flush_data(w, c, w->write_buf, write_pos);
+        flush_data(worker, connection, worker->write_buf, write_pos);
     }
 }
 
-static void handle_timer_expiration(worker_t *w, conn_t *c, int64_t delay_ms) {
-    c->parked_in_timer = false;
+static void handle_timer_expiration(worker_t *worker, conn_t *connection, int64_t delay_milliseconds) {
+    connection->parked_in_timer = false;
 
-    static const char res_delay_10[] =
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Type: text/plain\r\n"
-        "Content-Length: 2\r\n"
-        "Connection: keep-alive\r\n\r\n10";
-    static const size_t res_delay_10_len = sizeof(res_delay_10) - 1;
+    static const char response_delay_10[] = "HTTP/1.1 200 OK\r\n"
+                                            "Content-Type: text/plain\r\n"
+                                            "Content-Length: 2\r\n"
+                                            "Connection: keep-alive\r\n\r\n10";
+    static const size_t response_delay_10_length = sizeof(response_delay_10) - 1;
 
-    if (__builtin_expect(delay_ms == 10 && c->keep_alive, 1)) {
-        ssize_t n = send(c->fd, res_delay_10, res_delay_10_len, MSG_NOSIGNAL | MSG_DONTWAIT);
-        if (__builtin_expect(n == (ssize_t)res_delay_10_len, 1)) {
-        } else if (n > 0) {
-            flush_data(w, c, res_delay_10 + n, res_delay_10_len - (size_t)n);
-        } else if (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-            flush_data(w, c, res_delay_10, res_delay_10_len);
+    if (__builtin_expect(delay_milliseconds == 10 && connection->keep_alive, 1)) {
+        ssize_t bytes_sent =
+            send(connection->fd, response_delay_10, response_delay_10_length, MSG_NOSIGNAL | MSG_DONTWAIT);
+        if (__builtin_expect(bytes_sent == (ssize_t)response_delay_10_length, 1)) {
+        } else if (bytes_sent > 0) {
+            flush_data(worker, connection, response_delay_10 + bytes_sent,
+                       response_delay_10_length - (size_t)bytes_sent);
+        } else if (bytes_sent < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+            flush_data(worker, connection, response_delay_10, response_delay_10_length);
         } else {
-            close_conn(w, c);
+            close_conn(worker, connection);
             return;
         }
     } else {
-        response_t res;
-        res_init(&res, c->keep_alive);
-        char buf[24];
-        size_t len = format_i64(buf, delay_ms);
-        res_set_text(&res, buf, len);
+        response_t response;
+        res_init(&response, connection->keep_alive);
+        char number_buffer[24];
+        size_t formatted_length = format_i64(number_buffer, delay_milliseconds);
+        res_set_text(&response, number_buffer, formatted_length);
 
-        size_t written = res_serialize(&res, w->write_buf, sizeof(w->write_buf));
-        if (written > 0) {
-            flush_data(w, c, w->write_buf, written);
+        size_t bytes_written = res_serialize(&response, worker->write_buf, sizeof(worker->write_buf));
+        if (bytes_written > 0) {
+            flush_data(worker, connection, worker->write_buf, bytes_written);
         }
     }
 
-    if (c->fd >= 0 && c->read_pos > 0 && !c->closing && !c->parked_in_timer) {
-        process_requests(w, c);
+    if (connection->fd >= 0 && connection->read_pos > 0 && !connection->closing && !connection->parked_in_timer) {
+        process_requests(worker, connection);
     }
 }
 
-static void* worker_main(void *arg) {
-    worker_t *w = (worker_t*)arg;
-    t_worker = w;
+static void *worker_main(void *thread_argument) {
+    worker_t *worker = (worker_t *)thread_argument;
+    t_worker = worker;
 
 #if defined(__linux__) && defined(PR_SET_TIMERSLACK)
     prctl(PR_SET_TIMERSLACK, 1UL, 0, 0, 0);
 #endif
 
-    cpu_set_t cpuset;
-    CPU_ZERO(&cpuset);
-    CPU_SET(w->cpu_id, &cpuset);
-    pthread_setaffinity_np(pthread_self(), sizeof(cpuset), &cpuset);
+    cpu_set_t cpu_set;
+    CPU_ZERO(&cpu_set);
+    CPU_SET(worker->cpu_id, &cpu_set);
+    pthread_setaffinity_np(pthread_self(), sizeof(cpu_set), &cpu_set);
 
-    struct epoll_event events[MAX_EVENTS];
+    struct epoll_event epoll_events[MAX_EVENTS];
 
     while (g_running) {
-        uint64_t now_us = clock_monotonic_us();
+        uint64_t current_time_us = clock_monotonic_us();
 
-        if (w->timers.count > 0) {
-            timer_entry_t te;
-            while (timer_heap_peek(&w->timers, &te)) {
-                if (te.expire_at_us > now_us) break;
-                timer_heap_pop(&w->timers, &te);
-                conn_t *c = (conn_t*)te.conn_ptr;
-                if (c && c->gen == te.conn_gen && c->parked_in_timer) {
-                    handle_timer_expiration(w, c, te.delay_ms);
+        if (worker->timers.count > 0) {
+            timer_entry_t timer_entry;
+            while (timer_heap_peek(&worker->timers, &timer_entry)) {
+                if (timer_entry.expire_at_us > current_time_us) {
+                    break;
+                }
+                timer_heap_pop(&worker->timers, &timer_entry);
+                conn_t *connection = (conn_t *)timer_entry.conn_ptr;
+                if (connection && connection->gen == timer_entry.conn_gen && connection->parked_in_timer) {
+                    handle_timer_expiration(worker, connection, timer_entry.delay_ms);
                 }
             }
         }
 
-        int64_t timeout_us = timer_heap_next_timeout_us(&w->timers, now_us);
+        int64_t timeout_us = timer_heap_next_timeout_us(&worker->timers, current_time_us);
         if (timeout_us < 0 || timeout_us > 1000000) {
             timeout_us = 1000000;
         }
-        int nfds = 0;
+        int num_ready_descriptors = 0;
 
         if (timeout_us <= 350) {
-            uint64_t target_us = now_us + (uint64_t)timeout_us;
+            uint64_t target_time_us = current_time_us + (uint64_t)timeout_us;
             while (true) {
-                nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, 0);
-                if (nfds != 0) break;
-                now_us = clock_monotonic_us();
-                if (now_us >= target_us) break;
-                for (int spin = 0; spin < 16; spin++) {
+                num_ready_descriptors = epoll_wait(worker->epoll_fd, epoll_events, MAX_EVENTS, 0);
+                if (num_ready_descriptors != 0) {
+                    break;
+                }
+                current_time_us = clock_monotonic_us();
+                if (current_time_us >= target_time_us) {
+                    break;
+                }
+                for (int spin_count = 0; spin_count < 16; spin_count++) {
 #if defined(__x86_64__) || defined(_M_X64)
                     __builtin_ia32_pause();
 #elif defined(__aarch64__)
@@ -629,240 +662,269 @@ static void* worker_main(void *arg) {
         } else {
             int64_t sleep_us = timeout_us - 250;
 #if defined(__linux__)
-            struct timespec ts = {
-                .tv_sec = (time_t)(sleep_us / 1000000),
-                .tv_nsec = (long)((sleep_us % 1000000) * 1000)
-            };
-            nfds = epoll_pwait2(w->epoll_fd, events, MAX_EVENTS, &ts, NULL);
-            if (nfds < 0 && errno == ENOSYS) {
+            struct timespec timeout_timespec = {.tv_sec = (time_t)(sleep_us / 1000000),
+                                                .tv_nsec = (long)((sleep_us % 1000000) * 1000)};
+            num_ready_descriptors = epoll_pwait2(worker->epoll_fd, epoll_events, MAX_EVENTS, &timeout_timespec, NULL);
+            if (num_ready_descriptors < 0 && errno == ENOSYS) {
                 int timeout_ms = (int)(sleep_us / 1000);
-                if (timeout_ms < 1) timeout_ms = 1;
-                nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, timeout_ms);
+                if (timeout_ms < 1) {
+                    timeout_ms = 1;
+                }
+                num_ready_descriptors = epoll_wait(worker->epoll_fd, epoll_events, MAX_EVENTS, timeout_ms);
             }
 #else
             int timeout_ms = (int)(sleep_us / 1000);
-            if (timeout_ms < 1) timeout_ms = 1;
-            nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, timeout_ms);
+            if (timeout_ms < 1) {
+                timeout_ms = 1;
+            }
+            num_ready_descriptors = epoll_wait(worker->epoll_fd, epoll_events, MAX_EVENTS, timeout_ms);
 #endif
         }
 
-        if (nfds < 0) {
-            if (errno == EINTR) continue;
+        if (num_ready_descriptors < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
             break;
         }
 
-        uint64_t now_ms = clock_monotonic_ms();
+        uint64_t current_time_ms = clock_monotonic_ms();
 
         // Reap connections idle for >= 15 seconds
-        while (w->active_head) {
-            conn_t *oldest = w->active_head;
-            if (now_ms - oldest->last_active_ms < 15000) {
+        while (worker->active_head) {
+            conn_t *oldest_connection = worker->active_head;
+            if (current_time_ms - oldest_connection->last_active_ms < 15000) {
                 break;
             }
-            if (oldest->parked_in_timer) {
-                oldest->last_active_ms = now_ms;
-                if (w->active_head != w->active_tail) {
-                    conn_list_remove(w, oldest);
-                    conn_list_insert_tail(w, oldest);
+            if (oldest_connection->parked_in_timer) {
+                oldest_connection->last_active_ms = current_time_ms;
+                if (worker->active_head != worker->active_tail) {
+                    conn_list_remove(worker, oldest_connection);
+                    conn_list_insert_tail(worker, oldest_connection);
                     continue;
                 }
                 break;
             }
-            close_conn(w, oldest);
+            close_conn(worker, oldest_connection);
         }
 
 #if defined(__linux__)
-        if (w->id == 0 && (now_ms - w->last_trim_ms >= 5000)) {
-            w->last_trim_ms = now_ms;
+        if (worker->id == 0 && (current_time_ms - worker->last_trim_ms >= 5000)) {
+            worker->last_trim_ms = current_time_ms;
             malloc_trim(0);
         }
 #endif
 
-        if (w->timers.count > 0) {
-            now_us = clock_monotonic_us();
-            timer_entry_t te;
-            while (timer_heap_peek(&w->timers, &te)) {
-                if (te.expire_at_us > now_us) break;
-                timer_heap_pop(&w->timers, &te);
-                conn_t *c = (conn_t*)te.conn_ptr;
-                if (c && c->gen == te.conn_gen && c->parked_in_timer) {
-                    handle_timer_expiration(w, c, te.delay_ms);
+        if (worker->timers.count > 0) {
+            current_time_us = clock_monotonic_us();
+            timer_entry_t timer_entry;
+            while (timer_heap_peek(&worker->timers, &timer_entry)) {
+                if (timer_entry.expire_at_us > current_time_us) {
+                    break;
+                }
+                timer_heap_pop(&worker->timers, &timer_entry);
+                conn_t *connection = (conn_t *)timer_entry.conn_ptr;
+                if (connection && connection->gen == timer_entry.conn_gen && connection->parked_in_timer) {
+                    handle_timer_expiration(worker, connection, timer_entry.delay_ms);
                 }
             }
         }
 
-        for (int i = 0; i < nfds; i++) {
-            void *ptr = events[i].data.ptr;
-            uint32_t evs = events[i].events;
+        for (int event_index = 0; event_index < num_ready_descriptors; event_index++) {
+            void *event_data_ptr = epoll_events[event_index].data.ptr;
+            uint32_t event_flags = epoll_events[event_index].events;
 
-            if (ptr == &w->token_h1) {
+            if (event_data_ptr == &worker->token_h1) {
                 while (true) {
-                    int cfd = accept4(w->listen_h1_fd, NULL, NULL, SOCK_NONBLOCK | SOCK_CLOEXEC);
-                    if (cfd < 0) break;
+                    int client_fd = accept4(worker->listen_h1_fd, NULL, NULL, SOCK_NONBLOCK | SOCK_CLOEXEC);
+                    if (client_fd < 0) {
+                        break;
+                    }
 
-                    set_sock_opts(cfd);
-                    conn_t *c = alloc_conn(w, cfd, false, NULL);
-                    if (!c) { close(cfd); continue; }
-
-                    struct epoll_event ev = {
-                        .events = EPOLLIN | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
-                        .data.ptr = c
-                    };
-                    epoll_ctl(w->epoll_fd, EPOLL_CTL_ADD, cfd, &ev);
-                }
-                continue;
-            }
-
-            if (w->listen_tls_fd >= 0 && ptr == &w->token_tls) {
-                while (true) {
-                    int cfd = accept4(w->listen_tls_fd, NULL, NULL, SOCK_NONBLOCK | SOCK_CLOEXEC);
-                    if (cfd < 0) break;
-
-                    set_sock_opts(cfd);
-                    SSL *ssl = SSL_new(w->ssl_ctx);
-                    if (!ssl) { close(cfd); continue; }
-                    SSL_set_fd(ssl, cfd);
-                    SSL_set_accept_state(ssl);
-
-                    conn_t *c = alloc_conn(w, cfd, true, ssl);
-                    if (!c) { SSL_free(ssl); close(cfd); continue; }
-
-                    struct epoll_event ev = {
-                        .events = EPOLLIN | EPOLLOUT | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
-                        .data.ptr = c
-                    };
-                    epoll_ctl(w->epoll_fd, EPOLL_CTL_ADD, cfd, &ev);
-                }
-                continue;
-            }
-
-            if (w->listen_h2c_fd >= 0 && ptr == &w->token_h2c) {
-                while (true) {
-                    int cfd = accept4(w->listen_h2c_fd, NULL, NULL, SOCK_NONBLOCK | SOCK_CLOEXEC);
-                    if (cfd < 0) break;
-
-                    set_sock_opts(cfd);
-                    conn_t *c = alloc_conn(w, cfd, false, NULL);
-                    if (!c) { close(cfd); continue; }
-
-                    c->is_h2 = true;
-                    if (!h2_conn_init(c, w)) {
-                        close_conn(w, c);
+                    set_sock_opts(client_fd);
+                    conn_t *connection = alloc_conn(worker, client_fd, false, NULL);
+                    if (!connection) {
+                        close(client_fd);
                         continue;
                     }
 
-                    struct epoll_event ev = {
-                        .events = EPOLLIN | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
-                        .data.ptr = c
-                    };
-                    epoll_ctl(w->epoll_fd, EPOLL_CTL_ADD, cfd, &ev);
+                    struct epoll_event event = {.events = EPOLLIN | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
+                                                .data.ptr = connection};
+                    epoll_ctl(worker->epoll_fd, EPOLL_CTL_ADD, client_fd, &event);
                 }
                 continue;
             }
 
-            if (w->listen_h2_fd >= 0 && ptr == &w->token_h2) {
+            if (worker->listen_tls_fd >= 0 && event_data_ptr == &worker->token_tls) {
                 while (true) {
-                    int cfd = accept4(w->listen_h2_fd, NULL, NULL, SOCK_NONBLOCK | SOCK_CLOEXEC);
-                    if (cfd < 0) break;
+                    int client_fd = accept4(worker->listen_tls_fd, NULL, NULL, SOCK_NONBLOCK | SOCK_CLOEXEC);
+                    if (client_fd < 0) {
+                        break;
+                    }
 
-                    set_sock_opts(cfd);
-                    SSL *ssl = SSL_new(w->ssl_ctx_h2);
-                    if (!ssl) { close(cfd); continue; }
-                    SSL_set_fd(ssl, cfd);
-                    SSL_set_accept_state(ssl);
-
-                    conn_t *c = alloc_conn(w, cfd, true, ssl);
-                    if (!c) { SSL_free(ssl); close(cfd); continue; }
-
-                    struct epoll_event ev = {
-                        .events = EPOLLIN | EPOLLOUT | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
-                        .data.ptr = c
-                    };
-                    epoll_ctl(w->epoll_fd, EPOLL_CTL_ADD, cfd, &ev);
-                }
-                continue;
-            }
-
-            conn_t *c = (conn_t*)ptr;
-            if (!c || c->fd < 0) continue;
-
-            if (evs & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
-                close_conn(w, c);
-                continue;
-            }
-
-            conn_touch(w, c, now_ms);
-
-            if (c->is_tls && !c->tls_handshake_done) {
-                int ret = SSL_accept(c->ssl);
-                if (ret <= 0) {
-                    int err = SSL_get_error(c->ssl, ret);
-                    if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
+                    set_sock_opts(client_fd);
+                    SSL *ssl_session = SSL_new(worker->ssl_ctx);
+                    if (!ssl_session) {
+                        close(client_fd);
                         continue;
                     }
-                    close_conn(w, c);
+                    SSL_set_fd(ssl_session, client_fd);
+                    SSL_set_accept_state(ssl_session);
+
+                    conn_t *connection = alloc_conn(worker, client_fd, true, ssl_session);
+                    if (!connection) {
+                        SSL_free(ssl_session);
+                        close(client_fd);
+                        continue;
+                    }
+
+                    struct epoll_event event = {.events =
+                                                    EPOLLIN | EPOLLOUT | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
+                                                .data.ptr = connection};
+                    epoll_ctl(worker->epoll_fd, EPOLL_CTL_ADD, client_fd, &event);
+                }
+                continue;
+            }
+
+            if (worker->listen_h2c_fd >= 0 && event_data_ptr == &worker->token_h2c) {
+                while (true) {
+                    int client_fd = accept4(worker->listen_h2c_fd, NULL, NULL, SOCK_NONBLOCK | SOCK_CLOEXEC);
+                    if (client_fd < 0) {
+                        break;
+                    }
+
+                    set_sock_opts(client_fd);
+                    conn_t *connection = alloc_conn(worker, client_fd, false, NULL);
+                    if (!connection) {
+                        close(client_fd);
+                        continue;
+                    }
+
+                    connection->is_h2 = true;
+                    if (!h2_connection_init(connection, worker)) {
+                        close_conn(worker, connection);
+                        continue;
+                    }
+
+                    struct epoll_event event = {.events = EPOLLIN | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
+                                                .data.ptr = connection};
+                    epoll_ctl(worker->epoll_fd, EPOLL_CTL_ADD, client_fd, &event);
+                }
+                continue;
+            }
+
+            if (worker->listen_h2_fd >= 0 && event_data_ptr == &worker->token_h2) {
+                while (true) {
+                    int client_fd = accept4(worker->listen_h2_fd, NULL, NULL, SOCK_NONBLOCK | SOCK_CLOEXEC);
+                    if (client_fd < 0) {
+                        break;
+                    }
+
+                    set_sock_opts(client_fd);
+                    SSL *ssl_session = SSL_new(worker->ssl_ctx_h2);
+                    if (!ssl_session) {
+                        close(client_fd);
+                        continue;
+                    }
+                    SSL_set_fd(ssl_session, client_fd);
+                    SSL_set_accept_state(ssl_session);
+
+                    conn_t *connection = alloc_conn(worker, client_fd, true, ssl_session);
+                    if (!connection) {
+                        SSL_free(ssl_session);
+                        close(client_fd);
+                        continue;
+                    }
+
+                    struct epoll_event event = {.events =
+                                                    EPOLLIN | EPOLLOUT | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
+                                                .data.ptr = connection};
+                    epoll_ctl(worker->epoll_fd, EPOLL_CTL_ADD, client_fd, &event);
+                }
+                continue;
+            }
+
+            conn_t *connection = (conn_t *)event_data_ptr;
+            if (!connection || connection->fd < 0) {
+                continue;
+            }
+
+            if (event_flags & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
+                close_conn(worker, connection);
+                continue;
+            }
+
+            conn_touch(worker, connection, current_time_ms);
+
+            if (connection->is_tls && !connection->tls_handshake_done) {
+                int handshake_status = SSL_accept(connection->ssl);
+                if (handshake_status <= 0) {
+                    int ssl_error = SSL_get_error(connection->ssl, handshake_status);
+                    if (ssl_error == SSL_ERROR_WANT_READ || ssl_error == SSL_ERROR_WANT_WRITE) {
+                        continue;
+                    }
+                    close_conn(worker, connection);
                     continue;
                 }
-                c->tls_handshake_done = true;
+                connection->tls_handshake_done = true;
 
-                const unsigned char *alpn = NULL;
-                unsigned int alpn_len = 0;
-                SSL_get0_alpn_selected(c->ssl, &alpn, &alpn_len);
-                if (alpn && alpn_len == 2 && memcmp(alpn, "h2", 2) == 0) {
-                    c->is_h2 = true;
-                    if (!h2_conn_init(c, w)) {
-                        close_conn(w, c);
+                const unsigned char *alpn_selected = NULL;
+                unsigned int alpn_length = 0;
+                SSL_get0_alpn_selected(connection->ssl, &alpn_selected, &alpn_length);
+                if (alpn_selected && alpn_length == 2 && memcmp(alpn_selected, "h2", 2) == 0) {
+                    connection->is_h2 = true;
+                    if (!h2_connection_init(connection, worker)) {
+                        close_conn(worker, connection);
                         continue;
                     }
                 }
 
-                struct epoll_event ev = {
-                    .events = EPOLLIN | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
-                    .data.ptr = c
-                };
-                epoll_ctl(w->epoll_fd, EPOLL_CTL_MOD, c->fd, &ev);
+                struct epoll_event event = {.events = EPOLLIN | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
+                                            .data.ptr = connection};
+                epoll_ctl(worker->epoll_fd, EPOLL_CTL_MOD, connection->fd, &event);
             }
 
-            if (evs & EPOLLOUT) {
-                if (c->pending_write) {
-                    if (!flush_pending_write(w, c)) {
+            if (event_flags & EPOLLOUT) {
+                if (connection->pending_write) {
+                    if (!flush_pending_write(worker, connection)) {
                         continue;
                     }
                 }
             }
 
-            if (evs & EPOLLIN) {
-                if (c->is_h2) {
-                    char h2_in[65536];
+            if (event_flags & EPOLLIN) {
+                if (connection->is_h2) {
+                    char h2_read_buffer[65536];
                     while (true) {
-                        ssize_t n = 0;
-                        if (c->is_tls) {
-                            int ret = SSL_read(c->ssl, h2_in, sizeof(h2_in));
-                            if (ret <= 0) {
-                                int err = SSL_get_error(c->ssl, ret);
-                                if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
+                        ssize_t bytes_read = 0;
+                        if (connection->is_tls) {
+                            int read_status = SSL_read(connection->ssl, h2_read_buffer, sizeof(h2_read_buffer));
+                            if (read_status <= 0) {
+                                int ssl_error = SSL_get_error(connection->ssl, read_status);
+                                if (ssl_error == SSL_ERROR_WANT_READ || ssl_error == SSL_ERROR_WANT_WRITE) {
                                     break;
                                 }
-                                close_conn(w, c);
+                                close_conn(worker, connection);
                                 break;
                             }
-                            n = ret;
+                            bytes_read = read_status;
                         } else {
-                            n = recv(c->fd, h2_in, sizeof(h2_in), MSG_DONTWAIT);
-                            if (n < 0) {
+                            bytes_read = recv(connection->fd, h2_read_buffer, sizeof(h2_read_buffer), MSG_DONTWAIT);
+                            if (bytes_read < 0) {
                                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
                                     break;
                                 }
-                                close_conn(w, c);
+                                close_conn(worker, connection);
                                 break;
                             }
-                            if (n == 0) {
-                                close_conn(w, c);
+                            if (bytes_read == 0) {
+                                close_conn(worker, connection);
                                 break;
                             }
                         }
-                        if (!h2_conn_process(c, w, h2_in, (size_t)n)) {
-                            close_conn(w, c);
+                        if (!h2_connection_process_incoming_data(connection, worker, h2_read_buffer,
+                                                                 (size_t)bytes_read)) {
+                            close_conn(worker, connection);
                             break;
                         }
                     }
@@ -870,66 +932,82 @@ static void* worker_main(void *arg) {
                 }
 
                 while (true) {
-                    if (c->read_pos == c->read_cap) {
-                        size_t new_cap = c->read_cap * 2;
-                        if (new_cap < 65536) new_cap = 65536;
-                        if (new_cap > 512 * 1024) new_cap = 512 * 1024;
-                        if (new_cap > c->read_cap) {
-                            char *new_buf = malloc(new_cap);
-                            if (!new_buf) { close_conn(w, c); break; }
-                            memcpy(new_buf, c->read_buf, c->read_pos);
-                            if (c->read_buf != c->inline_read_buf) free(c->read_buf);
-                            c->read_buf = new_buf;
-                            c->read_cap = new_cap;
+                    if (connection->read_pos == connection->read_cap) {
+                        size_t new_capacity = connection->read_cap * 2;
+                        if (new_capacity < 65536) {
+                            new_capacity = 65536;
+                        }
+                        if (new_capacity > 512 * 1024) {
+                            new_capacity = 512 * 1024;
+                        }
+                        if (new_capacity > connection->read_cap) {
+                            char *new_buffer = malloc(new_capacity);
+                            if (!new_buffer) {
+                                close_conn(worker, connection);
+                                break;
+                            }
+                            memcpy(new_buffer, connection->read_buf, connection->read_pos);
+                            if (connection->read_buf != connection->inline_read_buf) {
+                                free(connection->read_buf);
+                            }
+                            connection->read_buf = new_buffer;
+                            connection->read_cap = new_capacity;
                         } else {
-                            close_conn(w, c);
+                            close_conn(worker, connection);
                             break;
                         }
                     }
 
-                    size_t avail = c->read_cap - c->read_pos;
-                    ssize_t n = 0;
-                    if (c->is_tls) {
-                        int ret = SSL_read(c->ssl, c->read_buf + c->read_pos, (int)avail);
-                        if (ret <= 0) {
-                            int err = SSL_get_error(c->ssl, ret);
-                            if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
+                    size_t available_space = connection->read_cap - connection->read_pos;
+                    ssize_t bytes_read = 0;
+                    if (connection->is_tls) {
+                        int read_status = SSL_read(connection->ssl, connection->read_buf + connection->read_pos,
+                                                   (int)available_space);
+                        if (read_status <= 0) {
+                            int ssl_error = SSL_get_error(connection->ssl, read_status);
+                            if (ssl_error == SSL_ERROR_WANT_READ || ssl_error == SSL_ERROR_WANT_WRITE) {
                                 break;
                             }
-                            close_conn(w, c);
+                            close_conn(worker, connection);
                             break;
                         }
-                        n = ret;
+                        bytes_read = read_status;
                     } else {
-                        n = recv(c->fd, c->read_buf + c->read_pos, avail, MSG_DONTWAIT);
-                        if (n < 0) {
+                        bytes_read = recv(connection->fd, connection->read_buf + connection->read_pos, available_space,
+                                          MSG_DONTWAIT);
+                        if (bytes_read < 0) {
                             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                                 break;
                             }
-                            close_conn(w, c);
+                            close_conn(worker, connection);
                             break;
                         }
-                        if (n == 0) {
-                            close_conn(w, c);
+                        if (bytes_read == 0) {
+                            close_conn(worker, connection);
                             break;
                         }
                     }
-                    c->read_pos += (size_t)n;
-                    if (c->read_pos >= 4) {
-                        const char *hdr_end = memmem(c->read_buf, c->read_pos, "\r\n\r\n", 4);
-                        if (hdr_end) {
-                            size_t hdr_len = (size_t)(hdr_end - c->read_buf) + 4;
-                            if (c->read_buf[0] == 'G' || c->read_buf[0] == 'H') {
+                    connection->read_pos += (size_t)bytes_read;
+                    if (connection->read_pos >= 4) {
+                        const char *header_end = memmem(connection->read_buf, connection->read_pos, "\r\n\r\n", 4);
+                        if (header_end) {
+                            size_t header_length = (size_t)(header_end - connection->read_buf) + 4;
+                            if (connection->read_buf[0] == 'G' || connection->read_buf[0] == 'H') {
                                 break;
                             }
-                            const char *cl_pos = memmem(c->read_buf, hdr_len, "Content-Length: ", 16);
-                            if (!cl_pos) {
-                                cl_pos = memmem(c->read_buf, hdr_len, "content-length: ", 16);
+                            const char *content_length_position =
+                                memmem(connection->read_buf, header_length, "Content-Length: ", 16);
+                            if (!content_length_position) {
+                                content_length_position =
+                                    memmem(connection->read_buf, header_length, "content-length: ", 16);
                             }
-                            if (cl_pos) {
-                                int64_t cl = 0;
-                                if (parse_i64(cl_pos + 16, (size_t)(hdr_end - (cl_pos + 16)), &cl) && cl >= 0) {
-                                    if (c->read_pos >= hdr_len + (size_t)cl) {
+                            if (content_length_position) {
+                                int64_t parsed_content_length = 0;
+                                if (parse_i64(content_length_position + 16,
+                                              (size_t)(header_end - (content_length_position + 16)),
+                                              &parsed_content_length) &&
+                                    parsed_content_length >= 0) {
+                                    if (connection->read_pos >= header_length + (size_t)parsed_content_length) {
                                         break;
                                     }
                                 }
@@ -938,76 +1016,82 @@ static void* worker_main(void *arg) {
                     }
                 }
 
-                if (c->fd >= 0 && c->read_pos > 0) {
-                    process_requests(w, c);
+                if (connection->fd >= 0 && connection->read_pos > 0) {
+                    process_requests(worker, connection);
                 }
-                if (c->is_tls) {
-                    while (c->fd >= 0 && !c->closing && SSL_pending(c->ssl) > 0) {
-                        size_t avail = c->read_cap - c->read_pos;
-                        if (avail == 0) break;
-                        int ret = SSL_read(c->ssl, c->read_buf + c->read_pos, (int)avail);
-                        if (ret <= 0) break;
-                        c->read_pos += (size_t)ret;
-                        process_requests(w, c);
+                if (connection->is_tls) {
+                    while (connection->fd >= 0 && !connection->closing && SSL_pending(connection->ssl) > 0) {
+                        size_t available_space = connection->read_cap - connection->read_pos;
+                        if (available_space == 0) {
+                            break;
+                        }
+                        int read_status = SSL_read(connection->ssl, connection->read_buf + connection->read_pos,
+                                                   (int)available_space);
+                        if (read_status <= 0) {
+                            break;
+                        }
+                        connection->read_pos += (size_t)read_status;
+                        process_requests(worker, connection);
                     }
                 }
             }
         }
     }
 
-    close(w->epoll_fd);
-    close(w->listen_h1_fd);
-    if (w->listen_tls_fd >= 0) close(w->listen_tls_fd);
-    compress_worker_destroy(&w->compress);
-    timer_heap_destroy(&w->timers);
-
-    conn_t *curr = w->free_conns;
-    while (curr) {
-        conn_t *next = curr->next_free;
-        if (curr->read_buf != curr->inline_read_buf) {
-            free(curr->read_buf);
-        }
-        if (curr->pending_write) {
-            free(curr->pending_write);
-        }
-        free(curr);
-        curr = next;
+    close(worker->epoll_fd);
+    close(worker->listen_h1_fd);
+    if (worker->listen_tls_fd >= 0) {
+        close(worker->listen_tls_fd);
     }
-    w->free_conns = NULL;
+    compress_worker_destroy(&worker->compress);
+    timer_heap_destroy(&worker->timers);
+
+    conn_t *current_connection = worker->free_conns;
+    while (current_connection) {
+        conn_t *next_connection = current_connection->next_free;
+        if (current_connection->read_buf != current_connection->inline_read_buf) {
+            free(current_connection->read_buf);
+        }
+        if (current_connection->pending_write) {
+            free(current_connection->pending_write);
+        }
+        free(current_connection);
+        current_connection = next_connection;
+    }
+    worker->free_conns = NULL;
 
     return NULL;
 }
 
-static int create_listen_socket(int port) {
-    int fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
-    if (fd < 0) return -1;
+static int create_listen_socket(int port_number) {
+    int socket_fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
+    if (socket_fd < 0) {
+        return -1;
+    }
 
-    int one = 1;
-    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
-    setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &one, sizeof(one));
+    int socket_option_value = 1;
+    setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &socket_option_value, sizeof(socket_option_value));
+    setsockopt(socket_fd, SOL_SOCKET, SO_REUSEPORT, &socket_option_value, sizeof(socket_option_value));
 #if defined(TCP_DEFER_ACCEPT)
-    int defer = 5;
-    setsockopt(fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &defer, sizeof(defer));
+    int defer_accept_seconds = 5;
+    setsockopt(socket_fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &defer_accept_seconds, sizeof(defer_accept_seconds));
 #endif
-    set_sock_opts(fd);
+    set_sock_opts(socket_fd);
 
-    struct sockaddr_in addr = {
-        .sin_family = AF_INET,
-        .sin_port = htons(port),
-        .sin_addr.s_addr = INADDR_ANY
-    };
+    struct sockaddr_in socket_address = {
+        .sin_family = AF_INET, .sin_port = htons((uint16_t)port_number), .sin_addr.s_addr = INADDR_ANY};
 
-    if (bind(fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
-        close(fd);
+    if (bind(socket_fd, (struct sockaddr *)&socket_address, sizeof(socket_address)) < 0) {
+        close(socket_fd);
         return -1;
     }
 
-    if (listen(fd, 65535) < 0) {
-        close(fd);
+    if (listen(socket_fd, 65535) < 0) {
+        close(socket_fd);
         return -1;
     }
 
-    return fd;
+    return socket_fd;
 }
 
 int main(void) {
@@ -1015,39 +1099,53 @@ int main(void) {
     signal(SIGTERM, handle_sig);
     signal(SIGPIPE, SIG_IGN);
 
-    cpu_set_t cs;
+    cpu_set_t cpu_affinity_mask;
     int allowed_cpus[MAX_WORKERS];
-    int num_allowed = 0;
-    if (sched_getaffinity(0, sizeof(cs), &cs) == 0) {
-        for (int i = 0; i < CPU_SETSIZE && num_allowed < MAX_WORKERS; i++) {
-            if (CPU_ISSET(i, &cs)) {
-                allowed_cpus[num_allowed++] = i;
+    int num_allowed_cpus = 0;
+    if (sched_getaffinity(0, sizeof(cpu_affinity_mask), &cpu_affinity_mask) == 0) {
+        for (int cpu_index = 0; cpu_index < CPU_SETSIZE && num_allowed_cpus < MAX_WORKERS; cpu_index++) {
+            if (CPU_ISSET(cpu_index, &cpu_affinity_mask)) {
+                allowed_cpus[num_allowed_cpus++] = cpu_index;
             }
         }
     }
-    if (num_allowed == 0) {
-        long ncpu = sysconf(_SC_NPROCESSORS_ONLN);
-        if (ncpu <= 0) ncpu = 1;
-        if (ncpu > MAX_WORKERS) ncpu = MAX_WORKERS;
-        for (int i = 0; i < ncpu; i++) allowed_cpus[i] = i;
-        num_allowed = (int)ncpu;
+    if (num_allowed_cpus == 0) {
+        long configured_cpus = sysconf(_SC_NPROCESSORS_ONLN);
+        if (configured_cpus <= 0) {
+            configured_cpus = 1;
+        }
+        if (configured_cpus > MAX_WORKERS) {
+            configured_cpus = MAX_WORKERS;
+        }
+        for (int cpu_index = 0; cpu_index < configured_cpus; cpu_index++) {
+            allowed_cpus[cpu_index] = cpu_index;
+        }
+        num_allowed_cpus = (int)configured_cpus;
     }
-    g_num_workers = num_allowed;
+    g_num_workers = num_allowed_cpus;
 
     const char *dataset_path = getenv("DATASET_PATH");
-    if (!dataset_path) dataset_path = "/data/dataset.json";
+    if (!dataset_path) {
+        dataset_path = "/data/dataset.json";
+    }
     if (!dataset_load(dataset_path)) {
         dataset_load("./data/dataset.json");
     }
 
     const char *static_root = getenv("STATIC_ROOT");
-    if (!static_root) static_root = "/data/static";
+    if (!static_root) {
+        static_root = "/data/static";
+    }
     static_files_init(static_root);
 
     const char *cert_file = getenv("TLS_CERT");
-    if (!cert_file) cert_file = "/certs/server.crt";
+    if (!cert_file) {
+        cert_file = "/certs/server.crt";
+    }
     const char *key_file = getenv("TLS_KEY");
-    if (!key_file) key_file = "/certs/server.key";
+    if (!key_file) {
+        key_file = "/certs/server.key";
+    }
 
     SSL_CTX *shared_ssl_ctx = tls_init_server_ctx(cert_file, key_file, false);
     if (!shared_ssl_ctx) {
@@ -1065,113 +1163,123 @@ int main(void) {
         return 1;
     }
 
-    int port_h1 = 8080;
+    int port_http1 = 8080;
     const char *port_env = getenv("PORT");
     if (port_env) {
-        int p = atoi(port_env);
-        if (p > 0) port_h1 = p;
+        int parsed_port = atoi(port_env);
+        if (parsed_port > 0) {
+            port_http1 = parsed_port;
+        }
     }
 
     int port_tls = 8081;
     const char *tls_port_env = getenv("TLS_PORT");
     if (tls_port_env) {
-        int p = atoi(tls_port_env);
-        if (p > 0) port_tls = p;
+        int parsed_port = atoi(tls_port_env);
+        if (parsed_port > 0) {
+            port_tls = parsed_port;
+        }
     }
 
     int port_h2c = 8082;
     const char *h2c_port_env = getenv("H2C_PORT");
     if (h2c_port_env) {
-        int p = atoi(h2c_port_env);
-        if (p > 0) port_h2c = p;
+        int parsed_port = atoi(h2c_port_env);
+        if (parsed_port > 0) {
+            port_h2c = parsed_port;
+        }
     }
 
-    int port_h2 = 8443;
+    int port_http2 = 8443;
     const char *h2_port_env = getenv("H2_PORT");
-    if (!h2_port_env) h2_port_env = getenv("H2PORT");
+    if (!h2_port_env) {
+        h2_port_env = getenv("H2PORT");
+    }
     if (h2_port_env) {
-        int p = atoi(h2_port_env);
-        if (p > 0) port_h2 = p;
+        int parsed_port = atoi(h2_port_env);
+        if (parsed_port > 0) {
+            port_http2 = parsed_port;
+        }
     }
 
-    for (int i = 0; i < g_num_workers; i++) {
-        worker_t *w = &g_workers[i];
-        w->id = i;
-        w->cpu_id = allowed_cpus[i];
-        w->ssl_ctx = shared_ssl_ctx;
-        w->ssl_ctx_h2 = shared_ssl_ctx_h2;
+    for (int worker_index = 0; worker_index < g_num_workers; worker_index++) {
+        worker_t *worker = &g_workers[worker_index];
+        worker->id = worker_index;
+        worker->cpu_id = allowed_cpus[worker_index];
+        worker->ssl_ctx = shared_ssl_ctx;
+        worker->ssl_ctx_h2 = shared_ssl_ctx_h2;
 
-        router_init(&w->router);
-        router_add(&w->router, HTTP_METHOD_GET, "/", pipeline_handler);
-        router_add(&w->router, HTTP_METHOD_GET, "/baseline11", baseline_handler);
-        router_add(&w->router, HTTP_METHOD_POST, "/baseline11", baseline_handler);
-        router_add(&w->router, HTTP_METHOD_GET, "/pipeline", pipeline_handler);
-        router_add(&w->router, HTTP_METHOD_GET, "/delay/:ms", delay_handler);
-        router_add(&w->router, HTTP_METHOD_GET, "/json/:count", json_handler);
-        router_add(&w->router, HTTP_METHOD_POST, "/echo", echo_handler);
-        router_add(&w->router, HTTP_METHOD_GET, "/static/", static_file_handler);
-        router_add(&w->router, HTTP_METHOD_HEAD, "/static/", static_file_handler);
-        router_add(&w->router, HTTP_METHOD_HEAD, "/", pipeline_handler);
+        router_init(&worker->router);
+        router_add(&worker->router, HTTP_METHOD_GET, "/", pipeline_handler);
+        router_add(&worker->router, HTTP_METHOD_GET, "/baseline11", baseline_handler);
+        router_add(&worker->router, HTTP_METHOD_POST, "/baseline11", baseline_handler);
+        router_add(&worker->router, HTTP_METHOD_GET, "/pipeline", pipeline_handler);
+        router_add(&worker->router, HTTP_METHOD_GET, "/delay/:ms", delay_handler);
+        router_add(&worker->router, HTTP_METHOD_GET, "/json/:count", json_handler);
+        router_add(&worker->router, HTTP_METHOD_POST, "/echo", echo_handler);
+        router_add(&worker->router, HTTP_METHOD_GET, "/static/", static_file_handler);
+        router_add(&worker->router, HTTP_METHOD_HEAD, "/static/", static_file_handler);
+        router_add(&worker->router, HTTP_METHOD_HEAD, "/", pipeline_handler);
 
-        compress_worker_init(&w->compress);
-        timer_heap_init(&w->timers, 16384);
-        w->free_conns = NULL;
+        compress_worker_init(&worker->compress);
+        timer_heap_init(&worker->timers, 16384);
+        worker->free_conns = NULL;
 
-        for (int k = 0; k < 128; k++) {
-            conn_t *c = calloc(1, sizeof(conn_t));
-            if (c) {
-                c->read_buf = c->inline_read_buf;
-                c->read_cap = sizeof(c->inline_read_buf);
-                c->fd = -1;
-                c->next_free = w->free_conns;
-                w->free_conns = c;
+        for (int pool_index = 0; pool_index < 128; pool_index++) {
+            conn_t *preallocated_conn = calloc(1, sizeof(conn_t));
+            if (preallocated_conn) {
+                preallocated_conn->read_buf = preallocated_conn->inline_read_buf;
+                preallocated_conn->read_cap = sizeof(preallocated_conn->inline_read_buf);
+                preallocated_conn->fd = -1;
+                preallocated_conn->next_free = worker->free_conns;
+                worker->free_conns = preallocated_conn;
             }
         }
 
-        w->epoll_fd = epoll_create1(EPOLL_CLOEXEC);
-        w->listen_h1_fd = create_listen_socket(port_h1);
-        w->token_h1 = 1;
-        struct epoll_event ev1 = { .events = EPOLLIN, .data.ptr = &w->token_h1 };
-        epoll_ctl(w->epoll_fd, EPOLL_CTL_ADD, w->listen_h1_fd, &ev1);
+        worker->epoll_fd = epoll_create1(EPOLL_CLOEXEC);
+        worker->listen_h1_fd = create_listen_socket(port_http1);
+        worker->token_h1 = 1;
+        struct epoll_event event_h1 = {.events = EPOLLIN, .data.ptr = &worker->token_h1};
+        epoll_ctl(worker->epoll_fd, EPOLL_CTL_ADD, worker->listen_h1_fd, &event_h1);
 
-        if (w->ssl_ctx) {
-            w->listen_tls_fd = create_listen_socket(port_tls);
-            if (w->listen_tls_fd >= 0) {
-                w->token_tls = 2;
-                struct epoll_event ev2 = { .events = EPOLLIN, .data.ptr = &w->token_tls };
-                epoll_ctl(w->epoll_fd, EPOLL_CTL_ADD, w->listen_tls_fd, &ev2);
-            }
-        } else {
-            w->listen_tls_fd = -1;
-        }
-
-        w->listen_h2c_fd = create_listen_socket(port_h2c);
-        if (w->listen_h2c_fd >= 0) {
-            w->token_h2c = 3;
-            struct epoll_event ev3 = { .events = EPOLLIN, .data.ptr = &w->token_h2c };
-            epoll_ctl(w->epoll_fd, EPOLL_CTL_ADD, w->listen_h2c_fd, &ev3);
-        }
-
-        if (w->ssl_ctx_h2) {
-            w->listen_h2_fd = create_listen_socket(port_h2);
-            if (w->listen_h2_fd >= 0) {
-                w->token_h2 = 4;
-                struct epoll_event ev4 = { .events = EPOLLIN, .data.ptr = &w->token_h2 };
-                epoll_ctl(w->epoll_fd, EPOLL_CTL_ADD, w->listen_h2_fd, &ev4);
+        if (worker->ssl_ctx) {
+            worker->listen_tls_fd = create_listen_socket(port_tls);
+            if (worker->listen_tls_fd >= 0) {
+                worker->token_tls = 2;
+                struct epoll_event event_tls = {.events = EPOLLIN, .data.ptr = &worker->token_tls};
+                epoll_ctl(worker->epoll_fd, EPOLL_CTL_ADD, worker->listen_tls_fd, &event_tls);
             }
         } else {
-            w->listen_h2_fd = -1;
+            worker->listen_tls_fd = -1;
         }
 
-        pthread_create(&w->thread, NULL, worker_main, w);
+        worker->listen_h2c_fd = create_listen_socket(port_h2c);
+        if (worker->listen_h2c_fd >= 0) {
+            worker->token_h2c = 3;
+            struct epoll_event event_h2c = {.events = EPOLLIN, .data.ptr = &worker->token_h2c};
+            epoll_ctl(worker->epoll_fd, EPOLL_CTL_ADD, worker->listen_h2c_fd, &event_h2c);
+        }
+
+        if (worker->ssl_ctx_h2) {
+            worker->listen_h2_fd = create_listen_socket(port_http2);
+            if (worker->listen_h2_fd >= 0) {
+                worker->token_h2 = 4;
+                struct epoll_event event_h2 = {.events = EPOLLIN, .data.ptr = &worker->token_h2};
+                epoll_ctl(worker->epoll_fd, EPOLL_CTL_ADD, worker->listen_h2_fd, &event_h2);
+            }
+        } else {
+            worker->listen_h2_fd = -1;
+        }
+
+        pthread_create(&worker->thread, NULL, worker_main, worker);
     }
 
-    printf("[apex] Server listening on port %d (TLS: %d, H2C: %d, H2: %d) with %d workers\n",
-           port_h1, shared_ssl_ctx ? port_tls : -1, port_h2c, shared_ssl_ctx_h2 ? port_h2 : -1, g_num_workers);
+    printf("[apex] Server listening on port %d (TLS: %d, H2C: %d, H2: %d) with %d workers\n", port_http1,
+           shared_ssl_ctx ? port_tls : -1, port_h2c, shared_ssl_ctx_h2 ? port_http2 : -1, g_num_workers);
     fflush(stdout);
 
-    for (int i = 0; i < g_num_workers; i++) {
-        pthread_join(g_workers[i].thread, NULL);
+    for (int worker_index = 0; worker_index < g_num_workers; worker_index++) {
+        pthread_join(g_workers[worker_index].thread, NULL);
     }
 
     if (shared_ssl_ctx) {

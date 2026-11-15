@@ -24,52 +24,63 @@
 #include <arpa/inet.h>
 #include <time.h>
 
-#define MAX_WORKERS         128
-#define MAX_EVENTS          1024
+#define MAX_WORKERS 128
+#define MAX_EVENTS 1024
 #define MAX_CONNS_PER_WORKER 65536
-#define READ_BUF_SIZE       (128 * 1024)
-#define WRITE_BUF_SIZE      (512 * 1024)
-#define MAX_HEADERS         64
-#define MAX_PARAMS          16
-#define MAX_STATIC_FILES    128
+#define READ_BUF_SIZE (128 * 1024)
+#define WRITE_BUF_SIZE (512 * 1024)
+#define MAX_HEADERS 64
+#define MAX_PARAMS 16
+#define MAX_STATIC_FILES 128
 
 typedef struct {
     const char *ptr;
-    size_t      len;
+    size_t len;
 } str_view_t;
 
-static inline bool view_eq(str_view_t v, const char *s) {
-    size_t slen = strlen(s);
-    return v.len == slen && memcmp(v.ptr, s, slen) == 0;
+static inline bool view_eq(str_view_t view, const char *expected_string) {
+    size_t expected_length = strlen(expected_string);
+    return view.len == expected_length && memcmp(view.ptr, expected_string, expected_length) == 0;
 }
 
-static inline bool view_case_eq(str_view_t v, const char *s) {
-    size_t slen = strlen(s);
-    return v.len == slen && strncasecmp(v.ptr, s, slen) == 0;
+static inline bool view_case_eq(str_view_t view, const char *expected_string) {
+    size_t expected_length = strlen(expected_string);
+    return view.len == expected_length && strncasecmp(view.ptr, expected_string, expected_length) == 0;
 }
 
-static inline bool parse_i64(const char *s, size_t len, int64_t *out) {
-    if (!len) return false;
-    if (__builtin_expect(len == 1 && s[0] >= '0' && s[0] <= '9', 1)) {
-        *out = s[0] - '0';
+static inline bool parse_i64(const char *string_buffer, size_t buffer_length, int64_t *out_parsed_value) {
+    if (!buffer_length) {
+        return false;
+    }
+    if (__builtin_expect(buffer_length == 1 && string_buffer[0] >= '0' && string_buffer[0] <= '9', 1)) {
+        *out_parsed_value = string_buffer[0] - '0';
         return true;
     }
-    if (len == 2 && s[0] >= '0' && s[0] <= '9' && s[1] >= '0' && s[1] <= '9') {
-        *out = (s[0] - '0') * 10 + (s[1] - '0');
+    if (buffer_length == 2 && string_buffer[0] >= '0' && string_buffer[0] <= '9' && string_buffer[1] >= '0' &&
+        string_buffer[1] <= '9') {
+        *out_parsed_value = (string_buffer[0] - '0') * 10 + (string_buffer[1] - '0');
         return true;
     }
-    size_t i = 0;
-    int neg = 0;
-    if (s[0] == '-') { neg = 1; i = 1; }
-    else if (s[0] == '+') { i = 1; }
-    if (i >= len) return false;
-    int64_t v = 0;
-    for (; i < len; i++) {
-        unsigned char c = (unsigned char)s[i];
-        if (c < '0' || c > '9') return false;
-        v = v * 10 + (c - '0');
+    size_t cursor_index = 0;
+    int sign_multiplier = 1;
+    if (string_buffer[0] == '-') {
+        sign_multiplier = -1;
+        cursor_index = 1;
+    } else if (string_buffer[0] == '+') {
+        cursor_index = 1;
     }
-    *out = neg ? -v : v;
+    if (cursor_index >= buffer_length) {
+        return false;
+    }
+    int64_t accumulated_value = 0;
+    for (; cursor_index < buffer_length; cursor_index++) {
+        unsigned char digit_char = (unsigned char)string_buffer[cursor_index];
+        if (digit_char < '0' || digit_char > '9') {
+            return false;
+        }
+        accumulated_value = accumulated_value * 10 + (digit_char - '0');
+    }
+    *out_parsed_value = sign_multiplier * accumulated_value;
     return true;
 }
 
@@ -78,52 +89,53 @@ static inline bool parse_i64(const char *s, size_t len, int64_t *out) {
 #include <sys/prctl.h>
 #endif
 
-static inline size_t format_i64(char *buf, int64_t v) {
-    if (__builtin_expect(v >= 0 && v < 100, 1)) {
-        if (v < 10) {
-            buf[0] = (char)('0' + v);
+static inline size_t format_i64(char *destination_buffer, int64_t integer_value) {
+    if (__builtin_expect(integer_value >= 0 && integer_value < 100, 1)) {
+        if (integer_value < 10) {
+            destination_buffer[0] = (char)('0' + integer_value);
             return 1;
         }
-        buf[0] = (char)('0' + (v / 10));
-        buf[1] = (char)('0' + (v % 10));
+        destination_buffer[0] = (char)('0' + (integer_value / 10));
+        destination_buffer[1] = (char)('0' + (integer_value % 10));
         return 2;
     }
-    char tmp[24];
-    size_t t = 0;
-    uint64_t u;
-    bool neg = false;
-    if (v < 0) {
-        neg = true;
-        u = (uint64_t)-v;
+    char temporary_buffer[24];
+    size_t digits_written = 0;
+    uint64_t unsigned_magnitude;
+    bool is_negative = false;
+    if (integer_value < 0) {
+        is_negative = true;
+        unsigned_magnitude = (uint64_t)-integer_value;
     } else {
-        u = (uint64_t)v;
+        unsigned_magnitude = (uint64_t)integer_value;
     }
-    static const char digits[201] =
-        "0001020304050607080910111213141516171819"
-        "2021222324252627282930313233343536373839"
-        "4041424344454647484950515253545556575859"
-        "6061626364656667686970717273747576777879"
-        "8081828384858687888990919293949596979899";
-    while (u >= 100) {
-        uint64_t q = u / 100;
-        uint32_t r = (uint32_t)(u - (q * 100));
-        tmp[t++] = digits[r * 2 + 1];
-        tmp[t++] = digits[r * 2];
-        u = q;
+    static const char two_digit_lookup_table[201] = "0001020304050607080910111213141516171819"
+                                                    "2021222324252627282930313233343536373839"
+                                                    "4041424344454647484950515253545556575859"
+                                                    "6061626364656667686970717273747576777879"
+                                                    "8081828384858687888990919293949596979899";
+    while (unsigned_magnitude >= 100) {
+        uint64_t quotient = unsigned_magnitude / 100;
+        uint32_t remainder = (uint32_t)(unsigned_magnitude - (quotient * 100));
+        temporary_buffer[digits_written++] = two_digit_lookup_table[remainder * 2 + 1];
+        temporary_buffer[digits_written++] = two_digit_lookup_table[remainder * 2];
+        unsigned_magnitude = quotient;
     }
-    if (u < 10) {
-        tmp[t++] = (char)('0' + u);
+    if (unsigned_magnitude < 10) {
+        temporary_buffer[digits_written++] = (char)('0' + unsigned_magnitude);
     } else {
-        uint32_t r = (uint32_t)u;
-        tmp[t++] = digits[r * 2 + 1];
-        tmp[t++] = digits[r * 2];
+        uint32_t remainder = (uint32_t)unsigned_magnitude;
+        temporary_buffer[digits_written++] = two_digit_lookup_table[remainder * 2 + 1];
+        temporary_buffer[digits_written++] = two_digit_lookup_table[remainder * 2];
     }
-    size_t out_len = 0;
-    if (neg) buf[out_len++] = '-';
-    for (size_t i = 0; i < t; i++) {
-        buf[out_len++] = tmp[t - 1 - i];
+    size_t output_length = 0;
+    if (is_negative) {
+        destination_buffer[output_length++] = '-';
     }
-    return out_len;
+    for (size_t index = 0; index < digits_written; index++) {
+        destination_buffer[output_length++] = temporary_buffer[digits_written - 1 - index];
+    }
+    return output_length;
 }
 
 static inline uint64_t clock_monotonic_ms(void) {

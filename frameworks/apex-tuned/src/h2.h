@@ -2,20 +2,37 @@
 
 #include "server.h"
 #include <nghttp2/nghttp2.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
-typedef struct h2_conn_s {
-    conn_t *c;
-    worker_t *w;
+#define H2_MAX_CONCURRENT_STREAMS 128
+#define H2_STREAM_SLOT_MASK (H2_MAX_CONCURRENT_STREAMS - 1)
+#define H2_MAX_PATH_LENGTH 256
+#define H2_INLINE_RESPONSE_BUFFER_SIZE 32
+
+typedef struct h2_stream_slot_s {
+    char request_path[H2_MAX_PATH_LENGTH];
+    size_t request_path_length;
+
+    char inline_response_buffer[H2_INLINE_RESPONSE_BUFFER_SIZE];
+    size_t inline_response_length;
+
+    char *dynamic_response_buffer;
+    size_t dynamic_response_length;
+    bool is_dynamic_buffer_static_memory;
+} h2_stream_slot_t;
+
+typedef struct h2_connection_s {
+    conn_t *connection;
+    worker_t *worker;
     nghttp2_session *session;
-    char stream_paths[128][256];
-    size_t stream_path_lens[128];
-    char stream_res[128][32];
-    size_t stream_res_lens[128];
-    char *stream_dyn_res[128];
-    size_t stream_dyn_lens[128];
-    bool stream_dyn_is_static[128];
-} h2_conn_t;
+    h2_stream_slot_t stream_slots[H2_MAX_CONCURRENT_STREAMS];
+} h2_connection_t;
 
-bool h2_conn_init(conn_t *c, worker_t *w);
-bool h2_conn_process(conn_t *c, worker_t *w, const char *buf, size_t len);
-void h2_conn_free(conn_t *c);
+bool h2_connection_init(conn_t *connection, worker_t *worker);
+
+bool h2_connection_process_incoming_data(conn_t *connection, worker_t *worker, const char *input_buffer,
+                                         size_t input_length);
+
+void h2_connection_destroy(conn_t *connection);

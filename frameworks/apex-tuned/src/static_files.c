@@ -1,109 +1,136 @@
 #include "static_files.h"
 
-static char g_static_root[512] = "/data/static";
+static char g_static_root_directory[512] = "/data/static";
 
-void static_files_init(const char *root_dir) {
-    if (root_dir && *root_dir) {
-        strncpy(g_static_root, root_dir, sizeof(g_static_root) - 1);
+void static_files_init(const char *root_directory) {
+    if (root_directory != NULL && *root_directory != '\0') {
+        strncpy(g_static_root_directory, root_directory, sizeof(g_static_root_directory) - 1);
+        g_static_root_directory[sizeof(g_static_root_directory) - 1] = '\0';
     }
 }
 
-static const char* guess_mime_type(const char *path) {
-    const char *dot = strrchr(path, '.');
-    if (!dot) return "application/octet-stream";
-    if (strcmp(dot, ".html") == 0 || strcmp(dot, ".htm") == 0) return "text/html; charset=utf-8";
-    if (strcmp(dot, ".css") == 0) return "text/css";
-    if (strcmp(dot, ".js") == 0) return "application/javascript";
-    if (strcmp(dot, ".json") == 0) return "application/json";
-    if (strcmp(dot, ".png") == 0) return "image/png";
-    if (strcmp(dot, ".jpg") == 0 || strcmp(dot, ".jpeg") == 0) return "image/jpeg";
-    if (strcmp(dot, ".txt") == 0) return "text/plain";
-    if (strcmp(dot, ".svg") == 0) return "image/svg+xml";
+static const char *determine_mime_type(const char *file_path) {
+    const char *extension_dot = strrchr(file_path, '.');
+    if (!extension_dot) {
+        return "application/octet-stream";
+    }
+
+    if (strcmp(extension_dot, ".html") == 0 || strcmp(extension_dot, ".htm") == 0) {
+        return "text/html; charset=utf-8";
+    }
+    if (strcmp(extension_dot, ".css") == 0) {
+        return "text/css";
+    }
+    if (strcmp(extension_dot, ".js") == 0) {
+        return "application/javascript";
+    }
+    if (strcmp(extension_dot, ".json") == 0) {
+        return "application/json";
+    }
+    if (strcmp(extension_dot, ".png") == 0) {
+        return "image/png";
+    }
+    if (strcmp(extension_dot, ".jpg") == 0 || strcmp(extension_dot, ".jpeg") == 0) {
+        return "image/jpeg";
+    }
+    if (strcmp(extension_dot, ".txt") == 0) {
+        return "text/plain";
+    }
+    if (strcmp(extension_dot, ".svg") == 0) {
+        return "image/svg+xml";
+    }
+
     return "application/octet-stream";
 }
 
-void static_file_handler(context_t *ctx) {
-    request_t *req = ctx->req;
-    response_t *res = ctx->res;
+void static_file_handler(context_t *context) {
+    request_t *request = context->req;
+    response_t *response = context->res;
 
-    if (req->num_route_params == 0 || req->route_params[0].len == 0) {
-        res_set_status(res, 404);
+    if (request->num_route_params == 0 || request->route_params[0].len == 0) {
+        res_set_status(response, 404);
         return;
     }
 
-    char rel_path[256];
-    size_t rlen = req->route_params[0].len;
-    if (rlen >= sizeof(rel_path)) rlen = sizeof(rel_path) - 1;
-    memcpy(rel_path, req->route_params[0].ptr, rlen);
-    rel_path[rlen] = '\0';
+    char relative_file_path[256];
+    size_t path_length = request->route_params[0].len;
+    if (path_length >= sizeof(relative_file_path)) {
+        path_length = sizeof(relative_file_path) - 1;
+    }
+    memcpy(relative_file_path, request->route_params[0].ptr, path_length);
+    relative_file_path[path_length] = '\0';
 
-    if (strstr(rel_path, "..")) {
-        res_set_status(res, 403);
+    if (strstr(relative_file_path, "..") != NULL) {
+        res_set_status(response, 403);
         return;
     }
 
-    const char *mime = guess_mime_type(rel_path);
+    const char *mime_type = determine_mime_type(relative_file_path);
 
-    bool client_wants_br = (req->accept_encoding.ptr && strcasestr(req->accept_encoding.ptr, "br") != NULL);
-    bool client_wants_gz = (req->accept_encoding.ptr && strcasestr(req->accept_encoding.ptr, "gzip") != NULL);
+    bool client_supports_brotli =
+        (request->accept_encoding.ptr && strcasestr(request->accept_encoding.ptr, "br") != NULL);
+    bool client_supports_gzip =
+        (request->accept_encoding.ptr && strcasestr(request->accept_encoding.ptr, "gzip") != NULL);
 
-    char full_path[512];
-    const char *chosen_encoding = NULL;
-    int fd = -1;
+    char full_file_path[512];
+    const char *chosen_content_encoding = NULL;
+    int file_descriptor = -1;
 
-    if (client_wants_br) {
-        snprintf(full_path, sizeof(full_path), "%s/%s.br", g_static_root, rel_path);
-        fd = open(full_path, O_RDONLY);
-        if (fd >= 0) {
-            chosen_encoding = "br";
+    if (client_supports_brotli) {
+        snprintf(full_file_path, sizeof(full_file_path), "%s/%s.br", g_static_root_directory, relative_file_path);
+        file_descriptor = open(full_file_path, O_RDONLY);
+        if (file_descriptor >= 0) {
+            chosen_content_encoding = "br";
         }
     }
 
-    if (fd < 0 && client_wants_gz) {
-        snprintf(full_path, sizeof(full_path), "%s/%s.gz", g_static_root, rel_path);
-        fd = open(full_path, O_RDONLY);
-        if (fd >= 0) {
-            chosen_encoding = "gzip";
+    if (file_descriptor < 0 && client_supports_gzip) {
+        snprintf(full_file_path, sizeof(full_file_path), "%s/%s.gz", g_static_root_directory, relative_file_path);
+        file_descriptor = open(full_file_path, O_RDONLY);
+        if (file_descriptor >= 0) {
+            chosen_content_encoding = "gzip";
         }
     }
 
-    if (fd < 0) {
-        snprintf(full_path, sizeof(full_path), "%s/%s", g_static_root, rel_path);
-        fd = open(full_path, O_RDONLY);
+    if (file_descriptor < 0) {
+        snprintf(full_file_path, sizeof(full_file_path), "%s/%s", g_static_root_directory, relative_file_path);
+        file_descriptor = open(full_file_path, O_RDONLY);
     }
 
-    if (fd < 0) {
-        res_set_status(res, 404);
+    if (file_descriptor < 0) {
+        res_set_status(response, 404);
         return;
     }
 
-    struct stat st;
-    if (fstat(fd, &st) < 0 || !S_ISREG(st.st_mode)) {
-        close(fd);
-        res_set_status(res, 404);
+    struct stat file_status;
+    if (fstat(file_descriptor, &file_status) < 0 || !S_ISREG(file_status.st_mode)) {
+        close(file_descriptor);
+        res_set_status(response, 404);
         return;
     }
 
-    size_t file_sz = (size_t)st.st_size;
-    char *buf = malloc(file_sz ? file_sz : 1);
-    if (!buf) {
-        close(fd);
-        res_set_status(res, 500);
+    size_t file_size = (size_t)file_status.st_size;
+    char *read_buffer = malloc(file_size ? file_size : 1);
+    if (!read_buffer) {
+        close(file_descriptor);
+        res_set_status(response, 500);
         return;
     }
 
-    size_t rd = 0;
-    while (rd < file_sz) {
-        ssize_t n = read(fd, buf + rd, file_sz - rd);
-        if (n <= 0) break;
-        rd += n;
+    size_t bytes_read = 0;
+    while (bytes_read < file_size) {
+        ssize_t read_result = read(file_descriptor, read_buffer + bytes_read, file_size - bytes_read);
+        if (read_result <= 0) {
+            break;
+        }
+        bytes_read += (size_t)read_result;
     }
-    close(fd);
+    close(file_descriptor);
 
-    res->status = 200;
-    res->content_type = mime;
-    res->content_encoding = chosen_encoding;
-    res->body = buf;
-    res->body_len = rd;
-    res->body_needs_free = true;
+    response->status = 200;
+    response->content_type = mime_type;
+    response->content_encoding = chosen_content_encoding;
+    response->body = read_buffer;
+    response->body_len = bytes_read;
+    response->body_needs_free = true;
 }

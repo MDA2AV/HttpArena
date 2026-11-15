@@ -1,379 +1,446 @@
 #include "http.h"
 #include <ctype.h>
 
-void req_init(request_t *req) {
-    req->method = HTTP_METHOD_UNKNOWN;
-    req->uri = (str_view_t){ NULL, 0 };
-    req->path = (str_view_t){ NULL, 0 };
-    req->query = (str_view_t){ NULL, 0 };
-    req->body = (str_view_t){ NULL, 0 };
-    req->num_headers = 0;
-    req->num_params = 0;
-    req->num_route_params = 0;
-    req->content_length = -1;
-    req->is_chunked = false;
-    req->keep_alive = true;
-    req->accept_encoding = (str_view_t){ NULL, 0 };
-    req->content_type = (str_view_t){ NULL, 0 };
+void req_init(request_t *request) {
+    request->method = HTTP_METHOD_UNKNOWN;
+    request->uri = (str_view_t){NULL, 0};
+    request->path = (str_view_t){NULL, 0};
+    request->query = (str_view_t){NULL, 0};
+    request->body = (str_view_t){NULL, 0};
+    request->num_headers = 0;
+    request->num_params = 0;
+    request->num_route_params = 0;
+    request->content_length = -1;
+    request->is_chunked = false;
+    request->keep_alive = true;
+    request->accept_encoding = (str_view_t){NULL, 0};
+    request->content_type = (str_view_t){NULL, 0};
 }
 
-void req_parse_query(request_t *req) {
-    if (!req->query.len || !req->query.ptr) return;
-    const char *p = req->query.ptr;
-    const char *end = p + req->query.len;
+void req_parse_query(request_t *request) {
+    if (!request->query.len || !request->query.ptr) {
+        return;
+    }
+    const char *cursor = request->query.ptr;
+    const char *query_end = cursor + request->query.len;
 
-    while (p < end && req->num_params < MAX_PARAMS) {
-        const char *key_start = p;
-        const char *eq = NULL;
-        while (p < end && *p != '&') {
-            if (*p == '=' && !eq) {
-                eq = p;
+    while (cursor < query_end && request->num_params < MAX_PARAMS) {
+        const char *key_start = cursor;
+        const char *equals_separator = NULL;
+        while (cursor < query_end && *cursor != '&') {
+            if (*cursor == '=' && !equals_separator) {
+                equals_separator = cursor;
             }
-            p++;
+            cursor++;
         }
 
-        if (eq) {
-            req->params[req->num_params].key = (str_view_t){ key_start, (size_t)(eq - key_start) };
-            req->params[req->num_params].val = (str_view_t){ eq + 1, (size_t)(p - (eq + 1)) };
+        if (equals_separator) {
+            request->params[request->num_params].key = (str_view_t){key_start, (size_t)(equals_separator - key_start)};
+            request->params[request->num_params].val =
+                (str_view_t){equals_separator + 1, (size_t)(cursor - (equals_separator + 1))};
         } else {
-            req->params[req->num_params].key = (str_view_t){ key_start, (size_t)(p - key_start) };
-            req->params[req->num_params].val = (str_view_t){ NULL, 0 };
+            request->params[request->num_params].key = (str_view_t){key_start, (size_t)(cursor - key_start)};
+            request->params[request->num_params].val = (str_view_t){NULL, 0};
         }
-        req->num_params++;
+        request->num_params++;
 
-        if (p < end && *p == '&') {
-            p++;
+        if (cursor < query_end && *cursor == '&') {
+            cursor++;
         }
     }
 }
 
-str_view_t req_get_header(const request_t *req, const char *name) {
-    for (size_t i = 0; i < req->num_headers; i++) {
-        if (view_case_eq(req->headers[i].name, name)) {
-            return req->headers[i].val;
+str_view_t req_get_header(const request_t *request, const char *header_name) {
+    for (size_t header_index = 0; header_index < request->num_headers; header_index++) {
+        if (view_case_eq(request->headers[header_index].name, header_name)) {
+            return request->headers[header_index].val;
         }
     }
-    return (str_view_t){ NULL, 0 };
+    return (str_view_t){NULL, 0};
 }
 
-bool req_get_query_param(const request_t *req, const char *key, str_view_t *out_val) {
-    for (size_t i = 0; i < req->num_params; i++) {
-        if (view_eq(req->params[i].key, key)) {
-            *out_val = req->params[i].val;
+bool req_get_query_param(const request_t *request, const char *parameter_key, str_view_t *out_parameter_value) {
+    for (size_t param_index = 0; param_index < request->num_params; param_index++) {
+        if (view_eq(request->params[param_index].key, parameter_key)) {
+            *out_parameter_value = request->params[param_index].val;
             return true;
         }
     }
     return false;
 }
 
-void res_init(response_t *res, bool keep_alive) {
-    res->status = 200;
-    res->keep_alive = keep_alive;
-    res->body_needs_free = false;
-    res->content_type = "text/plain";
-    res->content_encoding = NULL;
-    res->extra_headers = NULL;
-    res->extra_headers_len = 0;
-    res->body = NULL;
-    res->body_len = 0;
+void res_init(response_t *response, bool keep_alive) {
+    response->status = 200;
+    response->keep_alive = keep_alive;
+    response->body_needs_free = false;
+    response->content_type = "text/plain";
+    response->content_encoding = NULL;
+    response->extra_headers = NULL;
+    response->extra_headers_len = 0;
+    response->body = NULL;
+    response->body_len = 0;
 }
 
-void res_set_status(response_t *res, int status) {
-    res->status = status;
+void res_set_status(response_t *response, int status_code) {
+    response->status = status_code;
 }
 
-void res_set_text(response_t *res, const char *text, size_t len) {
-    res->content_type = "text/plain";
-    res->body = text;
-    res->body_len = len;
+void res_set_text(response_t *response, const char *text, size_t length) {
+    response->content_type = "text/plain";
+    response->body = text;
+    response->body_len = length;
 }
 
-void res_set_json(response_t *res, const char *json, size_t len) {
-    res->content_type = "application/json";
-    res->body = json;
-    res->body_len = len;
+void res_set_json(response_t *response, const char *json_string, size_t length) {
+    response->content_type = "application/json";
+    response->body = json_string;
+    response->body_len = length;
 }
 
-void res_set_binary(response_t *res, const char *data, size_t len, const char *content_type) {
-    res->content_type = content_type ? content_type : "application/octet-stream";
-    res->body = data;
-    res->body_len = len;
+void res_set_binary(response_t *response, const char *data, size_t length, const char *content_type) {
+    response->content_type = content_type ? content_type : "application/octet-stream";
+    response->body = data;
+    response->body_len = length;
 }
 
-static inline const char* status_text(int code) {
-    switch (code) {
-        case 200: return "200 OK";
-        case 204: return "204 No Content";
-        case 400: return "400 Bad Request";
-        case 404: return "404 Not Found";
-        case 405: return "405 Method Not Allowed";
-        case 500: return "500 Internal Server Error";
-        case 503: return "503 Service Unavailable";
-        default:  return "200 OK";
+static inline const char *status_text(int status_code) {
+    switch (status_code) {
+    case 200:
+        return "200 OK";
+    case 204:
+        return "204 No Content";
+    case 400:
+        return "400 Bad Request";
+    case 404:
+        return "404 Not Found";
+    case 405:
+        return "405 Method Not Allowed";
+    case 500:
+        return "500 Internal Server Error";
+    case 503:
+        return "503 Service Unavailable";
+    default:
+        return "200 OK";
     }
 }
 
-size_t res_serialize(const response_t *res, char *out_buf, size_t max_out) {
-    char *p = out_buf;
-    char *end = out_buf + max_out;
+size_t res_serialize(const response_t *response, char *destination_buffer, size_t max_destination_size) {
+    char *cursor = destination_buffer;
+    char *buffer_end = destination_buffer + max_destination_size;
 
-    if (__builtin_expect(res->status == 200 && res->content_type && !res->content_encoding && !res->extra_headers && res->keep_alive, 1)) {
-        if (strcmp(res->content_type, "text/plain") == 0) {
-            memcpy(p, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ", 59);
-            p += 59;
-            p += format_i64(p, (int64_t)res->body_len);
-            memcpy(p, "\r\nConnection: keep-alive\r\n\r\n", 28);
-            p += 28;
-            if (res->body && res->body_len) {
-                if ((size_t)(end - p) < res->body_len) return 0;
-                memcpy(p, res->body, res->body_len);
-                p += res->body_len;
+    if (__builtin_expect(response->status == 200 && response->content_type && !response->content_encoding &&
+                             !response->extra_headers && response->keep_alive,
+                         1)) {
+        if (strcmp(response->content_type, "text/plain") == 0) {
+            memcpy(cursor, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ", 59);
+            cursor += 59;
+            cursor += format_i64(cursor, (int64_t)response->body_len);
+            memcpy(cursor, "\r\nConnection: keep-alive\r\n\r\n", 28);
+            cursor += 28;
+            if (response->body && response->body_len) {
+                if ((size_t)(buffer_end - cursor) < response->body_len) {
+                    return 0;
+                }
+                memcpy(cursor, response->body, response->body_len);
+                cursor += response->body_len;
             }
-            return (size_t)(p - out_buf);
-        } else if (strcmp(res->content_type, "application/json") == 0) {
-            memcpy(p, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: ", 65);
-            p += 65;
-            p += format_i64(p, (int64_t)res->body_len);
-            memcpy(p, "\r\nConnection: keep-alive\r\n\r\n", 28);
-            p += 28;
-            if (res->body && res->body_len) {
-                if ((size_t)(end - p) < res->body_len) return 0;
-                memcpy(p, res->body, res->body_len);
-                p += res->body_len;
+            return (size_t)(cursor - destination_buffer);
+        } else if (strcmp(response->content_type, "application/json") == 0) {
+            memcpy(cursor, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: ", 65);
+            cursor += 65;
+            cursor += format_i64(cursor, (int64_t)response->body_len);
+            memcpy(cursor, "\r\nConnection: keep-alive\r\n\r\n", 28);
+            cursor += 28;
+            if (response->body && response->body_len) {
+                if ((size_t)(buffer_end - cursor) < response->body_len) {
+                    return 0;
+                }
+                memcpy(cursor, response->body, response->body_len);
+                cursor += response->body_len;
             }
-            return (size_t)(p - out_buf);
+            return (size_t)(cursor - destination_buffer);
         }
     }
 
-    if (__builtin_expect(res->status == 200, 1)) {
-        memcpy(p, "HTTP/1.1 200 OK\r\n", 17);
-        p += 17;
+    if (__builtin_expect(response->status == 200, 1)) {
+        memcpy(cursor, "HTTP/1.1 200 OK\r\n", 17);
+        cursor += 17;
     } else {
-        const char *st = status_text(res->status);
-        size_t st_len = strlen(st);
-        memcpy(p, "HTTP/1.1 ", 9); p += 9;
-        memcpy(p, st, st_len); p += st_len;
-        memcpy(p, "\r\n", 2); p += 2;
+        const char *status_string = status_text(response->status);
+        size_t status_string_length = strlen(status_string);
+        memcpy(cursor, "HTTP/1.1 ", 9);
+        cursor += 9;
+        memcpy(cursor, status_string, status_string_length);
+        cursor += status_string_length;
+        memcpy(cursor, "\r\n", 2);
+        cursor += 2;
     }
 
-    if (res->content_type) {
-        if (strcmp(res->content_type, "text/plain") == 0) {
-            memcpy(p, "Content-Type: text/plain\r\n", 26);
-            p += 26;
-        } else if (strcmp(res->content_type, "application/json") == 0) {
-            memcpy(p, "Content-Type: application/json\r\n", 32);
-            p += 32;
+    if (response->content_type) {
+        if (strcmp(response->content_type, "text/plain") == 0) {
+            memcpy(cursor, "Content-Type: text/plain\r\n", 26);
+            cursor += 26;
+        } else if (strcmp(response->content_type, "application/json") == 0) {
+            memcpy(cursor, "Content-Type: application/json\r\n", 32);
+            cursor += 32;
         } else {
-            size_t ct_len = strlen(res->content_type);
-            memcpy(p, "Content-Type: ", 14); p += 14;
-            memcpy(p, res->content_type, ct_len); p += ct_len;
-            memcpy(p, "\r\n", 2); p += 2;
+            size_t content_type_length = strlen(response->content_type);
+            memcpy(cursor, "Content-Type: ", 14);
+            cursor += 14;
+            memcpy(cursor, response->content_type, content_type_length);
+            cursor += content_type_length;
+            memcpy(cursor, "\r\n", 2);
+            cursor += 2;
         }
     }
 
-    if (res->content_encoding) {
-        size_t ce_len = strlen(res->content_encoding);
-        memcpy(p, "Content-Encoding: ", 18); p += 18;
-        memcpy(p, res->content_encoding, ce_len); p += ce_len;
-        memcpy(p, "\r\n", 2); p += 2;
+    if (response->content_encoding) {
+        size_t content_encoding_length = strlen(response->content_encoding);
+        memcpy(cursor, "Content-Encoding: ", 18);
+        cursor += 18;
+        memcpy(cursor, response->content_encoding, content_encoding_length);
+        cursor += content_encoding_length;
+        memcpy(cursor, "\r\n", 2);
+        cursor += 2;
     }
 
-    memcpy(p, "Content-Length: ", 16); p += 16;
-    p += format_i64(p, (int64_t)res->body_len);
-    memcpy(p, "\r\n", 2); p += 2;
+    memcpy(cursor, "Content-Length: ", 16);
+    cursor += 16;
+    cursor += format_i64(cursor, (int64_t)response->body_len);
+    memcpy(cursor, "\r\n", 2);
+    cursor += 2;
 
-    if (res->keep_alive) {
-        memcpy(p, "Connection: keep-alive\r\n", 24); p += 24;
+    if (response->keep_alive) {
+        memcpy(cursor, "Connection: keep-alive\r\n", 24);
+        cursor += 24;
     } else {
-        memcpy(p, "Connection: close\r\n", 19); p += 19;
+        memcpy(cursor, "Connection: close\r\n", 19);
+        cursor += 19;
     }
 
-    if (res->extra_headers && res->extra_headers_len) {
-        memcpy(p, res->extra_headers, res->extra_headers_len);
-        p += res->extra_headers_len;
+    if (response->extra_headers && response->extra_headers_len) {
+        memcpy(cursor, response->extra_headers, response->extra_headers_len);
+        cursor += response->extra_headers_len;
     }
 
-    memcpy(p, "\r\n", 2); p += 2;
+    memcpy(cursor, "\r\n", 2);
+    cursor += 2;
 
-    if (res->body && res->body_len) {
-        if ((size_t)(end - p) < res->body_len) {
+    if (response->body && response->body_len) {
+        if ((size_t)(buffer_end - cursor) < response->body_len) {
             return 0;
         }
-        memcpy(p, res->body, res->body_len);
-        p += res->body_len;
+        memcpy(cursor, response->body, response->body_len);
+        cursor += response->body_len;
     }
 
-    return (size_t)(p - out_buf);
+    return (size_t)(cursor - destination_buffer);
 }
 
-static inline const char* find_crlf_crlf(const char *buf, size_t len, size_t *header_len_out) {
-    if (len < 4) return NULL;
-    const char *p = buf;
-    const char *end = buf + len - 3;
-    while (p < end) {
-        p = memchr(p, '\r', (size_t)(end - p));
-        if (!p) return NULL;
-        if (p[1] == '\n' && p[2] == '\r' && p[3] == '\n') {
-            *header_len_out = (size_t)(p - buf) + 4;
-            return p + 4;
+static inline const char *find_crlf_crlf(const char *buffer, size_t buffer_length, size_t *out_header_length) {
+    if (buffer_length < 4) {
+        return NULL;
+    }
+    const char *cursor = buffer;
+    const char *search_end = buffer + buffer_length - 3;
+    while (cursor < search_end) {
+        cursor = memchr(cursor, '\r', (size_t)(search_end - cursor));
+        if (!cursor) {
+            return NULL;
         }
-        p++;
+        if (cursor[1] == '\n' && cursor[2] == '\r' && cursor[3] == '\n') {
+            *out_header_length = (size_t)(cursor - buffer) + 4;
+            return cursor + 4;
+        }
+        cursor++;
     }
     return NULL;
 }
 
-int parse_http_request(const char *buf, size_t len, request_t *req, char *chunk_buf, size_t max_chunk, size_t *consumed_out) {
-    size_t header_len = 0;
-    const char *body_start = find_crlf_crlf(buf, len, &header_len);
+int parse_http_request(const char *buffer, size_t buffer_length, request_t *request, char *chunk_buffer,
+                       size_t max_chunk_size, size_t *out_consumed_bytes) {
+    size_t header_length = 0;
+    const char *body_start = find_crlf_crlf(buffer, buffer_length, &header_length);
     if (!body_start) {
         return 0;
     }
 
-    req_init(req);
+    req_init(request);
 
-    const char *line = buf;
-    const char *line_end = memchr(line, '\r', header_len);
-    if (!line_end || line_end + 1 >= buf + header_len || line_end[1] != '\n') return -1;
-
-    const char *sp1 = memchr(line, ' ', line_end - line);
-    if (!sp1) return -1;
-    size_t mlen = sp1 - line;
-    if (mlen == 3 && memcmp(line, "GET", 3) == 0) req->method = HTTP_METHOD_GET;
-    else if (mlen == 4 && memcmp(line, "POST", 4) == 0) req->method = HTTP_METHOD_POST;
-    else if (mlen == 4 && memcmp(line, "HEAD", 4) == 0) req->method = HTTP_METHOD_HEAD;
-    else if (mlen == 3 && memcmp(line, "PUT", 3) == 0) req->method = HTTP_METHOD_PUT;
-    else if (mlen == 6 && memcmp(line, "DELETE", 6) == 0) req->method = HTTP_METHOD_DELETE;
-    else req->method = HTTP_METHOD_UNKNOWN;
-
-    const char *sp2 = memchr(sp1 + 1, ' ', line_end - (sp1 + 1));
-    if (!sp2) return -1;
-
-    req->uri = (str_view_t){ sp1 + 1, (size_t)(sp2 - (sp1 + 1)) };
-    const char *qmark = memchr(req->uri.ptr, '?', req->uri.len);
-    if (qmark) {
-        req->path = (str_view_t){ req->uri.ptr, (size_t)(qmark - req->uri.ptr) };
-        req->query = (str_view_t){ qmark + 1, (size_t)(req->uri.ptr + req->uri.len - (qmark + 1)) };
-    } else {
-        req->path = req->uri;
-        req->query = (str_view_t){ NULL, 0 };
+    const char *line_start = buffer;
+    const char *line_end = memchr(line_start, '\r', header_length);
+    if (!line_end || line_end + 1 >= buffer + header_length || line_end[1] != '\n') {
+        return -1;
     }
 
-    str_view_t proto = (str_view_t){ sp2 + 1, (size_t)(line_end - (sp2 + 1)) };
-    if (view_eq(proto, "HTTP/1.0")) {
-        req->keep_alive = false;
+    const char *space_first = memchr(line_start, ' ', (size_t)(line_end - line_start));
+    if (!space_first) {
+        return -1;
+    }
+    size_t method_length = (size_t)(space_first - line_start);
+    if (method_length == 3 && memcmp(line_start, "GET", 3) == 0) {
+        request->method = HTTP_METHOD_GET;
+    } else if (method_length == 4 && memcmp(line_start, "POST", 4) == 0) {
+        request->method = HTTP_METHOD_POST;
+    } else if (method_length == 4 && memcmp(line_start, "HEAD", 4) == 0) {
+        request->method = HTTP_METHOD_HEAD;
+    } else if (method_length == 3 && memcmp(line_start, "PUT", 3) == 0) {
+        request->method = HTTP_METHOD_PUT;
+    } else if (method_length == 6 && memcmp(line_start, "DELETE", 6) == 0) {
+        request->method = HTTP_METHOD_DELETE;
     } else {
-        req->keep_alive = true;
+        request->method = HTTP_METHOD_UNKNOWN;
     }
 
-    const char *p = line_end + 2;
-    const char *headers_end = buf + header_len - 2;
+    const char *space_second = memchr(space_first + 1, ' ', (size_t)(line_end - (space_first + 1)));
+    if (!space_second) {
+        return -1;
+    }
 
-    while (p < headers_end && req->num_headers < MAX_HEADERS) {
-        const char *next_line = memmem(p, headers_end - p, "\r\n", 2);
-        if (!next_line) break;
-        if (next_line == p) {
-            p += 2;
+    request->uri = (str_view_t){space_first + 1, (size_t)(space_second - (space_first + 1))};
+    const char *question_mark = memchr(request->uri.ptr, '?', request->uri.len);
+    if (question_mark) {
+        request->path = (str_view_t){request->uri.ptr, (size_t)(question_mark - request->uri.ptr)};
+        request->query =
+            (str_view_t){question_mark + 1, (size_t)(request->uri.ptr + request->uri.len - (question_mark + 1))};
+    } else {
+        request->path = request->uri;
+        request->query = (str_view_t){NULL, 0};
+    }
+
+    str_view_t protocol_view = (str_view_t){space_second + 1, (size_t)(line_end - (space_second + 1))};
+    if (view_eq(protocol_view, "HTTP/1.0")) {
+        request->keep_alive = false;
+    } else {
+        request->keep_alive = true;
+    }
+
+    const char *header_cursor = line_end + 2;
+    const char *headers_end = buffer + header_length - 2;
+
+    while (header_cursor < headers_end && request->num_headers < MAX_HEADERS) {
+        const char *next_line = memmem(header_cursor, (size_t)(headers_end - header_cursor), "\r\n", 2);
+        if (!next_line) {
+            break;
+        }
+        if (next_line == header_cursor) {
+            header_cursor += 2;
             break;
         }
 
-        const char *colon = memchr(p, ':', next_line - p);
+        const char *colon = memchr(header_cursor, ':', (size_t)(next_line - header_cursor));
         if (colon) {
-            const char *hname = p;
-            size_t hname_len = colon - p;
-            const char *hval = colon + 1;
-            while (hval < next_line && (*hval == ' ' || *hval == '\t')) hval++;
-            const char *hval_end = next_line;
-            while (hval_end > hval && (*(hval_end - 1) == ' ' || *(hval_end - 1) == '\t')) hval_end--;
+            const char *header_name = header_cursor;
+            size_t header_name_length = (size_t)(colon - header_cursor);
+            const char *header_value = colon + 1;
+            while (header_value < next_line && (*header_value == ' ' || *header_value == '\t')) {
+                header_value++;
+            }
+            const char *header_value_end = next_line;
+            while (header_value_end > header_value &&
+                   (*(header_value_end - 1) == ' ' || *(header_value_end - 1) == '\t')) {
+                header_value_end--;
+            }
 
-            req->headers[req->num_headers].name = (str_view_t){ hname, hname_len };
-            req->headers[req->num_headers].val = (str_view_t){ hval, (size_t)(hval_end - hval) };
+            request->headers[request->num_headers].name = (str_view_t){header_name, header_name_length};
+            request->headers[request->num_headers].val =
+                (str_view_t){header_value, (size_t)(header_value_end - header_value)};
 
-            str_view_t vval = req->headers[req->num_headers].val;
+            str_view_t header_value_view = request->headers[request->num_headers].val;
 
-            char first = (char)(hname[0] | 0x20);
-            if (first == 'c') {
-                if (hname_len == 14 && strncasecmp(hname, "content-length", 14) == 0) {
-                    int64_t cl = 0;
-                    if (parse_i64(vval.ptr, vval.len, &cl) && cl >= 0) {
-                        req->content_length = cl;
+            char first_char_lower = (char)(header_name[0] | 0x20);
+            if (first_char_lower == 'c') {
+                if (header_name_length == 14 && strncasecmp(header_name, "content-length", 14) == 0) {
+                    int64_t content_length_val = 0;
+                    if (parse_i64(header_value_view.ptr, header_value_view.len, &content_length_val) &&
+                        content_length_val >= 0) {
+                        request->content_length = content_length_val;
                     }
-                } else if (hname_len == 10 && strncasecmp(hname, "connection", 10) == 0) {
-                    if (view_case_eq(vval, "close")) {
-                        req->keep_alive = false;
-                    } else if (view_case_eq(vval, "keep-alive")) {
-                        req->keep_alive = true;
+                } else if (header_name_length == 10 && strncasecmp(header_name, "connection", 10) == 0) {
+                    if (view_case_eq(header_value_view, "close")) {
+                        request->keep_alive = false;
+                    } else if (view_case_eq(header_value_view, "keep-alive")) {
+                        request->keep_alive = true;
                     }
-                } else if (hname_len == 12 && strncasecmp(hname, "content-type", 12) == 0) {
-                    req->content_type = vval;
+                } else if (header_name_length == 12 && strncasecmp(header_name, "content-type", 12) == 0) {
+                    request->content_type = header_value_view;
                 }
-            } else if (first == 't') {
-                if (hname_len == 17 && strncasecmp(hname, "transfer-encoding", 17) == 0) {
-                    if (view_case_eq(vval, "chunked") || strcasestr(vval.ptr, "chunked")) {
-                        req->is_chunked = true;
+            } else if (first_char_lower == 't') {
+                if (header_name_length == 17 && strncasecmp(header_name, "transfer-encoding", 17) == 0) {
+                    if (view_case_eq(header_value_view, "chunked") || strcasestr(header_value_view.ptr, "chunked")) {
+                        request->is_chunked = true;
                     }
                 }
-            } else if (first == 'a') {
-                if (hname_len == 15 && strncasecmp(hname, "accept-encoding", 15) == 0) {
-                    req->accept_encoding = vval;
+            } else if (first_char_lower == 'a') {
+                if (header_name_length == 15 && strncasecmp(header_name, "accept-encoding", 15) == 0) {
+                    request->accept_encoding = header_value_view;
                 }
             }
 
-            req->num_headers++;
+            request->num_headers++;
         }
-        p = next_line + 2;
+        header_cursor = next_line + 2;
     }
 
-    if (req->is_chunked) {
-        const char *cur = body_start;
-        const char *buf_end = buf + len;
-        size_t total_decoded = 0;
+    if (request->is_chunked) {
+        const char *current_chunk = body_start;
+        const char *buffer_end_ptr = buffer + buffer_length;
+        size_t total_decoded_bytes = 0;
 
         while (true) {
-            const char *line_crlf = memmem(cur, buf_end - cur, "\r\n", 2);
-            if (!line_crlf) return 0;
-
-            char *endptr = NULL;
-            unsigned long chunk_sz = strtoul(cur, &endptr, 16);
-            if (endptr == cur) return -1;
-
-            const char *chunk_data = line_crlf + 2;
-            if (chunk_sz == 0) {
-                const char *trail = memmem(chunk_data, buf_end - chunk_data, "\r\n", 2);
-                if (!trail) return 0;
-                cur = trail + 2;
-                break;
-            }
-
-            if ((size_t)(buf_end - chunk_data) < chunk_sz + 2) {
+            const char *chunk_header_end = memmem(current_chunk, (size_t)(buffer_end_ptr - current_chunk), "\r\n", 2);
+            if (!chunk_header_end) {
                 return 0;
             }
-            if (chunk_data[chunk_sz] != '\r' || chunk_data[chunk_sz + 1] != '\n') {
+
+            char *parse_end_ptr = NULL;
+            unsigned long chunk_size = strtoul(current_chunk, &parse_end_ptr, 16);
+            if (parse_end_ptr == current_chunk) {
                 return -1;
             }
 
-            if (total_decoded + chunk_sz > max_chunk) return -1;
-            memcpy(chunk_buf + total_decoded, chunk_data, chunk_sz);
-            total_decoded += chunk_sz;
+            const char *chunk_payload = chunk_header_end + 2;
+            if (chunk_size == 0) {
+                const char *trailing_crlf = memmem(chunk_payload, (size_t)(buffer_end_ptr - chunk_payload), "\r\n", 2);
+                if (!trailing_crlf) {
+                    return 0;
+                }
+                current_chunk = trailing_crlf + 2;
+                break;
+            }
 
-            cur = chunk_data + chunk_sz + 2;
+            if ((size_t)(buffer_end_ptr - chunk_payload) < chunk_size + 2) {
+                return 0;
+            }
+            if (chunk_payload[chunk_size] != '\r' || chunk_payload[chunk_size + 1] != '\n') {
+                return -1;
+            }
+
+            if (total_decoded_bytes + chunk_size > max_chunk_size) {
+                return -1;
+            }
+            memcpy(chunk_buffer + total_decoded_bytes, chunk_payload, chunk_size);
+            total_decoded_bytes += chunk_size;
+
+            current_chunk = chunk_payload + chunk_size + 2;
         }
 
-        req->body = (str_view_t){ chunk_buf, total_decoded };
-        *consumed_out = (size_t)(cur - buf);
+        request->body = (str_view_t){chunk_buffer, total_decoded_bytes};
+        *out_consumed_bytes = (size_t)(current_chunk - buffer);
         return 1;
     }
 
-    if (req->content_length > 0) {
-        size_t cl = (size_t)req->content_length;
-        if (len < header_len + cl) {
+    if (request->content_length > 0) {
+        size_t content_length_bytes = (size_t)request->content_length;
+        if (buffer_length < header_length + content_length_bytes) {
             return 0;
         }
-        req->body = (str_view_t){ body_start, cl };
-        *consumed_out = header_len + cl;
+        request->body = (str_view_t){body_start, content_length_bytes};
+        *out_consumed_bytes = header_length + content_length_bytes;
         return 1;
     }
 
-    req->body = (str_view_t){ NULL, 0 };
-    *consumed_out = header_len;
+    request->body = (str_view_t){NULL, 0};
+    *out_consumed_bytes = header_length;
     return 1;
 }

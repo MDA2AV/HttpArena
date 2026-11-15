@@ -2,92 +2,110 @@
 #include <cjson/cJSON.h>
 
 static dataset_item_t *g_items = NULL;
-static size_t          g_num_items = 0;
+static size_t g_num_items = 0;
 
-static int64_t cjson_int(const cJSON *obj, const char *key) {
-    const cJSON *v = cJSON_GetObjectItemCaseSensitive(obj, key);
-    return cJSON_IsNumber(v) ? (int64_t)v->valuedouble : 0;
+static int64_t cjson_int(const cJSON *object, const char *key) {
+    const cJSON *value_node = cJSON_GetObjectItemCaseSensitive(object, key);
+    return cJSON_IsNumber(value_node) ? (int64_t)value_node->valuedouble : 0;
 }
 
-static const char* cjson_str(const cJSON *obj, const char *key) {
-    const cJSON *v = cJSON_GetObjectItemCaseSensitive(obj, key);
-    return cJSON_IsString(v) ? v->valuestring : "";
+static const char *cjson_str(const cJSON *object, const char *key) {
+    const cJSON *value_node = cJSON_GetObjectItemCaseSensitive(object, key);
+    return cJSON_IsString(value_node) ? value_node->valuestring : "";
 }
 
-bool dataset_load(const char *path) {
-    FILE *f = fopen(path, "rb");
-    if (!f) return false;
+bool dataset_load(const char *dataset_file_path) {
+    FILE *file_handle = fopen(dataset_file_path, "rb");
+    if (!file_handle) {
+        return false;
+    }
 
-    fseek(f, 0, SEEK_END);
-    long sz = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    if (sz <= 0) { fclose(f); return false; }
+    fseek(file_handle, 0, SEEK_END);
+    long file_size = ftell(file_handle);
+    fseek(file_handle, 0, SEEK_SET);
+    if (file_size <= 0) {
+        fclose(file_handle);
+        return false;
+    }
 
-    char *buf = malloc(sz + 1);
-    if (!buf) { fclose(f); return false; }
-    size_t rd = fread(buf, 1, sz, f);
-    fclose(f);
-    buf[rd] = '\0';
+    char *file_buffer = malloc((size_t)file_size + 1);
+    if (!file_buffer) {
+        fclose(file_handle);
+        return false;
+    }
+    size_t bytes_read = fread(file_buffer, 1, (size_t)file_size, file_handle);
+    fclose(file_handle);
+    file_buffer[bytes_read] = '\0';
 
-    cJSON *root = cJSON_ParseWithLength(buf, rd);
-    free(buf);
-    if (!cJSON_IsArray(root)) return false;
+    cJSON *root_array = cJSON_ParseWithLength(file_buffer, bytes_read);
+    free(file_buffer);
+    if (!cJSON_IsArray(root_array)) {
+        return false;
+    }
 
-    g_num_items = (size_t)cJSON_GetArraySize(root);
+    g_num_items = (size_t)cJSON_GetArraySize(root_array);
     g_items = calloc(g_num_items, sizeof(dataset_item_t));
-    if (!g_items) return false;
+    if (!g_items) {
+        cJSON_Delete(root_array);
+        return false;
+    }
 
-    size_t idx = 0;
+    size_t item_index = 0;
     const cJSON *item_node = NULL;
-    cJSON_ArrayForEach(item_node, root) {
-        dataset_item_t *it = &g_items[idx++];
-        it->id = cjson_int(item_node, "id");
-        it->price = cjson_int(item_node, "price");
-        it->quantity = cjson_int(item_node, "quantity");
-        it->base_total = it->price * it->quantity;
-        it->name = strdup(cjson_str(item_node, "name"));
-        it->category = strdup(cjson_str(item_node, "category"));
+    cJSON_ArrayForEach(item_node, root_array) {
+        dataset_item_t *item = &g_items[item_index++];
+        item->id = cjson_int(item_node, "id");
+        item->price = cjson_int(item_node, "price");
+        item->quantity = cjson_int(item_node, "quantity");
+        item->base_total = item->price * item->quantity;
+        item->name = strdup(cjson_str(item_node, "name"));
+        item->category = strdup(cjson_str(item_node, "category"));
 
-        const cJSON *act = cJSON_GetObjectItemCaseSensitive(item_node, "active");
-        it->active = cJSON_IsTrue(act);
+        const cJSON *active_node = cJSON_GetObjectItemCaseSensitive(item_node, "active");
+        item->active = cJSON_IsTrue(active_node);
 
-        const cJSON *rt = cJSON_GetObjectItemCaseSensitive(item_node, "rating");
-        if (rt) {
-            it->score = cjson_int(rt, "score");
-            it->count = cjson_int(rt, "count");
+        const cJSON *rating_node = cJSON_GetObjectItemCaseSensitive(item_node, "rating");
+        if (rating_node) {
+            item->score = cjson_int(rating_node, "score");
+            item->count = cjson_int(rating_node, "count");
         }
 
-        const cJSON *tags = cJSON_GetObjectItemCaseSensitive(item_node, "tags");
-        if (cJSON_IsArray(tags)) {
-            it->num_tags = (size_t)cJSON_GetArraySize(tags);
-            it->tags = calloc(it->num_tags, sizeof(char*));
-            size_t tidx = 0;
+        const cJSON *tags_array = cJSON_GetObjectItemCaseSensitive(item_node, "tags");
+        if (cJSON_IsArray(tags_array)) {
+            item->num_tags = (size_t)cJSON_GetArraySize(tags_array);
+            item->tags = calloc(item->num_tags, sizeof(char *));
+            size_t tag_index = 0;
             const cJSON *tag_node = NULL;
-            cJSON_ArrayForEach(tag_node, tags) {
-                it->tags[tidx++] = strdup(cJSON_GetStringValue(tag_node));
+            cJSON_ArrayForEach(tag_node, tags_array) {
+                item->tags[tag_index++] = strdup(cJSON_GetStringValue(tag_node));
             }
         }
 
-        char pbuf[2048];
-        char *p = pbuf;
-        p += sprintf(p, "{\"id\":%lld,\"name\":\"%s\",\"category\":\"%s\",\"price\":%lld,\"quantity\":%lld,\"active\":%s,\"tags\":[",
-                     (long long)it->id, it->name, it->category, (long long)it->price, (long long)it->quantity,
-                     it->active ? "true" : "false");
+        char prefix_buffer[2048];
+        char *prefix_cursor = prefix_buffer;
+        prefix_cursor += sprintf(prefix_cursor,
+                                 "{\"id\":%lld,\"name\":\"%s\",\"category\":\"%s\",\"price\":%lld,\"quantity\":%lld,"
+                                 "\"active\":%s,\"tags\":[",
+                                 (long long)item->id, item->name, item->category, (long long)item->price,
+                                 (long long)item->quantity, item->active ? "true" : "false");
 
-        for (size_t t = 0; t < it->num_tags; t++) {
-            if (t > 0) *p++ = ',';
-            p += sprintf(p, "\"%s\"", it->tags[t]);
+        for (size_t tag_index = 0; tag_index < item->num_tags; tag_index++) {
+            if (tag_index > 0) {
+                *prefix_cursor++ = ',';
+            }
+            prefix_cursor += sprintf(prefix_cursor, "\"%s\"", item->tags[tag_index]);
         }
 
-        p += sprintf(p, "],\"rating\":{\"score\":%lld,\"count\":%lld},\"total\":",
-                     (long long)it->score, (long long)it->count);
+        prefix_cursor +=
+            sprintf(prefix_cursor, "],\"rating\":{\"score\":%lld,\"count\":%lld},\"total\":", (long long)item->score,
+                    (long long)item->count);
 
-        it->prefix_len = (size_t)(p - pbuf);
-        it->prefix = malloc(it->prefix_len);
-        memcpy(it->prefix, pbuf, it->prefix_len);
+        item->prefix_len = (size_t)(prefix_cursor - prefix_buffer);
+        item->prefix = malloc(item->prefix_len);
+        memcpy(item->prefix, prefix_buffer, item->prefix_len);
     }
 
-    cJSON_Delete(root);
+    cJSON_Delete(root_array);
     return true;
 }
 
@@ -95,76 +113,85 @@ size_t dataset_count(void) {
     return g_num_items;
 }
 
-size_t json_serialize(size_t count, int64_t multiplier, char *out_buf, size_t max_out) {
-    (void)max_out;
-    if (count > g_num_items) count = g_num_items;
-    char *p = out_buf;
+size_t json_serialize(size_t count, int64_t multiplier, char *destination_buffer, size_t max_destination_size) {
+    (void)max_destination_size;
+    if (count > g_num_items) {
+        count = g_num_items;
+    }
+    char *cursor = destination_buffer;
 
-    memcpy(p, "{\"items\":[", 10); p += 10;
+    memcpy(cursor, "{\"items\":[", 10);
+    cursor += 10;
 
-    for (size_t i = 0; i < count; i++) {
-        if (i > 0) *p++ = ',';
-        memcpy(p, g_items[i].prefix, g_items[i].prefix_len);
-        p += g_items[i].prefix_len;
-        int64_t total = (multiplier == 1) ? g_items[i].base_total : (g_items[i].base_total * multiplier);
-        p += format_i64(p, total);
-        *p++ = '}';
+    for (size_t item_index = 0; item_index < count; item_index++) {
+        if (item_index > 0) {
+            *cursor++ = ',';
+        }
+        memcpy(cursor, g_items[item_index].prefix, g_items[item_index].prefix_len);
+        cursor += g_items[item_index].prefix_len;
+        int64_t total_price =
+            (multiplier == 1) ? g_items[item_index].base_total : (g_items[item_index].base_total * multiplier);
+        cursor += format_i64(cursor, total_price);
+        *cursor++ = '}';
     }
 
-    memcpy(p, "],\"count\":", 10); p += 10;
-    p += format_i64(p, (int64_t)count);
-    *p++ = '}';
+    memcpy(cursor, "],\"count\":", 10);
+    cursor += 10;
+    cursor += format_i64(cursor, (int64_t)count);
+    *cursor++ = '}';
 
-    return (size_t)(p - out_buf);
+    return (size_t)(cursor - destination_buffer);
 }
 
-void compress_worker_init(worker_compress_t *wc) {
-    memset(wc, 0, sizeof(*wc));
-    wc->zlib_stream.zalloc = Z_NULL;
-    wc->zlib_stream.zfree = Z_NULL;
-    wc->zlib_stream.opaque = Z_NULL;
-    if (deflateInit2(&wc->zlib_stream, 1, Z_DEFLATED, 15 + 16, 8, Z_DEFAULT_STRATEGY) == Z_OK) {
-        wc->zlib_initialized = true;
+void compress_worker_init(worker_compress_t *worker_compress) {
+    memset(worker_compress, 0, sizeof(*worker_compress));
+    worker_compress->zlib_stream.zalloc = Z_NULL;
+    worker_compress->zlib_stream.zfree = Z_NULL;
+    worker_compress->zlib_stream.opaque = Z_NULL;
+    if (deflateInit2(&worker_compress->zlib_stream, 1, Z_DEFLATED, 15 + 16, 8, Z_DEFAULT_STRATEGY) == Z_OK) {
+        worker_compress->zlib_initialized = true;
     }
 }
 
-void compress_worker_destroy(worker_compress_t *wc) {
-    if (wc->zlib_initialized) {
-        deflateEnd(&wc->zlib_stream);
-        wc->zlib_initialized = false;
+void compress_worker_destroy(worker_compress_t *worker_compress) {
+    if (worker_compress->zlib_initialized) {
+        deflateEnd(&worker_compress->zlib_stream);
+        worker_compress->zlib_initialized = false;
     }
 }
 
-int compress_brotli(const char *in_buf, size_t in_len, char *out_buf, size_t max_out, size_t *out_len) {
-    size_t encoded_size = max_out;
-    BROTLI_BOOL res = BrotliEncoderCompress(
-        1,
-        BROTLI_DEFAULT_WINDOW,
-        BROTLI_MODE_TEXT,
-        in_len,
-        (const uint8_t*)in_buf,
-        &encoded_size,
-        (uint8_t*)out_buf
-    );
+int compress_brotli(const char *input_buffer, size_t input_length, char *output_buffer, size_t max_output_size,
+                    size_t *out_compressed_length) {
+    size_t encoded_size = max_output_size;
+    BROTLI_BOOL encode_result =
+        BrotliEncoderCompress(1, BROTLI_DEFAULT_WINDOW, BROTLI_MODE_TEXT, input_length, (const uint8_t *)input_buffer,
+                              &encoded_size, (uint8_t *)output_buffer);
 
-    if (!res) return -1;
-    *out_len = encoded_size;
+    if (!encode_result) {
+        return -1;
+    }
+    *out_compressed_length = encoded_size;
     return 0;
 }
 
-int compress_gzip(worker_compress_t *wc, const char *in_buf, size_t in_len, char *out_buf, size_t max_out, size_t *out_len) {
-    if (!wc->zlib_initialized) return -1;
+int compress_gzip(worker_compress_t *worker_compress, const char *input_buffer, size_t input_length,
+                  char *output_buffer, size_t max_output_size, size_t *out_compressed_length) {
+    if (!worker_compress->zlib_initialized) {
+        return -1;
+    }
 
-    z_stream *strm = &wc->zlib_stream;
-    deflateReset(strm);
-    strm->next_in = (Bytef*)in_buf;
-    strm->avail_in = (uInt)in_len;
-    strm->next_out = (Bytef*)out_buf;
-    strm->avail_out = (uInt)max_out;
+    z_stream *compression_stream = &worker_compress->zlib_stream;
+    deflateReset(compression_stream);
+    compression_stream->next_in = (Bytef *)input_buffer;
+    compression_stream->avail_in = (uInt)input_length;
+    compression_stream->next_out = (Bytef *)output_buffer;
+    compression_stream->avail_out = (uInt)max_output_size;
 
-    int ret = deflate(strm, Z_FINISH);
-    if (ret != Z_STREAM_END) return -1;
+    int deflate_result = deflate(compression_stream, Z_FINISH);
+    if (deflate_result != Z_STREAM_END) {
+        return -1;
+    }
 
-    *out_len = max_out - strm->avail_out;
+    *out_compressed_length = max_output_size - compression_stream->avail_out;
     return 0;
 }

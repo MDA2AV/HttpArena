@@ -23,37 +23,37 @@ typedef struct {
 
 typedef struct {
     http_method_t method;
-    str_view_t    uri;
-    str_view_t    path;
-    str_view_t    query;
-    str_view_t    body;
+    str_view_t uri;
+    str_view_t path;
+    str_view_t query;
+    str_view_t body;
 
     http_header_t headers[MAX_HEADERS];
-    size_t        num_headers;
+    size_t num_headers;
 
     query_param_t params[MAX_PARAMS];
-    size_t        num_params;
+    size_t num_params;
 
-    str_view_t    route_params[MAX_PARAMS];
-    size_t        num_route_params;
+    str_view_t route_params[MAX_PARAMS];
+    size_t num_route_params;
 
-    int64_t       content_length;
-    bool          is_chunked;
-    bool          keep_alive;
-    str_view_t    accept_encoding;
-    str_view_t    content_type;
+    int64_t content_length;
+    bool is_chunked;
+    bool keep_alive;
+    str_view_t accept_encoding;
+    str_view_t content_type;
 } request_t;
 
 typedef struct {
-    int           status;
-    bool          keep_alive;
-    bool          body_needs_free;
-    const char   *content_type;
-    const char   *content_encoding;
-    const char   *extra_headers;
-    size_t        extra_headers_len;
-    const char   *body;
-    size_t        body_len;
+    int status;
+    bool keep_alive;
+    bool body_needs_free;
+    const char *content_type;
+    const char *content_encoding;
+    const char *extra_headers;
+    size_t extra_headers_len;
+    const char *body;
+    size_t body_len;
 } response_t;
 
 void req_init(request_t *req);
@@ -69,4 +69,5 @@ void res_set_binary(response_t *res, const char *data, size_t len, const char *c
 
 size_t res_serialize(const response_t *res, char *out_buf, size_t max_out);
 
-int parse_http_request(const char *buf, size_t len, request_t *req, char *chunk_buf, size_t max_chunk, size_t *consumed_out);
+int parse_http_request(const char *buf, size_t len, request_t *req, char *chunk_buf, size_t max_chunk,
+                       size_t *consumed_out);
