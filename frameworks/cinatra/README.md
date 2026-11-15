@@ -1,7 +1,7 @@
 # cinatra
 
 The benchmark service is maintained in cinatra at
-[`benchmark/httparena/`](https://github.com/qicosmos/cinatra/tree/a2c944309b1b98c4577afdb6929547c9aa8bcc25/benchmark/httparena).
+[`benchmark/httparena/`](https://github.com/qicosmos/cinatra/tree/97c8e20371fecc5b5f3fc8526b4fa1cef90df297/benchmark/httparena).
 This entry fetches that fixed revision and builds the cases there.
 It explicitly enables `HTTPARENA_X86_64_V3` for the benchmark host. The local
 cinatra Dockerfile instead builds the current checkout, with that option off
@@ -32,7 +32,8 @@ different header configuration.
 The service retains native response and WebSocket encoders. Native bounded WebSocket
 write batching is enabled; buffered input is drained and pending echoes are
 flushed before waiting for more data. Single-message clients do not wait for a
-fixed batch size. This revision also includes cinatra's small-input gzip workspace
+fixed batch size. Buffered headers and payloads bypass the reader-helper
+coroutine when no additional input is needed. This revision also includes cinatra's small-input gzip workspace
 optimization.
 
 HTTP listens on 8080. When the mounted certificate pair exists, HTTP/1.1 TLS
