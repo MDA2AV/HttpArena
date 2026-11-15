@@ -25,6 +25,10 @@ on:
         description: 'Run only the compliance suites the framework lists in "spec" in meta.json (true/false) - the /spec command'
         required: false
         default: ''
+      resilience_only:
+        description: 'Run only the resilience suite, for entries that opt in with "resilience" in meta.json (true/false) - the /resilience command'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -168,6 +172,7 @@ jobs:
           LIST: ${{ steps.resolve.outputs.list }}
           PROFILE: ${{ inputs.profile }}
           SPEC_ONLY: ${{ inputs.spec_only }}
+          RESILIENCE_ONLY: ${{ inputs.resilience_only }}
         run: |
           set -o pipefail
           mkdir -p /tmp/bench_logs
@@ -183,7 +188,7 @@ jobs:
             # whoever happened to precede it. Not applied before the first.
             if [ "$FIRST" = "true" ]; then FIRST=false; else sleep 15; fi
             bench_ok=true
-            if [ "$SPEC_ONLY" != "true" ]; then
+            if [ "$SPEC_ONLY" != "true" ] && [ "$RESILIENCE_ONLY" != "true" ]; then
               echo "::group::benchmark $fw"
               # Always save results to disk for comparison; only commit if --save requested
               if ! ./scripts/benchmark.sh "$fw" "$PROFILE" --save 2>&1 | tee "/tmp/bench_logs/$fw.log"; then
@@ -200,7 +205,7 @@ jobs:
             # failed that image may be stale, so the suites wait for the next run.
             # Like the benchmark, the scores always go to disk and are committed
             # only on --save.
-            if [ "$SPEC_ONLY" = "true" ] || { [ -z "$PROFILE" ] && $bench_ok; }; then
+            if [ "$SPEC_ONLY" = "true" ] || { [ "$RESILIENCE_ONLY" != "true" ] && [ -z "$PROFILE" ] && $bench_ok; }; then
               echo "::group::spec $fw"
               skip_build=1
               [ "$SPEC_ONLY" = "true" ] && skip_build=0
@@ -215,16 +220,19 @@ jobs:
             fi
             # The resilience suite, for entries that opt in with "resilience":
             # true in meta.json (scripts/resilience.sh). It is destructive and
-            # needs the whole machine, so it rides this exclusive benchmark slot
-            # instead of a job of its own: only on a full benchmark (no -t) that
-            # succeeded, reusing the image benchmark.sh just built. resilience.sh
-            # self-gates on the flag as well, so this stays a quick no-op for an
-            # entry that did not opt in. Verdicts go to disk, commit only on --save.
-            if [ "$SPEC_ONLY" != "true" ] && [ -z "$PROFILE" ] && $bench_ok; then
+            # needs the whole machine, so it rides this exclusive slot: on a full
+            # benchmark (no -t) that succeeded, or on its own via /resilience
+            # (RESILIENCE_ONLY, which builds the image itself since no benchmark
+            # did). resilience.sh self-gates on the flag too, so this is a quick
+            # no-op for an entry that did not opt in. Verdicts go to disk, commit
+            # only on --save.
+            if [ "$SPEC_ONLY" != "true" ] && { [ "$RESILIENCE_ONLY" = "true" ] || { [ -z "$PROFILE" ] && $bench_ok; }; }; then
               res_on=$(python3 -c "import json,sys;print('1' if json.load(open('frameworks/%s/meta.json'%sys.argv[1])).get('resilience') else '0')" "$fw" 2>/dev/null || echo 0)
               if [ "$res_on" = "1" ]; then
                 echo "::group::resilience $fw"
-                if ! RES_SKIP_BUILD=1 ./scripts/resilience.sh "$fw" --save 2>&1 | tee "/tmp/bench_logs/$fw.resilience.log"; then
+                res_skip_build=1
+                [ "$RESILIENCE_ONLY" = "true" ] && res_skip_build=0
+                if ! RES_SKIP_BUILD=$res_skip_build ./scripts/resilience.sh "$fw" --save 2>&1 | tee "/tmp/bench_logs/$fw.resilience.log"; then
                   echo "::error::resilience.sh failed for $fw"
                   case " $FAILED " in
                     *" $fw "*) ;;
@@ -238,7 +246,7 @@ jobs:
           echo "failed=$FAILED" >> "$GITHUB_OUTPUT"
 
       - name: Compare with main
-        if: inputs.spec_only != 'true'
+        if: inputs.spec_only != 'true' && inputs.resilience_only != 'true'
         env:
           LIST: ${{ steps.resolve.outputs.list }}
           COUNT: ${{ steps.resolve.outputs.count }}
@@ -272,6 +280,7 @@ jobs:
           COUNT: ${{ steps.resolve.outputs.count }}
           PROFILE: ${{ inputs.profile }}
           SPEC_ONLY: ${{ inputs.spec_only }}
+          RESILIENCE_ONLY: ${{ inputs.resilience_only }}
         run: |
           PR_DATA=$(gh api "/repos/${{ github.repository }}/pulls/${{ inputs.pr }}" --jq '.head.ref + " " + .head.repo.full_name')
           PR_BRANCH=$(echo "$PR_DATA" | awk '{print $1}')
@@ -305,6 +314,12 @@ jobs:
               else
                 MSG="Spec results: $COUNT frameworks [skip ci]"
               fi
+            elif [ "$RESILIENCE_ONLY" = "true" ]; then
+              if [ "$COUNT" = "1" ]; then
+                MSG="Resilience results: $LIST [skip ci]"
+              else
+                MSG="Resilience results: $COUNT frameworks [skip ci]"
+              fi
             elif [ "$COUNT" = "1" ]; then
               MSG="Benchmark results: $LIST $PROFILE [skip ci]"
             else
@@ -316,7 +331,7 @@ jobs:
           fi
 
       - name: Post results to PR
-        if: always()
+        if: always() && inputs.resilience_only != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LIST: ${{ steps.resolve.outputs.list }}

@@ -46,6 +46,8 @@ The suite is **off by default** — the attacks are destructive and need the who
 
 On a PR, a full `/benchmark` (no `-t`) then runs the suite for that entry **right after its benchmark**, on the self-hosted bench runner, and `--save` commits the verdicts to `site/data/resilience/<entry>.json` alongside the benchmark results. It rides the benchmark's slot on purpose: the bench host runs one job at a time, so the suite never competes with another run for CPU, memory or ports — contention that would corrupt a verdict. An entry without the flag is skipped.
 
+To run **only** the suite, without a benchmark, comment **`/resilience -f <entry>`** (add `--save` to commit the verdicts). It goes through the same approval and the same bench host as `/benchmark`, builds the image itself, and posts the report as its own comment. Only entries with the flag run; naming one that hasn't opted in is a no-op.
+
 ## Running it locally
 
 ```bash

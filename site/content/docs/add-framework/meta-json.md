@@ -38,7 +38,7 @@ Create a `meta.json` file in your framework directory:
 | `enabled` | Set to `false` to skip this framework during benchmark runs |
 | `tests` | Array of test profiles this framework participates in |
 | `tls_check` | Optional. Set to `true` to opt into the [TLS hardening checks](/docs/test-profiles/h1/tls/validation/) - certificate rotation, SNI, resumption and a vulnerability scan on a dedicated TLS listener on port 9000. Nothing is measured; passing earns the gold TLS badge |
-| `resilience` | Optional. Set to `true` to opt into the [resilience suite](/docs/test-profiles/resilience/) - slow-drip, Slowloris, oversized-chunk and HTTP/2 CONTINUATION attacks run against the entry in a capped 8 GiB / 2-CPU box to see whether it survives, sheds load, hangs or is OOM-killed. Runs on the bench host as part of a full `/benchmark`. Off by default because the attacks are destructive and need the whole machine |
+| `resilience` | Optional. Set to `true` to opt into the [resilience suite](/docs/test-profiles/resilience/) - slow-drip, Slowloris, oversized-chunk and HTTP/2 CONTINUATION attacks run against the entry in a capped 8 GiB / 2-CPU box to see whether it survives, sheds load, hangs or is OOM-killed. Runs on the bench host as part of a full `/benchmark`, or on its own with `/resilience -f <entry>`. Off by default because the attacks are destructive and need the whole machine |
 | `maintainers` | Array of GitHub usernames to notify when a PR modifies this framework |
 
 ## Available test profiles
