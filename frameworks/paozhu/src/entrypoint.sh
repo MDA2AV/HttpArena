@@ -106,12 +106,12 @@ warm_static() {
 sleep 3
 # TEMP DIAGNOSTIC: pre-warm disabled to check whether it is what kills the
 # process. Re-enable once the root cause is confirmed.
-#if [ -d /data/static ]; then
-#    wait_ready https://localhost:8443/pipeline || true
-#    wait_ready https://localhost:8081/pipeline || true
-#    warm_static https://localhost:8443
-#    warm_static https://localhost:8081
-#fi
+if [ -d /data/static ]; then
+   wait_ready https://localhost:8443/pipeline || true
+   wait_ready https://localhost:8081/pipeline || true
+   warm_static https://localhost:8443
+   warm_static https://localhost:8081
+fi
 
 shutdown() {
     trap - TERM INT
