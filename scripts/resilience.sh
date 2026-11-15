@@ -508,8 +508,10 @@ run_attack() {
     cpuline=$(cat "$WORK/$name.clientcpu" 2>/dev/null || echo "0 100")
     client_j=${cpuline%% *}; clk=${cpuline##* }
     [ -n "$client_j" ] || client_j=0; [ -n "$clk" ] || clk=100
-    client_cpu_cores=$(awk "BEGIN{printf \"%.2f\", ($client_j/$clk)/$attack_wall}")
-    server_cpu_cores=$(awk "BEGIN{printf \"%.2f\", (($cpu_srv_end-$cpu_srv_start)/1000000.0)/$attack_wall}")
+    client_cpu_cores=$(awk "BEGIN{v=($client_j/$clk)/$attack_wall; printf \"%.2f\", (v<0)?0:v}")
+    # A crashed/OOM container's cgroup is gone by the end read, so cpu_srv_end can
+    # read 0 and the delta goes negative — clamp to 0 (the verdict already says dead).
+    server_cpu_cores=$(awk "BEGIN{v=(($cpu_srv_end-$cpu_srv_start)/1000000.0)/$attack_wall; printf \"%.2f\", (v<0)?0:v}")
 
     python3 - "$WORK/$name.result.json" <<PY || warn "could not write the $name result record"
 import json, sys
