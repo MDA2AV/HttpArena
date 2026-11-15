@@ -11,16 +11,35 @@ Every attack runs against a **fresh capped container** (a crash in one must not 
 
 ## The attacks
 
+**HTTP/1.1 — run against any entry:**
+
 | Attack | Exhausts | What it does | What a hardened server does |
 |---|---|---|---|
-| `slow-body` | memory | `POST /echo` with a large declared `Content-Length`, body dripped one byte per second, never finishing | reaps the connection on a body-read-rate timeout |
-| `slow-headers` | connections | an unfinished request whose header block keeps growing, never terminated (Slowloris) | reaps it on a header-read timeout or a header-size cap |
+| `slow-body` | memory | `POST /echo` with a 100 MiB declared `Content-Length`, body dripped ~256 B/s, never finishing | reaps on a body-read-rate timeout, or caps the body size |
+| `slow-headers` | connections | an unfinished request whose header block keeps growing, never terminated (Slowloris) | reaps on a header-read timeout or a header-size cap |
 | `huge-chunk` | memory | `Transfer-Encoding: chunked` announcing a `0x7fffffffffffffff`-byte chunk | rejects the chunk size instead of pre-allocating it |
-| `continuation-flood` | memory | an HTTP/2 header block spread over an endless stream of `CONTINUATION` frames with no `END_HEADERS` ([CVE-2024-27316](https://nvd.nist.gov/vuln/detail/CVE-2024-27316)) | caps the header-block size and sends `GOAWAY` |
+| `decompression-bomb` | memory | a small `Content-Encoding: gzip` body that inflates to gigabytes | doesn't decode request bodies unbounded / caps the inflated size |
+| `hashdos` | CPU | a form body of tens of thousands of keys | caps the parameter count / uses a seeded hash (SipHash) |
+| `json-nesting-bomb` | CPU | a tiny, deeply nested JSON body | caps the parser's recursion depth |
+| `multipart-flood` | memory | `multipart/form-data` with tens of thousands of tiny parts | caps the part/field count |
+| `redos-headers` | CPU | header values crafted for catastrophic regex backtracking | uses RE2/string parsers, or caps header length |
 
-The H1 attacks run against any entry. `continuation-flood` runs only when the entry subscribes to an HTTP/2 profile (`baseline-h2`, `static-h2`, `baseline-h2c` or `json-h2c`); it uses the h2c listener on port 8082.
+The last four are **differential**: they only bite a server that actually parses that input (a form/JSON/multipart body, or a regex-based header parser). A minimal benchmark handler that doesn't parse the body is a clean `survived` — which is itself worth recording.
 
-A connection the server **reaps** (closes on the client) is the *correct* defense — a timeout fired, a cap held. Many reaped connections with flat server memory means the server defended itself; growing memory or an OOM-kill means it did not.
+**HTTP/2 — run only when the entry subscribes to an H2 profile** (`baseline-h2`, `static-h2`, `baseline-h2c`, `json-h2c`); over the h2c listener on port 8082:
+
+| Attack | Exhausts | What it does | What a hardened server does |
+|---|---|---|---|
+| `continuation-flood` | memory | a header block spread over endless `CONTINUATION` frames with no `END_HEADERS` ([CVE-2024-27316](https://nvd.nist.gov/vuln/detail/CVE-2024-27316)) | caps the header-block size, sends `GOAWAY` |
+| `hpack-bomb` | memory | one ~4 KB HPACK dynamic-table entry referenced by thousands of 1-byte indices ([CVE-2016-6581](https://nvd.nist.gov/vuln/detail/CVE-2016-6581)) | caps the decoded header-list size |
+| `rapid-reset` | CPU | open-then-immediately-`RST` streams in a tight loop ([CVE-2023-44487](https://nvd.nist.gov/vuln/detail/CVE-2023-44487)) | caps concurrent/total streams and in-flight work |
+| `madeyoureset` | CPU | force *server-side* `RST` via `WINDOW_UPDATE(0)` per stream ([CVE-2025-8671](https://nvd.nist.gov/vuln/detail/CVE-2025-8671)) | accounts server-sent resets, not just client ones |
+| `settings-flood` | CPU | flood `SETTINGS` frames the peer must ACK ([CVE-2019-9515](https://nvd.nist.gov/vuln/detail/CVE-2019-9515)) | rate-limits / bounds the ACK queue |
+| `ping-flood` | CPU | flood `PING` frames the peer must ACK ([CVE-2019-9512](https://nvd.nist.gov/vuln/detail/CVE-2019-9512)) | rate-limits / bounds the pong queue |
+| `empty-frame-flood` | CPU | flood zero-length `DATA` frames with no `END_STREAM` ([CVE-2019-9518](https://nvd.nist.gov/vuln/detail/CVE-2019-9518)) | caps empty/idle frames per connection |
+| `window-stall` | memory | open many streams at a 0 flow-control window and never grant it ([CVE-2019-9517](https://nvd.nist.gov/vuln/detail/CVE-2019-9517)) | times out stalled streams / caps buffered response data |
+
+A connection the server **reaps** (closes on the client) is the *correct* defense — a timeout fired, a cap held. The **memory** attacks produce the cleanest verdict (OOM-kill → exit 137); the **CPU** floods don't OOM, so they surface as `hung`/`degraded` through the liveness probe instead. Many reaped connections with flat memory and green liveness means the server defended itself.
 
 ## The verdict
 
@@ -58,7 +77,7 @@ To run **only** the suite, without a benchmark, comment **`/resilience -f <entry
 
 `<entry>` is the directory under `frameworks/`, not the display name — entries that share a display name each keep their own file, the way `site/data/spec/<entry>.json` does. Without the flag and without a named attack, the runner is a no-op.
 
-The box and the run are env-overridable: `RES_MEM` (default `8g`), `RES_CPUSET` (`0-1`), `RES_DURATION` (`45`s), `RES_CONNS` (`1000`), `RES_BODY_SIZE` (10 MiB), `RES_RECOVERY` (`15`s). The attack client runs on the load-generator cores so it never steals CPU from the deliberately CPU-starved server.
+The box and the run are env-overridable: `RES_MEM` (default `8g`), `RES_CPUSET` (`0-1`), `RES_DURATION` (`60`s), `RES_CONNS` (`4000` slow-attack connections, held below the ~28k ephemeral-port ceiling), `RES_BODY_SIZE` (100 MiB), `RES_DRIP_BYTES` (`256` B per drip), `RES_H2_CONNS` (`256` for the H2 floods), `RES_DECOMP_CONNS` (`64` for the H1 payload/parser floods), `RES_BOMB_SIZE` (1 GiB decompressed), `RES_HASHDOS_KEYS` (`100000`), `RES_JSON_DEPTH` (`100000`), `RES_MULTIPART_PARTS` (`50000`), `RES_REDOS_PAD` (`4000`), `RES_STALL_COUNT`/`RES_STALL_STREAMS` (`5000`/`64`), `RES_RECOVERY` (`15`s). The attack client runs on the load-generator cores so it never steals CPU from the deliberately CPU-starved server.
 
 ## The scores
 
