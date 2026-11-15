@@ -33,6 +33,10 @@ struct conn_s {
     bool        keep_alive;
     bool        closing;
 
+    uint64_t    last_active_ms;
+    conn_t     *active_prev;
+    conn_t     *active_next;
+
     conn_t     *next_free;
 };
 
@@ -48,6 +52,9 @@ typedef struct {
     worker_compress_t compress;
     timer_heap_t      timers;
     conn_t           *free_conns;
+    conn_t           *active_head;
+    conn_t           *active_tail;
+    uint64_t          last_trim_ms;
 
     int               token_h1;
     int               token_tls;
@@ -64,6 +71,41 @@ static __thread worker_t *t_worker = NULL;
 static void handle_sig(int sig) {
     (void)sig;
     _exit(0);
+}
+
+static inline void conn_list_insert_tail(worker_t *w, conn_t *c) {
+    c->active_prev = w->active_tail;
+    c->active_next = NULL;
+    if (w->active_tail) {
+        w->active_tail->active_next = c;
+    } else {
+        w->active_head = c;
+    }
+    w->active_tail = c;
+}
+
+static inline void conn_list_remove(worker_t *w, conn_t *c) {
+    if (c->active_prev || c->active_next || w->active_head == c || w->active_tail == c) {
+        if (c->active_prev) {
+            c->active_prev->active_next = c->active_next;
+        } else if (w->active_head == c) {
+            w->active_head = c->active_next;
+        }
+        if (c->active_next) {
+            c->active_next->active_prev = c->active_prev;
+        } else if (w->active_tail == c) {
+            w->active_tail = c->active_prev;
+        }
+        c->active_prev = NULL;
+        c->active_next = NULL;
+    }
+}
+
+static inline void conn_touch(worker_t *w, conn_t *c, uint64_t now_ms) {
+    c->last_active_ms = now_ms;
+    if (w->active_tail == c) return;
+    conn_list_remove(w, c);
+    conn_list_insert_tail(w, c);
 }
 
 static conn_t* alloc_conn(worker_t *w, int fd, bool is_tls, SSL *ssl) {
@@ -89,10 +131,15 @@ static conn_t* alloc_conn(worker_t *w, int fd, bool is_tls, SSL *ssl) {
     c->keep_alive = true;
     c->closing = false;
     c->next_free = NULL;
+    c->active_prev = NULL;
+    c->active_next = NULL;
+    c->last_active_ms = clock_monotonic_ms();
+    conn_list_insert_tail(w, c);
     return c;
 }
 
 static void close_conn(worker_t *w, conn_t *c) {
+    conn_list_remove(w, c);
     if (c->fd >= 0) {
         epoll_ctl(w->epoll_fd, EPOLL_CTL_DEL, c->fd, NULL);
         close(c->fd);
@@ -466,11 +513,12 @@ static void* worker_main(void *arg) {
         }
 
         int64_t timeout_us = timer_heap_next_timeout_us(&w->timers, now_us);
+        if (timeout_us < 0 || timeout_us > 1000000) {
+            timeout_us = 1000000;
+        }
         int nfds = 0;
 
-        if (timeout_us < 0) {
-            nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, -1);
-        } else if (timeout_us <= 350) {
+        if (timeout_us <= 350) {
             uint64_t target_us = now_us + (uint64_t)timeout_us;
             while (true) {
                 nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, 0);
@@ -509,6 +557,28 @@ static void* worker_main(void *arg) {
             if (errno == EINTR) continue;
             break;
         }
+
+        uint64_t now_ms = clock_monotonic_ms();
+
+        // Reap connections idle for >= 15 seconds
+        while (w->active_head) {
+            conn_t *oldest = w->active_head;
+            if (oldest->parked_in_timer) {
+                conn_touch(w, oldest, now_ms);
+                continue;
+            }
+            if (now_ms - oldest->last_active_ms < 15000) {
+                break;
+            }
+            close_conn(w, oldest);
+        }
+
+#if defined(__linux__)
+        if (w->id == 0 && (now_ms - w->last_trim_ms >= 5000)) {
+            w->last_trim_ms = now_ms;
+            malloc_trim(0);
+        }
+#endif
 
         if (w->timers.count > 0) {
             now_us = clock_monotonic_us();
@@ -575,6 +645,8 @@ static void* worker_main(void *arg) {
                 close_conn(w, c);
                 continue;
             }
+
+            conn_touch(w, c, now_ms);
 
             if (c->is_tls && !c->tls_handshake_done) {
                 int ret = SSL_accept(c->ssl);
@@ -719,6 +791,10 @@ static int create_listen_socket(int port) {
     int one = 1;
     setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
     setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &one, sizeof(one));
+#if defined(TCP_DEFER_ACCEPT)
+    int defer = 5;
+    setsockopt(fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &defer, sizeof(defer));
+#endif
     set_sock_opts(fd);
 
     struct sockaddr_in addr = {

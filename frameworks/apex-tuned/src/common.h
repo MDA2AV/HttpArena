@@ -74,6 +74,7 @@ static inline bool parse_i64(const char *s, size_t len, int64_t *out) {
 }
 
 #if defined(__linux__)
+#include <malloc.h>
 #include <sys/prctl.h>
 #endif
 
@@ -141,4 +142,24 @@ static inline void set_sock_opts(int fd) {
     int one = 1;
     setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
     setsockopt(fd, IPPROTO_TCP, TCP_QUICKACK, &one, sizeof(one));
+
+    // Enable TCP keepalive to detect and drop dead/idle sockets
+    setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &one, sizeof(one));
+
+#if defined(TCP_KEEPIDLE)
+    int keepidle = 15;
+    setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &keepidle, sizeof(keepidle));
+#endif
+#if defined(TCP_KEEPINTVL)
+    int keepintvl = 5;
+    setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, &keepintvl, sizeof(keepintvl));
+#endif
+#if defined(TCP_KEEPCNT)
+    int keepcnt = 3;
+    setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &keepcnt, sizeof(keepcnt));
+#endif
+#if defined(TCP_USER_TIMEOUT)
+    unsigned int user_timeout = 15000;
+    setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &user_timeout, sizeof(user_timeout));
+#endif
 }

@@ -37,9 +37,6 @@ SSL_CTX* tls_init_server_ctx(const char *cert_file, const char *key_file) {
     SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF);
 
     long options = SSL_OP_NO_RENEGOTIATION | SSL_OP_CIPHER_SERVER_PREFERENCE | SSL_OP_NO_TICKET;
-#ifdef SSL_OP_ENABLE_KTLS
-    options |= SSL_OP_ENABLE_KTLS;
-#endif
 #ifdef SSL_OP_NO_COMPRESSION
     options |= SSL_OP_NO_COMPRESSION;
 #endif
