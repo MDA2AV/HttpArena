@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - .github/workflows/benchmark-tools.yml
+      - .github/workflows/benchmark-pr.yml
+      - .github/workflows/pr-commands.yml
       - frameworks/_shared/authsvc/**
       - docker/h2load.Dockerfile
       - scripts/benchmark.sh

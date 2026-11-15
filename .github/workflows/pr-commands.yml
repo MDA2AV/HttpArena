@@ -172,7 +172,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin main --depth=1
+          git fetch origin main
           if ! git merge --no-commit --no-ff origin/main; then
             git merge --abort 2>/dev/null || true
             gh pr comment "${{ steps.parse.outputs.pr }}" \
@@ -296,7 +296,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin main --depth=1
+          git fetch origin main
           if ! git merge --no-commit --no-ff origin/main; then
             git merge --abort 2>/dev/null || true
             gh pr comment "${{ steps.parse.outputs.pr }}" \
@@ -415,7 +415,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin main --depth=1
+          git fetch origin main
           if ! git merge --no-commit --no-ff origin/main; then
             git merge --abort 2>/dev/null || true
             gh pr comment "${{ steps.parse.outputs.pr }}" \
