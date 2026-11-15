@@ -213,6 +213,27 @@ jobs:
               fi
               echo "::endgroup::"
             fi
+            # The resilience suite, for entries that opt in with "resilience":
+            # true in meta.json (scripts/resilience.sh). It is destructive and
+            # needs the whole machine, so it rides this exclusive benchmark slot
+            # instead of a job of its own: only on a full benchmark (no -t) that
+            # succeeded, reusing the image benchmark.sh just built. resilience.sh
+            # self-gates on the flag as well, so this stays a quick no-op for an
+            # entry that did not opt in. Verdicts go to disk, commit only on --save.
+            if [ "$SPEC_ONLY" != "true" ] && [ -z "$PROFILE" ] && $bench_ok; then
+              res_on=$(python3 -c "import json,sys;print('1' if json.load(open('frameworks/%s/meta.json'%sys.argv[1])).get('resilience') else '0')" "$fw" 2>/dev/null || echo 0)
+              if [ "$res_on" = "1" ]; then
+                echo "::group::resilience $fw"
+                if ! RES_SKIP_BUILD=1 ./scripts/resilience.sh "$fw" --save 2>&1 | tee "/tmp/bench_logs/$fw.resilience.log"; then
+                  echo "::error::resilience.sh failed for $fw"
+                  case " $FAILED " in
+                    *" $fw "*) ;;
+                    *) FAILED="${FAILED:+$FAILED }$fw" ;;
+                  esac
+                fi
+                echo "::endgroup::"
+              fi
+            fi
           done
           echo "failed=$FAILED" >> "$GITHUB_OUTPUT"
 
@@ -269,6 +290,10 @@ jobs:
             # Named by directory: variants sharing a display name own a file each.
             # Staged even when gone, so an entry that dropped "spec" drops its scores.
             git add -f -A "site/data/spec/${fw}.json" 2>/dev/null || true
+            # The resilience verdicts, when this run measured them (resilience.sh).
+            # Named by directory like spec; staged even when gone, so an entry that
+            # dropped "resilience" drops its verdicts.
+            git add -f -A "site/data/resilience/${fw}.json" 2>/dev/null || true
           done
           git add -f site/data/frameworks.json site/data/current.json 2>/dev/null || true
           if git diff --cached --quiet; then
@@ -508,6 +533,25 @@ jobs:
 
           gh pr comment "${{ inputs.pr }}" --repo "${{ github.repository }}" --body "$body"
           rm -rf /tmp/bench_logs /tmp/bench_body.txt /tmp/bench_full.txt /tmp/bench_table.txt /tmp/bench_comparison.md /tmp/pr_site_data /tmp/main_site_data /tmp/bench_site_data 2>/dev/null || true
+
+      - name: Post resilience report to PR
+        if: always() && inputs.spec_only != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LIST: ${{ steps.resolve.outputs.list }}
+        run: |
+          # A separate comment carrying the full resilience report. Only entries
+          # that opted in (meta.json "resilience": true) and actually ran leave a
+          # file in results/resilience/, so on a run where none did the generator
+          # prints nothing and no comment is posted.
+          body=$(python3 scripts/resilience_comment.py $LIST 2>/dev/null || true)
+          if [ -n "$body" ]; then
+            printf '%s\n' "$body" > /tmp/resilience_body.md
+            gh pr comment "${{ inputs.pr }}" --repo "${{ github.repository }}" --body-file /tmp/resilience_body.md
+            rm -f /tmp/resilience_body.md
+          else
+            echo "No resilience results this run — no report comment."
+          fi
 
       - name: Flag failed frameworks
         if: steps.bench.outputs.failed != ''
