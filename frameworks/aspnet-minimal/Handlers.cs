@@ -3,6 +3,7 @@ using HttpArena.Services;
 using HttpArena.Types;
 using System.Buffers;
 using System.Text;
+using System.Text.Json;
 
 static class Handlers
 {
@@ -71,6 +72,30 @@ static class Handlers
     // /spec, the compliance route. GET answers a fixed body of at least five
     // bytes - h2spec skips a flow-control test below that. Kestrel drops the
     // body itself when the same handler answers HEAD.
+    // POST /parse — actually parse the request body with the framework's standard
+    // facilities (the resilience suite's parser-differential target). JSON goes
+    // through System.Text.Json (depth cap), form/multipart through ReadFormAsync
+    // (value-count cap), and anything else is buffered after request decompression.
+    public static async Task<IResult> Parse(HttpContext ctx)
+    {
+        var ct = ctx.Request.ContentType ?? "";
+        if (ct.Contains("application/json", StringComparison.OrdinalIgnoreCase))
+        {
+            using var doc = await JsonDocument.ParseAsync(ctx.Request.Body);
+            return Results.Ok(doc.RootElement.ValueKind.ToString());
+        }
+        if (ctx.Request.HasFormContentType)   // urlencoded or multipart/form-data
+        {
+            var form = await ctx.Request.ReadFormAsync();
+            return Results.Ok(form.Count + form.Files.Count);
+        }
+        // Any other body (e.g. a compressed octet-stream): buffer the whole
+        // decompressed body — exercises request decompression + whole-body buffering.
+        using var ms = new MemoryStream();
+        await ctx.Request.Body.CopyToAsync(ms);
+        return Results.Ok(ms.Length);
+    }
+
     public static IResult SpecText() => Results.Text("spec ok", "text/plain");
 
     public static async Task SpecOptions(HttpContext ctx)
