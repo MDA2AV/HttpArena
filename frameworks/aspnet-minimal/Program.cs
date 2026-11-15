@@ -11,6 +11,9 @@ using Microsoft.Extensions.FileProviders;
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
 builder.Services.AddRazorPages();
+// Request decompression so POST /parse exercises the framework's handling of a
+// Content-Encoding body (the resilience suite's decompression-bomb target).
+builder.Services.AddRequestDecompression();
 
 builder.Services.ConfigureHttpJsonOptions(o =>
     o.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonContext.Default));
@@ -95,6 +98,7 @@ builder.Services.AddResponseCompression();
 var app = builder.Build();
 
 app.UseResponseCompression();
+app.UseRequestDecompression();
 
 app.Use((ctx, next) =>
 {
@@ -115,6 +119,12 @@ app.MapPost("/baseline11", Handlers.SumBody);
 app.MapGet("/baseline2", Handlers.Sum);
 
 app.MapPost("/echo", Handlers.EchoBody);
+
+// POST /parse — the request-body-parsing sink for the resilience suite. Parses
+// the body with the framework's standard facilities so the suite measures .NET's
+// limits (JSON depth, form value-count, request decompression), not a hand-rolled
+// parser. See site/content/docs/test-profiles/resilience/.
+app.MapPost("/parse", Handlers.Parse);
 
 // The compliance route (docs/test-profiles/compliance): one route with what
 // Http11Probe and h2spec need. Mapped like every other route, so it goes
