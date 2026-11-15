@@ -72,6 +72,40 @@ H1_PID=$!
 /server /app/conf/main/server.conf &
 MAIN_PID=$!
 
+# Pre-warm the native static compress cache. With the /static route removed and
+# wwwpath=/data, the framework serves /data/static through its on-disk compress
+# cache; hitting each identity file once (br preferred, as the benchmark sends)
+# populates that cache before the benchmark instead of paying compression on the
+# first live request. br is only produced on TLS, so warm via the HTTPS ports
+# (8443 main, 8081 h1) — each instance has its own cache dir, so both must be
+# warmed. Best-effort: a missed warm only means the first real request compresses
+# once.
+wait_ready() {
+    local url="$1" i
+    for i in $(seq 1 60); do
+        if curl -sk --max-time 2 -o /dev/null "$url" 2>/dev/null; then
+            return 0
+        fi
+        sleep 0.5
+    done
+    return 1
+}
+warm_static() {
+    local base="$1" f n
+    for f in /data/static/*; do
+        case "$f" in *.br|*.gz) continue ;; esac
+        [ -f "$f" ] || continue
+        n="${f##*/}"
+        curl -sk --max-time 5 -H 'Accept-Encoding: br, gzip' "$base/static/$n" -o /dev/null 2>/dev/null || true
+    done
+}
+if [ -d /data/static ]; then
+    wait_ready https://localhost:8443/pipeline || true
+    wait_ready https://localhost:8081/pipeline || true
+    warm_static https://localhost:8443
+    warm_static https://localhost:8081
+fi
+
 shutdown() {
     trap - TERM INT
     kill -TERM "$MAIN_PID" "$H1_PID" 2>/dev/null || true

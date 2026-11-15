@@ -29,7 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Pinned so mini_project.sh, the controller generator and the CMake entry point
 # stay in sync with the scaffold this entry was written against.
-ARG PAOZHU_REF=c3005fba93d9583ceb6e198348da4339f071e88c
+ARG PAOZHU_REF=414a598e5a0a539016e855a74c93dd590e98e039
 WORKDIR /paozhu
 # Prefer a source archive shipped in the build context (offline / slow-GitHub
 # environments); otherwise fetch the pinned revision from codeload. The direct
@@ -89,6 +89,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libbrotli1 \
         libstdc++6 \
         ca-certificates \
+        curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
