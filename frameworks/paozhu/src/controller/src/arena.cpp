@@ -417,78 +417,6 @@ std::string render_json(std::size_t count, long long multiplier,
     return out;
 }
 
-// Split "a=1&b=2" without decoding: the harness sends plain decimal values.
-// Returns false once the segment is exhausted.
-bool next_query_pair(const std::string &q, std::size_t &pos,
-                     std::string &key, std::string &value)
-{
-    if (pos >= q.size())
-    {
-        return false;
-    }
-    if (q[pos] == '?' || q[pos] == '&')
-    {
-        ++pos;
-    }
-    const std::size_t amp = q.find('&', pos);
-    const std::size_t end = (amp == std::string::npos) ? q.size() : amp;
-    const std::size_t eq  = q.find('=', pos);
-    if (eq != std::string::npos && eq < end)
-    {
-        key   = q.substr(pos, eq - pos);
-        value = q.substr(eq + 1, end - eq - 1);
-    }
-    else
-    {
-        key   = q.substr(pos, end - pos);
-        value.clear();
-    }
-    pos = end + 1;
-    return true;
-}
-
-long long sum_query(const std::string &q)
-{
-    long long sum = 0;
-    std::size_t pos = 0;
-    std::string key, value;
-    while (next_query_pair(q, pos, key, value))
-    {
-        if (value.empty())
-        {
-            continue;
-        }
-        char *end = nullptr;
-        const long long n = std::strtoll(value.c_str(), &end, 10);
-        if (end != value.c_str())
-        {
-            sum += n;
-        }
-    }
-    return sum;
-}
-
-long long query_multiplier(const std::string &q)
-{
-    long long multiplier = 1;
-    std::size_t pos = 0;
-    std::string key, value;
-    while (next_query_pair(q, pos, key, value))
-    {
-        if (key == "m" && !value.empty())
-        {
-            char *end = nullptr;
-            const long long n = std::strtoll(value.c_str(), &end, 10);
-            if (end != value.c_str())
-            {
-                multiplier = n;
-            }
-            break;
-        }
-    }
-    return multiplier;
-}
-
 long long body_number(const std::string &body)
 {
     char buf[32];
@@ -595,7 +523,16 @@ asio::awaitable<std::string> arena_pipeline(std::shared_ptr<httppeer> peer)
 //@urlpath(null,baseline11)
 asio::awaitable<std::string> arena_baseline11(std::shared_ptr<httppeer> peer)
 {
-    long long sum = sum_query(peer->querystring);
+    // get is parsed from the querystring at request time; sum every value.
+    // is_object() guards as_object(), which would otherwise allocate on NIL.
+    long long sum = 0;
+    if (peer->get.is_object())
+    {
+        for (const auto &kv : peer->get.as_object())
+        {
+            sum += kv.second.to_int();
+        }
+    }
     if (peer->method == POST)
     {
         sum += body_number(raw_body(peer));
@@ -608,8 +545,16 @@ asio::awaitable<std::string> arena_baseline11(std::shared_ptr<httppeer> peer)
 //@urlpath(null,baseline2)
 asio::awaitable<std::string> arena_baseline2(std::shared_ptr<httppeer> peer)
 {
+    long long sum = 0;
+    if (peer->get.is_object())
+    {
+        for (const auto &kv : peer->get.as_object())
+        {
+            sum += kv.second.to_int();
+        }
+    }
     peer->type("text/plain");
-    peer->output = std::to_string(sum_query(peer->querystring));
+    peer->output = std::to_string(sum);
     co_return "";
 }
 
@@ -618,7 +563,8 @@ asio::awaitable<std::string> arena_json(std::shared_ptr<httppeer> peer)
 {
     const std::vector<arena_item> &items = dataset();
     const long long count      = peer->get["count"].to_int();
-    const long long multiplier = query_multiplier(peer->querystring);
+    const obj_val &g           = peer->get;
+    const long long multiplier = g["m"].is_null() ? 1 : g["m"].to_int();
 
     peer->type("application/json");
     if (items.empty() || count < 1 || count > static_cast<long long>(items.size()))
