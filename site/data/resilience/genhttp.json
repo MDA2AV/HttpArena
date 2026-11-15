@@ -1,0 +1,174 @@
+{
+  "framework": "genhttp",
+  "dir": "genhttp",
+  "passed": 8,
+  "total": 8,
+  "attacks": {
+    "slow-body": {
+      "verdict": "survived",
+      "passed": true,
+      "resource": "memory",
+      "description": "Drip a large declared body one byte at a time; tests the body-read timeout / whole-body buffering.",
+      "peak_mem_mb": 404.2,
+      "baseline_mem_mb": 113.6,
+      "mem_limit_mb": 8192,
+      "liveness_fail_pct": 0.0,
+      "recovery_s": 0.0,
+      "oom_killed": false,
+      "exit_code": 0,
+      "duration_s": 60,
+      "client": {
+        "established": 4000,
+        "reaped": 0,
+        "open_at_end": 4000,
+        "drip_sent_bytes": 59392000,
+        "connect_errors": 0
+      }
+    },
+    "slow-headers": {
+      "verdict": "survived",
+      "passed": true,
+      "resource": "connections",
+      "description": "Hold connections with an unfinished, ever-growing header block; tests header-read timeout / caps.",
+      "peak_mem_mb": 694.3,
+      "baseline_mem_mb": 100.0,
+      "mem_limit_mb": 8192,
+      "liveness_fail_pct": 0.0,
+      "recovery_s": 0.0,
+      "oom_killed": false,
+      "exit_code": 0,
+      "duration_s": 60,
+      "client": {
+        "established": 4000,
+        "reaped": 4000,
+        "open_at_end": 0,
+        "drip_sent_bytes": 2807790,
+        "connect_errors": 0
+      }
+    },
+    "huge-chunk": {
+      "verdict": "survived",
+      "passed": true,
+      "resource": "memory",
+      "description": "Announce a 0x7fffffffffffffff-byte chunk; tests whether the server pre-allocates the declared chunk buffer.",
+      "peak_mem_mb": 455.7,
+      "baseline_mem_mb": 100.7,
+      "mem_limit_mb": 8192,
+      "liveness_fail_pct": 0.0,
+      "recovery_s": 0.0,
+      "oom_killed": false,
+      "exit_code": 0,
+      "duration_s": 60,
+      "client": {
+        "established": 4000,
+        "reaped": 0,
+        "open_at_end": 4000,
+        "drip_sent_bytes": 59392000,
+        "connect_errors": 0
+      }
+    },
+    "decompression-bomb": {
+      "verdict": "survived",
+      "passed": true,
+      "resource": "memory",
+      "description": "A small gzip request body that inflates to gigabytes; tests whether request Content-Encoding is decoded unbounded.",
+      "peak_mem_mb": 1565.1,
+      "baseline_mem_mb": 100.2,
+      "mem_limit_mb": 8192,
+      "liveness_fail_pct": 0.0,
+      "recovery_s": 0.0,
+      "oom_killed": false,
+      "exit_code": 0,
+      "duration_s": 60,
+      "client": {
+        "established": 64,
+        "reaped": 0,
+        "frames_sent": 1543,
+        "connect_errors": 0
+      }
+    },
+    "hashdos": {
+      "verdict": "survived",
+      "passed": true,
+      "resource": "cpu",
+      "description": "A form body of many keys; tests whether the body is parsed into an un-seeded hash map (O(n^2), CVE-2011-3414 era).",
+      "peak_mem_mb": 1171.1,
+      "baseline_mem_mb": 100.0,
+      "mem_limit_mb": 8192,
+      "liveness_fail_pct": 0.0,
+      "recovery_s": 0.0,
+      "oom_killed": false,
+      "exit_code": 0,
+      "duration_s": 60,
+      "client": {
+        "established": 64,
+        "reaped": 0,
+        "frames_sent": 1410,
+        "connect_errors": 0
+      }
+    },
+    "json-nesting-bomb": {
+      "verdict": "survived",
+      "passed": true,
+      "resource": "cpu",
+      "description": "A tiny, deeply nested JSON body; tests the recursion-depth cap of the request-body parser (stack overflow -> crash).",
+      "peak_mem_mb": 580.2,
+      "baseline_mem_mb": 100.6,
+      "mem_limit_mb": 8192,
+      "liveness_fail_pct": 0.0,
+      "recovery_s": 0.0,
+      "oom_killed": false,
+      "exit_code": 0,
+      "duration_s": 60,
+      "client": {
+        "established": 64,
+        "reaped": 0,
+        "frames_sent": 3915,
+        "connect_errors": 0
+      }
+    },
+    "multipart-flood": {
+      "verdict": "survived",
+      "passed": true,
+      "resource": "memory",
+      "description": "multipart/form-data with tens of thousands of tiny parts; tests the part/field-count cap.",
+      "peak_mem_mb": 367.0,
+      "baseline_mem_mb": 100.5,
+      "mem_limit_mb": 8192,
+      "liveness_fail_pct": 0.0,
+      "recovery_s": 0.0,
+      "oom_killed": false,
+      "exit_code": 0,
+      "duration_s": 60,
+      "client": {
+        "established": 64,
+        "reaped": 0,
+        "frames_sent": 79,
+        "connect_errors": 0
+      }
+    },
+    "redos-headers": {
+      "verdict": "survived",
+      "passed": true,
+      "resource": "cpu",
+      "description": "Header values crafted for catastrophic regex backtracking; tests the header parsers (Accept/Content-Disposition/Range).",
+      "peak_mem_mb": 120.6,
+      "baseline_mem_mb": 100.5,
+      "mem_limit_mb": 8192,
+      "liveness_fail_pct": 0.0,
+      "recovery_s": 0.0,
+      "oom_killed": false,
+      "exit_code": 0,
+      "duration_s": 60,
+      "client": {
+        "established": 64,
+        "reaped": 0,
+        "frames_sent": 3000186,
+        "connect_errors": 0
+      }
+    }
+  },
+  "tool": {
+    "driver": "resilience/attack.py"
+  }
+}
