@@ -99,8 +99,6 @@ void json_handler(context_t *context) {
     size_t json_length =
         json_serialize((size_t)item_count, multiplier, worker->compress.json_buf, sizeof(worker->compress.json_buf));
 
-    bool client_accepts_brotli =
-        (request->accept_encoding.ptr && strcasestr(request->accept_encoding.ptr, "br") != NULL);
     bool client_accepts_gzip =
         (request->accept_encoding.ptr && strcasestr(request->accept_encoding.ptr, "gzip") != NULL);
 
@@ -110,16 +108,6 @@ void json_handler(context_t *context) {
                           sizeof(worker->compress.comp_buf), &compressed_length) == 0) {
             res_set_json(response, worker->compress.comp_buf, compressed_length);
             response->content_encoding = "gzip";
-            return;
-        }
-    }
-
-    if (client_accepts_brotli) {
-        size_t compressed_length = 0;
-        if (compress_brotli(worker->compress.json_buf, json_length, worker->compress.comp_buf,
-                            sizeof(worker->compress.comp_buf), &compressed_length) == 0) {
-            res_set_json(response, worker->compress.comp_buf, compressed_length);
-            response->content_encoding = "br";
             return;
         }
     }
