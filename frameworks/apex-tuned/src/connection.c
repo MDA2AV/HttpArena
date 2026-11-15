@@ -193,17 +193,19 @@ void trim_inactive_connections(worker_t *worker, uint64_t current_time_ms) {
         stalled_curr = stalled_next;
     }
 
-    while (worker->active_head) {
-        conn_t *oldest_connection = worker->active_head;
-        if (oldest_connection->parked_in_timer) {
-            conn_touch(worker, oldest_connection, current_time_ms);
+    conn_t *curr = worker->active_head;
+    while (curr) {
+        conn_t *next = curr->active_next;
+        if (curr->parked_in_timer) {
+            curr = next;
             continue;
         }
 
-        if (current_time_ms - oldest_connection->last_active_ms < IDLE_TIMEOUT_MS) {
+        if (current_time_ms - curr->last_active_ms < IDLE_TIMEOUT_MS) {
             break;
         }
 
-        close_conn(worker, oldest_connection);
+        close_conn(worker, curr);
+        curr = next;
     }
 }

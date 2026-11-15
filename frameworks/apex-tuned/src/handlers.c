@@ -136,6 +136,7 @@ void echo_handler(context_t *context) {
 
 void handle_timer_expiration(worker_t *worker, conn_t *connection, int64_t delay_milliseconds) {
     connection->parked_in_timer = false;
+    conn_touch(worker, connection, clock_monotonic_ms());
 
     static const char response_delay_10[] = "HTTP/1.1 200 OK\r\n"
                                             "Content-Type: text/plain\r\n"

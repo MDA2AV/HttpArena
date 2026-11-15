@@ -204,7 +204,7 @@ void process_requests(worker_t *worker, conn_t *connection) {
     }
 
     // Release pooled buffer back to thread-local pool if connection is idle
-    if (connection->read_pos == 0 && connection->read_buf) {
+    if (connection->fd >= 0 && connection->read_pos == 0 && connection->read_buf) {
         if (connection->has_pooled_buffer) {
             buffer_pool_release(&worker->buffer_pool, connection->read_buf);
         } else {
