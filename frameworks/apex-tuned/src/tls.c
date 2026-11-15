@@ -30,9 +30,10 @@ SSL_CTX* tls_init_server_ctx(const char *cert_file, const char *key_file) {
     SSL_CTX *ctx = SSL_CTX_new(method);
     if (!ctx) return NULL;
 
-    SSL_CTX_set_min_proto_version(ctx, TLS1_3_VERSION);
+    SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
     SSL_CTX_set_max_proto_version(ctx, TLS1_3_VERSION);
     SSL_CTX_set_ciphersuites(ctx, "TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384");
+    SSL_CTX_set_cipher_list(ctx, "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:HIGH:!aNULL:!MD5");
     SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF);
 
     long options = SSL_OP_NO_RENEGOTIATION | SSL_OP_CIPHER_SERVER_PREFERENCE | SSL_OP_NO_TICKET;
@@ -50,9 +51,11 @@ SSL_CTX* tls_init_server_ctx(const char *cert_file, const char *key_file) {
     SSL_CTX_set_read_ahead(ctx, 1);
     SSL_CTX_set_alpn_select_cb(ctx, alpn_select_cb, NULL);
 
-    if (SSL_CTX_use_certificate_file(ctx, cert_file, SSL_FILETYPE_PEM) <= 0) {
-        SSL_CTX_free(ctx);
-        return NULL;
+    if (SSL_CTX_use_certificate_chain_file(ctx, cert_file) <= 0) {
+        if (SSL_CTX_use_certificate_file(ctx, cert_file, SSL_FILETYPE_PEM) <= 0) {
+            SSL_CTX_free(ctx);
+            return NULL;
+        }
     }
     if (SSL_CTX_use_PrivateKey_file(ctx, key_file, SSL_FILETYPE_PEM) <= 0) {
         SSL_CTX_free(ctx);
