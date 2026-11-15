@@ -1,7 +1,7 @@
 # cinatra
 
 The benchmark service is maintained in cinatra at
-[`benchmark/httparena/`](https://github.com/qicosmos/cinatra/tree/3c1e62e18c8bf08673abb2c7d683a4950eaa4df5/benchmark/httparena).
+[`benchmark/httparena/`](https://github.com/qicosmos/cinatra/tree/a2c944309b1b98c4577afdb6929547c9aa8bcc25/benchmark/httparena).
 This entry fetches that fixed revision and builds the cases there.
 It explicitly enables `HTTPARENA_X86_64_V3` for the benchmark host. The local
 cinatra Dockerfile instead builds the current checkout, with that option off
@@ -20,10 +20,15 @@ vectors borrow immutable dataset strings. The entry is marked tuned for its PMR
 storage and native contiguous buffers for small baseline replies and TLS
 JSON/echo, plus gzip level 3 through the native response API.
 
-The case disables automatic Date/Server headers, omits extra Connection headers,
-and uses the same text/JSON Content-Type values and gzip level as unmodified
-dusty. Thirty request variants match complete HTTP lengths (including TLS after
-decryption), HTTP body hashes, WS/WSS handshake lengths and TCP/TLS pipelines.
+The case keeps automatic Date and disables only Server through cinatra's native
+server configuration, including WS/WSS handshakes. It omits extra Connection
+headers and uses the same text/JSON Content-Type values and gzip level as dusty.
+Date-header byte checks use [dusty's native Date implementation](https://github.com/lalinsky/dusty/commit/ba2236da78ff120618550703e0d2fa59ba78b9ba),
+also included in v0.6.0, without adding header overlays. Thirty variants match
+complete HTTP lengths (including TLS after decryption), HTTP body hashes,
+WS/WSS handshake lengths and TCP/TLS pipelines. The historical dusty v0.5.0
+entry omitted Date; its recorded lengths and prior cinatra results describe a
+different header configuration.
 The service retains native response and WebSocket encoders. Native bounded WebSocket
 write batching is enabled; buffered input is drained and pending echoes are
 flushed before waiting for more data. Single-message clients do not wait for a
