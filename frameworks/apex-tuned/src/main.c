@@ -63,7 +63,7 @@ static __thread worker_t *t_worker = NULL;
 
 static void handle_sig(int sig) {
     (void)sig;
-    g_running = false;
+    _exit(0);
 }
 
 static conn_t* alloc_conn(worker_t *w, int fd, bool is_tls, SSL *ssl) {
@@ -790,6 +790,20 @@ int main(void) {
         return 1;
     }
 
+    int port_h1 = 8080;
+    const char *port_env = getenv("PORT");
+    if (port_env) {
+        int p = atoi(port_env);
+        if (p > 0) port_h1 = p;
+    }
+
+    int port_tls = 8081;
+    const char *tls_port_env = getenv("TLS_PORT");
+    if (tls_port_env) {
+        int p = atoi(tls_port_env);
+        if (p > 0) port_tls = p;
+    }
+
     for (int i = 0; i < g_num_workers; i++) {
         worker_t *w = &g_workers[i];
         w->id = i;
@@ -797,6 +811,7 @@ int main(void) {
         w->ssl_ctx = shared_ssl_ctx;
 
         router_init(&w->router);
+        router_add(&w->router, HTTP_METHOD_GET, "/", pipeline_handler);
         router_add(&w->router, HTTP_METHOD_GET, "/baseline11", baseline_handler);
         router_add(&w->router, HTTP_METHOD_POST, "/baseline11", baseline_handler);
         router_add(&w->router, HTTP_METHOD_GET, "/pipeline", pipeline_handler);
@@ -821,13 +836,13 @@ int main(void) {
         }
 
         w->epoll_fd = epoll_create1(EPOLL_CLOEXEC);
-        w->listen_h1_fd = create_listen_socket(8080);
+        w->listen_h1_fd = create_listen_socket(port_h1);
         w->token_h1 = 1;
         struct epoll_event ev1 = { .events = EPOLLIN, .data.ptr = &w->token_h1 };
         epoll_ctl(w->epoll_fd, EPOLL_CTL_ADD, w->listen_h1_fd, &ev1);
 
         if (w->ssl_ctx) {
-            w->listen_tls_fd = create_listen_socket(8081);
+            w->listen_tls_fd = create_listen_socket(port_tls);
             if (w->listen_tls_fd >= 0) {
                 w->token_tls = 2;
                 struct epoll_event ev2 = { .events = EPOLLIN, .data.ptr = &w->token_tls };
@@ -839,6 +854,10 @@ int main(void) {
 
         pthread_create(&w->thread, NULL, worker_main, w);
     }
+
+    printf("[apex] Server listening on port %d (TLS: %d) with %d workers\n",
+           port_h1, shared_ssl_ctx ? port_tls : -1, g_num_workers);
+    fflush(stdout);
 
     for (int i = 0; i < g_num_workers; i++) {
         pthread_join(g_workers[i].thread, NULL);

@@ -25,7 +25,7 @@ void router_add(router_t *r, http_method_t method, const char *pattern, handler_
         re->prefix_len = (size_t)(param_marker - pattern + 1);
     } else {
         re->has_param = false;
-        re->is_prefix = (re->pattern_len > 0 && pattern[re->pattern_len - 1] == '/');
+        re->is_prefix = (re->pattern_len > 1 && pattern[re->pattern_len - 1] == '/');
         re->prefix_len = re->pattern_len;
     }
 }
