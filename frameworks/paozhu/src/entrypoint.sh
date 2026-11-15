@@ -99,6 +99,11 @@ warm_static() {
         curl -sk --max-time 5 -H 'Accept-Encoding: br, gzip' "$base/static/$n" -o /dev/null 2>/dev/null || true
     done
 }
+# Give the two /server processes time to finish startup (dataset parse,
+# static cache dir setup, first TLS handshakes) before any probe or pre-warm
+# request goes out. Without this an early request can race that setup and take
+# the process down, which wait -n then turns into a full two-process shutdown.
+sleep 3
 if [ -d /data/static ]; then
     wait_ready https://localhost:8443/pipeline || true
     wait_ready https://localhost:8081/pipeline || true
