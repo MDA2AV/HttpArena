@@ -1,7 +1,7 @@
 {:paths ["src"]
- :deps {org.clojure/clojure {:mvn/version "1.12.5"}
+ :deps {org.clojure/clojure {:mvn/version "1.12.6"}
         org.clojure/data.json {:mvn/version "2.5.2"}
-        aleph/aleph {:mvn/version "0.8.3"
+        aleph/aleph {:mvn/version "0.9.11"
                      :exclusions [io.netty/netty-all
                                   io.netty/netty-buffer
                                   io.netty/netty-codec
@@ -20,5 +20,5 @@
                                   io.netty/netty-transport-native-epoll
                                   io.netty/netty-transport-native-kqueue
                                   io.netty/netty-transport-native-unix-common]}
-        io.netty/netty-all {:mvn/version "4.2.12.Final"}}
+        io.netty/netty-all {:mvn/version "4.2.20.Final"}}
  :aliases {:test {:extra-paths ["test"]}}}
