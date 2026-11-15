@@ -3,6 +3,7 @@ RUN apk add --no-cache ca-certificates git
 WORKDIR /src
 COPY rebar.config rebar.lock ./
 COPY config ./config
+COPY proto ./proto
 COPY src ./src
 RUN rebar3 as prod release
 

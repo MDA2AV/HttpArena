@@ -1,4 +1,7 @@
 _build/
+# Generated from proto/benchmark.proto by rebar3_gpb_plugin.
+src/benchmark_pb.erl
+src/benchmark_pb.hrl
 _checkouts/
 .rebar3/
 *.beam

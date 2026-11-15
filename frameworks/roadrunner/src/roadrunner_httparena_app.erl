@@ -9,10 +9,23 @@ start(_StartType, _StartArgs) ->
     ok = roadrunner_httparena_cache:new(),
     _ = roadrunner_httparena_db:start_pool(),
     Routes = roadrunner_httparena_handler:routes(),
+    %% gRPC's `benchmark.BenchmarkService` (unary-grpc and unary-grpc-tls),
+    %% served next to the HTTP routes on 8080 and 8443.
+    GrpcRoutes = roadrunner_grpc:routes(#{
+        services => [
+            roadrunner_grpc_protobuf:service(
+                benchmark_pb, ~"benchmark.BenchmarkService", roadrunner_httparena_grpc
+            )
+        ],
+        codecs => [roadrunner_grpc_protobuf]
+    }),
     HttpPort = application:get_env(roadrunner_httparena, http_port, 8080),
     {ok, _} = roadrunner:start_listener(httparena_http, #{
         port => HttpPort,
-        routes => Routes,
+        routes => Routes ++ GrpcRoutes,
+        %% HTTP/1.1, plus prior-knowledge h2c for gRPC (unary-grpc): a
+        %% connection that opens with the HTTP/2 preface is HTTP/2.
+        protocols => [http1, http2],
         %% High-concurrency profiles offer thousands of connections (async
         %% holds 32768 at once); size the cap above the largest profile plus
         %% churn headroom so the listener keeps every offered connection live
@@ -64,7 +77,7 @@ start(_StartType, _StartArgs) ->
             H2Port = application:get_env(roadrunner_httparena, h2_port, 8443),
             {ok, _} = roadrunner:start_listener(httparena_h2, #{
                 port => H2Port,
-                routes => Routes,
+                routes => Routes ++ GrpcRoutes,
                 tls => TlsOpts,
                 %% Same connection/stream bounds as the h2c listener above.
                 max_clients => 8192,
