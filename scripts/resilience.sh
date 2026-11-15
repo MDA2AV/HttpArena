@@ -36,7 +36,7 @@ ATTACKS_REQUESTED=()
 for arg in "$@"; do
     case "$arg" in
         --save) SAVE=true ;;
-        slow-body|slow-headers|huge-chunk|decompression-bomb|hashdos|json-nesting-bomb|multipart-flood|redos-headers|continuation-flood|hpack-bomb|rapid-reset|madeyoureset|settings-flood|ping-flood|empty-frame-flood|window-stall) ATTACKS_REQUESTED+=("$arg") ;;
+        slow-body|slow-headers|huge-chunk|decompression-bomb|hashdos|json-nesting-bomb|multipart-flood|redos-headers|continuation-flood|hpack-bomb|rapid-reset|madeyoureset|settings-flood|ping-flood|empty-frame-flood|window-stall|slow-read|large-upload|keepalive-hoard|content-length-prealloc|expect-100-continue|chunk-size-overflow|trailer-flood|chunk-extension-flood|tiny-chunk-flood|header-bomb|header-count-flood|duplicate-header-merge|pipelining-flood|decomp-codec-bypass|qvalue-cpu-bomb|cookie-flood|percent-decode-quadratic|range-bomb|json-bignum|ws-giant-frame|ws-fragment-bomb|ws-deflate-bomb|ws-pong-flood|tls-handshake-flood|dheat) ATTACKS_REQUESTED+=("$arg") ;;
         -*)     fail "unknown flag: $arg" ;;
         *)      POSITIONAL+=("$arg") ;;
     esac
@@ -61,6 +61,23 @@ RES_MULTIPART_PARTS="${RES_MULTIPART_PARTS:-50000}" # parts for multipart-flood
 RES_REDOS_PAD="${RES_REDOS_PAD:-4000}"              # ambiguous-run length for redos-headers
 RES_STALL_COUNT="${RES_STALL_COUNT:-5000}"          # /json/{count} size per stalled stream (window-stall)
 RES_STALL_STREAMS="${RES_STALL_STREAMS:-64}"        # stalled streams per connection (window-stall)
+RES_WS_CONNS="${RES_WS_CONNS:-256}"                 # connections for the WebSocket attacks
+RES_TLS_CONNS="${RES_TLS_CONNS:-128}"               # workers for the TLS handshake attacks
+RES_CL_DECLARE="${RES_CL_DECLARE:-2147483648}"      # declared Content-Length (content-length-prealloc/expect-100)
+RES_CHUNK_EXT_SIZE="${RES_CHUNK_EXT_SIZE:-4096}"    # chunk-extension bytes per chunk (chunk-extension-flood)
+RES_CHUNK_COUNT="${RES_CHUNK_COUNT:-500000}"        # 1-byte chunks (tiny-chunk-flood)
+RES_HEADER_VALUE_SIZE="${RES_HEADER_VALUE_SIZE:-1048576}"  # one header value's size (header-bomb)
+RES_HEADER_COUNT="${RES_HEADER_COUNT:-50000}"       # header fields (header-count-flood)
+RES_DUP_HEADERS="${RES_DUP_HEADERS:-20000}"         # repeats of one header name (duplicate-header-merge)
+RES_PIPELINE_DEPTH="${RES_PIPELINE_DEPTH:-10000}"   # pipelined requests per batch (pipelining-flood)
+RES_UPLOAD_SIZE="${RES_UPLOAD_SIZE:-2147483648}"    # bytes actually delivered (large-upload)
+RES_QVALUE_COUNT="${RES_QVALUE_COUNT:-5000}"        # Accept-Language entries (qvalue-cpu-bomb)
+RES_COOKIE_PAIRS="${RES_COOKIE_PAIRS:-100000}"      # cookie pairs (cookie-flood)
+RES_PERCENT_COUNT="${RES_PERCENT_COUNT:-2000}"      # %-encoded tokens in the path (percent-decode-quadratic)
+RES_RANGE_COUNT="${RES_RANGE_COUNT:-1000}"          # byte ranges (range-bomb)
+RES_BIGNUM_DIGITS="${RES_BIGNUM_DIGITS:-100000}"    # digits in the JSON number (json-bignum)
+RES_WS_FRAME_LEN="${RES_WS_FRAME_LEN:-9223372036854775552}"  # declared WS frame length (ws-giant-frame)
+RES_WS_FRAG_SIZE="${RES_WS_FRAG_SIZE:-4096}"        # bytes per WS fragment (ws-fragment-bomb)
 RES_RECOVERY="${RES_RECOVERY:-15}"   # seconds to wait for the server to serve again
 # The attack client runs on the load-generator cores so it never steals CPU from
 # the (deliberately CPU-starved) server.
@@ -107,11 +124,27 @@ has_h2() {
     framework_subscribes_to baseline-h2  || framework_subscribes_to static-h2 \
  || framework_subscribes_to baseline-h2c || framework_subscribes_to json-h2c
 }
+has_ws() {
+    framework_subscribes_to echo-ws || framework_subscribes_to echo-ws-pipeline \
+ || framework_subscribes_to echo-ws-limited
+}
+has_h1tls() {
+    framework_subscribes_to json-tls || framework_subscribes_to static-tls || framework_subscribes_to 8gbit
+}
+has_tls() { has_h1tls || has_h2; }
+# The TLS attacks need a TLS listener: the h1 one on 8081, else the h2 one on 8443.
+res_tls_port() { if has_h1tls; then echo "$H1TLS_PORT"; else echo "$H2PORT"; fi; }
 if [ "${#ATTACKS_REQUESTED[@]}" -gt 0 ]; then
     ATTACKS=("${ATTACKS_REQUESTED[@]}")
 else
-    ATTACKS=(slow-body slow-headers huge-chunk decompression-bomb hashdos json-nesting-bomb multipart-flood redos-headers)
+    ATTACKS=(slow-body slow-headers slow-read huge-chunk tiny-chunk-flood chunk-extension-flood chunk-size-overflow
+             content-length-prealloc large-upload expect-100-continue keepalive-hoard
+             header-bomb header-count-flood duplicate-header-merge pipelining-flood trailer-flood
+             decompression-bomb decomp-codec-bypass hashdos json-nesting-bomb multipart-flood
+             redos-headers qvalue-cpu-bomb cookie-flood percent-decode-quadratic range-bomb json-bignum)
     has_h2 && ATTACKS+=(continuation-flood hpack-bomb rapid-reset madeyoureset settings-flood ping-flood empty-frame-flood window-stall)
+    has_ws && ATTACKS+=(ws-giant-frame ws-fragment-bomb ws-deflate-bomb ws-pong-flood)
+    has_tls && ATTACKS+=(tls-handshake-flood dheat)
 fi
 info "attacks: ${ATTACKS[*]}"
 info "box: mem=$RES_MEM cpuset=$RES_CPUSET  duration=${RES_DURATION}s conns=$RES_CONNS"
@@ -178,18 +211,32 @@ recovery_probe() {
 # ── One attack ───────────────────────────────────────────────────────────────
 
 run_attack() {
-    local name="$1" port path conns extra_tls=""
+    local name="$1" port path conns needtls=0
     case "$name" in
-        slow-body)          port=$PORT;     path=/echo; conns=$RES_CONNS ;;
-        slow-headers)       port=$PORT;     path=/;      conns=$RES_CONNS ;;
-        huge-chunk)         port=$PORT;     path=/echo; conns=$RES_CONNS ;;
-        decompression-bomb|hashdos|json-nesting-bomb|multipart-flood) \
-                            port=$PORT;     path=/echo; conns=$RES_DECOMP_CONNS ;;
-        redos-headers)      port=$PORT;     path=/baseline11; conns=$RES_DECOMP_CONNS ;;
+        # H1 slow / hold / drip — hold many connections (RES_CONNS)
+        slow-body|huge-chunk) port=$PORT; path=/echo; conns=$RES_CONNS ;;
+        slow-headers|slow-read|keepalive-hoard) port=$PORT; path=/; conns=$RES_CONNS ;;
+        content-length-prealloc|expect-100-continue|chunk-size-overflow|trailer-flood|chunk-extension-flood) \
+                            port=$PORT; path=/echo; conns=$RES_CONNS ;;
+        # H1 request / payload floods on a body endpoint (RES_DECOMP_CONNS)
+        decompression-bomb|decomp-codec-bypass|hashdos|json-nesting-bomb|multipart-flood|tiny-chunk-flood|large-upload|json-bignum) \
+                            port=$PORT; path=/echo; conns=$RES_DECOMP_CONNS ;;
+        # H1 header / request floods on a GET endpoint
+        redos-headers|header-bomb|header-count-flood|duplicate-header-merge|pipelining-flood|qvalue-cpu-bomb|cookie-flood) \
+                            port=$PORT; path=/baseline11; conns=$RES_DECOMP_CONNS ;;
+        # H1 attacks that craft their own path/target
+        percent-decode-quadratic|range-bomb) port=$PORT; path=/; conns=$RES_DECOMP_CONNS ;;
+        # HTTP/2 floods (h2c, RES_H2_CONNS)
         continuation-flood|hpack-bomb|rapid-reset|madeyoureset|settings-flood|ping-flood|empty-frame-flood|window-stall) \
-                            port=$H2C_PORT; path=/;      conns=$RES_H2_CONNS ;;
+                            port=$H2C_PORT; path=/; conns=$RES_H2_CONNS ;;
+        # WebSocket (/ws on 8080, RES_WS_CONNS)
+        ws-giant-frame|ws-fragment-bomb|ws-deflate-bomb|ws-pong-flood) \
+                            port=$PORT; path=/; conns=$RES_WS_CONNS ;;
+        # TLS handshake attacks (the TLS listener, RES_TLS_CONNS)
+        tls-handshake-flood|dheat) port=$(res_tls_port); path=/; conns=$RES_TLS_CONNS; needtls=1 ;;
         *) warn "unknown attack: $name"; return 0 ;;
     esac
+    local tls_flag=(); [ "$needtls" = 1 ] && tls_flag=(--tls)
     log "resilience $name: $FRAMEWORK (port $port)"
 
     FRAMEWORK_MEM_LIMIT="$RES_MEM" framework_start resilience "$RES_CPUSET"
@@ -222,9 +269,7 @@ run_attack() {
     sample_mem "$cid" "$peak_file" &
     sampler_pid=$!
 
-    # The attack itself. --tls only for the TLS-fronted H2 case (not used here).
-    local tls_flag=()
-    [ -n "$extra_tls" ] && tls_flag=(--tls)
+    # The attack itself. tls_flag is set in the case above (TLS handshake attacks).
     taskset -c "$ATTACK_CPUS" python3 "$ATTACK_PY" \
         --attack "$name" --host 127.0.0.1 --port "$port" --path "$path" \
         --conns "$conns" --duration "$RES_DURATION" \
@@ -232,7 +277,15 @@ run_attack() {
         --drip-bytes "$RES_DRIP_BYTES" --bomb-size "$RES_BOMB_SIZE" \
         --hashdos-keys "$RES_HASHDOS_KEYS" --json-depth "$RES_JSON_DEPTH" \
         --multipart-parts "$RES_MULTIPART_PARTS" --redos-pad "$RES_REDOS_PAD" \
-        --stall-count "$RES_STALL_COUNT" --stall-streams "$RES_STALL_STREAMS" "${tls_flag[@]}" \
+        --stall-count "$RES_STALL_COUNT" --stall-streams "$RES_STALL_STREAMS" \
+        --cl-declare "$RES_CL_DECLARE" --chunk-ext-size "$RES_CHUNK_EXT_SIZE" \
+        --chunk-count "$RES_CHUNK_COUNT" --header-value-size "$RES_HEADER_VALUE_SIZE" \
+        --header-count "$RES_HEADER_COUNT" --dup-headers "$RES_DUP_HEADERS" \
+        --pipeline-depth "$RES_PIPELINE_DEPTH" --upload-size "$RES_UPLOAD_SIZE" \
+        --qvalue-count "$RES_QVALUE_COUNT" --cookie-pairs "$RES_COOKIE_PAIRS" \
+        --percent-count "$RES_PERCENT_COUNT" --range-count "$RES_RANGE_COUNT" \
+        --bignum-digits "$RES_BIGNUM_DIGITS" --ws-frame-len "$RES_WS_FRAME_LEN" \
+        --ws-frag-size "$RES_WS_FRAG_SIZE" "${tls_flag[@]}" \
         > "$WORK/$name.client.json" 2> "$WORK/$name.client.log" || \
         warn "attack client exited non-zero (see $name.client.log)"
 

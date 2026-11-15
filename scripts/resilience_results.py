@@ -57,6 +57,56 @@ RESOURCE = {
                                   "tests the part/field-count cap."),
     "redos-headers": ("cpu", "Header values crafted for catastrophic regex backtracking; tests "
                             "the header parsers (Accept/Content-Disposition/Range)."),
+    "slow-read": ("memory", "Request a large response then read it ~1 byte/sec; tests the "
+                           "send/write timeout and response buffering."),
+    "large-upload": ("memory", "A huge uncompressed body delivered fast; tests whole-body "
+                              "buffering and the max-body-size cap."),
+    "keepalive-hoard": ("connections", "Many complete keep-alive requests held idle; tests the "
+                                       "idle-timeout and max-connection caps."),
+    "content-length-prealloc": ("memory", "Declare a huge Content-Length and send no body; tests "
+                                          "whether the read buffer is sized from the declared length (CVE-2026-5440)."),
+    "expect-100-continue": ("memory", "Expect: 100-continue + a large Content-Length, body withheld; "
+                                      "tests buffer reservation on the 100-continue handshake (CVE-2020-10705)."),
+    "chunk-size-overflow": ("cpu", "A chunk-size near 2**64; tests whether chunk-size arithmetic "
+                                   "overflows and crashes the parser."),
+    "trailer-flood": ("memory", "A chunked body followed by an unbounded trailer section; tests the "
+                               "trailer-count cap, a header-limit blind spot (CVE-2026-22815 era)."),
+    "chunk-extension-flood": ("cpu", "1-byte chunks each carrying a huge chunk-extension; tests "
+                                     "read-amplification in the chunk parser (CVE-2023-39326)."),
+    "tiny-chunk-flood": ("cpu", "A chunked body of millions of 1-byte chunks; tests per-chunk "
+                               "framing/dechunk overhead."),
+    "header-bomb": ("memory", "One complete request with a single enormous header value; tests the "
+                             "per-field / total header size cap."),
+    "header-count-flood": ("memory", "Very many tiny distinct header fields; tests the header-COUNT "
+                                     "cap (CVE-2026-28980 era)."),
+    "duplicate-header-merge": ("cpu", "The same header name repeated N times; tests whether duplicates "
+                                      "are joined with O(n^2) concatenation before dispatch."),
+    "pipelining-flood": ("memory", "Thousands of pipelined requests on one socket, responses unread; "
+                                   "tests whether the inbound queue is bounded (CVE-2026-54273)."),
+    "decomp-codec-bypass": ("memory", "A deflate bomb labelled Content-Encoding: deflate; tests whether "
+                                      "non-gzip request codecs are decoded unbounded (CVE-2026-42587 era)."),
+    "qvalue-cpu-bomb": ("cpu", "A huge Accept-Language list; tests O(n^2) q-value sorting before "
+                              "dispatch (CVE-2020-27223)."),
+    "cookie-flood": ("memory", "One Cookie header of many tiny pairs under the byte cap; tests the "
+                              "cookie-COUNT cap (CVE-2025-58186)."),
+    "percent-decode-quadratic": ("cpu", "A path of many percent-encoded tokens; tests super-linear "
+                                        "percent-decoding in the router (CVE-2026-45822)."),
+    "range-bomb": ("memory", "Many overlapping byte ranges on a static file; tests multipart/byteranges "
+                            "response amplification (Apache-Killer, CVE-2011-3192)."),
+    "json-bignum": ("cpu", "A single gigantic JSON numeric literal; tests arbitrary-precision number "
+                          "parsing (BigDecimal / quadratic int, CVE-2023-4043)."),
+    "ws-giant-frame": ("memory", "A WebSocket frame header declaring a 2**63 payload length; tests "
+                                 "receive-buffer pre-allocation from the declared length."),
+    "ws-fragment-bomb": ("memory", "Endless WebSocket continuation frames with no FIN; tests the "
+                                   "fragment-aggregation cap (CVE-2026-48779)."),
+    "ws-deflate-bomb": ("memory", "A permessage-deflate frame that inflates to gigabytes; tests the "
+                                  "inflated-message cap (CVE-2026-1526 era)."),
+    "ws-pong-flood": ("memory", "Flood PING frames, never read; tests whether the auto-PONG queue is "
+                               "bounded (CVE-2026-109932)."),
+    "tls-handshake-flood": ("cpu", "Many full TLS handshakes; the server pays the asymmetric crypto "
+                                   "each time (THC-SSL-DOS class)."),
+    "dheat": ("cpu", "Offer only DHE and flood handshakes; forces a modular exponentiation per "
+                    "handshake, or reports immune if no DHE is offered (CVE-2002-20001)."),
 }
 
 LIVENESS_FAIL_THRESHOLD = 0.5   # over half the probes failing = "stopped answering"
