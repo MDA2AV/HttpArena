@@ -59,7 +59,7 @@ RES_DRIP="${RES_DRIP:-1.0}"          # seconds between drips
 RES_DRIP_BYTES="${RES_DRIP_BYTES:-256}"       # bytes per drip for slow-body/huge-chunk: ~256 B/s, slow
                                               # enough to be low-and-slow but above a bytes-at-zero reaper
 RES_H2_CONNS="${RES_H2_CONNS:-32768}"           # connections for the HTTP/2 flood attacks (each floods hard)
-RES_DECOMP_CONNS="${RES_DECOMP_CONNS:-4000}"    # connections for the H1 payload/parser floods
+RES_DECOMP_CONNS="${RES_DECOMP_CONNS:-32768}"    # connections for the H1 payload/parser floods
 RES_BOMB_SIZE="${RES_BOMB_SIZE:-1073741824}"  # 1 GiB decompressed per gzip bomb
 RES_HASHDOS_KEYS="${RES_HASHDOS_KEYS:-100000}"      # form keys for hashdos
 RES_JSON_DEPTH="${RES_JSON_DEPTH:-100000}"          # array nesting depth for json-nesting-bomb
@@ -67,7 +67,7 @@ RES_MULTIPART_PARTS="${RES_MULTIPART_PARTS:-50000}" # parts for multipart-flood
 RES_REDOS_PAD="${RES_REDOS_PAD:-4000}"              # ambiguous-run length for redos-headers
 RES_STALL_COUNT="${RES_STALL_COUNT:-5000}"          # /json/{count} size per stalled stream (window-stall)
 RES_STALL_STREAMS="${RES_STALL_STREAMS:-64}"        # stalled streams per connection (window-stall)
-RES_WS_CONNS="${RES_WS_CONNS:-4000}"                 # connections for the WebSocket attacks
+RES_WS_CONNS="${RES_WS_CONNS:-32768}"                 # connections for the WebSocket attacks
 RES_TLS_CONNS="${RES_TLS_CONNS:-4000}"               # workers for the TLS handshake attacks
 RES_CL_DECLARE="${RES_CL_DECLARE:-2147483648}"      # declared Content-Length (content-length-prealloc/expect-100)
 RES_CHUNK_EXT_SIZE="${RES_CHUNK_EXT_SIZE:-4096}"    # chunk-extension bytes per chunk (chunk-extension-flood)
