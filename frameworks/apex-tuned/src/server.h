@@ -77,6 +77,7 @@ struct worker_s {
     conn_t *active_head;
     conn_t *active_tail;
     uint64_t last_trim_ms;
+    uint64_t last_malloc_trim_ms;
 
     int token_h1;
     int token_tls;

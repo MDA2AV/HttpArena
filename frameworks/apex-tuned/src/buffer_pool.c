@@ -52,14 +52,8 @@ void buffer_pool_release(buffer_pool_t *pool, char *buffer) {
         return;
     }
 
-    size_t new_capacity = pool->capacity * 2;
-    char **expanded_slabs = realloc(pool->slabs, sizeof(char *) * new_capacity);
-    if (expanded_slabs) {
-        pool->slabs = expanded_slabs;
-        pool->capacity = new_capacity;
-        pool->slabs[pool->count++] = buffer;
-    } else {
-        free(buffer);
+    free(buffer);
+    if (pool->total_allocated > 0) {
         pool->total_allocated--;
     }
 }

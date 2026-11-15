@@ -5,6 +5,9 @@
 #include <string.h>
 #include <sys/epoll.h>
 #include <unistd.h>
+#if defined(__linux__) && defined(__GLIBC__)
+#include <malloc.h>
+#endif
 
 void conn_list_insert_tail(worker_t *worker, conn_t *connection) {
     connection->active_next = NULL;
@@ -150,4 +153,11 @@ void trim_inactive_connections(worker_t *worker, uint64_t current_time_ms) {
 
         close_conn(worker, oldest_connection);
     }
+
+#if defined(__linux__) && defined(__GLIBC__)
+    if (current_time_ms - worker->last_malloc_trim_ms >= 5000) {
+        worker->last_malloc_trim_ms = current_time_ms;
+        malloc_trim(0);
+    }
+#endif
 }

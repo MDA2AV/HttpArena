@@ -229,13 +229,13 @@ void *worker_thread_main(void *thread_argument) {
     CPU_SET(worker->cpu_id, &cpu_set);
     pthread_setaffinity_np(pthread_self(), sizeof(cpu_set), &cpu_set);
 
-    buffer_pool_init(&worker->buffer_pool, 2048);
+    buffer_pool_init(&worker->buffer_pool, BUFFER_POOL_DEFAULT_CAPACITY);
     register_application_routes(worker);
     compress_worker_init(&worker->compress);
     timer_wheel_init(&worker->timers, clock_monotonic_ms());
     worker->free_conns = NULL;
 
-    for (int pool_index = 0; pool_index < 2048; pool_index++) {
+    for (int pool_index = 0; pool_index < BUFFER_POOL_DEFAULT_CAPACITY; pool_index++) {
         conn_t *preallocated_conn = calloc(1, sizeof(conn_t));
         if (preallocated_conn) {
             preallocated_conn->fd = -1;
