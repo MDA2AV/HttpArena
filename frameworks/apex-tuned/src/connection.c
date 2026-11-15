@@ -23,13 +23,15 @@ void conn_list_insert_tail(worker_t *worker, conn_t *connection) {
 void conn_list_remove(worker_t *worker, conn_t *connection) {
     if (connection->active_prev) {
         connection->active_prev->active_next = connection->active_next;
-    } else if (worker->active_head == connection) {
+    }
+    if (worker->active_head == connection) {
         worker->active_head = connection->active_next;
     }
 
     if (connection->active_next) {
         connection->active_next->active_prev = connection->active_prev;
-    } else if (worker->active_tail == connection) {
+    }
+    if (worker->active_tail == connection) {
         worker->active_tail = connection->active_prev;
     }
 
@@ -39,6 +41,9 @@ void conn_list_remove(worker_t *worker, conn_t *connection) {
 
 void conn_touch(worker_t *worker, conn_t *connection, uint64_t current_time_ms) {
     connection->last_active_ms = current_time_ms;
+    if (connection == worker->active_tail) {
+        return;
+    }
     conn_list_remove(worker, connection);
     conn_list_insert_tail(worker, connection);
 }
@@ -195,7 +200,11 @@ void trim_inactive_connections(worker_t *worker, uint64_t current_time_ms) {
     }
 
     conn_t *curr = worker->active_head;
+    size_t iterations = 0;
     while (curr) {
+        if (++iterations > MAX_CONNS_PER_WORKER) {
+            break;
+        }
         conn_t *next = curr->active_next;
         if (curr->parked_in_timer) {
             curr = next;
@@ -215,12 +224,11 @@ void trim_inactive_connections(worker_t *worker, uint64_t current_time_ms) {
             continue;
         }
 
-        if (current_time_ms - curr->last_active_ms >= IDLE_TIMEOUT_MS) {
-            close_conn(worker, curr);
-            curr = next;
-            continue;
+        if (current_time_ms - curr->last_active_ms < IDLE_TIMEOUT_MS) {
+            break;
         }
 
+        close_conn(worker, curr);
         curr = next;
     }
 
