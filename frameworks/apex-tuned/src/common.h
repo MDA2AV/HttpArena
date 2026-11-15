@@ -220,6 +220,9 @@ static inline void set_sock_opts(int fd) {
     // Enable TCP keepalive to detect and drop dead/idle sockets
     setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &one, sizeof(one));
 
+    int sndbuf = 262144;
+    setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &sndbuf, sizeof(sndbuf));
+
 #if defined(TCP_KEEPIDLE)
     int keepidle = 15;
     setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &keepidle, sizeof(keepidle));
