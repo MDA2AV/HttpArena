@@ -1,0 +1,172 @@
+#!/usr/bin/env python3
+"""Turn the raw per-attack data from scripts/resilience.sh into an entry's
+resilience scores.
+
+    resilience_results.py <work dir> <display name> <entry dir> <attack>...
+
+Reads results/resilience/<entry dir>/<attack>.result.json (written by the
+runner) and prints the JSON for results/resilience/<entry dir>.json (and, with
+--save, site/data/resilience/<entry dir>.json).
+
+Each attack gets a verdict from the server-side signal:
+
+    oom-killed  the container was OOM-killed (ran out of the memory box) — fail
+    crashed     the process died without being OOM-killed (panic/segfault) — fail
+    hung        still running but stopped answering and never recovered — fail
+    degraded    stopped answering under load but recovered afterwards — pass (warn)
+    survived    kept answering throughout, no OOM, memory stayed bounded — pass
+
+plus peak RSS vs the idle baseline, the fraction of liveness probes that failed
+during the attack, recovery time, and what the attack client did. "passed" is
+true for survived/degraded. File format mirrors the compliance suite's
+site/data/spec/<dir>.json.
+"""
+import json
+import os
+import sys
+
+# What each attack is trying to exhaust, for the report.
+RESOURCE = {
+    "slow-body": ("memory", "Drip a large declared body one byte at a time; "
+                            "tests the body-read timeout / whole-body buffering."),
+    "slow-headers": ("connections", "Hold connections with an unfinished, ever-growing "
+                                    "header block; tests header-read timeout / caps."),
+    "huge-chunk": ("memory", "Announce a 0x7fffffffffffffff-byte chunk; tests whether "
+                            "the server pre-allocates the declared chunk buffer."),
+    "continuation-flood": ("memory", "Endless HTTP/2 CONTINUATION frames with no "
+                                     "END_HEADERS (CVE-2024-27316); tests the header-block cap."),
+    "decompression-bomb": ("memory", "A small gzip request body that inflates to gigabytes; "
+                                     "tests whether request Content-Encoding is decoded unbounded."),
+    "hpack-bomb": ("memory", "One ~4 KB HPACK dynamic-table entry referenced by thousands of "
+                            "1-byte indices (CVE-2016-6581 family); tests header-list size caps."),
+    "rapid-reset": ("cpu", "Open-then-immediately-RST streams in a tight loop "
+                          "(CVE-2023-44487); tests unbounded stream dispatch."),
+    "madeyoureset": ("cpu", "Force server-side RST via WINDOW_UPDATE(0) per stream "
+                           "(CVE-2025-8671); tests the Rapid-Reset-mitigation bypass."),
+    "settings-flood": ("cpu", "Flood SETTINGS frames the peer must ACK (CVE-2019-9515)."),
+    "ping-flood": ("cpu", "Flood PING frames the peer must ACK (CVE-2019-9512)."),
+    "empty-frame-flood": ("cpu", "Flood zero-length DATA frames with no END_STREAM "
+                                 "(CVE-2019-9518); tests per-frame overhead handling."),
+    "window-stall": ("memory", "Open many streams at a 0 flow-control window and never "
+                              "grant it (CVE-2019-9517); tests stalled-stream buffering/timeouts."),
+    "hashdos": ("cpu", "A form body of many keys; tests whether the body is parsed into an "
+                      "un-seeded hash map (O(n^2), CVE-2011-3414 era)."),
+    "json-nesting-bomb": ("cpu", "A tiny, deeply nested JSON body; tests the recursion-depth "
+                                 "cap of the request-body parser (stack overflow -> crash)."),
+    "multipart-flood": ("memory", "multipart/form-data with tens of thousands of tiny parts; "
+                                  "tests the part/field-count cap."),
+    "redos-headers": ("cpu", "Header values crafted for catastrophic regex backtracking; tests "
+                            "the header parsers (Accept/Content-Disposition/Range)."),
+}
+
+LIVENESS_FAIL_THRESHOLD = 0.5   # over half the probes failing = "stopped answering"
+
+
+def mem_limit_mb(s):
+    s = str(s).strip().lower()
+    try:
+        if s.endswith("g"):
+            return int(float(s[:-1]) * 1024)
+        if s.endswith("m"):
+            return int(float(s[:-1]))
+        if s.endswith("k"):
+            return int(float(s[:-1]) / 1024)
+        return int(int(s) / (1024 * 1024))
+    except ValueError:
+        return None
+
+
+def classify(r):
+    """verdict, passed from one attack's raw result record."""
+    if r.get("verdict") == "error":
+        return "error", False
+    if r.get("oom_killed") or r.get("exit_code") == 137:
+        return "oom-killed", False
+    if not r.get("running"):
+        return "crashed", False
+    total = r.get("liveness_total") or 0
+    ok = r.get("liveness_ok") or 0
+    fail_frac = (total - ok) / total if total else 0.0
+    if fail_frac > LIVENESS_FAIL_THRESHOLD:
+        if r.get("recovery") == "dead":
+            return "hung", False
+        return "degraded", True
+    return "survived", True
+
+
+def score_attack(r):
+    verdict, passed = classify(r)
+    if verdict == "error":
+        return {"verdict": "error", "error": r.get("error", "could not measure"),
+                "passed": False}
+    total = r.get("liveness_total") or 0
+    ok = r.get("liveness_ok") or 0
+    fail_pct = round(100 * (total - ok) / total, 1) if total else 0.0
+    resource, desc = RESOURCE.get(r["attack"], ("", ""))
+    recovery = r.get("recovery")
+    limit_mb = mem_limit_mb(r.get("mem_limit"))
+    peak_mb = round(r.get("peak_mem", 0) / (1024 * 1024), 1)
+    # An OOM-killed container's cgroup is gone by the time we read memory.peak, so
+    # the sampler's last value can undercount. By definition it reached the cap.
+    if verdict == "oom-killed" and limit_mb and peak_mb < limit_mb:
+        peak_mb = float(limit_mb)
+    out = {
+        "verdict": verdict,
+        "passed": passed,
+        "resource": resource,
+        "description": desc,
+        "peak_mem_mb": peak_mb,
+        "baseline_mem_mb": round(r.get("baseline_mem", 0) / (1024 * 1024), 1),
+        "mem_limit_mb": limit_mb,
+        "liveness_fail_pct": fail_pct,
+        "recovery_s": None if recovery == "dead" else _num(recovery),
+        "oom_killed": bool(r.get("oom_killed")),
+        "exit_code": r.get("exit_code"),
+        "duration_s": r.get("duration_s"),
+    }
+    client = r.get("client") or {}
+    # A server that reaped most of our connections defended itself; surface it.
+    if client:
+        out["client"] = {k: client[k] for k in
+                         ("established", "reaped", "open_at_end", "frames_sent",
+                          "drip_sent_bytes", "connect_errors")
+                         if k in client}
+    return out
+
+
+def _num(x):
+    try:
+        return float(x)
+    except (TypeError, ValueError):
+        return None
+
+
+def main():
+    work, display, entry = sys.argv[1], sys.argv[2], sys.argv[3]
+    attacks = sys.argv[4:]
+
+    scored = {}
+    for name in attacks:
+        path = os.path.join(work, f"{name}.result.json")
+        if not os.path.exists(path):
+            scored[name] = {"verdict": "error", "passed": False,
+                            "error": "the runner wrote no result"}
+            continue
+        with open(path) as f:
+            scored[name] = score_attack(json.load(f))
+
+    passed = sum(1 for a in scored.values() if a.get("passed"))
+    result = {
+        "framework": display,
+        "dir": entry,
+        "passed": passed,
+        "total": len(scored),
+        "attacks": scored,
+        "tool": {"driver": "resilience/attack.py"},
+    }
+    json.dump(result, sys.stdout, indent=2)
+    sys.stdout.write("\n")
+
+
+if __name__ == "__main__":
+    main()
