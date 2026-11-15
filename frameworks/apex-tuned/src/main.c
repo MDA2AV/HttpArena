@@ -563,11 +563,16 @@ static void* worker_main(void *arg) {
         // Reap connections idle for >= 15 seconds
         while (w->active_head) {
             conn_t *oldest = w->active_head;
-            if (oldest->parked_in_timer) {
-                conn_touch(w, oldest, now_ms);
-                continue;
-            }
             if (now_ms - oldest->last_active_ms < 15000) {
+                break;
+            }
+            if (oldest->parked_in_timer) {
+                oldest->last_active_ms = now_ms;
+                if (w->active_head != w->active_tail) {
+                    conn_list_remove(w, oldest);
+                    conn_list_insert_tail(w, oldest);
+                    continue;
+                }
                 break;
             }
             close_conn(w, oldest);
