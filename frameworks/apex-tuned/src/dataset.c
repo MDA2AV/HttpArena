@@ -44,6 +44,7 @@ bool dataset_load(const char *path) {
         it->id = cjson_int(item_node, "id");
         it->price = cjson_int(item_node, "price");
         it->quantity = cjson_int(item_node, "quantity");
+        it->base_total = it->price * it->quantity;
         it->name = strdup(cjson_str(item_node, "name"));
         it->category = strdup(cjson_str(item_node, "category"));
 
@@ -105,7 +106,7 @@ size_t json_serialize(size_t count, int64_t multiplier, char *out_buf, size_t ma
         if (i > 0) *p++ = ',';
         memcpy(p, g_items[i].prefix, g_items[i].prefix_len);
         p += g_items[i].prefix_len;
-        int64_t total = g_items[i].price * g_items[i].quantity * multiplier;
+        int64_t total = (multiplier == 1) ? g_items[i].base_total : (g_items[i].base_total * multiplier);
         p += format_i64(p, total);
         *p++ = '}';
     }

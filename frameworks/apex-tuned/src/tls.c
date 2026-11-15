@@ -39,8 +39,15 @@ SSL_CTX* tls_init_server_ctx(const char *cert_file, const char *key_file) {
 #ifdef SSL_OP_ENABLE_KTLS
     options |= SSL_OP_ENABLE_KTLS;
 #endif
+#ifdef SSL_OP_NO_COMPRESSION
+    options |= SSL_OP_NO_COMPRESSION;
+#endif
+#ifdef SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS
+    options |= SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS;
+#endif
     SSL_CTX_set_options(ctx, options);
-    SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
+    SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER | SSL_MODE_RELEASE_BUFFERS);
+    SSL_CTX_set_read_ahead(ctx, 1);
     SSL_CTX_set_alpn_select_cb(ctx, alpn_select_cb, NULL);
 
     if (SSL_CTX_use_certificate_file(ctx, cert_file, SSL_FILETYPE_PEM) <= 0) {

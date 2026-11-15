@@ -406,8 +406,17 @@ static void handle_timer_expiration(worker_t *w, conn_t *c, int64_t delay_ms) {
         "Connection: keep-alive\r\n\r\n10";
     static const size_t res_delay_10_len = sizeof(res_delay_10) - 1;
 
-    if (delay_ms == 10 && c->keep_alive) {
-        flush_data(w, c, res_delay_10, res_delay_10_len);
+    if (__builtin_expect(delay_ms == 10 && c->keep_alive, 1)) {
+        ssize_t n = send(c->fd, res_delay_10, res_delay_10_len, MSG_NOSIGNAL | MSG_DONTWAIT);
+        if (__builtin_expect(n == (ssize_t)res_delay_10_len, 1)) {
+        } else if (n > 0) {
+            flush_data(w, c, res_delay_10 + n, res_delay_10_len - (size_t)n);
+        } else if (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+            flush_data(w, c, res_delay_10, res_delay_10_len);
+        } else {
+            close_conn(w, c);
+            return;
+        }
     } else {
         response_t res;
         res_init(&res, c->keep_alive);
@@ -461,7 +470,7 @@ static void* worker_main(void *arg) {
 
         if (timeout_us < 0) {
             nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, -1);
-        } else if (timeout_us <= 250) {
+        } else if (timeout_us <= 350) {
             uint64_t target_us = now_us + (uint64_t)timeout_us;
             while (true) {
                 nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, 0);
@@ -477,18 +486,21 @@ static void* worker_main(void *arg) {
                 }
             }
         } else {
+            int64_t sleep_us = timeout_us - 250;
 #if defined(__linux__)
             struct timespec ts = {
-                .tv_sec = (time_t)(timeout_us / 1000000),
-                .tv_nsec = (long)((timeout_us % 1000000) * 1000)
+                .tv_sec = (time_t)(sleep_us / 1000000),
+                .tv_nsec = (long)((sleep_us % 1000000) * 1000)
             };
             nfds = epoll_pwait2(w->epoll_fd, events, MAX_EVENTS, &ts, NULL);
             if (nfds < 0 && errno == ENOSYS) {
-                int timeout_ms = (int)((timeout_us + 999) / 1000);
+                int timeout_ms = (int)(sleep_us / 1000);
+                if (timeout_ms < 1) timeout_ms = 1;
                 nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, timeout_ms);
             }
 #else
-            int timeout_ms = (int)((timeout_us + 999) / 1000);
+            int timeout_ms = (int)(sleep_us / 1000);
+            if (timeout_ms < 1) timeout_ms = 1;
             nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, timeout_ms);
 #endif
         }
@@ -623,7 +635,7 @@ static void* worker_main(void *arg) {
                         }
                         n = ret;
                     } else {
-                        n = recv(c->fd, c->read_buf + c->read_pos, avail, 0);
+                        n = recv(c->fd, c->read_buf + c->read_pos, avail, MSG_DONTWAIT);
                         if (n < 0) {
                             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                                 break;
@@ -662,6 +674,16 @@ static void* worker_main(void *arg) {
 
                 if (c->fd >= 0 && c->read_pos > 0) {
                     process_requests(w, c);
+                }
+                if (c->is_tls) {
+                    while (c->fd >= 0 && !c->closing && SSL_pending(c->ssl) > 0) {
+                        size_t avail = c->read_cap - c->read_pos;
+                        if (avail == 0) break;
+                        int ret = SSL_read(c->ssl, c->read_buf + c->read_pos, (int)avail);
+                        if (ret <= 0) break;
+                        c->read_pos += (size_t)ret;
+                        process_requests(w, c);
+                    }
                 }
             }
         }

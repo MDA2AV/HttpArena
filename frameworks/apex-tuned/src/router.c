@@ -69,7 +69,7 @@ static inline bool match_route(const route_entry_t *re, request_t *req) {
 }
 
 bool router_dispatch(const router_t *r, request_t *req, response_t *res, void *user_data, bool *async_parked_out) {
-    if (__builtin_expect(req->query.len > 0, 0)) {
+    if (req->query.len > 0) {
         req_parse_query(req);
     }
 

@@ -8,6 +8,7 @@ typedef struct {
     int64_t     id;
     int64_t     price;
     int64_t     quantity;
+    int64_t     base_total;
     int64_t     score;
     int64_t     count;
     bool        active;

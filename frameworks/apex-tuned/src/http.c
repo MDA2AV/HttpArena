@@ -208,10 +208,18 @@ size_t res_serialize(const response_t *res, char *out_buf, size_t max_out) {
 
 static inline const char* find_crlf_crlf(const char *buf, size_t len, size_t *header_len_out) {
     if (len < 4) return NULL;
-    const char *found = memmem(buf, len, "\r\n\r\n", 4);
-    if (!found) return NULL;
-    *header_len_out = (size_t)(found - buf) + 4;
-    return found + 4;
+    const char *p = buf;
+    const char *end = buf + len - 3;
+    while (p < end) {
+        p = memchr(p, '\r', (size_t)(end - p));
+        if (!p) return NULL;
+        if (p[1] == '\n' && p[2] == '\r' && p[3] == '\n') {
+            *header_len_out = (size_t)(p - buf) + 4;
+            return p + 4;
+        }
+        p++;
+    }
+    return NULL;
 }
 
 int parse_http_request(const char *buf, size_t len, request_t *req, char *chunk_buf, size_t max_chunk, size_t *consumed_out) {
@@ -224,8 +232,8 @@ int parse_http_request(const char *buf, size_t len, request_t *req, char *chunk_
     req_init(req);
 
     const char *line = buf;
-    const char *line_end = memmem(line, header_len, "\r\n", 2);
-    if (!line_end) return -1;
+    const char *line_end = memchr(line, '\r', header_len);
+    if (!line_end || line_end + 1 >= buf + header_len || line_end[1] != '\n') return -1;
 
     const char *sp1 = memchr(line, ' ', line_end - line);
     if (!sp1) return -1;
