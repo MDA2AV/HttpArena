@@ -13,7 +13,7 @@ Every attack runs against a **fresh capped container** (a crash in one must not 
 
 | Attack | Exhausts | What it does | What a hardened server does |
 |---|---|---|---|
-| `slow-body` | memory | `POST /echo` with a large declared `Content-Length`, body dripped one byte per second, never finishing | reaps the connection on a body-read-rate timeout |
+| `slow-body` | memory | `POST /echo` with a large declared `Content-Length` (100 MiB), body dripped a few hundred bytes per second, never finishing | reaps the connection on a body-read-rate timeout, or caps the body size |
 | `slow-headers` | connections | an unfinished request whose header block keeps growing, never terminated (Slowloris) | reaps it on a header-read timeout or a header-size cap |
 | `huge-chunk` | memory | `Transfer-Encoding: chunked` announcing a `0x7fffffffffffffff`-byte chunk | rejects the chunk size instead of pre-allocating it |
 | `continuation-flood` | memory | an HTTP/2 header block spread over an endless stream of `CONTINUATION` frames with no `END_HEADERS` ([CVE-2024-27316](https://nvd.nist.gov/vuln/detail/CVE-2024-27316)) | caps the header-block size and sends `GOAWAY` |
@@ -58,7 +58,7 @@ To run **only** the suite, without a benchmark, comment **`/resilience -f <entry
 
 `<entry>` is the directory under `frameworks/`, not the display name — entries that share a display name each keep their own file, the way `site/data/spec/<entry>.json` does. Without the flag and without a named attack, the runner is a no-op.
 
-The box and the run are env-overridable: `RES_MEM` (default `8g`), `RES_CPUSET` (`0-1`), `RES_DURATION` (`45`s), `RES_CONNS` (`1000`), `RES_BODY_SIZE` (10 MiB), `RES_RECOVERY` (`15`s). The attack client runs on the load-generator cores so it never steals CPU from the deliberately CPU-starved server.
+The box and the run are env-overridable: `RES_MEM` (default `8g`), `RES_CPUSET` (`0-1`), `RES_DURATION` (`60`s), `RES_CONNS` (`4000`, held below the ~28k ephemeral-port ceiling), `RES_BODY_SIZE` (100 MiB), `RES_DRIP_BYTES` (`256` B per drip), `RES_RECOVERY` (`15`s). The attack client runs on the load-generator cores so it never steals CPU from the deliberately CPU-starved server.
 
 ## The scores
 

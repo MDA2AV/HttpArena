@@ -121,7 +121,7 @@ def slow_body(args):
         f"Content-Length: {args.body_size}\r\n"
         f"Content-Type: application/octet-stream\r\n\r\n"
     ).encode()
-    return _run_slow(args, opener, lambda i, d: b"A")
+    return _run_slow(args, opener, lambda i, d: b"A" * args.drip_bytes)
 
 
 def slow_headers(args):
@@ -140,7 +140,7 @@ def huge_chunk(args):
         f"Transfer-Encoding: chunked\r\n\r\n"
         f"7fffffffffffffff\r\n"
     ).encode()
-    return _run_slow(args, opener, lambda i, d: b"A")
+    return _run_slow(args, opener, lambda i, d: b"A" * args.drip_bytes)
 
 
 # ── HTTP/2 CONTINUATION flood ────────────────────────────────────────────────
@@ -229,6 +229,7 @@ def main():
     p.add_argument("--duration", type=float, default=45.0)
     p.add_argument("--drip-interval", type=float, default=1.0, dest="drip_interval")
     p.add_argument("--body-size", type=int, default=10 * 1024 * 1024, dest="body_size")
+    p.add_argument("--drip-bytes", type=int, default=1, dest="drip_bytes")
     p.add_argument("--tls", action="store_true")
     args = p.parse_args()
 

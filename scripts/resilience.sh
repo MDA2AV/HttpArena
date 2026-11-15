@@ -46,10 +46,12 @@ done
 # ── Knobs (all env-overridable) ──────────────────────────────────────────────
 RES_MEM="${RES_MEM:-8g}"             # the box the entry runs in
 RES_CPUSET="${RES_CPUSET:-0-1}"      # 2 CPUs, pinned away from the attack client
-RES_DURATION="${RES_DURATION:-45}"   # seconds per attack
-RES_CONNS="${RES_CONNS:-1000}"       # connections the slow attacks hold
-RES_BODY_SIZE="${RES_BODY_SIZE:-10485760}"   # 10 MiB declared body for slow-body
+RES_DURATION="${RES_DURATION:-60}"   # seconds per attack
+RES_CONNS="${RES_CONNS:-4000}"       # connections the slow attacks hold (< the 28k ephemeral-port ceiling)
+RES_BODY_SIZE="${RES_BODY_SIZE:-104857600}"  # 100 MiB declared body for slow-body (pre-alloc pressure)
 RES_DRIP="${RES_DRIP:-1.0}"          # seconds between drips
+RES_DRIP_BYTES="${RES_DRIP_BYTES:-256}"       # bytes per drip for slow-body/huge-chunk: ~256 B/s, slow
+                                              # enough to be low-and-slow but above a bytes-at-zero reaper
 RES_RECOVERY="${RES_RECOVERY:-15}"   # seconds to wait for the server to serve again
 # The attack client runs on the load-generator cores so it never steals CPU from
 # the (deliberately CPU-starved) server.
@@ -213,7 +215,8 @@ run_attack() {
     taskset -c "$ATTACK_CPUS" python3 "$ATTACK_PY" \
         --attack "$name" --host 127.0.0.1 --port "$port" --path "$path" \
         --conns "$RES_CONNS" --duration "$RES_DURATION" \
-        --body-size "$RES_BODY_SIZE" --drip-interval "$RES_DRIP" "${tls_flag[@]}" \
+        --body-size "$RES_BODY_SIZE" --drip-interval "$RES_DRIP" \
+        --drip-bytes "$RES_DRIP_BYTES" "${tls_flag[@]}" \
         > "$WORK/$name.client.json" 2> "$WORK/$name.client.log" || \
         warn "attack client exited non-zero (see $name.client.log)"
 
