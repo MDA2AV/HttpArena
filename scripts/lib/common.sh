@@ -54,6 +54,7 @@ if [ -z "${GCANNON_CPUS:-}" ]; then
 fi
 export GCANNON_CPUS
 
+_H2LOAD_EXPLICIT="${H2LOAD:+true}"
 H2LOAD="${H2LOAD:-h2load}"
 H2LOAD_IMAGE="${H2LOAD_IMAGE:-h2load:1.69.0}"
 

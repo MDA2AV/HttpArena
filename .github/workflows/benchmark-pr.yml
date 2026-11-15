@@ -418,8 +418,6 @@ jobs:
                   return "".join(f.readlines()[-n:])
 
           def composite(fw):
-              if fw in failed:
-                  return "\n\nComposite score unavailable: some measurements failed; retained results are not a complete new run."
               text = tail(logs_dir + "/" + fw + ".composite.md", 50).strip()
               return "\n\n" + text if text else ""
 

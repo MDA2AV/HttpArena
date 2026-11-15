@@ -167,6 +167,16 @@ fi
 framework_load_meta "$FRAMEWORK_ARG"
 FRAMEWORK="$FRAMEWORK_ARG"
 
+# Client setup may build an image, so it must precede Docker's tuning restart.
+for profile in "${profiles_to_run[@]}"; do
+    framework_subscribes_to "$profile" || continue
+    parse_profile "${PROFILES[$profile]}"
+    if [ "$(endpoint_tool "$PROF_ENDPOINT")" = h2load ]; then
+        h2load_prepare || fail "HTTP/2 load generator setup failed"
+        break
+    fi
+done
+
 # Framework-level image build — skipped for compose-only entries because
 # their compose files build the server image from the repo root context,
 # not from frameworks/<fw>/. Covers gateway-64, gateway-h3, production-stack,

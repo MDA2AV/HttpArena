@@ -24,11 +24,36 @@ h2load_check_version() {
     version=$("${cmd[@]}" --version) || return 1
     if [[ ! "$version" =~ nghttp2/([0-9]+)\.([0-9]+)\.([0-9]+) ]] \
         || (( BASH_REMATCH[1] < 1 || (BASH_REMATCH[1] == 1 && BASH_REMATCH[2] < 69) )); then
-        echo "h2load >= 1.69.0 is required: older clients can run forever after -D expires during connection setup. Update H2LOAD or build docker/h2load.Dockerfile." >&2
+        echo "h2load >= 1.69.0 is required (found: $version): older clients can run forever after -D expires during connection setup. Update H2LOAD or build docker/h2load.Dockerfile." >&2
         return 1
     fi
     echo "[info] $version"
     H2LOAD_VERSION_CHECKED=true
+}
+
+h2load_prepare() {
+    if h2load_check_version 2>/dev/null; then return 0; fi
+    # Explicit commands must not silently change to a different client.
+    if [ -n "$H2LOAD_CMD" ] || [ "${_H2LOAD_EXPLICIT:-}" = true ] || [ "$H2LOAD" != h2load ]; then
+        h2load_check_version
+        return $?
+    fi
+
+    # The HTTP/3 build also speaks HTTP/2 when no h3 ALPN is requested.
+    H2LOAD="$H2LOAD_H3"
+    if h2load_check_version 2>/dev/null; then
+        echo "[info] HTTP/2 load generator: $H2LOAD (native)"
+        return 0
+    fi
+    H2LOAD=h2load
+
+    if ! docker image inspect "$H2LOAD_IMAGE" >/dev/null 2>&1; then
+        echo "[info] building $H2LOAD_IMAGE from docker/h2load.Dockerfile (no supported native h2load)"
+        docker build -t "$H2LOAD_IMAGE" -f "$ROOT_DIR/docker/h2load.Dockerfile" "$ROOT_DIR/docker" || return $?
+    fi
+    H2LOAD_CMD="docker run --rm --network host --cpuset-cpus=$GCANNON_CPUS --security-opt seccomp=unconfined --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576 -v $REQUESTS_DIR:$REQUESTS_DIR:ro $H2LOAD_IMAGE"
+    h2load_check_version || return $?
+    echo "[info] HTTP/2 load generator: $H2LOAD_IMAGE (docker)"
 }
 
 # ── Build arguments ─────────────────────────────────────────────────────────
