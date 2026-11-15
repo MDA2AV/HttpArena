@@ -25,6 +25,12 @@
            (dissoc response :body)))
     (is (= (seq payload) (seq (:body response))))))
 
+(deftest delay-responds-with-the-delay
+  (is (= {:status 200
+          :headers {"content-type" "text/plain"}
+          :body "5"}
+         (core/app {:request-method :get :uri "/delay/5"}))))
+
 (deftest config-separates-protocol-listeners
   (is (= {:http {:http1? true :http2? false :http3? false :tls false}
           :h2c {:http1? false :http2? true :http3? false :tls false}

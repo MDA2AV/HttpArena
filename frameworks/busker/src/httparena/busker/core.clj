@@ -8,7 +8,8 @@
   (:import
    [java.io InputStream]
    [java.net URLDecoder]
-   [java.nio.file Files Path Paths]))
+   [java.nio.file Files Path Paths]
+   [java.util.concurrent CompletableFuture Executors ScheduledExecutorService ThreadLocalRandom TimeUnit]))
 
 (set! *warn-on-reflection* true)
 
@@ -73,10 +74,25 @@
                       :count (count items)}))
     (text-response 500 "dataset.json not available")))
 
-(defn delay-response [request]
+(def delay-schedulers
+  ;; Thread/sleep on a virtual thread uses one JDK timer thread for all the
+  ;; timed parks of the process. At high request rates that thread is too slow.
+  ;; Use one scheduler thread for each 4 CPUs, at least one.
+  (let [factory (-> (Thread/ofPlatform) (.daemon true) (.name "delay-scheduler-" 0) (.factory))]
+    (vec (repeatedly (max 1 (quot (.availableProcessors (Runtime/getRuntime)) 4))
+                     #(Executors/newSingleThreadScheduledExecutor factory)))))
+
+(defn delay-response
+  "Responds after the delay in the URI. The virtual thread waits with no
+  timeout on a future that a delay scheduler completes."
+  [request]
   (let [ms (parse-long-safe (subs (:uri request) 7))]
     (when (pos? ms)
-      (Thread/sleep (long ms)))
+      (let [done (CompletableFuture.)
+            ^ScheduledExecutorService scheduler
+            (delay-schedulers (.nextInt (ThreadLocalRandom/current) (count delay-schedulers)))]
+        (.schedule scheduler ^Runnable (fn [] (.complete done nil)) (long ms) TimeUnit/MILLISECONDS)
+        (.join done)))
     (text-response 200 (str ms))))
 
 (defn content-type [filename]
@@ -156,6 +172,8 @@
                          :http2? true
                          :http3? true
                          :tls {:tls-compatibility-mode :modern}}}
+   :max-connections 65536
+   :request-threads :reuse-within-connection
    :dispatch [{:handler app}]})
 
 (defn -main [& _args]
