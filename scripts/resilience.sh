@@ -50,7 +50,7 @@ RES_MEM="${RES_MEM:-4g}"             # the box the entry runs in
 # aren't adjacent (e.g. 0,16): it would hand the server two SEPARATE physical cores,
 # twice the compute we intend. Override RES_CPUSET to pin a specific set.
 RES_CPUSET="${RES_CPUSET:-$(cat /sys/devices/system/cpu/cpu0/topology/thread_siblings_list 2>/dev/null || echo 0-1)}"
-RES_DURATION="${RES_DURATION:-15}"   # max seconds per attack (verdicts are clear well inside this; an attack ends early if the server dies OR is clearly surviving)
+RES_DURATION="${RES_DURATION:-45}"   # max seconds per attack (verdicts are clear well inside this; an attack ends early if the server dies OR is clearly surviving)
 RES_MIN_DURATION="${RES_MIN_DURATION:-8}"  # never early-exit "clearly surviving" before this many seconds
 RES_SETTLE="${RES_SETTLE:-6}"        # ... and only once peak RSS has been flat (and liveness 100%) this long
 RES_CONNS="${RES_CONNS:-32768}"      # connections the slow attacks hold (goroutine-backed now; capped under the ~28k single-IP port ceiling)
@@ -58,8 +58,8 @@ RES_BODY_SIZE="${RES_BODY_SIZE:-104857600}"  # 100 MiB declared body for slow-bo
 RES_DRIP="${RES_DRIP:-1.0}"          # seconds between drips
 RES_DRIP_BYTES="${RES_DRIP_BYTES:-256}"       # bytes per drip for slow-body/huge-chunk: ~256 B/s, slow
                                               # enough to be low-and-slow but above a bytes-at-zero reaper
-RES_H2_CONNS="${RES_H2_CONNS:-2048}"           # connections for the HTTP/2 flood attacks (each floods hard)
-RES_DECOMP_CONNS="${RES_DECOMP_CONNS:-256}"    # connections for the H1 payload/parser floods
+RES_H2_CONNS="${RES_H2_CONNS:-32768}"           # connections for the HTTP/2 flood attacks (each floods hard)
+RES_DECOMP_CONNS="${RES_DECOMP_CONNS:-4000}"    # connections for the H1 payload/parser floods
 RES_BOMB_SIZE="${RES_BOMB_SIZE:-1073741824}"  # 1 GiB decompressed per gzip bomb
 RES_HASHDOS_KEYS="${RES_HASHDOS_KEYS:-100000}"      # form keys for hashdos
 RES_JSON_DEPTH="${RES_JSON_DEPTH:-100000}"          # array nesting depth for json-nesting-bomb
@@ -67,8 +67,8 @@ RES_MULTIPART_PARTS="${RES_MULTIPART_PARTS:-50000}" # parts for multipart-flood
 RES_REDOS_PAD="${RES_REDOS_PAD:-4000}"              # ambiguous-run length for redos-headers
 RES_STALL_COUNT="${RES_STALL_COUNT:-5000}"          # /json/{count} size per stalled stream (window-stall)
 RES_STALL_STREAMS="${RES_STALL_STREAMS:-64}"        # stalled streams per connection (window-stall)
-RES_WS_CONNS="${RES_WS_CONNS:-256}"                 # connections for the WebSocket attacks
-RES_TLS_CONNS="${RES_TLS_CONNS:-512}"               # workers for the TLS handshake attacks
+RES_WS_CONNS="${RES_WS_CONNS:-4000}"                 # connections for the WebSocket attacks
+RES_TLS_CONNS="${RES_TLS_CONNS:-4000}"               # workers for the TLS handshake attacks
 RES_CL_DECLARE="${RES_CL_DECLARE:-2147483648}"      # declared Content-Length (content-length-prealloc/expect-100)
 RES_CHUNK_EXT_SIZE="${RES_CHUNK_EXT_SIZE:-4096}"    # chunk-extension bytes per chunk (chunk-extension-flood)
 RES_CHUNK_COUNT="${RES_CHUNK_COUNT:-500000}"        # 1-byte chunks (tiny-chunk-flood)
