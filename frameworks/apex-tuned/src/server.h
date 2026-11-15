@@ -36,6 +36,7 @@ struct conn_s {
     size_t read_cap;
     size_t read_pos;
     bool has_pooled_buffer;
+    uint64_t request_started_ms;
 
     char *pending_write;
     size_t pending_write_len;

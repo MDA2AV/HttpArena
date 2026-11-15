@@ -176,6 +176,9 @@ bool flush_pending_write(worker_t *worker, conn_t *connection) {
         }
 
         connection->pending_write_sent += (size_t)bytes_transferred;
+        if (connection->in_stalled_list) {
+            connection->stalled_since_ms = clock_monotonic_ms();
+        }
     }
 
     free(connection->pending_write);
@@ -250,6 +253,9 @@ void flush_data(worker_t *worker, conn_t *connection, const char *data, size_t l
             }
         }
         sent_bytes += (size_t)bytes_transferred;
+        if (connection->in_stalled_list) {
+            connection->stalled_since_ms = clock_monotonic_ms();
+        }
     }
 
     if (sent_bytes < length) {

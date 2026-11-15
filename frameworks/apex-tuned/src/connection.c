@@ -63,6 +63,7 @@ conn_t *alloc_conn(worker_t *worker, int client_fd, bool is_tls, SSL *ssl_sessio
     connection->read_cap = 0;
     connection->read_pos = 0;
     connection->has_pooled_buffer = false;
+    connection->request_started_ms = 0;
     connection->pending_write = NULL;
     connection->pending_write_len = 0;
     connection->pending_write_sent = 0;
@@ -197,6 +198,13 @@ void trim_inactive_connections(worker_t *worker, uint64_t current_time_ms) {
     while (curr) {
         conn_t *next = curr->active_next;
         if (curr->parked_in_timer) {
+            curr = next;
+            continue;
+        }
+
+        if (curr->read_pos > 0 && curr->request_started_ms > 0 &&
+            (current_time_ms - curr->request_started_ms > 5000)) {
+            close_conn(worker, curr);
             curr = next;
             continue;
         }

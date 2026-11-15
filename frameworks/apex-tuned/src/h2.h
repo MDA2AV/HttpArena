@@ -14,6 +14,7 @@
 typedef struct h2_stream_slot_s {
     char *dynamic_response_buffer;
     size_t dynamic_response_length;
+    size_t dynamic_response_sent;
     size_t request_path_length;
     size_t inline_response_length;
     char request_path[H2_MAX_PATH_LENGTH];

@@ -51,25 +51,41 @@ static ssize_t h2_data_read_callback(nghttp2_session *session, int32_t stream_id
 
     const char *payload_data = NULL;
     size_t payload_length = 0;
+    size_t *sent_ptr = NULL;
 
     if (slot->dynamic_response_buffer != NULL) {
         payload_data = slot->dynamic_response_buffer;
         payload_length = slot->dynamic_response_length;
+        sent_ptr = &slot->dynamic_response_sent;
     } else {
         payload_data = slot->inline_response_buffer;
         payload_length = slot->inline_response_length;
     }
 
-    if (payload_length > max_length) {
-        payload_length = max_length;
+    size_t sent = sent_ptr ? *sent_ptr : 0;
+    if (sent >= payload_length) {
+        *data_flags |= NGHTTP2_DATA_FLAG_EOF;
+        return 0;
     }
 
-    if (payload_length > 0 && payload_data != NULL) {
-        memcpy(destination_buffer, payload_data, payload_length);
+    size_t remaining = payload_length - sent;
+    size_t to_send = remaining > max_length ? max_length : remaining;
+
+    if (to_send > 0 && payload_data != NULL) {
+        memcpy(destination_buffer, payload_data + sent, to_send);
+        if (sent_ptr) {
+            *sent_ptr += to_send;
+        }
+        if (h2_conn->connection && h2_conn->connection->in_stalled_list) {
+            h2_conn->connection->stalled_since_ms = clock_monotonic_ms();
+        }
     }
 
-    *data_flags |= NGHTTP2_DATA_FLAG_EOF;
-    return (ssize_t)payload_length;
+    if (sent + to_send >= payload_length) {
+        *data_flags |= NGHTTP2_DATA_FLAG_EOF;
+    }
+
+    return (ssize_t)to_send;
 }
 
 static inline bool header_contains_token(const uint8_t *header_value, size_t value_length,
@@ -136,6 +152,7 @@ static int h2_on_stream_close_callback(nghttp2_session *session, int32_t stream_
         }
         slot->dynamic_response_buffer = NULL;
         slot->dynamic_response_length = 0;
+        slot->dynamic_response_sent = 0;
         slot->is_dynamic_buffer_static_memory = false;
         slot->is_pooled_buffer = false;
         if (h2_conn->active_dynamic_streams > 0) {
@@ -245,12 +262,12 @@ static int handle_h2_json_request(nghttp2_session *session, h2_connection_t *h2_
 
     int remote_window = nghttp2_session_get_stream_remote_window_size(session, stream_id);
     int session_window = nghttp2_session_get_remote_window_size(session);
-    if (__builtin_expect(remote_window <= 0 || session_window <= 0, 0)) {
+    if (__builtin_expect(remote_window < 1024 || session_window < 1024, 0)) {
         nghttp2_submit_rst_stream(session, NGHTTP2_FLAG_NONE, stream_id, NGHTTP2_FLOW_CONTROL_ERROR);
         return 0;
     }
 
-    if (__builtin_expect(h2_conn->active_dynamic_streams >= 64, 0)) {
+    if (__builtin_expect(h2_conn->active_dynamic_streams >= 32, 0)) {
         nghttp2_submit_rst_stream(session, NGHTTP2_FLAG_NONE, stream_id, NGHTTP2_REFUSED_STREAM);
         return 0;
     }
@@ -274,6 +291,7 @@ static int handle_h2_json_request(nghttp2_session *session, h2_connection_t *h2_
 
     slot->dynamic_response_buffer = json_serialized_buffer;
     slot->dynamic_response_length = json_serialized_length;
+    slot->dynamic_response_sent = 0;
     slot->is_dynamic_buffer_static_memory = false;
     slot->is_pooled_buffer = is_pooled;
 
@@ -293,6 +311,7 @@ static int handle_h2_pipeline_request(nghttp2_session *session, h2_connection_t 
 
     memcpy(slot->inline_response_buffer, "ok", 2);
     slot->inline_response_length = 2;
+    slot->dynamic_response_sent = 0;
 
     nghttp2_nv response_headers[] = {
         {(uint8_t *)":status", (uint8_t *)"200", 7, 3, NGHTTP2_NV_FLAG_NONE},
@@ -305,7 +324,14 @@ static int handle_h2_pipeline_request(nghttp2_session *session, h2_connection_t 
 }
 
 static int handle_h2_static_request(nghttp2_session *session, h2_connection_t *h2_conn, int32_t stream_id,
-                                    const char *request_path) {
+                                     const char *request_path) {
+    int remote_window = nghttp2_session_get_stream_remote_window_size(session, stream_id);
+    int session_window = nghttp2_session_get_remote_window_size(session);
+    if (__builtin_expect(remote_window < 1024 || session_window < 1024, 0)) {
+        nghttp2_submit_rst_stream(session, NGHTTP2_FLAG_NONE, stream_id, NGHTTP2_FLOW_CONTROL_ERROR);
+        return 0;
+    }
+
     int stream_slot_index = (stream_id >> 1) & H2_STREAM_SLOT_MASK;
     h2_stream_slot_t *slot = &h2_conn->stream_slots[stream_slot_index];
 
@@ -321,6 +347,7 @@ static int handle_h2_static_request(nghttp2_session *session, h2_connection_t *h
 
     slot->dynamic_response_buffer = (char *)(uintptr_t)file_result.data;
     slot->dynamic_response_length = file_result.size;
+    slot->dynamic_response_sent = 0;
     slot->is_dynamic_buffer_static_memory = true;
 
     char content_length_str[32];

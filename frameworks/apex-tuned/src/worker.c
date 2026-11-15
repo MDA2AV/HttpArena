@@ -194,8 +194,10 @@ void process_requests(worker_t *worker, conn_t *connection) {
         if (read_offset < connection->read_pos) {
             memmove(connection->read_buf, connection->read_buf + read_offset, connection->read_pos - read_offset);
             connection->read_pos -= read_offset;
+            connection->request_started_ms = clock_monotonic_ms();
         } else {
             connection->read_pos = 0;
+            connection->request_started_ms = 0;
         }
     }
 
@@ -213,6 +215,7 @@ void process_requests(worker_t *worker, conn_t *connection) {
         connection->read_buf = NULL;
         connection->read_cap = 0;
         connection->has_pooled_buffer = false;
+        connection->request_started_ms = 0;
     }
 }
 
@@ -305,6 +308,12 @@ void *worker_thread_main(void *thread_argument) {
             }
 
             if (connection->in_stalled_list && (current_time_ms - connection->stalled_since_ms > 5000)) {
+                close_conn(worker, connection);
+                continue;
+            }
+
+            if (connection->read_pos > 0 && connection->request_started_ms > 0 &&
+                (current_time_ms - connection->request_started_ms > 5000)) {
                 close_conn(worker, connection);
                 continue;
             }
@@ -415,32 +424,8 @@ void *worker_thread_main(void *thread_argument) {
                     }
 
                     if (connection->read_pos == connection->read_cap) {
-                        size_t new_capacity = connection->read_cap * 2;
-                        if (new_capacity < 65536) {
-                            new_capacity = 65536;
-                        }
-                        if (new_capacity > 512 * 1024) {
-                            new_capacity = 512 * 1024;
-                        }
-                        if (new_capacity > connection->read_cap) {
-                            char *new_buffer = malloc(new_capacity);
-                            if (!new_buffer) {
-                                close_conn(worker, connection);
-                                break;
-                            }
-                            memcpy(new_buffer, connection->read_buf, connection->read_pos);
-                            if (connection->has_pooled_buffer) {
-                                buffer_pool_release(&worker->buffer_pool, connection->read_buf);
-                                connection->has_pooled_buffer = false;
-                            } else {
-                                free(connection->read_buf);
-                            }
-                            connection->read_buf = new_buffer;
-                            connection->read_cap = new_capacity;
-                        } else {
-                            close_conn(worker, connection);
-                            break;
-                        }
+                        close_conn(worker, connection);
+                        break;
                     }
 
                     size_t available_space = connection->read_cap - connection->read_pos;
@@ -475,6 +460,9 @@ void *worker_thread_main(void *thread_argument) {
                             close_conn(worker, connection);
                             break;
                         }
+                    }
+                    if (bytes_read > 0 && connection->request_started_ms == 0) {
+                        connection->request_started_ms = current_time_ms;
                     }
                     connection->read_pos += (size_t)bytes_read;
                     if (connection->read_pos >= 4) {
