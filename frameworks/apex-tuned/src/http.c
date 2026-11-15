@@ -23,21 +23,27 @@ void req_parse_query(request_t *req) {
     const char *end = p + req->query.len;
 
     while (p < end && req->num_params < MAX_PARAMS) {
-        const char *eq = memchr(p, '=', end - p);
-        const char *amp = memchr(p, '&', end - p);
-        if (!amp) amp = end;
-
-        if (eq && eq < amp) {
-            req->params[req->num_params].key = (str_view_t){ p, (size_t)(eq - p) };
-            req->params[req->num_params].val = (str_view_t){ eq + 1, (size_t)(amp - (eq + 1)) };
-            req->num_params++;
-        } else {
-            req->params[req->num_params].key = (str_view_t){ p, (size_t)(amp - p) };
-            req->params[req->num_params].val = (str_view_t){ NULL, 0 };
-            req->num_params++;
+        const char *key_start = p;
+        const char *eq = NULL;
+        while (p < end && *p != '&') {
+            if (*p == '=' && !eq) {
+                eq = p;
+            }
+            p++;
         }
 
-        p = (amp < end) ? amp + 1 : end;
+        if (eq) {
+            req->params[req->num_params].key = (str_view_t){ key_start, (size_t)(eq - key_start) };
+            req->params[req->num_params].val = (str_view_t){ eq + 1, (size_t)(p - (eq + 1)) };
+        } else {
+            req->params[req->num_params].key = (str_view_t){ key_start, (size_t)(p - key_start) };
+            req->params[req->num_params].val = (str_view_t){ NULL, 0 };
+        }
+        req->num_params++;
+
+        if (p < end && *p == '&') {
+            p++;
+        }
     }
 }
 

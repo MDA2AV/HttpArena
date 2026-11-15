@@ -157,7 +157,12 @@ static void delay_handler(context_t *ctx) {
 
     int64_t ms = 0;
     if (req->num_route_params > 0) {
-        parse_i64(req->route_params[0].ptr, req->route_params[0].len, &ms);
+        str_view_t rp = req->route_params[0];
+        if (rp.len == 2 && rp.ptr[0] == '1' && rp.ptr[1] == '0') {
+            ms = 10;
+        } else {
+            parse_i64(rp.ptr, rp.len, &ms);
+        }
     }
 
     if (ms <= 0) {
@@ -240,7 +245,7 @@ static bool flush_pending_write(worker_t *w, conn_t *c) {
             }
             n = ret;
         } else {
-            n = send(c->fd, c->pending_write + c->pending_write_sent, remaining, MSG_NOSIGNAL);
+            n = send(c->fd, c->pending_write + c->pending_write_sent, remaining, MSG_NOSIGNAL | MSG_DONTWAIT);
             if (n < 0) {
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
                     return false;
@@ -289,7 +294,7 @@ static void flush_data(worker_t *w, conn_t *c, const char *data, size_t len) {
             }
             n = ret;
         } else {
-            n = send(c->fd, data + sent, len - sent, MSG_NOSIGNAL);
+            n = send(c->fd, data + sent, len - sent, MSG_NOSIGNAL | MSG_DONTWAIT);
             if (n < 0) {
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
                     break;
@@ -439,13 +444,39 @@ static void* worker_main(void *arg) {
 
     while (g_running) {
         uint64_t now_us = clock_monotonic_us();
-        int64_t timeout_us = timer_heap_next_timeout_us(&w->timers, now_us);
 
-        int nfds;
+        if (w->timers.count > 0) {
+            timer_entry_t te;
+            while (timer_heap_peek(&w->timers, &te)) {
+                if (te.expire_at_us > now_us) break;
+                timer_heap_pop(&w->timers, &te);
+                conn_t *c = (conn_t*)te.conn_ptr;
+                if (c && c->gen == te.conn_gen && c->parked_in_timer) {
+                    handle_timer_expiration(w, c, te.delay_ms);
+                }
+            }
+        }
+
+        int64_t timeout_us = timer_heap_next_timeout_us(&w->timers, now_us);
+        int nfds = 0;
+
         if (timeout_us < 0) {
             nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, -1);
-        } else if (timeout_us == 0) {
-            nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, 0);
+        } else if (timeout_us <= 250) {
+            uint64_t target_us = now_us + (uint64_t)timeout_us;
+            while (true) {
+                nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, 0);
+                if (nfds != 0) break;
+                now_us = clock_monotonic_us();
+                if (now_us >= target_us) break;
+                for (int spin = 0; spin < 16; spin++) {
+#if defined(__x86_64__) || defined(_M_X64)
+                    __builtin_ia32_pause();
+#elif defined(__aarch64__)
+                    asm volatile("yield" ::: "memory");
+#endif
+                }
+            }
         } else {
 #if defined(__linux__)
             struct timespec ts = {
@@ -462,6 +493,7 @@ static void* worker_main(void *arg) {
             nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, timeout_ms);
 #endif
         }
+
         if (nfds < 0) {
             if (errno == EINTR) continue;
             break;
