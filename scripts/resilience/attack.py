@@ -185,7 +185,7 @@ def _hpack_filler(size):
         val = b"a" * 32
         out += b"\x00" + bytes([len(name)]) + name + bytes([len(val)]) + val
         k += 1
-    return bytes(out)
+    return bytes(out[:size])   # exact: a CONTINUATION frame must stay <= SETTINGS_MAX_FRAME_SIZE (16384)
 
 
 def _h2_get_block(authority):
@@ -221,10 +221,12 @@ def _h2_session(args, stats, lock, body, deadline):
     """Open one H2(c) connection, send the preface + an empty SETTINGS, then run
     body(s, deadline) -> (frames, nbytes) until it returns or the peer drops us."""
     s = None
+    established = False
     try:
         s = _open(args.host, args.port, args.tls, ["h2"] if args.tls else None)
         s.sendall(H2_PREFACE)
         s.sendall(_frame(0x4, 0, 0, b""))               # empty SETTINGS
+        established = True
         with lock:
             stats["established"] += 1
         frames, nbytes = body(s, deadline)
@@ -232,8 +234,11 @@ def _h2_session(args, stats, lock, body, deadline):
             stats["frames_sent"] += frames
             stats["bytes_sent"] += nbytes
     except OSError:
+        # A drop before the preface/SETTINGS land is a connect failure (e.g. an
+        # unbound port), not a server reap — keep them apart so a mis-routed
+        # attack can't read as "defended".
         with lock:
-            stats["reaped"] += 1
+            stats["reaped" if established else "connect_errors"] += 1
     finally:
         if s is not None:
             try:
@@ -435,7 +440,10 @@ def _h1_request_flood(args, req):
                 if established:
                     stats["established"] += 1
                 if reaped:
-                    stats["reaped"] += 1
+                    # A failure after the connection was established is a server
+                    # reap; one before (the _open itself) is a connect failure —
+                    # don't let an unbound port / dead server read as "defended".
+                    stats["reaped" if established else "connect_errors"] += 1
                 stats["frames_sent"] += sent
                 stats["bytes_sent"] += nb
             if s is not None:
@@ -587,7 +595,9 @@ def chunk_size_overflow(args):
 def slow_read(args):
     # Request a large response, then read it ~1 byte per interval: the server
     # buffers the response (or blocks the connection) it cannot flush to us.
-    req = (f"GET /json/{args.stall_count} HTTP/1.1\r\nHost: {args.host}\r\n\r\n").encode()
+    # /static/vendor.js is ~300 KiB — far past the socket send buffer, so the
+    # response genuinely stalls (unlike /json, which clamps to the 50-item dataset).
+    req = (f"GET /static/vendor.js HTTP/1.1\r\nHost: {args.host}\r\n\r\n").encode()
     deadline = time.monotonic() + args.duration
     conns = []
     established = errors = 0
@@ -699,7 +709,10 @@ def large_upload(args):
                 if established:
                     stats["established"] += 1
                 if reaped:
-                    stats["reaped"] += 1
+                    # A failure after the connection was established is a server
+                    # reap; one before (the _open itself) is a connect failure —
+                    # don't let an unbound port / dead server read as "defended".
+                    stats["reaped" if established else "connect_errors"] += 1
                 stats["frames_sent"] += sent
                 stats["bytes_sent"] += nb
             if s is not None:
@@ -766,7 +779,10 @@ def pipelining_flood(args):
                 if established:
                     stats["established"] += 1
                 if reaped:
-                    stats["reaped"] += 1
+                    # A failure after the connection was established is a server
+                    # reap; one before (the _open itself) is a connect failure —
+                    # don't let an unbound port / dead server read as "defended".
+                    stats["reaped" if established else "connect_errors"] += 1
                 stats["frames_sent"] += sent
                 stats["bytes_sent"] += nb
             if s is not None:
@@ -858,18 +874,27 @@ def _ws_connect(args, extensions=None):
         req += b"Sec-WebSocket-Extensions: " + extensions + b"\r\n"
     req += b"\r\n"
     s = _open(args.host, args.port, args.tls, ["http/1.1"] if args.tls else None)
-    s.sendall(req)
-    s.settimeout(5)
-    resp = b""
-    while b"\r\n\r\n" not in resp and len(resp) < 65536:
-        b = s.recv(4096)
-        if not b:
-            break
-        resp += b
-    if b" 101" not in resp.split(b"\r\n", 1)[0]:
-        raise OSError("ws handshake not 101")
-    s.settimeout(None)
-    return s
+    try:
+        s.sendall(req)
+        s.settimeout(5)
+        resp = b""
+        while b"\r\n\r\n" not in resp and len(resp) < 65536:
+            b = s.recv(4096)
+            if not b:
+                break
+            resp += b
+        if b" 101" not in resp.split(b"\r\n", 1)[0]:
+            raise OSError("ws handshake not 101")
+        s.settimeout(None)
+        return s
+    except OSError:
+        # Close the fd on any handshake failure — the caller's `s` is still None,
+        # so its finally can't; a mass-failure run would otherwise leak fds.
+        try:
+            s.close()
+        except OSError:
+            pass
+        raise
 
 
 def _ws_frame(opcode, payload, fin=True, rsv1=False):
@@ -908,8 +933,10 @@ def _ws_flood(args, body):
 
     def worker():
         s = None
+        established = False
         try:
             s = _ws_connect(args)
+            established = True
             with lock:
                 stats["established"] += 1
             frames, nbytes = body(s, deadline)
@@ -917,8 +944,10 @@ def _ws_flood(args, body):
                 stats["frames_sent"] += frames
                 stats["bytes_sent"] += nbytes
         except OSError:
+            # Handshake failure (no /ws, upgrade refused) is a connect failure,
+            # not a server reap — keep them apart.
             with lock:
-                stats["reaped"] += 1
+                stats["reaped" if established else "connect_errors"] += 1
         finally:
             if s is not None:
                 try:
@@ -1004,8 +1033,10 @@ def _ws_flood_ext(args, body, ext):
 
     def worker():
         s = None
+        established = False
         try:
             s = _ws_connect(args, extensions=ext)
+            established = True
             with lock:
                 stats["established"] += 1
             frames, nbytes = body(s, deadline)
@@ -1014,7 +1045,7 @@ def _ws_flood_ext(args, body, ext):
                 stats["bytes_sent"] += nbytes
         except OSError:
             with lock:
-                stats["reaped"] += 1
+                stats["reaped" if established else "connect_errors"] += 1
         finally:
             if s is not None:
                 try:
@@ -1046,26 +1077,31 @@ def _tls_handshake_loop(args, ctx):
 
     def worker():
         hs = 0
-        reaped = immune = False
+        failed = False
         while time.monotonic() < deadline:
+            raw = None
             try:
                 raw = socket.create_connection((args.host, args.port), timeout=5)
                 ss = ctx.wrap_socket(raw, server_hostname=args.host)
                 hs += 1
                 ss.close()
-            except ssl.SSLError:
-                immune = True
-                break
-            except OSError:
-                reaped = True
+            except (ssl.SSLError, OSError):
+                # Either the server rejects our parameters (e.g. no DHE — "immune")
+                # or the port has no TLS listener. Both mean we did NOT load the
+                # server; neither is a "reap". The real signal is frames_sent
+                # (completed handshakes): 0 here = immune / no TLS listener.
+                failed = True
+                if raw is not None:
+                    try:
+                        raw.close()
+                    except OSError:
+                        pass
                 break
         with lock:
             if hs:
                 stats["established"] += 1
             stats["frames_sent"] += hs
-            if reaped:
-                stats["reaped"] += 1
-            if immune:
+            if failed:
                 stats["connect_errors"] += 1
     _run_workers(args.conns, deadline, worker)
     return stats

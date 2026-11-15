@@ -71,8 +71,12 @@ RES_HEADER_COUNT="${RES_HEADER_COUNT:-50000}"       # header fields (header-coun
 RES_DUP_HEADERS="${RES_DUP_HEADERS:-20000}"         # repeats of one header name (duplicate-header-merge)
 RES_PIPELINE_DEPTH="${RES_PIPELINE_DEPTH:-10000}"   # pipelined requests per batch (pipelining-flood)
 RES_UPLOAD_SIZE="${RES_UPLOAD_SIZE:-2147483648}"    # bytes actually delivered (large-upload)
-RES_QVALUE_COUNT="${RES_QVALUE_COUNT:-5000}"        # Accept-Language entries (qvalue-cpu-bomb)
-RES_COOKIE_PAIRS="${RES_COOKIE_PAIRS:-100000}"      # cookie pairs (cookie-flood)
+# Header-based attacks are bounded by the server's per-header / total-header size
+# cap (itself a first-line defense): too big and the request is rejected for size
+# before the quadratic sort / cookie-count path is reached. These defaults keep the
+# header ~7 KiB, under a common 8 KiB cap, so the attack actually exercises the path.
+RES_QVALUE_COUNT="${RES_QVALUE_COUNT:-600}"         # Accept-Language entries (qvalue-cpu-bomb)
+RES_COOKIE_PAIRS="${RES_COOKIE_PAIRS:-1000}"        # cookie pairs (cookie-flood)
 RES_PERCENT_COUNT="${RES_PERCENT_COUNT:-2000}"      # %-encoded tokens in the path (percent-decode-quadratic)
 RES_RANGE_COUNT="${RES_RANGE_COUNT:-1000}"          # byte ranges (range-bomb)
 RES_BIGNUM_DIGITS="${RES_BIGNUM_DIGITS:-100000}"    # digits in the JSON number (json-bignum)
@@ -120,9 +124,12 @@ mkdir -p "$WORK"
 # ── Which attacks apply ──────────────────────────────────────────────────────
 # The H1 attacks run against any entry. continuation-flood needs an HTTP/2
 # listener, so it runs only when the entry subscribes to an h2/h2c profile.
+# The H2 attacks all target the h2c (cleartext) listener on :8082, so gate them on
+# an h2c profile ONLY. An entry that does h2 only over TLS binds :8443, not :8082 —
+# gating it in here would fire the attacks at an unbound port and score 8 false
+# "survived". (TLS-H2 coverage would need the attacks routed to :8443 with ALPN.)
 has_h2() {
-    framework_subscribes_to baseline-h2  || framework_subscribes_to static-h2 \
- || framework_subscribes_to baseline-h2c || framework_subscribes_to json-h2c
+    framework_subscribes_to baseline-h2c || framework_subscribes_to json-h2c
 }
 has_ws() {
     framework_subscribes_to echo-ws || framework_subscribes_to echo-ws-pipeline \
@@ -131,7 +138,10 @@ has_ws() {
 has_h1tls() {
     framework_subscribes_to json-tls || framework_subscribes_to static-tls || framework_subscribes_to 8gbit
 }
-has_tls() { has_h1tls || has_h2; }
+# A real TLS listener means :8081 (h1-tls profiles) or :8443 (h2-over-TLS). An
+# h2c-only entry has NO TLS listener, so it must NOT be gated into the TLS attacks
+# (res_tls_port would otherwise aim at an unbound :8443 and score a false pass).
+has_tls() { has_h1tls || framework_subscribes_to baseline-h2 || framework_subscribes_to static-h2; }
 # The TLS attacks need a TLS listener: the h1 one on 8081, else the h2 one on 8443.
 res_tls_port() { if has_h1tls; then echo "$H1TLS_PORT"; else echo "$H2PORT"; fi; }
 if [ "${#ATTACKS_REQUESTED[@]}" -gt 0 ]; then
@@ -340,7 +350,9 @@ PY
 }
 
 for attack in "${ATTACKS[@]}"; do
-    run_attack "$attack"
+    # Guard so a single container-start failure (a name clash, a flaky-build abort)
+    # can't trip set -e and abandon every remaining attack's verdict.
+    run_attack "$attack" || warn "run_attack $attack failed — continuing"
 done
 
 # ── Scores ───────────────────────────────────────────────────────────────────

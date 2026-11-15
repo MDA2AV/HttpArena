@@ -50,7 +50,7 @@ The suite has **41 attacks** across four protocol surfaces. The most valuable fo
 | `percent-decode-quadratic` | CPU | a path of many `%XX` tokens → super-linear decode ([CVE-2026-45822](https://nvd.nist.gov/vuln/detail/CVE-2026-45822)) |
 | `range-bomb` | memory | many ranges on a static file → `multipart/byteranges` amplification ([CVE-2011-3192](https://nvd.nist.gov/vuln/detail/CVE-2011-3192)) |
 
-**HTTP/2 — only when the entry has an H2 profile** (`baseline-h2`/`static-h2`/`baseline-h2c`/`json-h2c`), over h2c on :8082:
+**HTTP/2 — only when the entry has an **h2c** profile** (`baseline-h2c`/`json-h2c`), over the cleartext h2c listener on :8082. (The attacks target :8082 directly, so an entry that does h2 only over TLS isn't covered yet — gating it in would fire the attacks at an unbound port.)
 
 | Attack | Exhausts | What it does |
 |---|---|---|
