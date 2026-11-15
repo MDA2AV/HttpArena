@@ -50,7 +50,9 @@ RES_MEM="${RES_MEM:-4g}"             # the box the entry runs in
 # aren't adjacent (e.g. 0,16): it would hand the server two SEPARATE physical cores,
 # twice the compute we intend. Override RES_CPUSET to pin a specific set.
 RES_CPUSET="${RES_CPUSET:-$(cat /sys/devices/system/cpu/cpu0/topology/thread_siblings_list 2>/dev/null || echo 0-1)}"
-RES_DURATION="${RES_DURATION:-25}"   # seconds per attack (verdicts are clear well inside this; the attack ends early if the server dies)
+RES_DURATION="${RES_DURATION:-15}"   # max seconds per attack (verdicts are clear well inside this; an attack ends early if the server dies OR is clearly surviving)
+RES_MIN_DURATION="${RES_MIN_DURATION:-8}"  # never early-exit "clearly surviving" before this many seconds
+RES_SETTLE="${RES_SETTLE:-6}"        # ... and only once peak RSS has been flat (and liveness 100%) this long
 RES_CONNS="${RES_CONNS:-4000}"       # connections the slow attacks hold (< the 28k ephemeral-port ceiling)
 RES_BODY_SIZE="${RES_BODY_SIZE:-104857600}"  # 100 MiB declared body for slow-body (pre-alloc pressure)
 RES_DRIP="${RES_DRIP:-1.0}"          # seconds between drips
@@ -376,12 +378,30 @@ run_attack() {
         --ws-frag-size "$RES_WS_FRAG_SIZE" "${tls_flag[@]}" \
         > "$WORK/$name.client.json" 2> "$WORK/$name.client.log" &
     local attack_pid=$! killed_early=0
-    # Early-exit: once the server is dead (OOM / crash) there's nothing left to
-    # measure, so stop the attack instead of flooding a dead container for the rest
-    # of the duration. Poll the container every 2s while the client is still running.
+    # Early-exit on either settled outcome, so a run never burns the full duration
+    # once the verdict is decided. Poll every 2s while the client runs:
+    #   1. the server DIED (OOM / crash) — nothing left to measure; or
+    #   2. the server is CLEARLY SURVIVING — past RES_MIN_DURATION, liveness has
+    #      been 100% and peak RSS has not grown for RES_SETTLE seconds, so the
+    #      attack isn't biting. A real memory leak keeps raising the peak (blocks
+    #      this); a CPU/liveness hit leaves a "fail" in the probe log (blocks this).
+    #      peak RSS is monotonic, so any genuine growth resets the flat timer —
+    #      the failure mode is "runs longer than needed", never "stops too soon".
+    local aw_start aw_now aw_elapsed aw_peak aw_last_peak=-1 aw_last_grow
+    aw_start=$(date +%s); aw_last_grow=$aw_start
     while kill -0 "$attack_pid" 2>/dev/null; do
         if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_NAME" 2>/dev/null || echo false)" != "true" ]; then
             info "$name: server stopped running — ending the attack early"
+            kill "$attack_pid" 2>/dev/null || true
+            killed_early=1
+            break
+        fi
+        aw_now=$(date +%s); aw_elapsed=$((aw_now - aw_start))
+        aw_peak=$(cat "$peak_file" 2>/dev/null || echo 0)
+        [ "${aw_peak:-0}" -gt "${aw_last_peak:-0}" ] 2>/dev/null && { aw_last_peak=$aw_peak; aw_last_grow=$aw_now; }
+        if [ "$aw_elapsed" -ge "$RES_MIN_DURATION" ] && [ $((aw_now - aw_last_grow)) -ge "$RES_SETTLE" ] \
+           && ! grep -q fail "$live_file" 2>/dev/null; then
+            info "$name: liveness 100% and peak RSS flat ${RES_SETTLE}s — ending early (clearly surviving)"
             kill "$attack_pid" 2>/dev/null || true
             killed_early=1
             break
