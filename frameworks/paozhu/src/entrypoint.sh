@@ -104,12 +104,14 @@ warm_static() {
 # request goes out. Without this an early request can race that setup and take
 # the process down, which wait -n then turns into a full two-process shutdown.
 sleep 3
-if [ -d /data/static ]; then
-    wait_ready https://localhost:8443/pipeline || true
-    wait_ready https://localhost:8081/pipeline || true
-    warm_static https://localhost:8443
-    warm_static https://localhost:8081
-fi
+# TEMP DIAGNOSTIC: pre-warm disabled to check whether it is what kills the
+# process. Re-enable once the root cause is confirmed.
+#if [ -d /data/static ]; then
+#    wait_ready https://localhost:8443/pipeline || true
+#    wait_ready https://localhost:8081/pipeline || true
+#    warm_static https://localhost:8443
+#    warm_static https://localhost:8081
+#fi
 
 shutdown() {
     trap - TERM INT
