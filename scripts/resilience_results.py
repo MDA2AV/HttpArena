@@ -35,6 +35,18 @@ RESOURCE = {
                             "the server pre-allocates the declared chunk buffer."),
     "continuation-flood": ("memory", "Endless HTTP/2 CONTINUATION frames with no "
                                      "END_HEADERS (CVE-2024-27316); tests the header-block cap."),
+    "decompression-bomb": ("memory", "A small gzip request body that inflates to gigabytes; "
+                                     "tests whether request Content-Encoding is decoded unbounded."),
+    "hpack-bomb": ("memory", "One ~4 KB HPACK dynamic-table entry referenced by thousands of "
+                            "1-byte indices (CVE-2016-6581 family); tests header-list size caps."),
+    "rapid-reset": ("cpu", "Open-then-immediately-RST streams in a tight loop "
+                          "(CVE-2023-44487); tests unbounded stream dispatch."),
+    "madeyoureset": ("cpu", "Force server-side RST via WINDOW_UPDATE(0) per stream "
+                           "(CVE-2025-8671); tests the Rapid-Reset-mitigation bypass."),
+    "settings-flood": ("cpu", "Flood SETTINGS frames the peer must ACK (CVE-2019-9515)."),
+    "ping-flood": ("cpu", "Flood PING frames the peer must ACK (CVE-2019-9512)."),
+    "empty-frame-flood": ("cpu", "Flood zero-length DATA frames with no END_STREAM "
+                                 "(CVE-2019-9518); tests per-frame overhead handling."),
 }
 
 LIVENESS_FAIL_THRESHOLD = 0.5   # over half the probes failing = "stopped answering"

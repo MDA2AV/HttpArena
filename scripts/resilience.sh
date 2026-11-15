@@ -36,7 +36,7 @@ ATTACKS_REQUESTED=()
 for arg in "$@"; do
     case "$arg" in
         --save) SAVE=true ;;
-        slow-body|slow-headers|huge-chunk|continuation-flood) ATTACKS_REQUESTED+=("$arg") ;;
+        slow-body|slow-headers|huge-chunk|decompression-bomb|continuation-flood|hpack-bomb|rapid-reset|madeyoureset|settings-flood|ping-flood|empty-frame-flood) ATTACKS_REQUESTED+=("$arg") ;;
         -*)     fail "unknown flag: $arg" ;;
         *)      POSITIONAL+=("$arg") ;;
     esac
@@ -52,6 +52,9 @@ RES_BODY_SIZE="${RES_BODY_SIZE:-104857600}"  # 100 MiB declared body for slow-bo
 RES_DRIP="${RES_DRIP:-1.0}"          # seconds between drips
 RES_DRIP_BYTES="${RES_DRIP_BYTES:-256}"       # bytes per drip for slow-body/huge-chunk: ~256 B/s, slow
                                               # enough to be low-and-slow but above a bytes-at-zero reaper
+RES_H2_CONNS="${RES_H2_CONNS:-256}"           # connections for the HTTP/2 flood attacks (each floods hard)
+RES_DECOMP_CONNS="${RES_DECOMP_CONNS:-64}"    # connections for decompression-bomb
+RES_BOMB_SIZE="${RES_BOMB_SIZE:-1073741824}"  # 1 GiB decompressed per gzip bomb
 RES_RECOVERY="${RES_RECOVERY:-15}"   # seconds to wait for the server to serve again
 # The attack client runs on the load-generator cores so it never steals CPU from
 # the (deliberately CPU-starved) server.
@@ -101,8 +104,8 @@ has_h2() {
 if [ "${#ATTACKS_REQUESTED[@]}" -gt 0 ]; then
     ATTACKS=("${ATTACKS_REQUESTED[@]}")
 else
-    ATTACKS=(slow-body slow-headers huge-chunk)
-    has_h2 && ATTACKS+=(continuation-flood)
+    ATTACKS=(slow-body slow-headers huge-chunk decompression-bomb)
+    has_h2 && ATTACKS+=(continuation-flood hpack-bomb rapid-reset madeyoureset settings-flood ping-flood empty-frame-flood)
 fi
 info "attacks: ${ATTACKS[*]}"
 info "box: mem=$RES_MEM cpuset=$RES_CPUSET  duration=${RES_DURATION}s conns=$RES_CONNS"
@@ -169,12 +172,14 @@ recovery_probe() {
 # ── One attack ───────────────────────────────────────────────────────────────
 
 run_attack() {
-    local name="$1" port path extra_tls=""
+    local name="$1" port path conns extra_tls=""
     case "$name" in
-        slow-body)          port=$PORT;     path=/echo ;;
-        slow-headers)       port=$PORT;     path=/ ;;
-        huge-chunk)         port=$PORT;     path=/echo ;;
-        continuation-flood) port=$H2C_PORT; path=/ ;;
+        slow-body)          port=$PORT;     path=/echo; conns=$RES_CONNS ;;
+        slow-headers)       port=$PORT;     path=/;      conns=$RES_CONNS ;;
+        huge-chunk)         port=$PORT;     path=/echo; conns=$RES_CONNS ;;
+        decompression-bomb) port=$PORT;     path=/echo; conns=$RES_DECOMP_CONNS ;;
+        continuation-flood|hpack-bomb|rapid-reset|madeyoureset|settings-flood|ping-flood|empty-frame-flood) \
+                            port=$H2C_PORT; path=/;      conns=$RES_H2_CONNS ;;
         *) warn "unknown attack: $name"; return 0 ;;
     esac
     log "resilience $name: $FRAMEWORK (port $port)"
@@ -214,9 +219,9 @@ run_attack() {
     [ -n "$extra_tls" ] && tls_flag=(--tls)
     taskset -c "$ATTACK_CPUS" python3 "$ATTACK_PY" \
         --attack "$name" --host 127.0.0.1 --port "$port" --path "$path" \
-        --conns "$RES_CONNS" --duration "$RES_DURATION" \
+        --conns "$conns" --duration "$RES_DURATION" \
         --body-size "$RES_BODY_SIZE" --drip-interval "$RES_DRIP" \
-        --drip-bytes "$RES_DRIP_BYTES" "${tls_flag[@]}" \
+        --drip-bytes "$RES_DRIP_BYTES" --bomb-size "$RES_BOMB_SIZE" "${tls_flag[@]}" \
         > "$WORK/$name.client.json" 2> "$WORK/$name.client.log" || \
         warn "attack client exited non-zero (see $name.client.log)"
 
