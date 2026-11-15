@@ -6,7 +6,7 @@ C++20 HTTP/2 client and server library built on coroutines ([kelcoro](https://gi
 
 - **Language:** C++20
 - **Engine:** hidi
-- **Build:** `ubuntu:24.04`, clang 18, `-O3 -march=native`; hidi's CMake fetches its dependencies with CPM
+- **Build:** `ubuntu:24.04`, clang 20, `-O3 -march=native`; hidi's CMake fetches its dependencies with CPM
 
 ## Listeners
 
