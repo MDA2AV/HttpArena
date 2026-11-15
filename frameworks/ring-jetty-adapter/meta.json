@@ -5,7 +5,7 @@
   "engine": "ring-jetty-adapter",
   "description": "Minimal HTTP/1.1 and HTTPS engine benchmark using the official Ring Jetty adapter with native WebSocket echo.",
   "repo": "https://github.com/ring-clojure/ring",
-  "maintainers": [],
+  "maintainers": ["Ramblurr"],
   "enabled": true,
   "tests": [
     "baseline", "async", "latency-1m", "latency-10k", "latency-500k-8cpu",
