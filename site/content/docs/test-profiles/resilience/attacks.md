@@ -9,7 +9,7 @@ The suite has **41 attacks** across four protocol surfaces. The most valuable fo
 
 ## HTTP/1.1 server-level
 
-Fire against any entry:
+Fire against any entry with an HTTP/1.1 profile on :8080 (`baseline`, `pipelined`, `limited-conn`, `json-comp`, `async`, `async-db`, `fortunes` or a latency profile):
 
 | Attack | Exhausts | What it does |
 |---|---|---|
@@ -32,7 +32,7 @@ Fire against any entry:
 
 ## HTTP/1.1 parser-differential
 
-Run against the `POST /parse` endpoint. An entry that implements `/parse` parses the request body with its standard facilities (JSON, form/multipart, request decompression) — so these measure the framework's real parser limits. An entry that does **not** implement `/parse` (returns 404/405) shows **🔌 no-endpoint** and is **not scored** (neither pass nor fail):
+Run against the `POST /parse` endpoint, for the same entries as the server-level attacks. An entry that implements `/parse` parses the request body with its standard facilities (JSON, form/multipart, request decompression) — so these measure the framework's real parser limits. An entry that does **not** implement `/parse` (returns 404/405) shows **🔌 no-endpoint** and is **not scored** (neither pass nor fail):
 
 | Attack | Exhausts | What it does |
 |---|---|---|

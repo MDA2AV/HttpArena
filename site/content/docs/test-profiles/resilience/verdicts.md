@@ -19,7 +19,7 @@ For each attack the runner records a verdict from the server-side signal, plus p
 | `crashed` | the process died without being OOM-killed (panic/segfault) | ✗ |
 | `oom-killed` | the container ran out of its memory box | ✗ |
 
-A liveness probe — a cheap `GET` on port 8080 — runs every second during the attack; recovery is measured by the same probe after the attack client stops. OOM is read straight from the container (`State.OOMKilled` / exit 137), and peak RSS from the cgroup's `memory.peak`.
+A liveness probe runs every second during the attack: a cheap `GET` on port 8080 whenever the entry has an HTTP/1.1 profile, whatever the attack targets; without one, a `GET` over h2c on 8082, else over HTTP/2 with TLS on 8443, else, for a WebSocket-only entry, a WebSocket handshake on `/ws`, which has to be accepted. Any HTTP status counts as an answer. The same probe tells when the server is up before the attack, and measures recovery after the attack client stops. OOM is read straight from the container (`State.OOMKilled` / exit 137), and peak RSS from the cgroup's `memory.peak`.
 
 ## The results file
 

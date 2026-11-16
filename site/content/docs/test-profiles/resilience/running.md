@@ -13,9 +13,9 @@ The suite is **off by default** — the attacks are destructive and need the who
 "resilience": true
 ```
 
-On a PR, a full `/benchmark` (no `-t`) then runs the suite for that entry **right after its benchmark**, on the self-hosted bench runner, and `--save` commits the verdicts to `site/data/resilience/<entry>.json` alongside the benchmark results. It rides the benchmark's slot on purpose: the bench host runs one job at a time, so the suite never competes with another run for CPU, memory or ports — contention that would corrupt a verdict. An entry without the flag is skipped.
+The suite runs only on request, never as part of a `/benchmark`: comment `/resilience -f <entry>` on the PR (several: `-f <a>,<b>`), and add `--save` to commit the verdicts to `site/data/resilience/<entry>.json`. It goes through the same approval and the same self-hosted bench host as a benchmark, which runs one job at a time, so the suite never competes with another run for CPU, memory or ports — contention that would corrupt a verdict. It builds the image itself and posts the report as its own comment. Only entries with the flag run; naming one that hasn't opted in is a no-op.
 
-To run **only** the suite, without a benchmark, comment `/resilience -f <entry>` (add `--save` to commit the verdicts). It goes through the same approval and the same bench host as a benchmark, builds the image itself, and posts the report as its own comment. Only entries with the flag run; naming one that hasn't opted in is a no-op.
+An entry runs the [attack families](attacks) its profiles give it a listener for: HTTP/1.1 on 8080, h2c on 8082, `/ws`, TLS. An entry split across directories that share a display name (`ntex`, `ntex-h2`, `ntex-ws`) opts each directory in; each one runs its own families, and the board joins their verdicts under the one name. A directory with none of those listeners, such as a gRPC-only one, has nothing to run.
 
 ## Running it locally
 

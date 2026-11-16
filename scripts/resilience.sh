@@ -13,7 +13,8 @@
 # For each attack we record:
 #   verdict        survived | degraded | hung | crashed | oom-killed
 #   peak RSS       cgroup high-water during the attack, vs the idle baseline
-#   liveness       a plaintext GET every second *during* the attack
+#   liveness       a request every second *during* the attack, on the entry's
+#                  own listener (res_probe below)
 #   recovery       seconds until the server serves again *after* the attack stops
 # plus what the attack client itself did (scripts/resilience/attack.py).
 #
@@ -28,6 +29,7 @@ SOURCE_DIR="$(cd "$(dirname "$0")/lib" && pwd)"
 source "$SOURCE_DIR/common.sh"
 source "$SOURCE_DIR/framework.sh"
 source "$SOURCE_DIR/profiles.sh"
+source "$SOURCE_DIR/spec.sh"
 cd "$ROOT_DIR"
 
 SAVE=false
@@ -256,12 +258,26 @@ rm -rf "$WORK"
 mkdir -p "$WORK"
 
 # ── Which attacks apply ──────────────────────────────────────────────────────
-# The H1 attacks run against any entry. continuation-flood needs an HTTP/2
-# listener, so it runs only when the entry subscribes to an h2/h2c profile.
-# The H2 attacks all target the h2c (cleartext) listener on :8082, so gate them on
-# an h2c profile ONLY. An entry that does h2 only over TLS binds :8443, not :8082 —
-# gating it in here would fire the attacks at an unbound port and score 8 false
-# "survived". (TLS-H2 coverage would need the attacks routed to :8443 with ALPN.)
+# Each family of attacks needs the listener it targets, so an entry runs the
+# families its profiles give it a listener for. An entry split across
+# directories (ntex, ntex-h2, ntex-ws) opts each directory in, each runs its own
+# families, and the board joins their verdicts under the display name.
+#
+#   HTTP/1.1   a plaintext HTTP/1.1 profile, the listener on :8080: the profiles
+#              the h1 compliance suite runs against (lib/spec.sh).
+#   HTTP/2     an h2c profile ONLY. The attacks target the cleartext listener on
+#              :8082; an entry that does h2 only over TLS binds :8443, and gating
+#              it in would fire them at an unbound port and score 8 false
+#              "survived". (TLS-H2 coverage would need them routed to :8443.)
+#   WebSocket  an echo-ws profile, /ws on :8080.
+#   TLS        a TLS listener, :8081 (h1-tls profiles) or :8443 (h2 over TLS).
+has_h1() {
+    local p
+    for p in $(spec_profiles_for h1); do
+        framework_subscribes_to "$p" && return 0
+    done
+    return 1
+}
 has_h2() {
     framework_subscribes_to baseline-h2c || framework_subscribes_to json-h2c
 }
@@ -281,7 +297,8 @@ res_tls_port() { if has_h1tls; then echo "$H1TLS_PORT"; else echo "$H2PORT"; fi;
 if [ "${#ATTACKS_REQUESTED[@]}" -gt 0 ]; then
     ATTACKS=("${ATTACKS_REQUESTED[@]}")
 else
-    ATTACKS=(slow-body slow-headers slow-read huge-chunk tiny-chunk-flood chunk-extension-flood chunk-size-overflow
+    ATTACKS=()
+    has_h1 && ATTACKS+=(slow-body slow-headers slow-read huge-chunk tiny-chunk-flood chunk-extension-flood chunk-size-overflow
              content-length-prealloc large-upload expect-100-continue keepalive-hoard
              header-bomb header-count-flood duplicate-header-merge pipelining-flood trailer-flood
              decompression-bomb decomp-codec-bypass hashdos json-nesting-bomb multipart-flood
@@ -290,7 +307,26 @@ else
     has_ws && ATTACKS+=(ws-giant-frame ws-fragment-bomb ws-deflate-bomb ws-pong-flood)
     has_tls && ATTACKS+=(tls-handshake-flood dheat)
 fi
+if [ "${#ATTACKS[@]}" -eq 0 ]; then
+    info "$FRAMEWORK has none of the listeners the attacks target (tests: $FRAMEWORK_TESTS) — nothing to do"
+    if $SAVE && [ -f "$ROOT_DIR/site/data/resilience/$FRAMEWORK.json" ]; then
+        rm -f "$ROOT_DIR/site/data/resilience/$FRAMEWORK.json"
+        info "removed site/data/resilience/$FRAMEWORK.json"
+    fi
+    exit 0
+fi
+
+# Readiness, liveness and recovery all probe one listener: the HTTP/1.1 one on
+# :8080 whenever the entry has it, whatever the attack targets; without it, the
+# h2c one on :8082, else h2 over TLS on :8443, else the /ws handshake.
+if has_h1; then RES_PROBE=h1
+elif has_h2; then RES_PROBE=h2c
+elif framework_subscribes_to baseline-h2 || framework_subscribes_to static-h2; then RES_PROBE=h2
+elif has_ws; then RES_PROBE=ws
+else RES_PROBE=h1
+fi
 info "attacks: ${ATTACKS[*]}"
+info "probe: $RES_PROBE"
 build_go_attacker
 info "box: mem=$RES_MEM cpuset=$RES_CPUSET attack_cpus=$ATTACK_CPUS  duration=${RES_DURATION}s conns=$RES_CONNS"
 
@@ -368,12 +404,48 @@ sample_cpu() {
     done
 }
 
-# Seconds until a plaintext GET succeeds again, or "dead" after the budget.
+# One probe of the listener RES_PROBE names: success if it answered within 2s.
+# Any HTTP status counts, as it always has on :8080; on /ws the handshake has to
+# be accepted (101), since a WebSocket-only server may not answer plain HTTP.
+res_probe() {
+    case "$RES_PROBE" in
+        h1)  curl -sk -o /dev/null --max-time 2 "http://127.0.0.1:$PORT/baseline11?a=1&b=1" ;;
+        h2c) curl -s -o /dev/null --max-time 2 --http2-prior-knowledge "http://127.0.0.1:$H2C_PORT/baseline2?a=1&b=1" ;;
+        h2)  curl -sk -o /dev/null --max-time 2 --http2 "https://127.0.0.1:$H2PORT/baseline2?a=1&b=1" ;;
+        ws)  timeout 3 python3 -c '
+import socket, sys
+s = socket.create_connection(("127.0.0.1", int(sys.argv[1])), timeout=2)
+s.sendall(b"GET /ws HTTP/1.1\r\nHost: 127.0.0.1\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n"
+          b"Sec-WebSocket-Version: 13\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n\r\n")
+head = b""
+while b"\r\n" not in head:
+    data = s.recv(256)
+    if not data:
+        break
+    head += data
+sys.exit(0 if head.startswith(b"HTTP/1.1 101") else 1)' "$PORT" ;;
+    esac
+} 2>/dev/null
+
+# Wait for that listener after a start, 30 tries like framework_wait_ready.
+res_wait_ready() {
+    local i
+    case "$RES_PROBE" in
+        h1)  framework_wait_ready baseline ;;
+        h2c) framework_wait_ready h2c ;;
+        h2)  if framework_subscribes_to baseline-h2; then framework_wait_ready h2
+             else framework_wait_ready static-h2; fi ;;
+        ws)  for i in $(seq 1 30); do res_probe && return 0; sleep 1; done
+             return 1 ;;
+    esac
+}
+
+# Seconds until the probe succeeds again, or "dead" after the budget.
 recovery_probe() {
     local max="$1" start now i
     start=$(date +%s.%N)
     for ((i = 0; i < max * 2; i++)); do
-        if curl -sk -o /dev/null --max-time 2 "http://127.0.0.1:$PORT/baseline11?a=1&b=1" 2>/dev/null; then
+        if res_probe; then
             now=$(date +%s.%N)
             awk "BEGIN{printf \"%.1f\", $now - $start}"
             return
@@ -420,7 +492,7 @@ run_attack() {
     log "resilience $name: $FRAMEWORK (port $port)"
 
     FRAMEWORK_MEM_LIMIT="$RES_MEM" framework_start resilience "$RES_CPUSET"
-    if ! framework_wait_ready baseline; then
+    if ! res_wait_ready; then
         echo '{"verdict":"error","error":"server did not come up"}' > "$WORK/$name.result.json"
         dump_container_logs "$CONTAINER_NAME" "$FRAMEWORK" 2>/dev/null || true
         framework_stop
@@ -452,10 +524,10 @@ run_attack() {
     live_file="$WORK/$name.liveness"
     : > "$live_file"
 
-    # Liveness: a cheap GET every second during the attack.
+    # Liveness: a cheap probe every second during the attack.
     (
         while :; do
-            if curl -sk -o /dev/null --max-time 2 "http://127.0.0.1:$PORT/baseline11?a=1&b=1" 2>/dev/null; then
+            if res_probe; then
                 echo ok; else echo fail; fi
             sleep 1
         done
