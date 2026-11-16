@@ -15,22 +15,27 @@
     <GarbageCollectionAdaptationMode>0</GarbageCollectionAdaptationMode>
   </PropertyGroup>
 
-  <!-- GenHTTP.Engine.Ioxide 11.3.0 pins ioxide 0.15.251; ioxide.pg and ioxide.timer below are
-       built against the same ioxide, so they move with it. -->
+  <!-- GenHTTP from source, cloned by the Dockerfile into GenHttpSource (see there). Its
+       GenHTTP.Engine.Ioxide pins ioxide 0.26.563; ioxide.pg and ioxide.timer below are built
+       against the same ioxide, so they move with it. -->
+  <PropertyGroup>
+    <GenHttpSource Condition="'$(GenHttpSource)' == ''">/genhttp</GenHttpSource>
+  </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="GenHTTP.Engine.Ioxide" Version="11.3.0" />
-    <PackageReference Include="GenHTTP.Modules.IO" Version="11.3.0" />
-    <PackageReference Include="GenHTTP.Modules.Files" Version="11.3.0" />
-    <PackageReference Include="GenHTTP.Modules.Layouting" Version="11.3.0" />
-    <PackageReference Include="GenHTTP.Modules.Webservices" Version="11.3.0" />
-    <PackageReference Include="GenHTTP.Modules.Compression" Version="11.3.0" />
-    <PackageReference Include="GenHTTP.Modules.Websockets" Version="11.3.0" />
+    <ProjectReference Include="$(GenHttpSource)/Engine/Ioxide/GenHTTP.Engine.Ioxide.csproj" />
+    <ProjectReference Include="$(GenHttpSource)/Modules/IO/GenHTTP.Modules.IO.csproj" />
+    <ProjectReference Include="$(GenHttpSource)/Modules/Files/GenHTTP.Modules.Files.csproj" />
+    <ProjectReference Include="$(GenHttpSource)/Modules/Layouting/GenHTTP.Modules.Layouting.csproj" />
+    <ProjectReference Include="$(GenHttpSource)/Modules/Webservices/GenHTTP.Modules.Webservices.csproj" />
+    <ProjectReference Include="$(GenHttpSource)/Modules/Compression/GenHTTP.Modules.Compression.csproj" />
+    <ProjectReference Include="$(GenHttpSource)/Modules/Websockets/GenHTTP.Modules.Websockets.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ioxide.pg" Version="0.15.251" />
+    <PackageReference Include="ioxide.pg" Version="0.26.563" />
     <!-- Ring-native timeouts for /delay: the wait completes on the reactor, not the thread pool. -->
-    <PackageReference Include="ioxide.timer" Version="0.15.251" />
+    <PackageReference Include="ioxide.timer" Version="0.26.563" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="11.0.0-preview.5.26302.115" />
   </ItemGroup>
 

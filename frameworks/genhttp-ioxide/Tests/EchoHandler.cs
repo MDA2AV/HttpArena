@@ -46,9 +46,9 @@ public sealed class EchoHandler : IImperativeHandler
                 return false;
 
             case FrameType.Error:
-                if (frame.IsError(out var error) && error.ErrorType is not (FrameErrorType.Canceled or FrameErrorType.IncompleteForever))
+                if (frame.IsError(out var error) && error.CloseStatus is { } status)
                 {
-                    await TryCloseAsync(connection, error.ErrorType == FrameErrorType.PayloadTooLarge ? (ushort)1009 : (ushort)1002);
+                    await TryCloseAsync(connection, status);
                 }
                 return false;
 
