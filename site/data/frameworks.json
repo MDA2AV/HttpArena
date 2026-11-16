@@ -2204,6 +2204,20 @@
     "type": "engine",
     "engine": "epoll"
   },
+  "Ruvel": {
+    "dir": "ruvel",
+    "description": "A laravel alternative framework for rust developers",
+    "repo": "https://github.com/Stephan-MC/ruvel-ui",
+    "type": "experimental",
+    "engine": "ruvel",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "salvo": {
     "dir": "salvo",
     "description": "Salvo 0.96 on tokio and hyper, default configuration. Routing through the Router tree, JSON through salvo's Json responder, gzip and brotli through the built-in Compression hoop at level 1, json-tls on 8081 through rustls.",
