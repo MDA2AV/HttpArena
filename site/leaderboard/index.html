@@ -515,6 +515,24 @@
 .cm td.pc.spec.crashed .cmem{color:#c0392b}
 .cm td.spec{cursor:pointer}
 .cm td.spec:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+/* The Resilience column: three small per-surface survival scores (H1/H2/WS) in
+   one cell, set off from the profiles after it like the Spec column. A
+   standalone robustness read, never part of the composite. */
+.cm th.resilh, .cm td.resil{border-right:1px solid var(--line-soft)}
+.cm td.resil{vertical-align:middle}
+.cm td.resil .rzrow{display:flex; gap:.55rem; align-items:flex-end}
+.cm td.resil .rz{display:flex; flex-direction:column; align-items:flex-start; gap:.08rem; min-width:30px}
+.cm td.resil .rzl{font-family:var(--sans); font-size:.56rem; letter-spacing:.03em; color:var(--muted); text-transform:none; line-height:1}
+.cm td.resil .rzv{font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:.74rem; color:var(--text); line-height:1.1}
+.cm td.resil .rzp{font-size:.55rem; color:var(--muted); margin-left:.04rem}
+.cm td.resil .rz.full .rzv{font-weight:700}
+.cm td.resil .rzbar{position:relative; width:100%; height:2px; margin-top:.12rem; background:var(--bar-track); overflow:hidden}
+.cm td.resil .rzbar i{position:absolute; left:0; top:0; height:100%; background:var(--muted); opacity:.75}
+.cm td.resil .rz.full .rzbar i{background:var(--accent); opacity:.85}
+/* A surface the entry did not run: a muted dash and no track, so it reads as
+   absent rather than as a zero score. */
+.cm td.resil .rz-none .rzv{color:var(--line-soft)}
+.cm td.resil .rz-none .rzbar{background:transparent}
   .cm th.pcol.refcol{opacity:.45}
   /* Two affordances per profile column: open that profile's detail view, and
      open its implementation guide. They sit on their own line under the label,
@@ -933,6 +951,57 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     document.addEventListener('scroll', function(){ if(!held()) close(); }, true);
   }
 
+  // ── Resilience (robustness) column ───────────────────────
+  // Adversarial-attack survival per surface, from site/data/resilience/, which
+  // scripts/resilience_results.py writes per entry directory. A standalone
+  // robustness read, never part of the composite - like the Spec column.
+  // gen_leaderboard_data.py has already scored each surface and joined any
+  // variant directories into D.meta[fw].resil as {h1:[pts,n], h2:[pts,n],
+  // ws:[pts,n]}, carrying only the surfaces an entry actually ran. The column
+  // follows the board scope and shows that one surface - H1 on the H/1.1 view,
+  // H2 on H/2, WS on WebSocket; scopes with no surface omit the column.
+  var RESIL_SURF=[['h1','H1'],['h2','H2'],['ws','WS']];
+  // The resilience column follows the board's current scope: the H/1.1 view shows
+  // the H1 surface, H/2 the H2 surface, WebSocket the WS surface. Other scopes
+  // (H/3, gateway, gRPC) have no resilience surface, so the column is absent there.
+  var RESIL_SCOPE={h1:['h1','H1'],h2:['h2','H2'],ws:['ws','WS']};
+  function resilSurface(){ return state.view==='composite' ? (RESIL_SCOPE[state.scope]||null) : null; }
+  function resilOf(fw){ var m=D.meta[fw]; return (m&&m.resil)||null; }
+  // Show the column only when the current scope has a surface and some entry ran it.
+  function resilCol(){
+    var s=resilSurface(); if(!s) return false;
+    return Object.keys(D.meta||{}).some(function(fw){ var r=D.meta[fw]&&D.meta[fw].resil; return !!(r&&r[s[0]]); });
+  }
+  // Survival rate on the current surface, for sorting. -1 when the entry did not
+  // run this surface, so those sort to the bottom like the Spec column.
+  function resilAgg(fw){
+    var s=resilSurface(); if(!s) return -1;
+    var r=resilOf(fw), v=r&&r[s[0]];
+    return (v&&v[1])?v[0]/v[1]:-1;
+  }
+  function resilTip(fw){
+    var s=resilSurface(), r=resilOf(fw), v=r&&r[s[0]];
+    var how='Resilience - adversarial attacks the entry survives on its '+s[1]+' surface, run against it in a capped CPU/memory box. survived = 1 point, degraded = ½, hung/crashed/OOM = 0. Opt-in, and not part of the composite.';
+    if(!v) return how+'\nThis entry has not run the suite on '+s[1]+'.';
+    return how+'\n'+s[1]+': '+v[0]+' of '+v[1]+' attacks survived.';
+  }
+  function resilCell(fw){
+    var s=resilSurface(), r=resilOf(fw), v=r&&r[s[0]], seg;
+    if(!v){
+      seg='<span class="rz rz-none">'
+        + '<span class="rzv">—</span><span class="rzbar"></span></span>';
+    } else {
+      var ratio=v[1]?v[0]/v[1]:0, pct=Math.round(ratio*100);
+      var col=state.heat?heatColor(ratio):'';
+      seg='<span class="rz'+(ratio===1?' full':'')+'" data-tip="'
+        + esc(s[1]+': '+v[0]+' of '+v[1]+' attacks survived ('+pct+'%). survived = 1 point, degraded = ½.')+'">'
+        + '<span class="rzv">'+pct+'<span class="rzp">%</span></span>'
+        + '<span class="rzbar"><i style="width:'+pct+'%'+(col?';background:'+col:'')+'"></i></span></span>';
+    }
+    return '<td class="num pc resil'+(v?'':' empty')+'" data-tip="'+esc(resilTip(fw))
+      + '"><span class="rzrow">'+seg+'</span></td>';
+  }
+
   // The composite views are keyed by scope; 'h1' is the HTTP/1.1 one.
   function h1View(){ return state.view === 'composite' && state.scope === 'h1'; }
   function tlsCheckBadge(fw){
@@ -1005,7 +1074,8 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     fw:'Framework - click the name to open its repository.',
     fwCompact:'Narrow this column to the type square, the tuned mark and the name, and give the width back to the profile columns.',
     fwExpand:'Widen this column back to the favourite star, the tuned pill, the language and the medals.',
-    spec:'Protocol compliance - how much of the conformance suite of this family the entry passes: Http11Probe on HTTP/1.1, h2spec on HTTP/2, h3spec on HTTP/3, Autobahn on WebSocket. A score, not part of the composite. A dot: the entry does not run the suite. A dash: it could not be measured.'
+    spec:'Protocol compliance - how much of the conformance suite of this family the entry passes: Http11Probe on HTTP/1.1, h2spec on HTTP/2, h3spec on HTTP/3, Autobahn on WebSocket. A score, not part of the composite. A dot: the entry does not run the suite. A dash: it could not be measured.',
+    resil:'Resilience - adversarial attacks the entry survives on this surface (the board scope picks it: H1 / H2 / WebSocket), run against it in a capped CPU/memory box. survived = 1 point, degraded = ½, hung/crashed/OOM = 0. Opt-in and not part of the composite; a dash means this surface was not run. Sorts on the survival rate.'
   };
   // Every field the published row carries for one framework on one profile,
   // across each connection count the profile ran. A column can only show one
@@ -2009,6 +2079,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       if(sk==='fw'){ var x=a.fw.toLowerCase(),y=b.fw.toLowerCase(); return x<y?-dir:x>y?dir:0; }
       if(sk==='score'){ return (a.score-b.score)*dir; }
       if(sk==='spec'){ return (specRatio(specOf(a.fw))-specRatio(specOf(b.fw)))*dir || (b.score-a.score); }
+      if(sk==='resil'){ return (resilAgg(a.fw)-resilAgg(b.fw))*dir || (b.score-a.score); }
       var av=(a.cells[sk]&&a.cells[sk].v)||0, bv=(b.cells[sk]&&b.cells[sk].v)||0;
       return (av-bv)*dir || (b.score-a.score);
     });
@@ -2029,6 +2100,13 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       + '<span class="pnav"><a class="pico" href="/docs/test-profiles/compliance/"'
       +   ' data-tip="'+esc('What the compliance suites test, the /spec route they run against, and how an entry subscribes to them.')+'"'
       +   ' aria-label="How the compliance score works">?</a></span></th>';
+    // Resilience, beside Spec: a standalone robustness read (adversarial-attack
+    // survival, H1 / H2 / WS), shown on every composite view since the
+    // measurement does not change with the board. Not part of the composite.
+    if(resilCol()) th+='<th class="num pcol resilh" data-k="resil" data-tip="'+esc(TIP.resil)+'">Resilience'+ar('resil')
+      + '<span class="pnav"><a class="pico" href="/docs/test-profiles/resilience/"'
+      +   ' data-tip="'+esc('What the resilience suite attacks, the box it runs the entry in, and how an entry opts in.')+'"'
+      +   ' aria-label="How the resilience score works">?</a></span></th>';
     pids.forEach(function(pid){
       var p=PROF[pid]; var ref=!scoredForType(pid, leagueType());
       var nav='<span class="pnav">'
@@ -2061,6 +2139,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
         +   '</span></td>'
         + '<td class="sticky scorec" title="'+esc(cmpTip(r))+'"><span class="sc"><b>'+r.score.toFixed(0)+cmpDelta(r)+'</b><span class="bar"><i style="width:'+Math.max(pct,2).toFixed(0)+'%;background:rgba('+c.rgb+','+(dark?0.55:0.42)+')"></i></span></span></td>';
       if(specSuite()) tr+=specCell(r.fw);
+      if(resilCol()) tr+=resilCell(r.fw);
       pids.forEach(function(pid){
         var cell=r.cells[pid];
         if(!cell){ tr+='<td class="num pc empty">·</td>'; return; }
@@ -2082,7 +2161,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       });
       return tr+'<td class="spacer"></td></tr>';
     }).join('');
-    var colspan=pids.length+4+(specSuite()?1:0);
+    var colspan=pids.length+4+(specSuite()?1:0)+(resilCol()?1:0);
     document.getElementById('rows').innerHTML='<div class="cscroll-row endonly" id="cscrollRowTop"><button class="cscroll-end" id="cscrollEndTop" type="button"></button></div><div class="cwrap" id="cwrap"><table class="cm'+(state.compactFw?' compact':'')+(state.heat?' heat':'')+'"><thead><tr>'+th+'</tr></thead><tbody>'+(body||'<tr><td colspan="'+colspan+'" class="empty">No frameworks match this filter.</td></tr>')+'</tbody></table></div><div class="cscroll-row" id="cscrollRow"><div class="cscroll" id="cscrollTop"><div></div></div><button class="cscroll-end" id="cscrollEnd" type="button"></button></div>';
     // The ? in the Composite header is a link out to the docs, not a sort
     // target - a click there must not also reorder the table behind the
