@@ -165,6 +165,85 @@ async fn echo_body(mut payload: web::Payload) -> HttpResponse {
         .body(body.freeze())
 }
 
+/// POST /parse — the resilience suite's parser-differential sink. Decompresses
+/// Content-Encoding (the decompression-bomb / codec-bypass target), then parses
+/// the body with a standard facility by content-type: JSON via serde_json (its
+/// recursion + number handling), urlencoded split into key/value pairs, multipart
+/// split on the boundary (per-part work). Anything else is just the buffered
+/// decompressed body. See site/content/docs/test-profiles/resilience/.
+async fn parse_body(req: HttpRequest, mut payload: web::Payload) -> HttpResponse {
+    use std::io::Read;
+    let mut raw = web::BytesMut::new();
+    while let Some(chunk) = payload.next().await {
+        match chunk {
+            Ok(data) => raw.extend_from_slice(&data),
+            Err(_) => return HttpResponse::BadRequest().finish(),
+        }
+    }
+    // Decompress the request body (unbounded, on purpose) so the parser sees the
+    // inflated form — what a decompression bomb targets.
+    let ce = req
+        .headers()
+        .get(header::CONTENT_ENCODING)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    let body: Vec<u8> = if ce.contains("gzip") {
+        let mut out = Vec::new();
+        if flate2::read::GzDecoder::new(&raw[..])
+            .read_to_end(&mut out)
+            .is_err()
+        {
+            return HttpResponse::BadRequest().finish();
+        }
+        out
+    } else if ce.contains("deflate") {
+        let mut out = Vec::new();
+        if flate2::read::ZlibDecoder::new(&raw[..])
+            .read_to_end(&mut out)
+            .is_err()
+        {
+            return HttpResponse::BadRequest().finish();
+        }
+        out
+    } else {
+        raw.to_vec()
+    };
+    let ct = req
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("")
+        .to_string();
+    if ct.contains("application/json") {
+        let _ = serde_json::from_slice::<serde_json::Value>(&body);
+    } else if ct.contains("application/x-www-form-urlencoded") {
+        let _pairs: Vec<(&[u8], &[u8])> = body
+            .split(|&b| b == b'&')
+            .map(|kv| match kv.iter().position(|&b| b == b'=') {
+                Some(i) => (&kv[..i], &kv[i + 1..]),
+                None => (kv, &kv[kv.len()..]),
+            })
+            .collect();
+    } else if ct.contains("multipart/form-data") {
+        if let Some(i) = ct.find("boundary=") {
+            let boundary = format!("--{}", ct[i + 9..].trim().trim_matches('"'));
+            let bb = boundary.as_bytes();
+            if bb.len() > 2 {
+                let _parts: Vec<usize> = body
+                    .windows(bb.len())
+                    .enumerate()
+                    .filter(|(_, w)| *w == bb)
+                    .map(|(j, _)| j)
+                    .collect();
+            }
+        }
+    }
+    HttpResponse::Ok()
+        .content_type(ContentType::plaintext())
+        .body("ok")
+}
+
 // /spec, the compliance route (site/content/docs/test-profiles/compliance/):
 // what Http11Probe and h2spec need from one route. GET answers a fixed body of
 // at least five bytes - h2spec skips a flow-control test below that - and HEAD
@@ -289,6 +368,7 @@ async fn main() -> io::Result<()> {
             .route("/baseline2", web::get().to(baseline2))
             .route("/pipeline", web::get().to(pipeline))
             .route("/echo", web::post().to(echo_body))
+            .route("/parse", web::post().to(parse_body))
             .service(
                 web::resource("/spec")
                     .route(web::get().to(spec_text))
