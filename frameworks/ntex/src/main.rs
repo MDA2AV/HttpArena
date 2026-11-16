@@ -1,11 +1,10 @@
 use std::path::Path;
 
-use ntex::http::header::{self, ContentEncoding};
+use ntex::http::header;
 use ntex::http::{self, HttpService};
 use ntex::server::LoadBalancing;
 use ntex::util::Bytes;
-use ntex::web::{self, App, HttpRequest, HttpResponse, middleware};
-use ntex_files::NamedFile;
+use ntex::web::{self, App, HttpResponse, middleware};
 use serde::{Deserialize, Serialize};
 
 mod db;
@@ -152,101 +151,6 @@ async fn baseline2(query: QueryParams) -> HttpResponse {
         .body(sum_query(&query).to_string())
 }
 
-/// Encodings acceptable to the client in preference order, best first.
-///
-/// Only the precompressed `br` and `gzip` siblings exist on disk; a coding
-/// with `q=0` is refused, and `br` wins ties.
-fn accepted_encodings(accept: &str) -> Vec<ContentEncoding> {
-    let (mut br, mut gzip, mut any) = (None, None, None);
-    for entry in accept.split(',') {
-        let mut parts = entry.split(';');
-        let coding = parts.next().unwrap_or("").trim();
-        let q = parts
-            .find_map(|p| p.trim().strip_prefix("q=").or(p.trim().strip_prefix("Q=")))
-            .map_or(Some(1.0), |q| q.trim().parse::<f32>().ok())
-            .unwrap_or(0.0);
-        if coding.eq_ignore_ascii_case("br") {
-            br = Some(q);
-        } else if coding.eq_ignore_ascii_case("gzip") || coding.eq_ignore_ascii_case("x-gzip") {
-            gzip = Some(q);
-        } else if coding == "*" {
-            any = Some(q);
-        }
-    }
-    let br = br.or(any).unwrap_or(0.0);
-    let gzip = gzip.or(any).unwrap_or(0.0);
-    let mut out = Vec::with_capacity(2);
-    for (q, encoding) in [(br, ContentEncoding::Br), (gzip, ContentEncoding::Gzip)] {
-        if q > 0.0 {
-            out.push((q, encoding));
-        }
-    }
-    out.sort_by(|a, b| b.0.total_cmp(&a.0));
-    out.into_iter().map(|(_, encoding)| encoding).collect()
-}
-
-/// Opens `path` as a regular file, typed and named after `original`.
-fn open_file(path: &Path, original: &Path) -> Option<NamedFile> {
-    let file = std::fs::File::open(path).ok()?;
-    if !file.metadata().ok()?.is_file() {
-        return None;
-    }
-    NamedFile::from_file(file, original).ok()
-}
-
-/// Serves `/static/{name}` straight from disk on every request. A `.br` or
-/// `.gz` sibling is sent when the client accepts it, with the original file's
-/// Content-Type and the matching Content-Encoding.
-async fn static_file(req: HttpRequest, dir: &Path) -> HttpResponse {
-    let name = req.match_info().get("name").unwrap_or_default();
-    if name.is_empty() || name.starts_with('.') || name.contains(['/', '\\']) {
-        return HttpResponse::NotFound().build();
-    }
-    let path = dir.join(name);
-    let accept = req
-        .headers()
-        .get(header::ACCEPT_ENCODING)
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
-
-    let mut selected = None;
-    for encoding in accepted_encodings(accept) {
-        let suffix = if encoding == ContentEncoding::Br {
-            "br"
-        } else {
-            "gz"
-        };
-        let mut variant = path.clone().into_os_string();
-        variant.push(".");
-        variant.push(suffix);
-        if let Some(file) = open_file(Path::new(&variant), &path) {
-            selected = Some((file, encoding));
-            break;
-        }
-    }
-    let (file, encoding) = match selected {
-        Some(selected) => selected,
-        None => match open_file(&path, &path) {
-            Some(file) => (file, ContentEncoding::Identity),
-            None => return HttpResponse::NotFound().build(),
-        },
-    };
-
-    let mut response = file.disable_content_disposition().into_response(&req);
-    let headers = response.headers_mut();
-    if encoding != ContentEncoding::Identity {
-        headers.insert(
-            header::CONTENT_ENCODING,
-            header::HeaderValue::from_static(encoding.as_str()),
-        );
-    }
-    headers.insert(
-        header::VARY,
-        header::HeaderValue::from_static("accept-encoding"),
-    );
-    response
-}
-
 fn routes(
     cfg: &mut web::ServiceConfig<()>,
     dataset: &'static [DatasetItem],
@@ -274,8 +178,9 @@ fn routes(
     .service(web::resource("/async-db").route(web::get().to(db::async_db)))
     .service(web::resource("/fortunes").route(web::get().to(fortunes::fortunes)))
     .service(
-        web::resource("/static/{name}")
-            .route(web::get().to(async move |req| static_file(req, static_dir).await)),
+        ntex_files::Files::new("/static", static_dir)
+            .try_compressed()
+            .disable_content_disposition(),
     )
     .service(web::resource("/delay/{ms}").route(web::get().to(delay)))
     .service(web::resource("/echo").route(web::post().to(echo_body)));
@@ -569,31 +474,6 @@ mod tests {
         }
     }
 
-    /// STATEMENT: `accepted_encodings` orders `br` and `gzip` by q-value and
-    /// drops refused codings.
-    ///
-    /// HOW:
-    /// - Parse headers covering ties, explicit q-values, `x-gzip`, `*`,
-    ///   `q=0`, malformed q-values and unsupported codings.
-    /// - Compare each result with the expected preference list.
-    #[test]
-    fn accept_encoding_preference() {
-        use ContentEncoding::{Br, Gzip};
-        for (accept, expected) in [
-            ("", vec![]),
-            ("identity, deflate", vec![]),
-            ("gzip, br", vec![Br, Gzip]),
-            ("gzip;q=1.0, br;q=0.5", vec![Gzip, Br]),
-            ("BR; Q=0.2, x-gzip;q=0.3", vec![Gzip, Br]),
-            ("br;q=0, gzip", vec![Gzip]),
-            ("*;q=0.5, gzip;q=0", vec![Br]),
-            ("*", vec![Br, Gzip]),
-            ("br;q=bogus, gzip", vec![Gzip]),
-        ] {
-            assert_eq!(accepted_encodings(accept), expected, "{accept}");
-        }
-    }
-
     /// STATEMENT: `/static/{name}` serves the best precompressed sibling with
     /// the original Content-Type, and falls back to the identity file.
     ///
@@ -654,9 +534,10 @@ mod tests {
     /// names that could escape the static directory.
     ///
     /// HOW:
-    /// - Request a missing file, a dot file, encoded traversal and encoded
-    ///   separators.
-    /// - Confirm every request is `404 Not Found`.
+    /// - Request a missing file, the parent directory, a dot file, encoded
+    ///   traversal and encoded separators.
+    /// - Confirm the missing file is `404 Not Found` and every other request
+    ///   is a client error.
     #[ntex::test]
     async fn static_files_reject_missing_and_traversal() {
         let app =
@@ -675,7 +556,11 @@ mod tests {
                 .call(TestRequest::get().uri(uri).to_request())
                 .await
                 .unwrap();
-            assert_eq!(response.status(), StatusCode::NOT_FOUND, "{uri}");
+            if uri == "/static/nonexistent.txt" {
+                assert_eq!(response.status(), StatusCode::NOT_FOUND, "{uri}");
+            } else {
+                assert!(response.status().is_client_error(), "{uri}");
+            }
         }
     }
 }

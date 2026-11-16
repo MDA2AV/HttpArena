@@ -154,9 +154,9 @@ dependencies = [
 
 [[package]]
 name = "bumpalo"
-version = "3.20.3"
+version = "3.20.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72f5acc6cb2ba439de613abc23857ec3d78374d8ed5ac84e9d11336e87da8649"
+checksum = "87a0cf66fd1eb2fb7b822cb78370d82303750809bc6ba855f3f58e517d3238db"
 
 [[package]]
 name = "bytes"
@@ -166,9 +166,9 @@ checksum = "fc652a48c352aef3ea3aed32080501cf3ef6ed5da78602a020c991775b0aff04"
 
 [[package]]
 name = "cc"
-version = "1.11.1"
+version = "1.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ff2a8126fff0f8c839080d619675a585e61720bb12d2baceae45769fd66f155"
+checksum = "33ef9e3e8154a45c7a95cff4c1299702106ad94062d7bb85fdc5d3a5afd91d45"
 dependencies = [
  "find-msvc-tools",
  "shlex",
@@ -699,9 +699,9 @@ dependencies = [
 
 [[package]]
 name = "ntex"
-version = "4.8.0"
+version = "4.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b74e8ef109f871d6e340323c5d7f3cd3f9ce7fb49c019c6af2f6140b85ee823f"
+checksum = "fe3dffe600524914d5efd8f9f33945aea1de163383c031a1aa37caa750599ef6"
 dependencies = [
  "atoi_simd",
  "base64",
@@ -744,9 +744,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-bytes"
-version = "1.15.2"
+version = "1.15.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c7dca6f1c7cd624f604a9369cdf1b6d677fd475b3cc891180c6b0ac5be7806fe"
+checksum = "51370a4d971de9bab09499022ac00f542a959efa2923ed661b9177c136ef97bb"
 dependencies = [
  "bytes",
  "serde",
@@ -829,18 +829,18 @@ dependencies = [
 
 [[package]]
 name = "ntex-httparse"
-version = "2.4.0"
+version = "2.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a0527d7a54b66d3b113584ae2a91d62ffc38f423608ec905a826c2de148b4da"
+checksum = "97cb46332c754436d816a71b875d6e4b85c5c5335b062bbc51e76528289e8196"
 dependencies = [
  "simdutf8",
 ]
 
 [[package]]
 name = "ntex-io"
-version = "4.7.2"
+version = "4.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "047f6657e6011f9a860041b8e7078b809ed0900ebe7277f4c65c0820bd3ba935"
+checksum = "03cd9f94ea536a520dd17afd7a2082174c9cecdaf768e0db67786de43c52d16a"
 dependencies = [
  "bitflags",
  "log",
@@ -878,9 +878,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-net"
-version = "4.12.0"
+version = "4.12.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3eac18d5d0c5d4eef3ad7ec1c5eae545c242ee1217164b52d286340db5b39657"
+checksum = "8a4154dd43684549dab3287fc8b8c1b018bf3edc595cb0201b0c07006bcaa310"
 dependencies = [
  "bitflags",
  "cfg-if",
@@ -931,9 +931,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-rt"
-version = "4.9.0"
+version = "4.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba3846d6025dd3e6850a393b9e3e1bac8728de3583be8d3459c88283f66c89d2"
+checksum = "8f1adf65507a381252efa093bd3a7ef80ac3015518c52ceaf667b8928aaf76ee"
 dependencies = [
  "async-channel",
  "atomic-waker",
@@ -958,9 +958,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-server"
-version = "4.6.0"
+version = "4.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "98f61727fc234e6effece5d90ab4d836d8319e2348db33a46a390c739e48ec03"
+checksum = "6a9385d4487cc1b12d9cc123eb0410ee53b8f1858f1ec3fed08c38542e98efa1"
 dependencies = [
  "async-channel",
  "event-listener",
@@ -982,12 +982,13 @@ dependencies = [
 
 [[package]]
 name = "ntex-service"
-version = "5.7.2"
+version = "5.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e99bc7500ca77591949f24f51415df866eea41af5be7d02a3e45831f71242b2"
+checksum = "afe94f666362995a02f6a77bbce5c6f2a1e9488287c3bb5d78257a0a1d65778d"
 dependencies = [
  "foldhash",
  "log",
+ "pin-project-lite",
  "slab",
 ]
 
@@ -1014,9 +1015,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-util"
-version = "4.10.0"
+version = "4.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d249db19373086e53a18b174cb5e966db2c77241e57b73f743656eafc1fe1f2"
+checksum = "1ccfbc525b3b9db6f5be352f75ceb42febf1234ab97b01e8d2fd85f37275cbec"
 dependencies = [
  "backoff",
  "bitflags",
