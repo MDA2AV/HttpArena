@@ -580,16 +580,49 @@ asio::awaitable<std::string> arena_json(std::shared_ptr<httppeer> peer)
 asio::awaitable<std::string> arena_static(std::shared_ptr<httppeer> peer)
 {
     const std::string filename = peer->get["filename"].to_string();
+    if (!safe_filename(filename))
+    {
+        peer->status(404);
+        peer->type("text/plain");
+        peer->output = "Not Found";
+        co_return "";
+    }
+
+    // The Accept-Encoding header decides whether compression is wanted at all:
+    // state.br / state.gzip are set only for codings the client accepts (q=0 is
+    // rejected upstream). Prefer brotli, then gzip; each twin is used only when
+    // the client accepts that coding AND the twin exists. Otherwise serve the
+    // identity file. Reading per request (no resident cache) keeps the validation
+    // suite's mid-run replacement visible and costs no q11 on the request path;
+    // binary assets (woff2/webp) ship no twin and stay identity.
+    std::string path = "/data/static/" + filename;
+    unsigned char enc = 0;
     struct stat st {};
     bool stat_ok = false;
-    if (safe_filename(filename))
+    if (peer->state.br)
     {
-        // stat + read on every request: the validation suite replaces a mounted
-        // file (same length, new bytes, possibly within the same mtime second)
-        // and expects the next response to carry the new bytes, so no resident
-        // body cache — a freshness stamp keyed on mtime/size cannot see that.
-        stat_ok = ::stat(("/data/static/" + filename).c_str(), &st) == 0 &&
-                  (st.st_mode & S_IFREG) != 0;
+        const std::string twin = path + ".br";
+        if (::stat(twin.c_str(), &st) == 0 && (st.st_mode & S_IFREG) != 0)
+        {
+            path    = twin;
+            enc     = 2;
+            stat_ok = true;
+        }
+    }
+    if (!stat_ok && peer->state.gzip)
+    {
+        const std::string twin = path + ".gz";
+        if (::stat(twin.c_str(), &st) == 0 && (st.st_mode & S_IFREG) != 0)
+        {
+            path    = twin;
+            enc     = 1;
+            stat_ok = true;
+        }
+    }
+    if (!stat_ok)
+    {
+        enc     = 0;
+        stat_ok = ::stat(path.c_str(), &st) == 0 && (st.st_mode & S_IFREG) != 0;
     }
     if (!stat_ok)
     {
@@ -599,10 +632,9 @@ asio::awaitable<std::string> arena_static(std::shared_ptr<httppeer> peer)
         co_return "";
     }
 
-    // Size the body once, then read straight into it: no per-byte iterator
-    // and no second copy. Short read (file shrank between stat and read):
-    // keep what arrived. A zero-size file is a valid body, not a miss.
-    std::ifstream in("/data/static/" + filename, std::ios::binary);
+    // Size the body once, then read straight into it. Short read (file shrank
+    // between stat and read): keep what arrived. A zero-size file is valid.
+    std::ifstream in(path, std::ios::binary);
     if (!in.is_open())
     {
         peer->status(404);
@@ -614,8 +646,14 @@ asio::awaitable<std::string> arena_static(std::shared_ptr<httppeer> peer)
     body.resize(static_cast<std::size_t>(st.st_size));
     in.read(&body[0], static_cast<std::streamsize>(st.st_size));
     body.resize(static_cast<std::size_t>(in.gcount()));
+
     peer->output = std::move(body);
+    // Content-Type stays the original asset type; Content-Encoding (from compress)
+    // carries the coding. compress=1/2 tells the send layer the body is already
+    // compressed so it does not compress again; 0 leaves it identity.
     peer->type(mime_of(filename));
+    peer->compress = enc;
+    peer->length(peer->output.size());
     co_return "";
 }
 
