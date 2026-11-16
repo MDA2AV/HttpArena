@@ -45,11 +45,94 @@ done
 
 # ── Knobs (all env-overridable) ──────────────────────────────────────────────
 RES_MEM="${RES_MEM:-4g}"             # the box the entry runs in
-# One physical core + its SMT sibling — a tight "2 hardware threads on 1 core" box,
-# read from the CPU topology. A blind "0-1" is wrong on CPUs whose thread siblings
-# aren't adjacent (e.g. 0,16): it would hand the server two SEPARATE physical cores,
-# twice the compute we intend. Override RES_CPUSET to pin a specific set.
-RES_CPUSET="${RES_CPUSET:-$(cat /sys/devices/system/cpu/cpu0/topology/thread_siblings_list 2>/dev/null || echo 0-1)}"
+# Server box + attack box, derived together from the CPU topology so they are
+# always disjoint, always a valid cpuset, and sane on a machine of ANY size.
+# Override RES_CPUSET / ATTACK_CPUS to pin a specific split.
+#   • Server: one physical core + its SMT sibling (cpu0's thread_siblings_list).
+#     A blind "0-1" is wrong on CPUs whose siblings aren't adjacent (e.g. 0,16) —
+#     that hands the server two SEPARATE physical cores, twice the compute we mean.
+#   • Attack client: every OTHER logical CPU, so it never shares a physical core
+#     with the (deliberately CPU-starved) server and keeps maximum firepower.
+#   • A no-SMT / SMT-off machine (common on ARM) reports cpu0's siblings as a bare
+#     "0"; it is emitted as "0-0", because framework_start rejects a bare "0" as
+#     the ambiguous --cpus count. A box too small to spare the client a core of its
+#     own (the server set already spans every CPU) pins the server to CPU 0 and
+#     gives the client the rest; a single-CPU box can't isolate at all, so the
+#     client shares CPU 0 with a warning. The bench host (≥32 cores) is unchanged:
+#     the server cpuset string it records is byte-for-byte what it was before.
+_res_cpu_split=$(RES_CPUSET="${RES_CPUSET:-}" ATTACK_CPUS="${ATTACK_CPUS:-}" python3 - <<'PY' 2>/dev/null || true
+import os
+
+def parse(s):
+    out = set()
+    for p in s.replace(" ", "").split(","):
+        if not p:
+            continue
+        if "-" in p:
+            a, b = p.split("-"); out.update(range(int(a), int(b) + 1))
+        else:
+            out.add(int(p))
+    return out
+
+def fmt(cpus):
+    # Compact a CPU set to cpuset-list syntax ("0,16" / "1-7" / "1-3,5"). A single
+    # CPU n -> "n-n", never a bare "n", so framework_start reads it as a cpuset and
+    # not as the ambiguous CPU *count* "0".
+    cpus = sorted(cpus)
+    runs = []; start = prev = cpus[0]
+    for c in cpus[1:]:
+        if c == prev + 1:
+            prev = c; continue
+        runs.append((start, prev)); start = prev = c
+    runs.append((start, prev))
+    return ",".join(str(a) if a == b and len(cpus) > 1 else f"{a}-{b}" for a, b in runs)
+
+ncpu = os.cpu_count() or 2
+allc = set(range(ncpu))
+
+raw = os.environ.get("RES_CPUSET", "").strip()
+if not raw:
+    try:
+        raw = open("/sys/devices/system/cpu/cpu0/topology/thread_siblings_list").read().strip()
+    except OSError:
+        raw = ""
+srv = (parse(raw) & allc) if raw else set()
+if not srv:
+    srv = {0, 1} & allc or {0}
+
+warn = 0
+rest = allc - srv
+if not rest:                 # server set already spans the machine → free CPU 0's peers
+    srv = {0}
+    rest = allc - srv
+if not rest:                 # one logical CPU only → no isolation is possible
+    rest = {0}
+    warn = 1
+
+# Keep an explicit/raw multi-CPU cpuset verbatim when it still fits, so a known-good
+# split (e.g. the bench host's "0,64") is recorded exactly as before.
+srv_str = raw if (raw and any(ch in raw for ch in "-,") and parse(raw) == srv) else fmt(srv)
+atk_env = os.environ.get("ATTACK_CPUS", "").strip()
+atk_str = atk_env if atk_env else fmt(rest)
+
+print(srv_str)
+print(atk_str)
+print(warn)
+PY
+)
+if [ -n "$_res_cpu_split" ]; then
+    RES_CPUSET=$(printf '%s\n' "$_res_cpu_split" | sed -n 1p)
+    ATTACK_CPUS=$(printf '%s\n' "$_res_cpu_split" | sed -n 2p)
+    if [ "$(printf '%s\n' "$_res_cpu_split" | sed -n 3p)" = "1" ]; then
+        warn "only $(nproc 2>/dev/null || echo '?') logical CPU(s): the attack client shares the server's core — resilience verdicts are indicative only on this box"
+    fi
+else
+    # python3 is a hard dependency elsewhere in this script, but never crash the
+    # run on the CPU split alone: fall back to the historical defaults.
+    RES_CPUSET="${RES_CPUSET:-0-1}"
+    ATTACK_CPUS="${ATTACK_CPUS:-$GCANNON_CPUS}"
+fi
+unset _res_cpu_split
 RES_DURATION="${RES_DURATION:-45}"   # max seconds per attack (verdicts are clear well inside this; an attack ends early if the server dies OR is clearly surviving)
 RES_MIN_DURATION="${RES_MIN_DURATION:-8}"  # never early-exit "clearly surviving" before this many seconds
 RES_SETTLE="${RES_SETTLE:-6}"        # ... and only once peak RSS has been flat (and liveness 100%) this long
@@ -89,21 +172,8 @@ RES_BIGNUM_DIGITS="${RES_BIGNUM_DIGITS:-100000}"    # digits in the JSON number 
 RES_WS_FRAME_LEN="${RES_WS_FRAME_LEN:-9223372036854775552}"  # declared WS frame length (ws-giant-frame)
 RES_WS_FRAG_SIZE="${RES_WS_FRAG_SIZE:-4096}"        # bytes per WS fragment (ws-fragment-bomb)
 RES_RECOVERY="${RES_RECOVERY:-15}"   # seconds to wait for the server to serve again
-# The attack client gets EVERY logical CPU except the server's core+sibling, so it
-# never shares a physical core with the (deliberately CPU-starved) server and has
-# maximum firepower. Derived from RES_CPUSET — GCANNON_CPUS (half the box) could
-# overlap the server's SMT sibling on a non-adjacent-sibling CPU.
-ATTACK_CPUS="${ATTACK_CPUS:-$(python3 -c '
-import os, sys
-srv = set()
-for p in sys.argv[1].replace(" ", "").split(","):
-    if "-" in p:
-        a, b = p.split("-"); srv.update(range(int(a), int(b) + 1))
-    elif p:
-        srv.add(int(p))
-rest = [c for c in range(os.cpu_count() or 2) if c not in srv]
-print(",".join(map(str, rest)) or "0")
-' "$RES_CPUSET" 2>/dev/null || echo "$GCANNON_CPUS")}"
+# ATTACK_CPUS (every logical CPU except the server's core+sibling) is derived
+# alongside RES_CPUSET at the top of this block.
 ATTACK_PY="$SCRIPT_DIR/resilience/attack.py"
 ATTACK_GO_DIR="$SCRIPT_DIR/resilience/attacker"
 ATTACK_GO_BIN="$ATTACK_GO_DIR/attacker"
@@ -222,7 +292,7 @@ else
 fi
 info "attacks: ${ATTACKS[*]}"
 build_go_attacker
-info "box: mem=$RES_MEM cpuset=$RES_CPUSET  duration=${RES_DURATION}s conns=$RES_CONNS"
+info "box: mem=$RES_MEM cpuset=$RES_CPUSET attack_cpus=$ATTACK_CPUS  duration=${RES_DURATION}s conns=$RES_CONNS"
 
 # ── Measurement helpers ──────────────────────────────────────────────────────
 
