@@ -1,4 +1,7 @@
-FROM maven:3.9-eclipse-temurin-26 AS build
+FROM eclipse-temurin:27-jdk AS build
+
+COPY --from=maven:3.9-eclipse-temurin-26 /usr/share/maven /usr/share/maven
+ENV PATH="/usr/share/maven/bin:${PATH}"
 
 WORKDIR /src
 COPY pom.xml ./
@@ -8,7 +11,7 @@ COPY src ./src
 RUN mvn -q -DskipTests package dependency:copy-dependencies \
     -DincludeScope=runtime -DoutputDirectory=/deps
 
-FROM eclipse-temurin:26-jre
+FROM eclipse-temurin:27-jre
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libssl3 \
