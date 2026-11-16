@@ -503,6 +503,20 @@
       "response": true
     }
   },
+  "doba": {
+    "dir": "doba",
+    "description": "A high-performance, transport- and protocol-agnostic C++20 server framework.",
+    "repo": "https://github.com/martianlabs/doba",
+    "type": "emerging",
+    "engine": "doba",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
+  },
   "dogrider": {
     "dir": "dogrider",
     "description": "GenHTTP websockets with zerg backend",
