@@ -5,7 +5,7 @@ description: "Medals on the leaderboard: top three of a family composite, of a l
 weight: 10
 ---
 
-An achievement is a medal for a top three place: **gold** for first, **silver** for second, **bronze** for third. Medals are shown next to the name on the composite board, in the panel that opens when you click a row, and in full on every framework page.
+An achievement is a medal for a top three place: **gold** for first, **silver** for second, **bronze** for third. Medals are shown in the panel that opens when you click a row on the board, and in full on every framework page.
 
 Nothing is scored again to award them. A medal is a place in a field the site already publishes, so a medal, a rank badge and the table you are looking at always say the same thing.
 
