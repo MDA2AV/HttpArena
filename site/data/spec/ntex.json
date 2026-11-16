@@ -1,0 +1,77 @@
+{
+  "framework": "ntex",
+  "dir": "ntex",
+  "suites": {
+    "h1": {
+      "tool": "http11probe",
+      "version": "d50d818",
+      "passed": 151,
+      "total": 159,
+      "warnings": 19,
+      "failed": [
+        {
+          "id": "COMP-HOST-WITH-USERINFO",
+          "test": "Host header with userinfo (user@host) must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a73.2",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-HOST-WITH-PATH",
+          "test": "Host header with path component must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a73.2",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-OPTIONS-STAR",
+          "test": "OPTIONS * is the only valid asterisk-form request",
+          "expected": "2xx or 405; close/timeout = warn",
+          "got": "404, connection left open",
+          "rfc": "RFC 9112 \u00a73.2.4",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-METHOD-CONNECT",
+          "test": "CONNECT to an origin server must be rejected",
+          "expected": "400/405/501 or close",
+          "got": "404, connection closed",
+          "rfc": "RFC 9110 \u00a79.3.6",
+          "level": "Should"
+        },
+        {
+          "id": "SMUG-MULTIPLE-HOST-COMMA",
+          "test": "Host header with comma-separated values must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9110 \u00a77.2",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-INCOMPLETE-REQUEST",
+          "test": "Partial HTTP request \u2014 request-line and headers but no final CRLF",
+          "expected": "400/close/timeout",
+          "got": "408, connection closed",
+          "level": "NotApplicable"
+        },
+        {
+          "id": "MAL-EMPTY-REQUEST",
+          "test": "Zero bytes \u2014 TCP connection established without sending any data",
+          "expected": "400/close/timeout",
+          "got": "408, connection closed",
+          "level": "NotApplicable"
+        },
+        {
+          "id": "WS-UPGRADE-POST",
+          "test": "WebSocket upgrade via POST must not be accepted",
+          "expected": "!101",
+          "got": "no response, timed out",
+          "rfc": "RFC 6455 \u00a74.1",
+          "level": "Must"
+        }
+      ]
+    }
+  }
+}

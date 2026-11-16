@@ -1,0 +1,226 @@
+{
+  "framework": "ntex",
+  "dir": "ntex-h2",
+  "suites": {
+    "h2": {
+      "tool": "h2spec",
+      "version": "2.6.0",
+      "passed": 135,
+      "total": 146,
+      "failed": [
+        {
+          "id": "http2/5.1/2",
+          "test": "idle: Sends a RST_STREAM frame",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/5.1/5",
+          "test": "half closed (remote): Sends a DATA frame",
+          "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/5.1/6",
+          "test": "half closed (remote): Sends a HEADERS frame",
+          "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/5.1/11",
+          "test": "closed: Sends a DATA frame",
+          "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/5.1/12",
+          "test": "closed: Sends a HEADERS frame",
+          "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/5.3.1/2",
+          "test": "Sends PRIORITY frame that depend on itself",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/6.1/2",
+          "test": "Sends a DATA frame on the stream that is not in \"open\" or \"half-closed (local)\" state",
+          "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+          "got": "HEADERS Frame (length:47, flags:0x05, stream_id:1)"
+        },
+        {
+          "id": "http2/6.3/2",
+          "test": "Sends a PRIORITY frame with a length other than 5 octets",
+          "expected": "GOAWAY Frame (Error Code: FRAME_SIZE_ERROR) or RST_STREAM Frame (Error Code: FRAME_SIZE_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/6.4/2",
+          "test": "Sends a RST_STREAM frame on a idle stream",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/6.9/2",
+          "test": "Sends a WINDOW_UPDATE frame with a flow control window increment of 0 on a stream",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/6.9.1/3",
+          "test": "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1 on a stream",
+          "expected": "RST_STREAM Frame (Error Code: FLOW_CONTROL_ERROR)",
+          "got": "RST_STREAM Frame (length:4, flags:0x00, stream_id:1)"
+        }
+      ],
+      "listeners": {
+        "tls": {
+          "passed": 135,
+          "total": 146,
+          "failed": [
+            {
+              "id": "http2/5.1/2",
+              "test": "idle: Sends a RST_STREAM frame",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/5.1/5",
+              "test": "half closed (remote): Sends a DATA frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1/6",
+              "test": "half closed (remote): Sends a HEADERS frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1/11",
+              "test": "closed: Sends a DATA frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/5.1/12",
+              "test": "closed: Sends a HEADERS frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/5.3.1/2",
+              "test": "Sends PRIORITY frame that depend on itself",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.1/2",
+              "test": "Sends a DATA frame on the stream that is not in \"open\" or \"half-closed (local)\" state",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "HEADERS Frame (length:47, flags:0x05, stream_id:1)"
+            },
+            {
+              "id": "http2/6.3/2",
+              "test": "Sends a PRIORITY frame with a length other than 5 octets",
+              "expected": "GOAWAY Frame (Error Code: FRAME_SIZE_ERROR) or RST_STREAM Frame (Error Code: FRAME_SIZE_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/6.4/2",
+              "test": "Sends a RST_STREAM frame on a idle stream",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.9/2",
+              "test": "Sends a WINDOW_UPDATE frame with a flow control window increment of 0 on a stream",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/6.9.1/3",
+              "test": "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1 on a stream",
+              "expected": "RST_STREAM Frame (Error Code: FLOW_CONTROL_ERROR)",
+              "got": "RST_STREAM Frame (length:4, flags:0x00, stream_id:1)"
+            }
+          ]
+        },
+        "h2c": {
+          "passed": 135,
+          "total": 146,
+          "failed": [
+            {
+              "id": "http2/5.1/2",
+              "test": "idle: Sends a RST_STREAM frame",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/5.1/5",
+              "test": "half closed (remote): Sends a DATA frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1/6",
+              "test": "half closed (remote): Sends a HEADERS frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1/11",
+              "test": "closed: Sends a DATA frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/5.1/12",
+              "test": "closed: Sends a HEADERS frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/5.3.1/2",
+              "test": "Sends PRIORITY frame that depend on itself",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.1/2",
+              "test": "Sends a DATA frame on the stream that is not in \"open\" or \"half-closed (local)\" state",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "HEADERS Frame (length:47, flags:0x05, stream_id:1)"
+            },
+            {
+              "id": "http2/6.3/2",
+              "test": "Sends a PRIORITY frame with a length other than 5 octets",
+              "expected": "GOAWAY Frame (Error Code: FRAME_SIZE_ERROR) or RST_STREAM Frame (Error Code: FRAME_SIZE_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/6.4/2",
+              "test": "Sends a RST_STREAM frame on a idle stream",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.9/2",
+              "test": "Sends a WINDOW_UPDATE frame with a flow control window increment of 0 on a stream",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/6.9.1/3",
+              "test": "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1 on a stream",
+              "expected": "RST_STREAM Frame (Error Code: FLOW_CONTROL_ERROR)",
+              "got": "RST_STREAM Frame (length:4, flags:0x00, stream_id:1)"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
