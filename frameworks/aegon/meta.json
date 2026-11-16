@@ -10,7 +10,7 @@
     "request": true,
     "response": true
   },
-  "description": "Linux-native C++26 asynchronous web framework powered by io_uring multishot primitives, coroutines, stepped SIMD vectorization, Glaze JSON serialization, and native zero-overhead gRPC over HTTP/2 with kTLS TX offload.",
+  "description": "Linux-native C++26 asynchronous web framework on io_uring: one event loop per core with multishot accept and recv over provided buffer rings, requests parsed in place from the receive buffer, coroutine handlers with userspace timers, Glaze JSON serialization, and gzip/deflate (libdeflate) and brotli compression middleware. Static files are served from a per-worker cache that follows the disk through inotify, with precompressed .br/.gz variants. TLS 1.3 through OpenSSL with a zero-copy connection BIO and ALPN; HTTP/2 and HTTP/3 (QUIC) with pooled streams; WebSocket; native gRPC over HTTP/2.",
   "repo": "https://github.com/UdayKhare09/Aegon",
   "enabled": true,
   "tests": [
