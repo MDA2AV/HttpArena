@@ -13,6 +13,8 @@
   "description": "JetBrains Ktor 3.x on Netty with Ghost Serializer, JDK 25.",
   "repo": "https://github.com/ktorio/ktor",
   "enabled": true,
+  "resilience": true,
+  "spec": ["h1", "h2", "h3"],
   "tests": [
     "baseline", "async", "latency-1m", "latency-10k", "latency-500k-8cpu",
     "limited-conn",

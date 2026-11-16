@@ -1,30 +1,29 @@
 package com.httparena
 
+import com.ghost.serialization.Ghost
 import com.httparena.DbResponse.Companion.toResponse
 import io.ktor.http.*
 import io.ktor.http.content.*
-import com.ghost.serialization.Ghost
-import io.ktor.http.content.ByteArrayContent
-import io.ktor.server.request.receive
+import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.html.*
 import io.ktor.server.http.content.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.compression.*
-import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.utils.io.*
-import io.netty.channel.ChannelOption
-import io.netty.channel.WriteBufferWaterMark
-import io.netty.handler.flush.FlushConsolidationHandler
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlinx.html.*
+import kotlinx.serialization.json.JsonElement
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.between
 import org.jetbrains.exposed.v1.core.eq
@@ -325,6 +324,62 @@ private fun Application.configureRouting(appData: ArenaApplicationDeps) {
             val delayParam = call.parameters["ms"] ?: "0"
             delay(delayParam.toLong().milliseconds)
             call.respond(TextContent(delayParam, ContentType.Text.Plain))
+        }
+
+        /**
+         * Parses the JSON body and responds with 200.
+         * https://http-arena.com/docs/test-profiles/resilience/
+         *
+         * Ghost doesn't have a generic element so we use `kotlinx.serialization` instead here.
+         */
+        route("/parse") {
+            install(ContentNegotiation) {
+                json(appData.json)
+            }
+            post {
+                try {
+                    call.receive<JsonElement>() // parses the payload
+                    call.respond(HttpStatusCode.OK)
+                } catch (_: Exception) {
+                    ensureActive()
+                    call.respond(HttpStatusCode.BadRequest)
+                }
+            }
+        }
+
+        /**
+         * Endpoints used in the compliance testing.
+         * https://http-arena.com/docs/test-profiles/compliance/implementation/
+         */
+        route("/spec") {
+            val specBody = ByteArrayContent("spec ok".toByteArray(), ContentType.Text.Plain)
+
+            get { call.respond(specBody) }
+            head { call.respond(specBody) }
+            options {
+                call.receiveChannel().discard()
+                call.response.headers.append(HttpHeaders.Allow, "GET, HEAD, POST, OPTIONS")
+                call.respond(HttpStatusCode.OK)
+            }
+            post {
+                val body = call.receive<ByteArray>()
+                call.respond(ByteArrayContent(body, ContentType.Application.OctetStream))
+            }
+
+            suspend fun ApplicationCall.respondHeaders() {
+                receiveChannel().discard()
+                val text = buildString {
+                    request.headers.forEach { name, values ->
+                        values.forEach { append(name).append(": ").append(it).append('\n') }
+                    }
+                }
+                respond(TextContent(text, ContentType.Text.Plain))
+            }
+
+            route("/headers") {
+                get { call.respondHeaders() }
+                post { call.respondHeaders() }
+            }
         }
 
     }
