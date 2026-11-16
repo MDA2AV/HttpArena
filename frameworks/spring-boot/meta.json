@@ -13,6 +13,7 @@
   "description": "Spring Boot with embedded Tomcat on JDK 25 with virtual threads.",
   "repo": "https://github.com/spring-projects/spring-boot",
   "enabled": true,
+  "resilience": true,
   "tests": [
     "baseline", "async", "latency-1m", "latency-10k", "latency-500k-8cpu",
     "limited-conn",
