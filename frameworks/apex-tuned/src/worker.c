@@ -7,6 +7,7 @@
 #include "listener.h"
 #include "response_builder.h"
 #include "router.h"
+#include "static_files.h"
 #include "timer.h"
 
 #include <errno.h>
@@ -137,6 +138,74 @@ static inline size_t append_pipeline_responses(char *destination_buffer, size_t 
     return (size_t)(cursor - destination_buffer);
 }
 
+static inline bool parse_json_gzip_request_fast(const char *buffer, size_t buffer_length,
+                                                size_t *out_consumed_bytes, size_t *out_item_count,
+                                                int64_t *out_multiplier) {
+    static const char request_prefix[] = "GET /json/";
+    static const char request_line_suffix[] = " HTTP/1.1\r\n";
+    if (buffer_length < sizeof(request_prefix) - 1 + sizeof(request_line_suffix) - 1 + 8 ||
+        memcmp(buffer, request_prefix, sizeof(request_prefix) - 1) != 0) {
+        return false;
+    }
+
+    const char *buffer_end = buffer + buffer_length;
+    const char *cursor = buffer + sizeof(request_prefix) - 1;
+    size_t item_count = 0;
+    size_t count_digits = 0;
+    while (cursor < buffer_end && count_digits < 2 && (unsigned int)(unsigned char)(*cursor - '0') <= 9) {
+        item_count = item_count * 10 + (size_t)(*cursor - '0');
+        cursor++;
+        count_digits++;
+    }
+    if (count_digits == 0 || item_count == 0 || item_count > 50 || (size_t)(buffer_end - cursor) < 4 ||
+        cursor[0] != '?' || cursor[1] != 'm' || cursor[2] != '=' ||
+        (unsigned int)(unsigned char)(cursor[3] - '0') > 9) {
+        return false;
+    }
+
+    int64_t multiplier = cursor[3] - '0';
+    cursor += 4;
+    if ((size_t)(buffer_end - cursor) < sizeof(request_line_suffix) - 1 ||
+        memcmp(cursor, request_line_suffix, sizeof(request_line_suffix) - 1) != 0) {
+        return false;
+    }
+
+    const char *header_cursor = cursor + sizeof(request_line_suffix) - 1;
+    const char *header_end = memmem(header_cursor, (size_t)(buffer_end - header_cursor), "\r\n\r\n", 4);
+    if (!header_end) {
+        return false;
+    }
+
+    bool accepts_gzip = false;
+    while (header_cursor < header_end) {
+        const char *line_end = memmem(header_cursor, (size_t)(header_end + 2 - header_cursor), "\r\n", 2);
+        if (!line_end) {
+            return false;
+        }
+        size_t line_length = (size_t)(line_end - header_cursor);
+        if (line_length >= 16 && memcmp(header_cursor, "Accept-Encoding:", 16) == 0) {
+            const char *value = header_cursor + 16;
+            while (value < line_end && (*value == ' ' || *value == '\t')) {
+                value++;
+            }
+            accepts_gzip = memmem(value, (size_t)(line_end - value), "gzip", 4) != NULL;
+        } else if ((line_length >= 11 && memcmp(header_cursor, "Connection:", 11) == 0) ||
+                   (line_length >= 15 && memcmp(header_cursor, "Content-Length:", 15) == 0) ||
+                   (line_length >= 18 && memcmp(header_cursor, "Transfer-Encoding:", 18) == 0)) {
+            return false;
+        }
+        header_cursor = line_end + 2;
+    }
+
+    if (!accepts_gzip) {
+        return false;
+    }
+    *out_consumed_bytes = (size_t)(header_end + 4 - buffer);
+    *out_item_count = item_count;
+    *out_multiplier = multiplier;
+    return true;
+}
+
 int worker_init(worker_t *worker, int id, int cpu_id, SSL_CTX *ssl_ctx, SSL_CTX *ssl_ctx_h2, int port_h1, int port_tls,
                 int port_h2c, int port_h2) {
     memset(worker, 0, sizeof(*worker));
@@ -244,6 +313,34 @@ void process_requests(worker_t *worker, conn_t *connection) {
             continue;
         }
 
+        size_t json_consumed_bytes;
+        size_t json_item_count;
+        int64_t json_multiplier;
+        if (__builtin_expect(parse_json_gzip_request_fast(request_buffer, request_buffer_length,
+                                                          &json_consumed_bytes, &json_item_count,
+                                                          &json_multiplier),
+                             0)) {
+            const char *response_start = NULL;
+            size_t response_length =
+                json_gzip_cached_http1_response(json_item_count, json_multiplier, &response_start);
+            if (response_length > 0) {
+                if (write_pos > 0) {
+                    flush_data(worker, connection, worker->write_buf, write_pos);
+                    write_pos = 0;
+                    if (connection->fd < 0) {
+                        return;
+                    }
+                }
+                read_offset += json_consumed_bytes;
+                connection->keep_alive = true;
+                flush_data(worker, connection, response_start, response_length);
+                if (connection->fd < 0) {
+                    break;
+                }
+                continue;
+            }
+        }
+
         request_t request;
         size_t consumed_bytes = 0;
         int parse_status = parse_http_request(request_buffer, request_buffer_length, &request, worker->chunk_buf,
@@ -333,6 +430,29 @@ void process_requests(worker_t *worker, conn_t *connection) {
             continue;
         }
 
+        if (__builtin_expect(request.method == HTTP_METHOD_GET && request.keep_alive && request.path.len > 8 &&
+                                 memcmp(request.path.ptr, "/static/", 8) == 0,
+                             0)) {
+            const char *response_start = NULL;
+            size_t response_length = static_cached_http1_response(&request, &response_start);
+            if (response_length > 0) {
+                if (write_pos > 0) {
+                    flush_data(worker, connection, worker->write_buf, write_pos);
+                    write_pos = 0;
+                    if (connection->fd < 0) {
+                        return;
+                    }
+                }
+
+                read_offset += consumed_bytes;
+                flush_data(worker, connection, response_start, response_length);
+                if (connection->fd < 0) {
+                    break;
+                }
+                continue;
+            }
+        }
+
         response_t response;
         res_init(&response, connection->keep_alive);
 
@@ -405,10 +525,13 @@ void *worker_thread_main(void *thread_argument) {
     prctl(PR_SET_TIMERSLACK, 1UL, 0, 0, 0);
 #endif
 
-    cpu_set_t cpu_set;
-    CPU_ZERO(&cpu_set);
-    CPU_SET(worker->cpu_id, &cpu_set);
-    pthread_setaffinity_np(pthread_self(), sizeof(cpu_set), &cpu_set);
+    const char *pin_cpus = getenv("APEX_PIN_CPUS");
+    if (pin_cpus && pin_cpus[0] != '\0' && pin_cpus[0] != '0') {
+        cpu_set_t cpu_set;
+        CPU_ZERO(&cpu_set);
+        CPU_SET(worker->cpu_id, &cpu_set);
+        pthread_setaffinity_np(pthread_self(), sizeof(cpu_set), &cpu_set);
+    }
 
     buffer_pool_init(&worker->buffer_pool, BUFFER_POOL_DEFAULT_CAPACITY);
     register_application_routes(worker);
@@ -597,6 +720,11 @@ void *worker_thread_main(void *thread_argument) {
                                 close_conn(worker, connection);
                             }
                             break;
+                        }
+                    }
+                    if (connection->fd >= 0 && !h2_connection_drain_send(connection, worker)) {
+                        if (connection->fd >= 0) {
+                            close_conn(worker, connection);
                         }
                     }
                     continue;

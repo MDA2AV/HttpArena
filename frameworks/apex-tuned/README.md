@@ -4,7 +4,7 @@ High-performance HTTP/1.1 framework in C23 designed for many-core NUMA architect
 
 ## Architecture
 
-- **Runtime**: Thread-per-core shared-nothing event loop using Linux `epoll`. Workers pin to dedicated CPUs via `pthread_setaffinity_np` with per-worker `SO_REUSEPORT` listeners on ports 8080 and 8081.
+- **Runtime**: Thread-per-core shared-nothing event loop using Linux `epoll` with per-worker `SO_REUSEPORT` listeners. Workers use kernel scheduling by default for co-located loads; `APEX_PIN_CPUS=1` enables dedicated CPU pinning.
 - **Memory**: Slab-allocated connection contexts and pre-sized I/O rings. Zero dynamic allocations in the request-response path.
 - **Parser**: Streaming state-machine HTTP/1.1 parser resilient to byte-level TCP fragmentation, supporting pipelining, chunked transfer decoding, and lower-cased header variants.
 - **Routing & Middleware**: Trie router with route parameter extraction (`:ms`, `:count`) and query string slicing; middleware chain for compression negotiation.

@@ -40,12 +40,8 @@ void conn_list_remove(worker_t *worker, conn_t *connection) {
 }
 
 void conn_touch(worker_t *worker, conn_t *connection, uint64_t current_time_ms) {
+    (void)worker;
     connection->last_active_ms = current_time_ms;
-    if (connection == worker->active_tail) {
-        return;
-    }
-    conn_list_remove(worker, connection);
-    conn_list_insert_tail(worker, connection);
 }
 
 conn_t *alloc_conn(worker_t *worker, int client_fd, bool is_tls, SSL *ssl_session) {
@@ -224,11 +220,9 @@ void trim_inactive_connections(worker_t *worker, uint64_t current_time_ms) {
             continue;
         }
 
-        if (current_time_ms - curr->last_active_ms < IDLE_TIMEOUT_MS) {
-            break;
+        if (current_time_ms - curr->last_active_ms >= IDLE_TIMEOUT_MS) {
+            close_conn(worker, curr);
         }
-
-        close_conn(worker, curr);
         curr = next;
     }
 

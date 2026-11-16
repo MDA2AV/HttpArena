@@ -94,7 +94,7 @@ bool router_dispatch(const router_t *router, request_t *request, response_t *res
                                  .res = response,
                                  .user_data = user_data,
                                  .async_parked = false,
-                                 .middlewares = (middleware_fn_t *)router->middlewares,
+                                  .middlewares = router->middlewares,
                                  .num_middlewares = router->num_middlewares,
                                  .mw_index = 0,
                                  .handler = router->routes[route_index].handler};

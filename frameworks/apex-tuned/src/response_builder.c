@@ -241,13 +241,13 @@ size_t format_plain_text_baseline_response(char *destination_buffer, int64_t acc
                                             bool *out_closing) {
     if (__builtin_expect(keep_alive, 1)) {
         static const char header_keep_alive[] =
-            "HTTP/1.1 200 OK\r\nContent-Type:text/plain\r\nContent-Length:";
+            "HTTP/1.1 200 \r\nContent-Type:text/plain\r\nContent-Length:";
         return format_baseline_response_payload(destination_buffer, header_keep_alive,
                                                 sizeof(header_keep_alive) - 1, accumulated_sum);
     }
 
     static const char header_close[] =
-        "HTTP/1.1 200 OK\r\nContent-Type:text/plain\r\nConnection:close\r\nContent-Length:";
+        "HTTP/1.1 200 \r\nContent-Type:text/plain\r\nConnection:close\r\nContent-Length:";
     if (out_closing) {
         *out_closing = true;
     }

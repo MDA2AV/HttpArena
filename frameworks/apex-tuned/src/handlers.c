@@ -182,10 +182,20 @@ void json_handler(context_t *context) {
     int64_t multiplier = 1;
     parse_json_request_parameters(request, &item_count, &multiplier);
 
+    bool accepts_gzip = json_accepts_gzip(request);
+    if (!accepts_gzip) {
+        const char *cached_payload = NULL;
+        size_t cached_payload_length = json_cached_payload(item_count, multiplier, &cached_payload);
+        if (cached_payload_length > 0) {
+            res_set_json(response, cached_payload, cached_payload_length);
+            response->content_encoding = NULL;
+            return;
+        }
+    }
+
     size_t json_length = json_serialize(item_count, multiplier, worker->compress.json_buf,
                                         sizeof(worker->compress.json_buf));
-
-    if (json_accepts_gzip(request)) {
+    if (accepts_gzip) {
         size_t compressed_length = 0;
         if (compress_gzip(&worker->compress, worker->compress.json_buf, json_length, worker->compress.comp_buf,
                           sizeof(worker->compress.comp_buf), &compressed_length) == 0) {
@@ -218,10 +228,27 @@ size_t format_json_http1_response(const request_t *request, worker_t *worker, ch
     int64_t multiplier;
     parse_json_request_parameters(request, &item_count, &multiplier);
 
+    bool accepts_gzip = json_accepts_gzip(request);
+    if (!accepts_gzip && request->keep_alive) {
+        size_t response_length =
+            json_cached_http1_response(item_count, multiplier, out_response_start);
+        if (response_length > 0) {
+            return response_length;
+        }
+    }
+    if (accepts_gzip && request->keep_alive) {
+        size_t response_length = json_gzip_http1_response(&worker->compress, item_count, multiplier,
+                                                          destination_buffer, max_destination_size,
+                                                          out_response_start);
+        if (response_length > 0) {
+            return response_length;
+        }
+    }
+
     char *body_start = destination_buffer + JSON_HEADER_RESERVE;
     size_t body_capacity = max_destination_size - JSON_HEADER_RESERVE;
     size_t body_length;
-    bool use_gzip = json_accepts_gzip(request);
+    bool use_gzip = accepts_gzip;
     if (use_gzip) {
         size_t json_length = json_serialize(item_count, multiplier, worker->compress.json_buf,
                                             sizeof(worker->compress.json_buf));
@@ -286,9 +313,10 @@ void echo_handler(context_t *context) {
     res_set_binary(response, request->body.ptr, request->body.len, "application/octet-stream");
 }
 
-void handle_timer_expiration(worker_t *worker, conn_t *connection, int64_t delay_milliseconds) {
+void handle_timer_expiration(worker_t *worker, conn_t *connection, int64_t delay_milliseconds,
+                             uint64_t current_time_ms) {
     connection->parked_in_timer = false;
-    conn_touch(worker, connection, clock_monotonic_ms());
+    conn_touch(worker, connection, current_time_ms);
 
     static const char response_delay_10[] = "HTTP/1.1 200 OK\r\n"
                                             "Content-Type: text/plain\r\n"

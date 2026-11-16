@@ -15,7 +15,7 @@ OPT_FLAGS = -O3 -march=native -mtune=native -flto=auto \
 
 CFLAGS ?= $(OPT_FLAGS) $(WARN_FLAGS) -std=gnu2x -MMD -MP
 LDFLAGS ?= -flto=auto -Wl,--gc-sections -Wl,-O3 -Wl,--as-needed -Wl,-z,now -Wl,-z,relro -s
-LIBS = -lssl -lcrypto -lbrotlienc -lbrotlicommon -lz -lcjson -lpthread -lnghttp2
+LIBS = -lssl -lcrypto -lbrotlienc -lbrotlicommon -lisal -ldeflate -lz -lcjson -lpthread -lnghttp2
 
 SRCS = src/main.c \
        src/buffer_pool.c \
