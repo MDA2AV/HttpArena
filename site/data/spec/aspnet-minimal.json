@@ -1,0 +1,426 @@
+{
+  "framework": "aspnet-minimal",
+  "dir": "aspnet-minimal",
+  "suites": {
+    "h1": {
+      "tool": "http11probe",
+      "version": "d50d818",
+      "passed": 133,
+      "total": 159,
+      "warnings": 22,
+      "failed": [
+        {
+          "id": "RFC9112-5-INVALID-HEADER-NAME",
+          "test": "Header name with invalid characters (brackets) must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a75",
+          "level": "Must"
+        },
+        {
+          "id": "RFC9112-6.1-CL-PLUS-SIGN",
+          "test": "Content-Length with plus sign must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a76.1",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-ASTERISK-WITH-GET",
+          "test": "Asterisk-form (*) request-target with GET must be rejected",
+          "expected": "400, close, or timeout = warn",
+          "got": "405, connection closed",
+          "rfc": "RFC 9112 \u00a73.2.4",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-OPTIONS-STAR",
+          "test": "OPTIONS * is the only valid asterisk-form request",
+          "expected": "2xx or 405; close/timeout = warn",
+          "got": "404, connection left open",
+          "rfc": "RFC 9112 \u00a73.2.4",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-METHOD-CONNECT",
+          "test": "CONNECT to an origin server must be rejected",
+          "expected": "400/405/501 or close",
+          "got": "404, connection left open",
+          "rfc": "RFC 9110 \u00a79.3.6",
+          "level": "Should"
+        },
+        {
+          "id": "COMP-HOST-EMPTY-VALUE",
+          "test": "Empty Host header value must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a73.2",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-VERSION-CASE",
+          "test": "HTTP version is case-sensitive \u2014 lowercase 'http' must be rejected",
+          "expected": "400, close, or timeout = warn",
+          "got": "505, connection closed",
+          "rfc": "RFC 9112 \u00a72.3",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-BARE-SEMICOLON",
+          "test": "Chunk size with bare semicolon and no extension name must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-EXT-INVALID-TOKEN",
+          "test": "Chunk extension with invalid token character must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-EXT-CTRL",
+          "test": "NUL byte in chunk extension must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-LF-TRAILER",
+          "test": "Bare LF in chunked trailer termination \u2014 server MAY accept bare LF per RFC 9112 \u00a72.2",
+          "expected": "400 or 2xx",
+          "got": "no response, timed out",
+          "rfc": "RFC 9112 \u00a77.1",
+          "level": "May"
+        },
+        {
+          "id": "SMUG-CL-NEGATIVE-ZERO",
+          "test": "Content-Length: -0 must be rejected \u2014 not valid 1*DIGIT",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9110 \u00a78.6",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CLTE-CONN-CLOSE",
+          "test": "CL+TE conflict \u2014 server MUST close connection after responding",
+          "expected": "400, or 2xx + close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a76.1",
+          "level": "Must",
+          "note": "Accepted with 200 but kept connection open \u2014 follow-up GET returned 200"
+        },
+        {
+          "id": "SMUG-TECL-CONN-CLOSE",
+          "test": "TE+CL conflict (reversed order) \u2014 server MUST close connection after responding",
+          "expected": "400, or 2xx + close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a76.1",
+          "level": "Must",
+          "note": "Accepted with 200 but kept connection open \u2014 follow-up GET returned 200"
+        },
+        {
+          "id": "SMUG-CLTE-DESYNC",
+          "test": "CL.TE desync \u2014 leftover bytes after the body boundary may be interpreted as the next request",
+          "expected": "400, or close",
+          "got": "405, connection left open",
+          "rfc": "RFC 9112 \u00a76.1",
+          "level": "Must",
+          "note": "Accepted with 200, kept connection open \u2014 follow-up GET returned 405"
+        },
+        {
+          "id": "SMUG-CLTE-SMUGGLED-GET",
+          "test": "CL.TE desync \u2014 embedded GET in body; multiple responses indicate request boundary confusion",
+          "expected": "400, or close (no extra response)",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a76.1",
+          "level": "Must",
+          "note": "MULTIPLE RESPONSES: observed 2 HTTP status lines (embedded GET likely executed)"
+        },
+        {
+          "id": "SMUG-CLTE-SMUGGLED-GET-CL-PLUS",
+          "test": "CL.TE desync with malformed Content-Length (+N) \u2014 multiple responses indicate request boundary confusion",
+          "expected": "400, or close (no extra response)",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a76.1",
+          "level": "Must",
+          "note": "MULTIPLE RESPONSES: observed 2 HTTP status lines (embedded GET likely executed)"
+        },
+        {
+          "id": "SMUG-CLTE-SMUGGLED-HEAD",
+          "test": "CL.TE desync \u2014 embedded HEAD in body; multiple responses indicate request boundary confusion",
+          "expected": "400, or close (no extra response)",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a76.1",
+          "level": "Must",
+          "note": "MULTIPLE RESPONSES: observed 2 HTTP status lines (embedded HEAD likely executed)"
+        },
+        {
+          "id": "SMUG-CLTE-SMUGGLED-GET-TE-TRAILING-SPACE",
+          "test": "CL.TE desync with TE trailing space \u2014 multiple responses indicate request boundary confusion",
+          "expected": "400, or close (no extra response)",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a76.1",
+          "level": "Must",
+          "note": "MULTIPLE RESPONSES: observed 2 HTTP status lines (embedded GET likely executed)"
+        },
+        {
+          "id": "SMUG-CLTE-SMUGGLED-GET-TE-LEADING-COMMA",
+          "test": "CL.TE desync with TE leading comma \u2014 multiple responses indicate request boundary confusion",
+          "expected": "400, or close (no extra response)",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a76.1",
+          "level": "Must",
+          "note": "MULTIPLE RESPONSES: observed 2 HTTP status lines (embedded GET likely executed)"
+        },
+        {
+          "id": "SMUG-CLTE-SMUGGLED-GET-TE-CASE-MISMATCH",
+          "test": "CL.TE desync with TE case mismatch \u2014 multiple responses indicate request boundary confusion",
+          "expected": "400, or close (no extra response)",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a76.1",
+          "level": "Must",
+          "note": "MULTIPLE RESPONSES: observed 2 HTTP status lines (embedded GET likely executed)"
+        },
+        {
+          "id": "SMUG-TECL-SMUGGLED-GET",
+          "test": "TE.CL desync via chunk-size prefix trick \u2014 multiple responses indicate request boundary confusion",
+          "expected": "400, or close (no extra response)",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a76.1",
+          "level": "Must",
+          "note": "Accepted with 200 but kept connection open \u2014 MUST-close violated (no extra response observed)"
+        },
+        {
+          "id": "SMUG-TECL-DESYNC",
+          "test": "TE.CL desync \u2014 chunked terminator before CL boundary, leftover bytes smuggled",
+          "expected": "400, or close",
+          "got": "405, connection left open",
+          "rfc": "RFC 9112 \u00a76.1",
+          "level": "Must",
+          "note": "Accepted with 200, kept connection open \u2014 follow-up GET returned 405"
+        },
+        {
+          "id": "MAL-CONTROL-CHARS-HEADER",
+          "test": "Control characters in header value should be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-LONG-METHOD",
+          "test": "100KB method name should be rejected",
+          "expected": "400, 501 or close",
+          "got": "414, connection closed",
+          "level": "Should"
+        },
+        {
+          "id": "MAL-CHUNK-SIZE-OVERFLOW",
+          "test": "Chunk size with integer overflow must be rejected",
+          "expected": "400 or close",
+          "got": "500, connection closed",
+          "level": "Must"
+        }
+      ]
+    },
+    "h2": {
+      "tool": "h2spec",
+      "version": "2.6.0",
+      "passed": 146,
+      "total": 146,
+      "failed": [],
+      "listeners": {
+        "tls": {
+          "passed": 146,
+          "total": 146,
+          "failed": []
+        },
+        "h2c": {
+          "passed": 146,
+          "total": 146,
+          "failed": []
+        }
+      }
+    },
+    "h3": {
+      "tool": "h3spec",
+      "version": "v0.1.15",
+      "passed": 43,
+      "total": 85,
+      "failed": [
+        {
+          "id": "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if original_destination_connection_id is received [Transport 18.2]",
+          "got": "predicate failed on expected exception: QUICException / TransportErrorIsReceived TLSHandshakeFailure \"\""
+        },
+        {
+          "id": "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if preferred_address is received [Transport 18.2]",
+          "got": "predicate failed on expected exception: QUICException / TransportErrorIsReceived TLSHandshakeFailure \"\""
+        },
+        {
+          "id": "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if retry_source_connection_id is received [Transport 18.2]",
+          "got": "predicate failed on expected exception: QUICException / TransportErrorIsReceived TLSHandshakeFailure \"\""
+        },
+        {
+          "id": "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if stateless_reset_token is received [Transport 18.2]",
+          "got": "predicate failed on expected exception: QUICException / TransportErrorIsReceived TLSHandshakeFailure \"\""
+        },
+        {
+          "id": "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if a parameter value is malformed [Transport 18]",
+          "got": "predicate failed on expected exception: QUICException / TransportErrorIsReceived TLSHandshakeFailure \"\""
+        },
+        {
+          "id": "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if max_udp_payload_size < 1200 [Transport 7.4 and 18.2]",
+          "got": "predicate failed on expected exception: QUICException / TransportErrorIsReceived TLSHandshakeFailure \"\""
+        },
+        {
+          "id": "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if ack_delay_exponent > 20 [Transport 7.4 and 18.2]",
+          "got": "predicate failed on expected exception: QUICException / TransportErrorIsReceived TLSHandshakeFailure \"\""
+        },
+        {
+          "id": "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if max_ack_delay >= 2^14 [Transport 7.4 and 18.2]",
+          "got": "predicate failed on expected exception: QUICException / TransportErrorIsReceived TLSHandshakeFailure \"\""
+        },
+        {
+          "id": "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if initial_max_streams_bidi > 2^60 [Transport 18.2]",
+          "got": "predicate failed on expected exception: QUICException / TransportErrorIsReceived TLSHandshakeFailure \"\""
+        },
+        {
+          "id": "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if initial_max_streams_uni > 2^60 [Transport 18.2]",
+          "got": "predicate failed on expected exception: QUICException / TransportErrorIsReceived TLSHandshakeFailure \"\""
+        },
+        {
+          "id": "QUIC servers SHOULD send PROTOCOL_VIOLATION on an ACK for a packet never sent [Transport 13.1]",
+          "got": "predicate failed on expected exception: QUICException / TransportErrorIsReceived FrameEncodingError \"\""
+        },
+        {
+          "id": "QUIC servers MUST send PROTOCOL_VIOLATION on no frames [Transport 12.4]",
+          "got": "predicate failed on expected exception: QUICException / TransportErrorIsSent InternalError \"Too many path or CID frames\""
+        },
+        {
+          "id": "QUIC servers MUST send PROTOCOL_VIOLATION if PATH_CHALLENGE in Handshake is received [Transport 12.4]",
+          "got": "predicate failed on expected exception: QUICException / TransportErrorIsReceived FrameEncodingError \"\""
+        },
+        {
+          "id": "QUIC servers MUST send PROTOCOL_VIOLATION if RETIRE_CONNECTION_ID for a sequence number never issued [Transport 19.16]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "QUIC servers MUST send PROTOCOL_VIOLATION if STREAM_DATA_BLOCKED in Handshake is received [Transport 12.4]",
+          "got": "predicate failed on expected exception: QUICException / TransportErrorIsReceived FrameEncodingError \"\""
+        },
+        {
+          "id": "QUIC servers MUST send PROTOCOL_VIOLATION if DATA_BLOCKED in Handshake is received [Transport 12.4]",
+          "got": "predicate failed on expected exception: QUICException / TransportErrorIsReceived FrameEncodingError \"\""
+        },
+        {
+          "id": "QUIC servers MUST send PROTOCOL_VIOLATION if NEW_TOKEN is received [Transport 19.7]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "QUIC servers MUST send FRAME_ENCODING_ERROR if invalid MAX_STREAMS is received [Transport 19.11]",
+          "got": "predicate failed on expected exception: QUICException / TransportErrorIsReceived StreamLimitError \"\""
+        },
+        {
+          "id": "QUIC servers MUST send STREAM_LIMIT_ERROR or FRAME_ENCODING_ERROR if invalid STREAMS_BLOCKED is received [Transport 19.14]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "QUIC servers MUST send unexpected_message TLS alert if KeyUpdate in Handshake is received [TLS 6]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "QUIC servers MUST send unexpected_message TLS alert if KeyUpdate in 1-RTT is received [TLS 6]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_MESSAGE_ERROR if mandatory pseudo-header fields are absent [HTTP/3 4.3.1]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST treat a request with keep-alive as malformed [HTTP/3 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST treat a request with proxy-connection as malformed [HTTP/3 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST treat a request with transfer-encoding as malformed [HTTP/3 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST treat a request with upgrade as malformed [HTTP/3 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_FRAME_ERROR if a SETTINGS frame stops mid-parameter [HTTP/3 7.1]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers treats a repeated setting identifier as an error whatever its value [HTTP/3 7.2.4]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_ID_ERROR if CANCEL_PUSH names a push ID not allowed [HTTP/3 7.2.3]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_ID_ERROR if MAX_PUSH_ID goes down [HTTP/3 7.2.7]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_ID_ERROR if GOAWAY goes up [HTTP/3 5.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST ignore a frame of unknown type, however long [HTTP/3 7.2.8]",
+          "got": "uncaught exception: QUICException / ApplicationProtocolErrorIsReceived (ApplicationProtocolError 262) \"\""
+        },
+        {
+          "id": "HTTP/3 servers MUST send QPACK_DECOMPRESSION_FAILED if an invalid static table index exists in a field line representation [QPACK 3.1]",
+          "got": "predicate failed on expected exception: QUICException / ApplicationProtocolErrorIsSent (ApplicationProtocolError 270) \"\""
+        },
+        {
+          "id": "HTTP/3 servers MUST send QPACK_DECOMPRESSION_FAILED if a field line references a dynamic table entry that is not there [QPACK 2.2.3]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send QPACK_DECOMPRESSION_FAILED if a field line is cut short [QPACK 2.2.3]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send QPACK_DECOMPRESSION_FAILED if a Huffman string is badly padded [QPACK 4.1.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST NOT buffer an over-long frame on a control stream [HTTP/3 7.1]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send QPACK_ENCODER_STREAM_ERROR if a new dynamic table capacity value exceeds the limit [QPACK 4.3.1]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_STREAM_CREATION_ERROR if a client opens a push stream [HTTP/3 6.2.2]",
+          "got": "did not get expected exception"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_CLOSED_CRITICAL_STREAM if a decoder stream is closed [QPACK 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_CLOSED_CRITICAL_STREAM if an encoder stream ends inside an instruction [QPACK 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send QPACK_DECODER_STREAM_ERROR if Insert Count Increment is 0 [QPACK 4.4.3]",
+          "got": "did not get expected exception: QUICException"
+        }
+      ]
+    }
+  }
+}

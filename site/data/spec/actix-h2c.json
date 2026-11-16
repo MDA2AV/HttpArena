@@ -1,0 +1,34 @@
+{
+  "framework": "actix",
+  "dir": "actix-h2c",
+  "suites": {
+    "h2": {
+      "tool": "h2spec",
+      "version": "2.6.0",
+      "passed": 144,
+      "total": 145,
+      "failed": [
+        {
+          "id": "http2/3.5/2",
+          "test": "Sends invalid connection preface",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "Error: unexpected EOF"
+        }
+      ],
+      "listeners": {
+        "h2c": {
+          "passed": 144,
+          "total": 145,
+          "failed": [
+            {
+              "id": "http2/3.5/2",
+              "test": "Sends invalid connection preface",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Error: unexpected EOF"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

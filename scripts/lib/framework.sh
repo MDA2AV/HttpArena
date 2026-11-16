@@ -92,6 +92,16 @@ framework_start() {
         -v "$CERTS_DIR:/certs:ro"
     )
 
+    # Optional memory cap, used by the resilience suite (scripts/resilience.sh)
+    # to run an entry in a fixed-size box and see whether an attack OOM-kills it.
+    # Empty is the default and leaves every other caller (benchmark, validate,
+    # spec) exactly as before. --memory-swap equal to --memory disables swap, so
+    # an over-limit server is OOM-killed deterministically instead of silently
+    # swapping and merely getting slow.
+    if [ -n "${FRAMEWORK_MEM_LIMIT:-}" ]; then
+        args+=(--memory="$FRAMEWORK_MEM_LIMIT" --memory-swap="$FRAMEWORK_MEM_LIMIT")
+    fi
+
     # Profiles that exercise the database get DATABASE_URL + per-profile conn cap.
     case "$endpoint" in
         async-db|fortunes)
@@ -99,9 +109,12 @@ framework_start() {
             ;;
     esac
 
-    # Profile-declared CPU limit.
+    # Profile-declared CPU limit. A cpuset is anything with a dash OR a comma
+    # ("0-1", "0,64" for a core + its SMT sibling, "0-31,64-95") → --cpuset-cpus;
+    # a bare number ("2") → --cpus. Without the comma, "0,64" fell through to
+    # --cpus="0,64", which Docker rejects ("not a rational number").
     if [ -n "$cpu_limit" ]; then
-        if [[ "$cpu_limit" == *-* ]]; then
+        if [[ "$cpu_limit" == *[-,]* ]]; then
             local max_cpu
             max_cpu=$(($(nproc)-1))
             # Extract the largest CPU index from the cpuset string (e.g. "95" from "0-31,64-95")

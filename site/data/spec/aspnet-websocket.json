@@ -1,0 +1,14 @@
+{
+  "framework": "aspnet-minimal",
+  "dir": "aspnet-websocket",
+  "suites": {
+    "ws": {
+      "tool": "autobahn-testsuite",
+      "version": "25.10.1",
+      "passed": 244,
+      "total": 244,
+      "non_strict": 2,
+      "failed": []
+    }
+  }
+}

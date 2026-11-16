@@ -1,5 +1,6 @@
 use actix_files::Files;
 use actix_web::http::header::{self, ContentType};
+use actix_web::http::Method;
 use actix_web::middleware::Compress;
 use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer};
 use futures_util::StreamExt;
@@ -164,6 +165,37 @@ async fn echo_body(mut payload: web::Payload) -> HttpResponse {
         .body(body.freeze())
 }
 
+// /spec, the compliance route (site/content/docs/test-profiles/compliance/):
+// what Http11Probe and h2spec need from one route. GET answers a fixed body of
+// at least five bytes - h2spec skips a flow-control test below that - and HEAD
+// has a route of its own, since a GET resource does not answer it; actix-http
+// drops the body of a HEAD response itself. POST is the 8gbit echo.
+async fn spec_text() -> HttpResponse {
+    HttpResponse::Ok().content_type(ContentType::plaintext()).body("spec ok")
+}
+
+async fn spec_options(mut payload: web::Payload) -> HttpResponse {
+    while payload.next().await.is_some() {}
+    HttpResponse::Ok()
+        .insert_header((header::ALLOW, "GET, HEAD, POST, OPTIONS"))
+        .finish()
+}
+
+// Every request header as actix stored it, one "Name: Value" line each. The
+// probe's normalization tests read this back to see what became of a
+// malformed header name. A body is read and discarded.
+async fn spec_headers(req: HttpRequest, mut payload: web::Payload) -> HttpResponse {
+    while payload.next().await.is_some() {}
+    let mut out = String::new();
+    for (name, value) in req.headers().iter() {
+        out.push_str(name.as_str());
+        out.push_str(": ");
+        out.push_str(&String::from_utf8_lossy(value.as_bytes()));
+        out.push('\n');
+    }
+    HttpResponse::Ok().content_type(ContentType::plaintext()).body(out)
+}
+
 // JSON endpoint. Serialized fresh per request with serde_json.
 //
 // gzip is driven directly here rather than left to the Compress middleware.
@@ -257,6 +289,18 @@ async fn main() -> io::Result<()> {
             .route("/baseline2", web::get().to(baseline2))
             .route("/pipeline", web::get().to(pipeline))
             .route("/echo", web::post().to(echo_body))
+            .service(
+                web::resource("/spec")
+                    .route(web::get().to(spec_text))
+                    .route(web::head().to(spec_text))
+                    .route(web::method(Method::OPTIONS).to(spec_options))
+                    .route(web::post().to(echo_body)),
+            )
+            .service(
+                web::resource("/spec/headers")
+                    .route(web::get().to(spec_headers))
+                    .route(web::post().to(spec_headers)),
+            )
             .route("/async-db", web::get().to(db::async_db))
             .route("/fortunes", web::get().to(fortunes::fortunes))
             .route("/delay/{ms}", web::get().to(delay))

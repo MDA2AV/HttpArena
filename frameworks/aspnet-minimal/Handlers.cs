@@ -2,6 +2,8 @@
 using HttpArena.Services;
 using HttpArena.Types;
 using System.Buffers;
+using System.Text;
+using System.Text.Json;
 
 static class Handlers
 {
@@ -65,6 +67,61 @@ static class Handlers
         var body = ms.GetBuffer().AsMemory(0, (int)ms.Length);
         ctx.Response.ContentLength = body.Length;
         await ctx.Response.Body.WriteAsync(body);
+    }
+
+    // /spec, the compliance route. GET answers a fixed body of at least five
+    // bytes - h2spec skips a flow-control test below that. Kestrel drops the
+    // body itself when the same handler answers HEAD.
+    // POST /parse — actually parse the request body with the framework's standard
+    // facilities (the resilience suite's parser-differential target). JSON goes
+    // through System.Text.Json (depth cap), form/multipart through ReadFormAsync
+    // (value-count cap), and anything else is buffered after request decompression.
+    public static async Task<IResult> Parse(HttpContext ctx)
+    {
+        var ct = ctx.Request.ContentType ?? "";
+        if (ct.Contains("application/json", StringComparison.OrdinalIgnoreCase))
+        {
+            using var doc = await JsonDocument.ParseAsync(ctx.Request.Body);
+            _ = doc.RootElement.ValueKind;
+        }
+        else if (ctx.Request.HasFormContentType)   // urlencoded or multipart/form-data
+        {
+            var form = await ctx.Request.ReadFormAsync();
+            _ = form.Count + form.Files.Count;
+        }
+        else
+        {
+            // Any other body (e.g. a compressed octet-stream): buffer the whole
+            // decompressed body — exercises request decompression + whole-body buffering.
+            using var ms = new MemoryStream();
+            await ctx.Request.Body.CopyToAsync(ms);
+        }
+        // Fixed text response (no JSON serialization, AOT-safe) — the suite doesn't
+        // check the body, only that the parse above ran.
+        return Results.Text("ok", "text/plain");
+    }
+
+    public static IResult SpecText() => Results.Text("spec ok", "text/plain");
+
+    public static async Task SpecOptions(HttpContext ctx)
+    {
+        await ctx.Request.Body.CopyToAsync(Stream.Null);
+        ctx.Response.Headers.Allow = "GET, HEAD, POST, OPTIONS";
+        ctx.Response.ContentLength = 0;
+    }
+
+    // Every request header as Kestrel stored it, one "Name: Value" line each.
+    // The probe's normalization tests read this back to see what happened to
+    // a malformed header name.
+    public static async Task SpecHeaders(HttpContext ctx)
+    {
+        await ctx.Request.Body.CopyToAsync(Stream.Null);
+        var sb = new StringBuilder();
+        foreach (var (name, values) in ctx.Request.Headers)
+            foreach (var value in values)
+                sb.Append(name).Append(": ").Append(value).Append('\n');
+        ctx.Response.ContentType = "text/plain";
+        await ctx.Response.WriteAsync(sb.ToString());
     }
 
     public static IResult Json(int count, DatasetService dataset, int m = 1)

@@ -13,6 +13,7 @@
   "description": "Actix-web 4 with rustls for TLS and mimalloc as the allocator. Default worker count, TCP_NODELAY enabled. actix-files serves static content from disk per request via try_compressed(), which selects a pre-compressed .br/.gz sibling by Accept-Encoding through the framework API (no hand-rolled suffix lookup). JSON is serialized per request with serde_json; on json-comp gzip (level 1) is driven in the handler, because actix-web's encoder sends every body over 1 KiB through the blocking pool, and the Compress middleware on that route serves any other encoding. async-db through a deadpool-postgres pool per worker (DATABASE_MAX_CONN split between the workers). fortunes rendered through an Askama template. json-tls and static-tls are served over HTTP/1.1-with-TLS on :8081; baseline-h2/static-h2 over h2 on :8443. Compiled with -O3 and thin LTO.",
   "repo": "https://github.com/actix/actix-web",
   "enabled": true,
+  "spec": ["h1", "h2"],
   "tests": [
     "baseline",
     "async",

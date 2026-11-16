@@ -17,8 +17,12 @@
 | `/benchmark-multiple -f <fw1>,<fw2>,...` | Benchmark several frameworks in one run — takes `-t` and `--save` too; saved results land in a single commit |
 | `/benchmark-multiple --save` | No `-f` needed: benchmark and save every framework the PR touches |
 | `/benchmark-test -t <test>` | Benchmark **all** enabled frameworks subscribed to `<test>` and save the results |
+| `/spec -f <framework>` | Run the protocol-compliance suites the framework lists in `spec` in its `meta.json` |
+| `/spec -f <framework> --save` | Run them and save the scores to `site/data/spec/` (lands with the merge, like saved results) |
 
 For `/benchmark`, always specify `-f <framework>`; the flags combine in any order. Results come back as a comment with a per-profile table of RPS, p99, CPU and memory — one table per framework on multi runs. A new benchmark comment while a run is in flight queues behind it (one deep) instead of cancelling it. For multi-framework PRs (dependency bumps, same-language refactors) prefer `/benchmark-multiple`, which runs everything in a single job and commits all saved results together, so no run overwrites another. `--compare` works on single-framework runs only.
+
+A `/benchmark` without `-t` also runs the compliance suites, and its `--save` saves their scores with the results. `/spec` runs the suites alone; without `-f` it runs them for every framework the PR touches. See [Compliance](https://http-arena.com/docs/test-profiles/compliance/).
 
 **What the deltas are measured against.** By default, this framework's own results published on `main` - answering *"did this change help?"*. When you are tuning a variant or a successor entry, `--compare` re-bases them on another entry instead:
 

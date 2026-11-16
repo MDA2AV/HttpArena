@@ -63,4 +63,5 @@ Gateway and `production-stack` profiles are compose-orchestrated, so their servi
   {{< card link="h3" title="H/3" subtitle="Baseline and static file benchmarks over QUIC for frameworks with native H/3 support." icon="globe-alt" >}}
   {{< card link="grpc" title="gRPC" subtitle="Unary RPC throughput over HTTP/2, cleartext and TLS, using Protocol Buffers serialization." icon="globe-alt" >}}
   {{< card link="ws" title="WebSocket" subtitle="WebSocket echo throughput measuring frame processing performance." icon="globe-alt" >}}
+  {{< card link="compliance" title="Compliance" subtitle="The /spec route the protocol-compliance suites run against, and the compliance score columns." icon="shield-check" >}}
 {{< /cards >}}

@@ -151,6 +151,24 @@ has_test() {
     [[ " $TESTS " == *" $1 "* ]]
 }
 
+# The compliance suites the entry subscribes to: "spec" in meta.json, a list
+# like "tests". Checked the same way and for the same reason -- a typo or a
+# suite with nothing to run against would otherwise drop a column without a
+# word. The table of suites lives in lib/spec.sh, shared with spec.sh.
+source "$SCRIPT_DIR/lib/spec.sh"
+if ! spec_load "$META_FILE"; then
+    echo "FAIL: meta.json \"spec\" must be a list of compliance suites, e.g. [\"h1\", \"h2\"] (known: $SPEC_KNOWN)"
+    exit 1
+fi
+if ! SPEC_PROBLEMS=$(spec_check "$TESTS"); then
+    echo "FAIL: meta.json \"spec\" lists suite(s) that cannot run:"
+    printf '%s\n' "$SPEC_PROBLEMS" | sed 's/^/      /'
+    exit 1
+fi
+if [ -n "$SPEC_SUITES" ]; then
+    echo "[info] Compliance suites: $SPEC_SUITES"
+fi
+
 # Build — skip standalone build if framework only subscribes to compose profiles
 # (gateway-64, gateway-h3, production-stack) and has no isolated tests.
 GATEWAY_ONLY=true
@@ -2466,6 +2484,175 @@ if has_test "echo-ws" || has_test "echo-ws-pipeline" || has_test "echo-ws-limite
     FAIL=$((FAIL + ${WS_FAIL:-0}))
     if [ "${WS_FAIL:-0}" -gt 0 ]; then
         echo "        → $WS_DOCS"
+    fi
+fi
+
+# ───── Compliance route (/spec, for the h1 and h2 suites in "spec") ─────
+#
+# The route the protocol-compliance suites run against: Http11Probe on :8080,
+# h2spec on the HTTP/2 listeners. Nothing on it is measured. An entry whose
+# "spec" lists h1 or h2 is held to the whole contract on every listener that
+# suite uses, so a route added on :8080 and forgotten on :8443 fails here
+# instead of quietly losing the H/2 compliance column. h3 and ws need no route. Contract: site/content/docs/test-profiles/compliance/.
+
+# One raw HTTP/1.1 exchange. Prints the status code and the number of bytes that
+# followed the headers -- the one thing curl cannot show for a HEAD response.
+spec_raw_h1() {
+    PORT="$PORT" python3 - "$1" <<'PYEOF' 2>/dev/null || echo "000 0"
+import os, socket, sys
+s = socket.create_connection(("localhost", int(os.environ["PORT"])), timeout=10)
+s.sendall(sys.argv[1].encode("latin-1"))
+buf = b""
+try:
+    while True:
+        d = s.recv(65536)
+        if not d:
+            break
+        buf += d
+except socket.timeout:
+    pass
+head, sep, rest = buf.partition(b"\r\n\r\n")
+parts = head.split(b"\r\n", 1)[0].split(b" ")
+print(parts[1].decode() if len(parts) > 1 else "000", len(rest) if sep else 0)
+PYEOF
+}
+
+spec_h1_checks() {
+    local base="http://localhost:$PORT" out src code sz allow m missing tag
+
+    # GET: 200 and at least 5 bytes -- h2spec skips a flow-control test below that.
+    out=$(mktemp)
+    code=$(curl -s --max-time 10 -o "$out" -w '%{http_code}' "$base/spec" || true)
+    sz=$(wc -c < "$out"); rm -f "$out"
+    if [ "$code" = "200" ] && [ "$sz" -ge 5 ]; then
+        echo "  PASS [GET /spec] (200, ${sz}-byte body)"; PASS=$((PASS + 1))
+    else
+        fail_with_link "[GET /spec]: expected 200 with a body of at least 5 bytes, got HTTP $code with $sz bytes" "$SPEC_DOCS"
+    fi
+
+    # HEAD: 200 and nothing after the headers, read off the socket.
+    read -r code sz <<< "$(spec_raw_h1 $'HEAD /spec HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n')"
+    if [ "$code" = "200" ] && [ "$sz" = "0" ]; then
+        echo "  PASS [HEAD /spec] (200, no body)"; PASS=$((PASS + 1))
+    else
+        fail_with_link "[HEAD /spec]: expected 200 and no body, got HTTP $code followed by $sz body bytes" "$SPEC_DOCS"
+    fi
+
+    # OPTIONS: 200 with an Allow header naming all four methods.
+    out=$(mktemp)
+    code=$(curl -s --max-time 10 -X OPTIONS -D "$out" -o /dev/null -w '%{http_code}' "$base/spec" || true)
+    allow=$(grep -i '^allow:' "$out" | head -1 | cut -d: -f2- | tr -d '\r' | sed 's/^ *//' || true)
+    rm -f "$out"
+    missing=""
+    for m in GET HEAD POST OPTIONS; do
+        [[ ",$(echo "$allow" | tr -d ' ' | tr '[:lower:]' '[:upper:]')," == *",$m,"* ]] || missing="$missing $m"
+    done
+    if [ "$code" = "200" ] && [ -z "$missing" ]; then
+        echo "  PASS [OPTIONS /spec] (200, Allow: $allow)"; PASS=$((PASS + 1))
+    else
+        fail_with_link "[OPTIONS /spec]: expected 200 with an Allow header naming GET, HEAD, POST and OPTIONS, got HTTP $code with Allow '$allow'${missing:+ (missing:$missing)}" "$SPEC_DOCS"
+    fi
+
+    # POST: the body back byte for byte. No Content-Type, which is how the probe
+    # sends almost all of its requests; then chunked; then empty.
+    for sz in 1 1024 65536; do
+        src=$(mktemp); out=$(mktemp)
+        head -c "$sz" /dev/urandom > "$src"
+        code=$(curl -s --http1.1 --max-time 30 -o "$out" -w '%{http_code}' -X POST -H 'Content-Type:' \
+               --data-binary "@$src" "$base/spec" || true)
+        if [ "$code" = "200" ] && cmp -s "$src" "$out"; then
+            echo "  PASS [POST /spec ${sz}B] (echoed byte for byte)"; PASS=$((PASS + 1))
+        else
+            fail_with_link "[POST /spec ${sz}B]: expected 200 and the $sz bytes echoed verbatim, got HTTP $code with $(wc -c < "$out") bytes that differ" "$SPEC_DOCS"
+        fi
+        rm -f "$src" "$out"
+    done
+    for sz in 1024 65536; do
+        src=$(mktemp); out=$(mktemp)
+        head -c "$sz" /dev/urandom > "$src"
+        code=$(curl -s --http1.1 --max-time 30 -o "$out" -w '%{http_code}' -X POST -H 'Content-Type:' \
+               -H 'Transfer-Encoding: chunked' --data-binary @- "$base/spec" < "$src" || true)
+        if [ "$code" = "200" ] && cmp -s "$src" "$out"; then
+            echo "  PASS [POST /spec chunked ${sz}B] (decoded and echoed byte for byte)"; PASS=$((PASS + 1))
+        else
+            fail_with_link "[POST /spec chunked ${sz}B]: expected 200 and the $sz bytes echoed verbatim, got HTTP $code with $(wc -c < "$out") bytes that differ - the body has to be read from the chunked framing" "$SPEC_DOCS"
+        fi
+        rm -f "$src" "$out"
+    done
+    out=$(mktemp)
+    code=$(curl -s --http1.1 --max-time 10 -o "$out" -w '%{http_code}' -X POST -H 'Content-Type:' \
+           --data-binary '' "$base/spec" || true)
+    sz=$(wc -c < "$out"); rm -f "$out"
+    if [ "$code" = "200" ] && [ "$sz" = "0" ]; then
+        echo "  PASS [POST /spec empty body] (200, empty)"; PASS=$((PASS + 1))
+    else
+        fail_with_link "[POST /spec empty body]: expected 200 with an empty body, got HTTP $code with $sz bytes" "$SPEC_DOCS"
+    fi
+
+    # The header echo: a random value has to come back as a Name: Value line,
+    # the name in any case. POST reads and discards its body.
+    tag="spec-$RANDOM$RANDOM"
+    for m in GET POST; do
+        out=$(mktemp)
+        if [ "$m" = "GET" ]; then
+            code=$(curl -s --max-time 10 -o "$out" -w '%{http_code}' -H "X-Spec-Probe: $tag" "$base/spec/headers" || true)
+        else
+            code=$(curl -s --max-time 10 -o "$out" -w '%{http_code}' -X POST -H "X-Spec-Probe: $tag" \
+                   --data-binary 'read and discarded' "$base/spec/headers" || true)
+        fi
+        if [ "$code" = "200" ] && grep -qiE "^x-spec-probe:[[:space:]]*${tag}[[:space:]]*\$" "$out"; then
+            echo "  PASS [$m /spec/headers] (X-Spec-Probe echoed)"; PASS=$((PASS + 1))
+        else
+            fail_with_link "[$m /spec/headers]: expected 200 and a line 'X-Spec-Probe: $tag', got HTTP $code" "$SPEC_DOCS"
+        fi
+        rm -f "$out"
+    done
+}
+
+# What h2spec needs from one HTTP/2 listener. $1 label, $2 base URL, then the
+# curl options that select the protocol.
+spec_h2_checks() {
+    local label="$1" base="$2" out src code ver sz
+    shift 2
+    out=$(mktemp)
+    read -r code ver <<< "$(curl -s --max-time 10 "$@" -o "$out" -w '%{http_code} %{http_version}' "$base/spec" || true)"
+    sz=$(wc -c < "$out"); rm -f "$out"
+    if [ "$code" = "200" ] && [ "$ver" = "2" ] && [ "$sz" -ge 5 ]; then
+        echo "  PASS [GET /spec over $label] (200, HTTP/2, ${sz}-byte body)"; PASS=$((PASS + 1))
+    else
+        fail_with_link "[GET /spec over $label]: expected 200 over HTTP/2 with a body of at least 5 bytes, got HTTP/${ver:-?} $code with $sz bytes" "$SPEC_DOCS"
+    fi
+    src=$(mktemp); out=$(mktemp)
+    head -c 1024 /dev/urandom > "$src"
+    code=$(curl -s --max-time 30 "$@" -o "$out" -w '%{http_code}' -X POST -H 'Content-Type:' \
+           --data-binary "@$src" "$base/spec" || true)
+    if [ "$code" = "200" ] && cmp -s "$src" "$out"; then
+        echo "  PASS [POST /spec 1024B over $label] (echoed byte for byte)"; PASS=$((PASS + 1))
+    else
+        fail_with_link "[POST /spec 1024B over $label]: expected 200 and the 1024 bytes echoed verbatim, got HTTP $code with $(wc -c < "$out") bytes that differ" "$SPEC_DOCS"
+    fi
+    rm -f "$src" "$out"
+}
+
+if [ -n "$SPEC_SUITES" ] && [ "$GATEWAY_ONLY" = "false" ]; then
+    SPEC_DOCS="$DOCS_BASE/compliance/validation"
+    echo "[test] compliance suites (spec: $SPEC_SUITES)"
+    if spec_has h1; then
+        spec_h1_checks
+    fi
+    if spec_has h2; then
+        if has_test "baseline-h2" || has_test "static-h2"; then
+            spec_h2_checks "h2 :$H2PORT" "https://localhost:$H2PORT" -k --http2
+        fi
+        if has_test "baseline-h2c" || has_test "json-h2c"; then
+            spec_h2_checks "h2c :$H2C_PORT" "http://localhost:$H2C_PORT" --http2-prior-knowledge
+        fi
+    fi
+    if spec_has h3; then
+        echo "  NOTE [spec h3]: no route to check - h3spec runs against the QUIC listener on :$H2PORT"
+    fi
+    if spec_has ws; then
+        echo "  NOTE [spec ws]: no route to check - Autobahn runs against the /ws echo"
     fi
 fi
 
