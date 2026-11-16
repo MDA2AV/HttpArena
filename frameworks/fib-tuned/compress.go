@@ -1,19 +1,19 @@
 package main
 
 import (
-	"bytes"
 	"io"
 	stdhttp "net/http"
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 
-	"github.com/andybalholm/brotli"
 	"github.com/klauspost/compress/flate"
 	"github.com/klauspost/compress/gzip"
 	"github.com/klauspost/compress/zstd"
 	fibhttp "github.com/lesismal/fib/http"
 	"github.com/lesismal/fib/middleware"
+	brrr "github.com/molecule-man/go-brrr"
 )
 
 // CompressConfig sets how hard each coding works and which bodies are worth
@@ -56,7 +56,7 @@ func newCompress(config CompressConfig) middleware.Middleware {
 	if config.MinLength <= 0 {
 		config.MinLength = defaultMinLength
 	}
-	config.BrotliQuality = min(max(config.BrotliQuality, brotli.BestSpeed), brotli.BestCompression)
+	config.BrotliQuality = min(max(config.BrotliQuality, brrr.BestSpeed), brrr.BestCompression)
 	if config.ZstdLevel == 0 {
 		config.ZstdLevel = zstd.SpeedDefault
 	}
@@ -75,6 +75,9 @@ func newCompress(config CompressConfig) middleware.Middleware {
 			r := c.Request
 			coder := codings.negotiate(r.Header["Accept-Encoding"])
 			head := r.Method == stdhttp.MethodHead
+			// out is the pooled buffer the body was coded into, while the
+			// response may still be reading it.
+			var out *outBuf
 			c.OnResponse(func(response *fibhttp.Response) {
 				if !compressible(response, config.MinLength) {
 					return
@@ -83,21 +86,46 @@ func newCompress(config CompressConfig) middleware.Middleware {
 				if coder == nil || head {
 					return
 				}
-				body, ok := coder.encode(response.Body)
-				if !ok {
+				buf := outBufs.Get().(*outBuf)
+				buf.b = buf.b[:0]
+				if !coder.encode(buf, response.Body) {
+					outBufs.Put(buf)
 					return
 				}
-				response.Body = body
+				response.Body = buf.b
+				if r.ProtoMajor == 1 && len(buf.b) <= maxCopiedBody {
+					out = buf
+				}
+				// Otherwise the response keeps the array, and the pool
+				// makes another.
 				response.Header["Content-Encoding"] = []string{coder.name}
 				delete(response.Header, "Content-Length")
 				if tag := headerValue(response.Header, "Etag"); tag != "" && !strings.HasPrefix(tag, "W/") {
 					response.Header["Etag"] = []string{"W/" + tag}
 				}
 			})
+			if coder != nil && !head && r.ProtoMajor == 1 {
+				c.OnFinish(func(int, stdhttp.Header, int64) {
+					if out != nil {
+						outBufs.Put(out)
+						out = nil
+					}
+				})
+			}
 			next.ServeHTTP(c)
 		})
 	}
 }
+
+// maxCopiedBody is the longest body fib's HTTP/1 send copies into the
+// connection's buffer, so that the array is free again once the response has
+// been handed over and its OnFinish hooks run (fib v1.8.0's
+// maxCopiedResponseBody, in http/handler.go). A longer body is sent from the
+// array itself, which the connection may keep until the socket has taken
+// it, so it is not given back to the pool. HTTP/2 and HTTP/3 keep the body
+// until flow control or the peer's acknowledgement lets it go, so theirs
+// never are. A compressed /json/50 is under 2 KB.
+const maxCopiedBody = 4 << 10
 
 // compressible reports whether response could be compressed for a client that
 // accepts it. A response to HEAD counts by the length it declares.
@@ -143,43 +171,54 @@ func headerValue(h stdhttp.Header, name string) string {
 	return ""
 }
 
-// coder is one content coding. encode returns the coded body in an array of
-// its own, since the response keeps it until it is sent, and false when coding
-// failed or saved nothing.
+// coder is one content coding. encode appends the coded body to dst, and
+// reports false when coding failed or saved nothing.
 type coder struct {
 	name   string
-	encode func(body []byte) ([]byte, bool)
+	encode func(dst *outBuf, body []byte) bool
 }
 
-// coders holds the codings in the server's order of preference.
+// coders holds the codings in the server's order of preference, and the
+// last Accept-Encoding negotiated with what it chose.
 type coders struct {
 	list []*coder
+	last atomic.Pointer[negotiation]
 }
 
-// bufferPool holds the scratch buffers the stream coders write into; the
-// result is copied out of them at its exact length.
-var bufferPool = sync.Pool{New: func() any { return new(bytes.Buffer) }}
+type negotiation struct {
+	field string
+	coder *coder
+}
+
+// outBuf is the array a body is coded into. Its Write appends, so that the
+// stream coders can write to it; the one-shot ones append to b.
+type outBuf struct {
+	b []byte
+}
+
+func (o *outBuf) Write(p []byte) (int, error) {
+	o.b = append(o.b, p...)
+	return len(p), nil
+}
+
+// outBufs holds the arrays coded bodies are written to, given back once
+// their response no longer reads them.
+var outBufs = sync.Pool{New: func() any { return &outBuf{b: make([]byte, 0, maxCopiedBody)} }}
 
 // streamCoder wraps a coder that writes through an io.WriteCloser which can be
 // reset onto a new destination, recycling the writers, which cost far more to
 // make than to reset.
 func streamCoder(name string, make func() streamWriter) coder {
 	writers := sync.Pool{New: func() any { return make() }}
-	return coder{name: name, encode: func(body []byte) ([]byte, bool) {
-		buf := bufferPool.Get().(*bytes.Buffer)
-		buf.Reset()
-		defer bufferPool.Put(buf)
+	return coder{name: name, encode: func(dst *outBuf, body []byte) bool {
 		w := writers.Get().(streamWriter)
-		w.Reset(buf)
+		w.Reset(dst)
 		_, err := w.Write(body)
 		if cerr := w.Close(); err == nil {
 			err = cerr
 		}
 		writers.Put(w)
-		if err != nil || buf.Len() >= len(body) {
-			return nil, false
-		}
-		return bytes.Clone(buf.Bytes()), true
+		return err == nil && len(dst.b) < len(body)
 	}}
 }
 
@@ -196,13 +235,31 @@ func newCoders(config CompressConfig) *coders {
 	if err != nil {
 		panic(err)
 	}
+	// go-brrr, the brotli encoder fasthttp, and so fiber-tuned, uses. Its
+	// Writers are recycled as its one-shot Compress recycles its encoders,
+	// and told the body's length up front as Compress is, but write into
+	// outBuf rather than into an array Compress makes for each body.
+	brWriters := sync.Pool{New: func() any {
+		w, err := brrr.NewWriter(nil, config.BrotliQuality)
+		if err != nil {
+			panic(err)
+		}
+		return w
+	}}
 	all := map[string]coder{
-		"br": streamCoder("br", func() streamWriter {
-			return brotli.NewWriterLevel(nil, config.BrotliQuality)
-		}),
-		"zstd": {name: "zstd", encode: func(body []byte) ([]byte, bool) {
-			out := zenc.EncodeAll(body, make([]byte, 0, len(body)/2))
-			return out, len(out) < len(body)
+		"br": {name: "br", encode: func(dst *outBuf, body []byte) bool {
+			w := brWriters.Get().(*brrr.Writer)
+			w.ResetWithSizeHint(dst, uint(len(body)))
+			_, err := w.Write(body)
+			if cerr := w.Close(); err == nil {
+				err = cerr
+			}
+			brWriters.Put(w)
+			return err == nil && len(dst.b) < len(body)
+		}},
+		"zstd": {name: "zstd", encode: func(dst *outBuf, body []byte) bool {
+			dst.b = zenc.EncodeAll(body, dst.b)
+			return len(dst.b) < len(body)
 		}},
 		"gzip": streamCoder("gzip", func() streamWriter {
 			w, _ := gzip.NewWriterLevel(nil, config.GzipLevel)
@@ -228,9 +285,26 @@ func newCoders(config CompressConfig) *coders {
 	return cs
 }
 
-// negotiate picks the coding the Accept-Encoding fields give the highest q,
-// the first in the server's order among equals, or nil when they accept none.
+// negotiate is parse with the last answer kept: clients send the same
+// Accept-Encoding over and over, so a request whose one field is the last
+// one parsed is answered without parsing it again.
 func (cs *coders) negotiate(fields []string) *coder {
+	if len(fields) != 1 {
+		return cs.parse(fields)
+	}
+	if last := cs.last.Load(); last != nil && last.field == fields[0] {
+		return last.coder
+	}
+	c := cs.parse(fields)
+	// The field may be in the request's recycled buffer, so the key is a
+	// copy of its own.
+	cs.last.Store(&negotiation{field: strings.Clone(fields[0]), coder: c})
+	return c
+}
+
+// parse picks the coding the Accept-Encoding fields give the highest q, the
+// first in the server's order among equals, or nil when they accept none.
+func (cs *coders) parse(fields []string) *coder {
 	if len(fields) == 0 {
 		return nil
 	}
