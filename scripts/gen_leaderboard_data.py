@@ -4033,10 +4033,81 @@ def _fw_spec(spec, own_dir):
             + "".join(tables))
 
 
-def build_meta(frameworks, tls_check=None, spec_by_dir=None):
+# ── Resilience (robustness) column ─────────────────────────────────────────
+# Per-entry adversarial-attack results from site/data/resilience/<dir>.json
+# (scripts/resilience_results.py). A standalone robustness read, the way the
+# compliance scores are — never folded into the composite. The board shows
+# three per-surface scores: HTTP/1.1, HTTP/2 and WebSocket.
+#
+# This one dict is the authority for which surface an attack belongs to, so the
+# mapping cannot drift from the board: index.html only renders what build_meta
+# has already computed here. Scoring mirrors resilience_results.py exactly —
+# survived = 1 point, degraded = ½, hung/crashed/oom-killed/error = 0, and
+# no-endpoint (passed is None) drops out of both the points and the count.
+RESIL_SURFACE_ATTACKS = {
+    "h2": {"continuation-flood", "hpack-bomb", "rapid-reset", "madeyoureset",
+           "settings-flood", "ping-flood", "empty-frame-flood", "window-stall"},
+    "ws": {"ws-giant-frame", "ws-fragment-bomb", "ws-deflate-bomb", "ws-pong-flood"},
+}
+# Transport-layer floods — not an H1/H2/WS surface, so excluded from all three.
+RESIL_EXCLUDE = {"tls-handshake-flood", "dheat"}
+# The order the board renders the surfaces in.
+RESIL_SURFACES = ("h1", "h2", "ws")
+_RESIL_WEIGHT = {"survived": 1.0, "degraded": 0.5}
+
+
+def _resil_surface(attack):
+    """Which surface an attack belongs to: 'h2', 'ws', or 'h1' for everything
+    that is neither an H2/WS attack nor an excluded transport flood. None means
+    excluded from every surface."""
+    if attack in RESIL_EXCLUDE:
+        return None
+    for surf, names in RESIL_SURFACE_ATTACKS.items():
+        if attack in names:
+            return surf
+    return "h1"
+
+
+def _resil_for(m, resil_by_dir):
+    """The board's compact resilience cell for one entry: {surface: [points,
+    scored]} for each surface that has at least one scored attack. Joined over
+    the entry's own directory and its variants' — an attack from any of them
+    counts, the entry's own directory winning a name collision. {} if the entry
+    has no resilience file at all. A surface with no scored attack present
+    (e.g. an entry with no h2c/ws profile) is left out, so the board shows it a
+    dash rather than a zero."""
+    dirs = [m.get("dir", "")] + [v.get("dir", "") for v in m.get("variants") or []]
+    attacks = {}
+    for d in dirs:
+        data = resil_by_dir.get(d)
+        if not isinstance(data, dict):
+            continue
+        for name, a in (data.get("attacks") or {}).items():
+            if name not in attacks and isinstance(a, dict):
+                attacks[name] = a
+    tally = {}
+    for name, a in attacks.items():
+        if a.get("passed") is None:        # no-endpoint: out of both count and points
+            continue
+        surf = _resil_surface(name)
+        if surf is None:                   # transport-layer, not a surface
+            continue
+        pts, cnt = tally.get(surf, (0.0, 0))
+        tally[surf] = (pts + _RESIL_WEIGHT.get(a.get("verdict"), 0.0), cnt + 1)
+    out = {}
+    for surf in RESIL_SURFACES:
+        if surf in tally:
+            pts, cnt = tally[surf]
+            # Keep it an int when whole (8, not 8.0), like resilience_results.py.
+            out[surf] = [int(pts) if pts == int(pts) else round(pts, 1), cnt]
+    return out
+
+
+def build_meta(frameworks, tls_check=None, spec_by_dir=None, resil_by_dir=None):
     """Display name -> the meta.json fields the board and the composite read."""
     tls_check = tls_check or {}
     spec_by_dir = spec_by_dir or {}
+    resil_by_dir = resil_by_dir or {}
     return {n: {"type": m.get("type", "emerging"),
                 "mode": m.get("mode", "standard"),
                 "language": m.get("language", ""),
@@ -4055,7 +4126,11 @@ def build_meta(frameworks, tls_check=None, spec_by_dir=None):
                 "tlsCheck": tls_check.get(m.get("dir", "")),
                 # The compliance scores, from site/data/spec/ (scripts/spec.sh).
                 # Only on the entries that have any.
-                **({"spec": _spec_for(m, spec_by_dir)} if _spec_for(m, spec_by_dir) else {})}
+                **({"spec": _spec_for(m, spec_by_dir)} if _spec_for(m, spec_by_dir) else {}),
+                # The resilience (robustness) scores, from site/data/resilience/
+                # (scripts/resilience_results.py). Only on the entries that opted
+                # in and have a file. Not part of the composite.
+                **({"resil": _resil_for(m, resil_by_dir)} if _resil_for(m, resil_by_dir) else {})}
             for n, m in frameworks.items()}
 
 
@@ -4142,7 +4217,21 @@ def main():
             if isinstance(v.get("suites"), dict):
                 spec_by_dir[f.stem] = v["suites"]
 
-    meta = build_meta(frameworks, tls_check, spec_by_dir)
+    # Resilience (robustness) results, written by scripts/resilience_results.py
+    # with --save. Keyed by directory like the spec and TLS files; build_meta
+    # joins them to display names through "dir" and "variants".
+    resil_by_dir = {}
+    resil_dir = ROOT / "site" / "data" / "resilience"
+    if resil_dir.is_dir():
+        for f in sorted(resil_dir.glob("*.json")):
+            try:
+                v = json.loads(f.read_text())
+            except Exception:
+                continue
+            if isinstance(v.get("attacks"), dict):
+                resil_by_dir[f.stem] = v
+
+    meta = build_meta(frameworks, tls_check, spec_by_dir, resil_by_dir)
 
     docs_tree, docs_content = build_docs()
 
