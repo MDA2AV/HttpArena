@@ -137,7 +137,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin main --depth=1
+          git fetch origin main
           if ! git merge --no-edit origin/main; then
             git merge --abort 2>/dev/null || true
             gh pr comment "${{ inputs.pr }}" \
@@ -158,7 +158,7 @@ jobs:
           # replaces staged main's copy of every file under site/data, and copying the
           # PR's files back over does not delete, so a file the PR removed stayed in the
           # index and rode along in the results commit.
-          git fetch origin main --depth=1
+          git fetch origin main
           rm -rf /tmp/main_site_data
           mkdir -p /tmp/main_site_data
           git archive origin/main:site/data | tar -x -C /tmp/main_site_data
@@ -178,6 +178,15 @@ jobs:
           mkdir -p /tmp/bench_logs
           FAILED=""
           FIRST=true
+          # This file runs from main but the scripts come from the PR, and a branch
+          # cut before the compliance suites (#1777) has no scripts/spec.sh. A
+          # /benchmark there skips the suites instead of marking every entry
+          # failed; a /spec there still fails.
+          have_spec=true
+          if [ ! -f scripts/spec.sh ]; then
+            have_spec=false
+            echo "::notice::scripts/spec.sh is not on this branch (it predates #1777): merge main to run the compliance suites"
+          fi
           for fw in $LIST; do
             # Settle between frameworks. The previous entry's container has only
             # just been torn down: its sockets are still draining through
@@ -205,7 +214,7 @@ jobs:
             # failed that image may be stale, so the suites wait for the next run.
             # Like the benchmark, the scores always go to disk and are committed
             # only on --save.
-            if [ "$SPEC_ONLY" = "true" ] || { [ "$RESILIENCE_ONLY" != "true" ] && [ -z "$PROFILE" ] && $bench_ok; }; then
+            if [ "$SPEC_ONLY" = "true" ] || { $have_spec && [ "$RESILIENCE_ONLY" != "true" ] && [ -z "$PROFILE" ] && $bench_ok; }; then
               echo "::group::spec $fw"
               skip_build=1
               [ "$SPEC_ONLY" = "true" ] && skip_build=0
