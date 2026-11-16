@@ -333,7 +333,26 @@ jobs:
             fi
             git commit -m "$MSG"
             git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${PR_REPO}.git"
-            git push origin HEAD:"${PR_BRANCH}" || echo "Warning: could not push to fork (permissions)"
+            # A push that does not land loses the results, so it fails the job
+            # and says so on the PR instead of passing with a warning nobody
+            # reads. Most often a commit reached the branch while this run was
+            # measuring (#1783): the numbers are for the commit checked out at
+            # the start, so they are not put on top of the new one either.
+            if ! git push origin HEAD:"${PR_BRANCH}"; then
+              RAN=$(git rev-parse "refs/remotes/pull/${{ inputs.pr }}/head" 2>/dev/null || true)
+              NOW=$(gh api "/repos/${{ github.repository }}/pulls/${{ inputs.pr }}" --jq '.head.sha' 2>/dev/null || true)
+              if [ -n "$RAN" ] && [ -n "$NOW" ] && [ "$RAN" != "$NOW" ]; then
+                WHY="the branch moved to \`${NOW:0:9}\` while this run was measuring \`${RAN:0:9}\`, so the numbers are for code the branch no longer has"
+              elif [ "$PR_REPO" != "${{ github.repository }}" ]; then
+                WHY="the push to \`${PR_REPO}\` was refused, most likely a fork that does not allow edits from maintainers"
+              else
+                WHY="the push to \`${PR_BRANCH}\` was refused"
+              fi
+              echo "::error::Results not saved: ${WHY}"
+              gh pr comment "${{ inputs.pr }}" --repo "${{ github.repository }}" \
+                --body "⚠️ **This run's results were not saved**: ${WHY}. Nothing was committed, and the board keeps the numbers it has. Save them with a new run."
+              exit 1
+            fi
           fi
 
       - name: Post results to PR
