@@ -108,6 +108,13 @@
       "response": true
     }
   },
+  "apex-tuned": {
+    "dir": "apex-tuned",
+    "description": "Apex HTTP engine in C23: shared-nothing thread-per-core epoll runtime, CPU affinity pinning, zero-copy buffer recycling, streaming HTTP parser with TCP fragmentation resilience, route parameter trie, middleware pipeline, Brotli compression, and tuned TLS 1.3.",
+    "repo": "https://github.com/xdearboy/apex",
+    "type": "engine",
+    "engine": "apex"
+  },
   "araara-standard": {
     "dir": "araara-standard",
     "description": "araara - an OCaml 5 web stack built on HCS, using HCS server defaults where possible for the HttpArena harness. Eio, radix-trie routing, Phoenix-style plugs, Postgres via repodb, gzip/zstd compression. HTTP/3 and gRPC are not implemented.",
