@@ -957,44 +957,50 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // robustness read, never part of the composite - like the Spec column.
   // gen_leaderboard_data.py has already scored each surface and joined any
   // variant directories into D.meta[fw].resil as {h1:[pts,n], h2:[pts,n],
-  // ws:[pts,n]}, carrying only the surfaces an entry actually ran. Shown on
-  // every composite view: the measurement does not change with the board, and
-  // each cell carries all three surfaces rather than one per scope.
+  // ws:[pts,n]}, carrying only the surfaces an entry actually ran. The column
+  // follows the board scope and shows that one surface - H1 on the H/1.1 view,
+  // H2 on H/2, WS on WebSocket; scopes with no surface omit the column.
   var RESIL_SURF=[['h1','H1'],['h2','H2'],['ws','WS']];
-  var HAS_RESIL=Object.keys(D.meta||{}).some(function(fw){ return D.meta[fw] && D.meta[fw].resil; });
-  function resilCol(){ return state.view==='composite' && HAS_RESIL; }
+  // The resilience column follows the board's current scope: the H/1.1 view shows
+  // the H1 surface, H/2 the H2 surface, WebSocket the WS surface. Other scopes
+  // (H/3, gateway, gRPC) have no resilience surface, so the column is absent there.
+  var RESIL_SCOPE={h1:['h1','H1'],h2:['h2','H2'],ws:['ws','WS']};
+  function resilSurface(){ return state.view==='composite' ? (RESIL_SCOPE[state.scope]||null) : null; }
   function resilOf(fw){ var m=D.meta[fw]; return (m&&m.resil)||null; }
-  // Aggregate survival over the three surfaces, for sorting. -1 when the entry
-  // has no resilience data, so those sort to the bottom like the Spec column.
+  // Show the column only when the current scope has a surface and some entry ran it.
+  function resilCol(){
+    var s=resilSurface(); if(!s) return false;
+    return Object.keys(D.meta||{}).some(function(fw){ var r=D.meta[fw]&&D.meta[fw].resil; return !!(r&&r[s[0]]); });
+  }
+  // Survival rate on the current surface, for sorting. -1 when the entry did not
+  // run this surface, so those sort to the bottom like the Spec column.
   function resilAgg(fw){
-    var r=resilOf(fw); if(!r) return -1;
-    var p=0,t=0; RESIL_SURF.forEach(function(s){ var v=r[s[0]]; if(v){ p+=v[0]; t+=v[1]; } });
-    return t?p/t:-1;
+    var s=resilSurface(); if(!s) return -1;
+    var r=resilOf(fw), v=r&&r[s[0]];
+    return (v&&v[1])?v[0]/v[1]:-1;
   }
   function resilTip(fw){
-    var r=resilOf(fw);
-    var how='Resilience - adversarial attacks the entry survives, per surface, run against it in a capped CPU/memory box. survived = 1 point, degraded = ½, hung/crashed/OOM = 0. Opt-in, and not part of the composite.';
-    if(!r) return how+'\nThis entry has not run the suite.';
-    var parts=RESIL_SURF.map(function(s){ var v=r[s[0]];
-      return s[1]+': '+(v?(v[0]+' of '+v[1]+' survived'):'not run'); });
-    return how+'\n'+parts.join('\n');
+    var s=resilSurface(), r=resilOf(fw), v=r&&r[s[0]];
+    var how='Resilience - adversarial attacks the entry survives on its '+s[1]+' surface, run against it in a capped CPU/memory box. survived = 1 point, degraded = ½, hung/crashed/OOM = 0. Opt-in, and not part of the composite.';
+    if(!v) return how+'\nThis entry has not run the suite on '+s[1]+'.';
+    return how+'\n'+s[1]+': '+v[0]+' of '+v[1]+' attacks survived.';
   }
   function resilCell(fw){
-    var r=resilOf(fw);
-    var segs=RESIL_SURF.map(function(s){
-      var v=r&&r[s[0]];
-      if(!v) return '<span class="rz rz-none"><span class="rzl">'+s[1]+'</span>'
+    var s=resilSurface(), r=resilOf(fw), v=r&&r[s[0]], seg;
+    if(!v){
+      seg='<span class="rz rz-none"><span class="rzl">'+s[1]+'</span>'
         + '<span class="rzv">—</span><span class="rzbar"></span></span>';
+    } else {
       var ratio=v[1]?v[0]/v[1]:0, pct=Math.round(ratio*100);
       var col=state.heat?heatColor(ratio):'';
-      return '<span class="rz'+(ratio===1?' full':'')+'" data-tip="'
+      seg='<span class="rz'+(ratio===1?' full':'')+'" data-tip="'
         + esc(s[1]+': '+v[0]+' of '+v[1]+' attacks survived ('+pct+'%). survived = 1 point, degraded = ½.')+'">'
         + '<span class="rzl">'+s[1]+'</span>'
         + '<span class="rzv">'+pct+'<span class="rzp">%</span></span>'
         + '<span class="rzbar"><i style="width:'+pct+'%'+(col?';background:'+col:'')+'"></i></span></span>';
-    }).join('');
-    return '<td class="num pc resil'+(r?'':' empty')+'" data-tip="'+esc(resilTip(fw))
-      + '"><span class="rzrow">'+segs+'</span></td>';
+    }
+    return '<td class="num pc resil'+(v?'':' empty')+'" data-tip="'+esc(resilTip(fw))
+      + '"><span class="rzrow">'+seg+'</span></td>';
   }
 
   // The composite views are keyed by scope; 'h1' is the HTTP/1.1 one.
@@ -1070,7 +1076,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     fwCompact:'Narrow this column to the type square, the tuned mark and the name, and give the width back to the profile columns.',
     fwExpand:'Widen this column back to the favourite star, the tuned pill, the language and the medals.',
     spec:'Protocol compliance - how much of the conformance suite of this family the entry passes: Http11Probe on HTTP/1.1, h2spec on HTTP/2, h3spec on HTTP/3, Autobahn on WebSocket. A score, not part of the composite. A dot: the entry does not run the suite. A dash: it could not be measured.',
-    resil:'Resilience - adversarial attacks the entry survives, split by surface (H1 / H2 / WebSocket), run against it in a capped CPU/memory box. Each: survived = 1 point, degraded = ½, hung/crashed/OOM = 0. Opt-in and not part of the composite; a dash means that surface was not run. Sorts on the combined survival rate.'
+    resil:'Resilience - adversarial attacks the entry survives on this surface (the board scope picks it: H1 / H2 / WebSocket), run against it in a capped CPU/memory box. survived = 1 point, degraded = ½, hung/crashed/OOM = 0. Opt-in and not part of the composite; a dash means this surface was not run. Sorts on the survival rate.'
   };
   // Every field the published row carries for one framework on one profile,
   // across each connection count the profile ran. A column can only show one
