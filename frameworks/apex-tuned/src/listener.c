@@ -111,12 +111,17 @@ void handle_accept_h2c(worker_t *worker) {
 
         connection->is_h2 = true;
         if (!h2_connection_init(connection, worker)) {
-            close_conn(worker, connection);
+            if (connection->fd >= 0) {
+                close_conn(worker, connection);
+            }
             continue;
         }
 
-        struct epoll_event event = {.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
-                                    .data.ptr = connection};
+        uint32_t connection_events = EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLERR;
+        if (connection->pending_write) {
+            connection_events |= EPOLLOUT;
+        }
+        struct epoll_event event = {.events = connection_events, .data.ptr = connection};
         epoll_ctl(worker->epoll_fd, EPOLL_CTL_ADD, client_fd, &event);
     }
 }

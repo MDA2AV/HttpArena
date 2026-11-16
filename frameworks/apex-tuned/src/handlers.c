@@ -18,11 +18,31 @@ void baseline_handler(context_t *context) {
 
     int64_t accumulated_sum = 0;
     if (__builtin_expect(request->num_params == 2, 1)) {
-        int64_t first_param_value = 0;
-        int64_t second_param_value = 0;
-        parse_i64(request->params[0].val.ptr, request->params[0].val.len, &first_param_value);
-        parse_i64(request->params[1].val.ptr, request->params[1].val.len, &second_param_value);
-        accumulated_sum = first_param_value + second_param_value;
+        str_view_t first_value = request->params[0].val;
+        str_view_t second_value = request->params[1].val;
+        uint64_t parsed_sum;
+        bool parsed_fast;
+
+        if (__builtin_expect(first_value.len == second_value.len, 1)) {
+            parsed_fast = sum_two_ascii_digits_fast(first_value.ptr, second_value.ptr, first_value.len, &parsed_sum);
+        } else {
+            uint64_t first_param_value = 0;
+            uint64_t second_param_value = 0;
+            bool first_parsed = parse_ascii_digits_fast(first_value.ptr, first_value.len, &first_param_value);
+            bool second_parsed = parse_ascii_digits_fast(second_value.ptr, second_value.len, &second_param_value);
+            parsed_fast = first_parsed && second_parsed;
+            parsed_sum = first_param_value + second_param_value;
+        }
+
+        if (__builtin_expect(parsed_fast, 1)) {
+            accumulated_sum = (int64_t)parsed_sum;
+        } else {
+            int64_t first_param_value = 0;
+            int64_t second_param_value = 0;
+            parse_i64(first_value.ptr, first_value.len, &first_param_value);
+            parse_i64(second_value.ptr, second_value.len, &second_param_value);
+            accumulated_sum = first_param_value + second_param_value;
+        }
     } else {
         for (size_t param_index = 0; param_index < request->num_params; param_index++) {
             int64_t parameter_value = 0;
@@ -80,11 +100,27 @@ static void parse_json_request_parameters(const request_t *request, size_t *out_
     if (request->path.len >= 6 && memcmp(request->path.ptr, "/json/", 6) == 0) {
         const char *count_start = request->path.ptr + 6;
         size_t count_length = request->path.len - 6;
-        const char *slash = memchr(count_start, '/', count_length);
-        if (slash) {
-            count_length = (size_t)(slash - count_start);
+        unsigned int first_digit = count_length > 0
+                                       ? (unsigned int)(unsigned char)count_start[0] - (unsigned int)'0'
+                                       : 10;
+        if (__builtin_expect(count_length == 1 && first_digit <= 9, 1)) {
+            item_count = (int64_t)first_digit;
+        } else if (__builtin_expect(count_length == 2, 1)) {
+            unsigned int second_digit = (unsigned int)(unsigned char)count_start[1] - (unsigned int)'0';
+            if (first_digit <= 9 && second_digit <= 9) {
+                item_count = (int64_t)(first_digit * 10 + second_digit);
+            } else if (first_digit <= 9 && count_start[1] == '/') {
+                item_count = (int64_t)first_digit;
+            } else {
+                parse_i64(count_start, count_length, &item_count);
+            }
+        } else {
+            const char *slash = memchr(count_start, '/', count_length);
+            if (slash) {
+                count_length = (size_t)(slash - count_start);
+            }
+            parse_i64(count_start, count_length, &item_count);
         }
-        parse_i64(count_start, count_length, &item_count);
     }
     if (item_count < 1) {
         item_count = 1;
@@ -94,19 +130,27 @@ static void parse_json_request_parameters(const request_t *request, size_t *out_
 
     int64_t multiplier = 1;
     if (request->query.ptr && request->query.len > 0) {
-        const char *cursor = request->query.ptr;
-        const char *query_end = cursor + request->query.len;
-        for (size_t parameter_index = 0; cursor < query_end && parameter_index < MAX_PARAMS; parameter_index++) {
-            const char *field_end = memchr(cursor, '&', (size_t)(query_end - cursor));
-            if (!field_end) {
-                field_end = query_end;
+        const char *query = request->query.ptr;
+        unsigned int digit = request->query.len == 3
+                                 ? (unsigned int)(unsigned char)query[2] - (unsigned int)'0'
+                                 : 10;
+        if (__builtin_expect(request->query.len == 3 && query[0] == 'm' && query[1] == '=' && digit <= 9, 1)) {
+            multiplier = (int64_t)digit;
+        } else {
+            const char *cursor = query;
+            const char *query_end = cursor + request->query.len;
+            for (size_t parameter_index = 0; cursor < query_end && parameter_index < MAX_PARAMS; parameter_index++) {
+                const char *field_end = memchr(cursor, '&', (size_t)(query_end - cursor));
+                if (!field_end) {
+                    field_end = query_end;
+                }
+                const char *equals_separator = memchr(cursor, '=', (size_t)(field_end - cursor));
+                if (equals_separator && equals_separator == cursor + 1 && cursor[0] == 'm') {
+                    parse_i64(equals_separator + 1, (size_t)(field_end - equals_separator - 1), &multiplier);
+                    break;
+                }
+                cursor = field_end < query_end ? field_end + 1 : query_end;
             }
-            const char *equals_separator = memchr(cursor, '=', (size_t)(field_end - cursor));
-            if (equals_separator && equals_separator == cursor + 1 && cursor[0] == 'm') {
-                parse_i64(equals_separator + 1, (size_t)(field_end - equals_separator - 1), &multiplier);
-                break;
-            }
-            cursor = field_end < query_end ? field_end + 1 : query_end;
         }
     }
 
@@ -292,6 +336,7 @@ void register_application_routes(worker_t *worker) {
     router_add(&worker->router, HTTP_METHOD_GET, "/", pipeline_handler);
     router_add(&worker->router, HTTP_METHOD_HEAD, "/", pipeline_handler);
     router_add(&worker->router, HTTP_METHOD_GET, "/pipeline", pipeline_handler);
+    router_add(&worker->router, HTTP_METHOD_GET, "/query", baseline_handler);
     router_add(&worker->router, HTTP_METHOD_GET, "/baseline11", baseline_handler);
     router_add(&worker->router, HTTP_METHOD_POST, "/baseline11", baseline_handler);
     router_add(&worker->router, HTTP_METHOD_GET, "/baseline2", baseline_handler);

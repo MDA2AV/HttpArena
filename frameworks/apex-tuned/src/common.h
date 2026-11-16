@@ -84,6 +84,165 @@ static inline bool parse_i64(const char *string_buffer, size_t buffer_length, in
     return true;
 }
 
+static inline uint32_t collapse_eight_decimal_lanes(uint64_t digit_lanes) {
+    static const uint64_t lane_mask = UINT64_C(0x000000ff000000ff);
+    digit_lanes = digit_lanes * 10 + (digit_lanes >> 8);
+    return (uint32_t)((((digit_lanes & lane_mask) * UINT64_C(0x000f424000000064)) +
+                       (((digit_lanes >> 16) & lane_mask) * UINT64_C(0x0000271000000001))) >>
+                      32);
+}
+
+static inline bool eight_bytes_are_ascii_digits(uint64_t ascii_bytes) {
+    return ((((ascii_bytes + UINT64_C(0x4646464646464646)) |
+              (ascii_bytes - UINT64_C(0x3030303030303030))) &
+             UINT64_C(0x8080808080808080)) == 0);
+}
+
+static inline bool parse_ascii_digits_fast(const char *digits, size_t length, uint64_t *out_value) {
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+    if (__builtin_expect(length == 7, 1)) {
+        uint64_t ascii_bytes = 0;
+        memcpy(&ascii_bytes, digits, 7);
+        ascii_bytes = (ascii_bytes << 8) | (uint64_t)'0';
+        *out_value = collapse_eight_decimal_lanes(ascii_bytes - UINT64_C(0x3030303030303030));
+        return eight_bytes_are_ascii_digits(ascii_bytes);
+    }
+    if (length == 8) {
+        uint64_t ascii_bytes;
+        memcpy(&ascii_bytes, digits, sizeof(ascii_bytes));
+        *out_value = collapse_eight_decimal_lanes(ascii_bytes - UINT64_C(0x3030303030303030));
+        return eight_bytes_are_ascii_digits(ascii_bytes);
+    }
+#endif
+
+    uint64_t parsed_value = 0;
+    unsigned int invalid_digit = 0;
+
+#define PARSE_DIGIT()                                                                                                  \
+    do {                                                                                                               \
+        unsigned int digit = (unsigned int)(unsigned char)*digits++ - (unsigned int)'0';                              \
+        invalid_digit |= digit > 9;                                                                                    \
+        parsed_value = parsed_value * 10 + digit;                                                                       \
+    } while (0)
+
+    switch (length) {
+    case 6:
+        PARSE_DIGIT();
+        [[fallthrough]];
+    case 5:
+        PARSE_DIGIT();
+        [[fallthrough]];
+    case 4:
+        PARSE_DIGIT();
+        [[fallthrough]];
+    case 3:
+        PARSE_DIGIT();
+        [[fallthrough]];
+    case 2:
+        PARSE_DIGIT();
+        [[fallthrough]];
+    case 1:
+        PARSE_DIGIT();
+        break;
+#if !defined(__BYTE_ORDER__) || __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__
+    case 7:
+        for (size_t index = 0; index < 7; index++) {
+            PARSE_DIGIT();
+        }
+        break;
+    case 8:
+        for (size_t index = 0; index < 8; index++) {
+            PARSE_DIGIT();
+        }
+        break;
+#endif
+    default:
+        return false;
+    }
+
+    *out_value = parsed_value;
+    return invalid_digit == 0;
+
+#undef PARSE_DIGIT
+}
+
+static inline bool sum_two_ascii_digits_fast(const char *first_digits, const char *second_digits, size_t length,
+                                              uint64_t *out_sum) {
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+    if (__builtin_expect(length == 7, 1)) {
+        uint64_t first_bytes = 0;
+        uint64_t second_bytes = 0;
+        memcpy(&first_bytes, first_digits, 7);
+        memcpy(&second_bytes, second_digits, 7);
+        first_bytes = (first_bytes << 8) | (uint64_t)'0';
+        second_bytes = (second_bytes << 8) | (uint64_t)'0';
+        *out_sum = collapse_eight_decimal_lanes(first_bytes + second_bytes - UINT64_C(0x6060606060606060));
+        return eight_bytes_are_ascii_digits(first_bytes) & eight_bytes_are_ascii_digits(second_bytes);
+    }
+    if (length == 8) {
+        uint64_t first_bytes;
+        uint64_t second_bytes;
+        memcpy(&first_bytes, first_digits, sizeof(first_bytes));
+        memcpy(&second_bytes, second_digits, sizeof(second_bytes));
+        *out_sum = collapse_eight_decimal_lanes(first_bytes + second_bytes - UINT64_C(0x6060606060606060));
+        return eight_bytes_are_ascii_digits(first_bytes) & eight_bytes_are_ascii_digits(second_bytes);
+    }
+#endif
+
+    uint64_t parsed_sum = 0;
+    unsigned int invalid_digit = 0;
+
+#define PARSE_DIGIT_PAIR()                                                                                             \
+    do {                                                                                                               \
+        unsigned int first_digit =                                                                                     \
+            (unsigned int)(unsigned char)*first_digits++ - (unsigned int)'0';                                          \
+        unsigned int second_digit =                                                                                    \
+            (unsigned int)(unsigned char)*second_digits++ - (unsigned int)'0';                                         \
+        invalid_digit |= (first_digit > 9) | (second_digit > 9);                                                       \
+        parsed_sum = parsed_sum * 10 + first_digit + second_digit;                                                     \
+    } while (0)
+
+    switch (length) {
+    case 6:
+        PARSE_DIGIT_PAIR();
+        [[fallthrough]];
+    case 5:
+        PARSE_DIGIT_PAIR();
+        [[fallthrough]];
+    case 4:
+        PARSE_DIGIT_PAIR();
+        [[fallthrough]];
+    case 3:
+        PARSE_DIGIT_PAIR();
+        [[fallthrough]];
+    case 2:
+        PARSE_DIGIT_PAIR();
+        [[fallthrough]];
+    case 1:
+        PARSE_DIGIT_PAIR();
+        break;
+#if !defined(__BYTE_ORDER__) || __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__
+    case 7:
+        for (size_t index = 0; index < 7; index++) {
+            PARSE_DIGIT_PAIR();
+        }
+        break;
+    case 8:
+        for (size_t index = 0; index < 8; index++) {
+            PARSE_DIGIT_PAIR();
+        }
+        break;
+#endif
+    default:
+        return false;
+    }
+
+    *out_sum = parsed_sum;
+    return invalid_digit == 0;
+
+#undef PARSE_DIGIT_PAIR
+}
+
 #if defined(__linux__)
 #include <malloc.h>
 #include <sys/prctl.h>
@@ -220,7 +379,7 @@ static inline void set_sock_opts(int fd) {
     // Enable TCP keepalive to detect and drop dead/idle sockets
     setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &one, sizeof(one));
 
-    int sndbuf = 262144;
+    int sndbuf = 524288;
     setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &sndbuf, sizeof(sndbuf));
 
 #if defined(TCP_KEEPIDLE)

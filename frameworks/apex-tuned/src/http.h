@@ -40,6 +40,7 @@ typedef struct {
     int64_t content_length;
     bool is_chunked;
     bool keep_alive;
+    bool is_http11;
     str_view_t accept_encoding;
     str_view_t content_type;
 } request_t;

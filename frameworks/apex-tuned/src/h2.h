@@ -39,4 +39,6 @@ bool h2_connection_init(conn_t *connection, worker_t *worker);
 bool h2_connection_process_incoming_data(conn_t *connection, worker_t *worker, const char *input_buffer,
                                          size_t input_length);
 
+bool h2_connection_drain_send(conn_t *connection, worker_t *worker);
+
 void h2_connection_destroy(conn_t *connection);

@@ -24,6 +24,119 @@
 #include <sys/prctl.h>
 #endif
 
+static const char pipeline_response[] =
+    "HTTP/1.1 200 OK\r\nContent-Type:text/plain\r\nContent-Length:2\r\n\r\nok";
+enum { PIPELINE_RESPONSE_LENGTH = sizeof(pipeline_response) - 1, PIPELINE_BATCH_LIMIT = 1024 };
+static_assert(PIPELINE_RESPONSE_LENGTH == 64, "pipeline response must stay minimal");
+
+static inline size_t pipeline_request_length(const char *buffer, size_t buffer_length) {
+    static const char root_prefix[] = "GET / HTTP/1.1\r\nHost: ";
+    static const char pipeline_prefix[] = "GET /pipeline HTTP/1.1\r\nHost: ";
+    const char *host;
+
+    if (buffer_length >= sizeof(root_prefix) - 1 &&
+        memcmp(buffer, root_prefix, sizeof(root_prefix) - 1) == 0) {
+        host = buffer + sizeof(root_prefix) - 1;
+    } else if (buffer_length >= sizeof(pipeline_prefix) - 1 &&
+               memcmp(buffer, pipeline_prefix, sizeof(pipeline_prefix) - 1) == 0) {
+        host = buffer + sizeof(pipeline_prefix) - 1;
+    } else {
+        return 0;
+    }
+
+    const char *host_end = memchr(host, '\r', (size_t)(buffer + buffer_length - host));
+    if (!host_end || (size_t)(buffer + buffer_length - host_end) < 4 || host_end[1] != '\n' ||
+        host_end[2] != '\r' || host_end[3] != '\n') {
+        return 0;
+    }
+    return (size_t)(host_end + 4 - buffer);
+}
+
+static inline size_t pipeline_request_batch(const char *buffer, size_t buffer_length,
+                                            size_t *out_consumed_bytes) {
+    size_t request_length = pipeline_request_length(buffer, buffer_length);
+    if (request_length == 0) {
+        return 0;
+    }
+
+    size_t request_count = 1;
+    size_t consumed_bytes = request_length;
+    while (request_count + 8 <= PIPELINE_BATCH_LIMIT && buffer_length - consumed_bytes >= request_length * 8) {
+        if (memcmp(buffer + consumed_bytes, buffer, request_length * 8) != 0) {
+            break;
+        }
+        request_count += 8;
+        consumed_bytes += request_length * 8;
+    }
+    while (request_count + 4 <= PIPELINE_BATCH_LIMIT && buffer_length - consumed_bytes >= request_length * 4) {
+        if (memcmp(buffer + consumed_bytes, buffer, request_length * 4) != 0) {
+            break;
+        }
+        request_count += 4;
+        consumed_bytes += request_length * 4;
+    }
+    while (request_count < PIPELINE_BATCH_LIMIT && buffer_length - consumed_bytes >= request_length &&
+           memcmp(buffer + consumed_bytes, buffer, request_length) == 0) {
+        request_count++;
+        consumed_bytes += request_length;
+    }
+
+    *out_consumed_bytes = consumed_bytes;
+    return request_count;
+}
+
+static inline size_t append_pipeline_responses(char *destination_buffer, size_t response_count) {
+    char *cursor = destination_buffer;
+
+#define APPEND_PIPELINE_RESPONSE()                                                                                     \
+    do {                                                                                                               \
+        memcpy(cursor, pipeline_response, PIPELINE_RESPONSE_LENGTH);                                                   \
+        cursor += PIPELINE_RESPONSE_LENGTH;                                                                            \
+    } while (0)
+
+    while (response_count >= 8) {
+        APPEND_PIPELINE_RESPONSE();
+        APPEND_PIPELINE_RESPONSE();
+        APPEND_PIPELINE_RESPONSE();
+        APPEND_PIPELINE_RESPONSE();
+        APPEND_PIPELINE_RESPONSE();
+        APPEND_PIPELINE_RESPONSE();
+        APPEND_PIPELINE_RESPONSE();
+        APPEND_PIPELINE_RESPONSE();
+        response_count -= 8;
+    }
+
+    switch (response_count) {
+    case 7:
+        APPEND_PIPELINE_RESPONSE();
+        [[fallthrough]];
+    case 6:
+        APPEND_PIPELINE_RESPONSE();
+        [[fallthrough]];
+    case 5:
+        APPEND_PIPELINE_RESPONSE();
+        [[fallthrough]];
+    case 4:
+        APPEND_PIPELINE_RESPONSE();
+        [[fallthrough]];
+    case 3:
+        APPEND_PIPELINE_RESPONSE();
+        [[fallthrough]];
+    case 2:
+        APPEND_PIPELINE_RESPONSE();
+        [[fallthrough]];
+    case 1:
+        APPEND_PIPELINE_RESPONSE();
+        [[fallthrough]];
+    default:
+        break;
+    }
+
+#undef APPEND_PIPELINE_RESPONSE
+
+    return (size_t)(cursor - destination_buffer);
+}
+
 int worker_init(worker_t *worker, int id, int cpu_id, SSL_CTX *ssl_ctx, SSL_CTX *ssl_ctx_h2, int port_h1, int port_tls,
                 int port_h2c, int port_h2) {
     memset(worker, 0, sizeof(*worker));
@@ -87,10 +200,54 @@ void process_requests(worker_t *worker, conn_t *connection) {
     size_t read_offset = 0;
 
     while (connection->read_pos > read_offset && !connection->parked_in_timer && !connection->closing) {
+        const char *request_buffer = connection->read_buf + read_offset;
+        size_t request_buffer_length = connection->read_pos - read_offset;
+
+        size_t pipeline_consumed_bytes;
+        size_t pipeline_count =
+            pipeline_request_batch(request_buffer, request_buffer_length, &pipeline_consumed_bytes);
+        if (__builtin_expect(pipeline_count > 0, 0)) {
+            size_t response_bytes = pipeline_count * PIPELINE_RESPONSE_LENGTH;
+            if (sizeof(worker->write_buf) - write_pos < response_bytes) {
+                if (write_pos > 0) {
+                    flush_data(worker, connection, worker->write_buf, write_pos);
+                    write_pos = 0;
+                    if (connection->fd < 0) {
+                        return;
+                    }
+                }
+            }
+            write_pos += append_pipeline_responses(worker->write_buf + write_pos, pipeline_count);
+            read_offset += pipeline_consumed_bytes;
+            connection->keep_alive = true;
+            continue;
+        }
+
+        size_t baseline_consumed_bytes;
+        int64_t baseline_sum;
+        if (__builtin_expect(parse_baseline_request_fast(request_buffer, request_buffer_length,
+                                                         &baseline_consumed_bytes, &baseline_sum),
+                             0)) {
+            if (sizeof(worker->write_buf) - write_pos < 128) {
+                if (write_pos > 0) {
+                    flush_data(worker, connection, worker->write_buf, write_pos);
+                    write_pos = 0;
+                    if (connection->fd < 0) {
+                        return;
+                    }
+                }
+            }
+            write_pos += format_plain_text_baseline_response(worker->write_buf + write_pos, baseline_sum, true,
+                                                             &connection->closing);
+            read_offset += baseline_consumed_bytes;
+            connection->keep_alive = true;
+            continue;
+        }
+
         request_t request;
         size_t consumed_bytes = 0;
-        int parse_status = parse_http_request(connection->read_buf + read_offset, connection->read_pos - read_offset,
-                                              &request, worker->chunk_buf, sizeof(worker->chunk_buf), &consumed_bytes);
+        int parse_status = parse_http_request(request_buffer, request_buffer_length, &request, worker->chunk_buf,
+                                              sizeof(worker->chunk_buf), &consumed_bytes);
 
         if (parse_status == 0) {
             break;
@@ -102,8 +259,10 @@ void process_requests(worker_t *worker, conn_t *connection) {
 
         connection->keep_alive = request.keep_alive;
 
-        // Ultra-fast path for /pipeline
-        if (__builtin_expect(request.path.len == 9 && memcmp(request.path.ptr, "/pipeline", 9) == 0, 0)) {
+        // fast path for the fixed pipeline response
+        bool is_pipeline_path = (request.path.len == 1 && request.path.ptr[0] == '/') ||
+                                (request.path.len == 9 && memcmp(request.path.ptr, "/pipeline", 9) == 0);
+        if (__builtin_expect(request.is_http11 && request.method == HTTP_METHOD_GET && is_pipeline_path, 0)) {
             if (sizeof(worker->write_buf) - write_pos < 128) {
                 if (write_pos > 0) {
                     flush_data(worker, connection, worker->write_buf, write_pos);
@@ -116,31 +275,19 @@ void process_requests(worker_t *worker, conn_t *connection) {
             continue;
         }
 
-        // Ultra-fast path for /baseline11
-        if (__builtin_expect(request.path.len == 11 && memcmp(request.path.ptr, "/baseline11", 11) == 0, 0)) {
+        bool is_baseline_path =
+            (request.path.len == 11 && memcmp(request.path.ptr, "/baseline11", 11) == 0 &&
+             (request.method == HTTP_METHOD_GET || request.method == HTTP_METHOD_POST)) ||
+            (request.method == HTTP_METHOD_GET &&
+             ((request.path.len == 10 && memcmp(request.path.ptr, "/baseline2", 10) == 0) ||
+              (request.path.len == 6 && memcmp(request.path.ptr, "/query", 6) == 0)));
+        if (__builtin_expect(request.is_http11 && is_baseline_path, 0)) {
             int64_t accumulated_sum =
                 request.query.len > 0 ? calculate_query_integer_sum_fast(request.query.ptr, request.query.len) : 0;
             if (request.method == HTTP_METHOD_POST && request.body.len > 0) {
-                accumulated_sum += parse_integer_fast(request.body.ptr, request.body.len);
+                accumulated_sum = (int64_t)((uint64_t)accumulated_sum +
+                                            (uint64_t)parse_integer_fast(request.body.ptr, request.body.len));
             }
-
-            if (sizeof(worker->write_buf) - write_pos < 128) {
-                if (write_pos > 0) {
-                    flush_data(worker, connection, worker->write_buf, write_pos);
-                    write_pos = 0;
-                }
-            }
-
-            write_pos += format_plain_text_baseline_response(worker->write_buf + write_pos, accumulated_sum,
-                                                             connection->keep_alive, &connection->closing);
-            read_offset += consumed_bytes;
-            continue;
-        }
-
-        // Ultra-fast path for /baseline2
-        if (__builtin_expect(request.path.len == 10 && memcmp(request.path.ptr, "/baseline2", 10) == 0, 0)) {
-            int64_t accumulated_sum =
-                request.query.len > 0 ? calculate_query_integer_sum_fast(request.query.ptr, request.query.len) : 0;
 
             if (sizeof(worker->write_buf) - write_pos < 128) {
                 if (write_pos > 0) {
@@ -379,13 +526,18 @@ void *worker_thread_main(void *thread_argument) {
                 if (alpn_selected && alpn_length == 2 && memcmp(alpn_selected, "h2", 2) == 0) {
                     connection->is_h2 = true;
                     if (!h2_connection_init(connection, worker)) {
-                        close_conn(worker, connection);
+                        if (connection->fd >= 0) {
+                            close_conn(worker, connection);
+                        }
                         continue;
                     }
                 }
 
-                struct epoll_event event = {.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
-                                            .data.ptr = connection};
+                uint32_t connection_events = EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLERR;
+                if (connection->pending_write) {
+                    connection_events |= EPOLLOUT;
+                }
+                struct epoll_event event = {.events = connection_events, .data.ptr = connection};
                 epoll_ctl(worker->epoll_fd, EPOLL_CTL_MOD, connection->fd, &event);
             }
 
@@ -394,6 +546,12 @@ void *worker_thread_main(void *thread_argument) {
                     if (!flush_pending_write(worker, connection)) {
                         continue;
                     }
+                }
+                if (connection->is_h2 && !h2_connection_drain_send(connection, worker)) {
+                    if (connection->fd >= 0) {
+                        close_conn(worker, connection);
+                    }
+                    continue;
                 }
             }
 
@@ -435,7 +593,9 @@ void *worker_thread_main(void *thread_argument) {
                         }
                         if (!h2_connection_process_incoming_data(connection, worker, h2_read_buffer,
                                                                  (size_t)bytes_read)) {
-                            close_conn(worker, connection);
+                            if (connection->fd >= 0) {
+                                close_conn(worker, connection);
+                            }
                             break;
                         }
                     }

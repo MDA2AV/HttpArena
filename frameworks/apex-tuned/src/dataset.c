@@ -4,6 +4,60 @@
 static dataset_item_t *g_items = NULL;
 static size_t g_num_items = 0;
 
+static inline void copy_json_prefix_tail(char *destination, const char *source, size_t length) {
+    size_t offset = 0;
+    if (length & 16) {
+        memcpy(destination, source, 16);
+        offset = 16;
+    }
+    if (length & 8) {
+        memcpy(destination + offset, source + offset, 8);
+        offset += 8;
+    }
+    if (length & 4) {
+        memcpy(destination + offset, source + offset, 4);
+        offset += 4;
+    }
+    if (length & 2) {
+        memcpy(destination + offset, source + offset, 2);
+        offset += 2;
+    }
+    if (length & 1) {
+        destination[offset] = source[offset];
+    }
+}
+
+static inline void copy_json_prefix(char *destination, const char *source, size_t length) {
+    size_t full_blocks = length / 32;
+    switch (full_blocks) {
+    case 6:
+        memcpy(destination + 160, source + 160, 32);
+        [[fallthrough]];
+    case 5:
+        memcpy(destination + 128, source + 128, 32);
+        [[fallthrough]];
+    case 4:
+        memcpy(destination + 96, source + 96, 32);
+        [[fallthrough]];
+    case 3:
+        memcpy(destination + 64, source + 64, 32);
+        [[fallthrough]];
+    case 2:
+        memcpy(destination + 32, source + 32, 32);
+        [[fallthrough]];
+    case 1:
+        memcpy(destination, source, 32);
+        break;
+    case 0:
+        break;
+    default:
+        memcpy(destination, source, length);
+        return;
+    }
+    size_t copied_length = full_blocks * 32;
+    copy_json_prefix_tail(destination + copied_length, source + copied_length, length - copied_length);
+}
+
 static int64_t cjson_int(const cJSON *object, const char *key) {
     const cJSON *value_node = cJSON_GetObjectItemCaseSensitive(object, key);
     return cJSON_IsNumber(value_node) ? (int64_t)value_node->valuedouble : 0;
@@ -85,31 +139,66 @@ bool dataset_load(const char *dataset_file_path) {
         char prefix_buffer[2048];
         char *prefix_cursor = prefix_buffer;
         if (current_item_index == 0) {
-            memcpy(prefix_cursor, "{\"items\":[", 10);
-            prefix_cursor += 10;
+            memcpy(prefix_cursor, "{\"items\":[", sizeof("{\"items\":[") - 1);
+            prefix_cursor += sizeof("{\"items\":[") - 1;
         } else {
-            memcpy(prefix_cursor, "},", 2);
-            prefix_cursor += 2;
+            memcpy(prefix_cursor, "},", sizeof("},") - 1);
+            prefix_cursor += sizeof("},") - 1;
         }
-        prefix_cursor += sprintf(prefix_cursor,
-                                 "{\"id\":%lld,\"name\":\"%s\",\"category\":\"%s\",\"price\":%lld,\"quantity\":%lld,"
-                                 "\"active\":%s,\"tags\":[",
-                                 (long long)item->id, item->name, item->category, (long long)item->price,
-                                 (long long)item->quantity, item->active ? "true" : "false");
+
+        memcpy(prefix_cursor, "{\"id\":", sizeof("{\"id\":") - 1);
+        prefix_cursor += sizeof("{\"id\":") - 1;
+        prefix_cursor += format_i64(prefix_cursor, item->id);
+        memcpy(prefix_cursor, ",\"name\":\"", sizeof(",\"name\":\"") - 1);
+        prefix_cursor += sizeof(",\"name\":\"") - 1;
+        size_t name_length = strlen(item->name);
+        memcpy(prefix_cursor, item->name, name_length);
+        prefix_cursor += name_length;
+        memcpy(prefix_cursor, "\",\"category\":\"", sizeof("\",\"category\":\"") - 1);
+        prefix_cursor += sizeof("\",\"category\":\"") - 1;
+        size_t category_length = strlen(item->category);
+        memcpy(prefix_cursor, item->category, category_length);
+        prefix_cursor += category_length;
+        memcpy(prefix_cursor, "\",\"price\":", sizeof("\",\"price\":") - 1);
+        prefix_cursor += sizeof("\",\"price\":") - 1;
+        prefix_cursor += format_i64(prefix_cursor, item->price);
+        memcpy(prefix_cursor, ",\"quantity\":", sizeof(",\"quantity\":") - 1);
+        prefix_cursor += sizeof(",\"quantity\":") - 1;
+        prefix_cursor += format_i64(prefix_cursor, item->quantity);
+        if (item->active) {
+            memcpy(prefix_cursor, ",\"active\":true,\"tags\":[", sizeof(",\"active\":true,\"tags\":[") - 1);
+            prefix_cursor += sizeof(",\"active\":true,\"tags\":[") - 1;
+        } else {
+            memcpy(prefix_cursor, ",\"active\":false,\"tags\":[", sizeof(",\"active\":false,\"tags\":[") - 1);
+            prefix_cursor += sizeof(",\"active\":false,\"tags\":[") - 1;
+        }
 
         for (size_t tag_index = 0; tag_index < item->num_tags; tag_index++) {
             if (tag_index > 0) {
                 *prefix_cursor++ = ',';
             }
-            prefix_cursor += sprintf(prefix_cursor, "\"%s\"", item->tags[tag_index]);
+            *prefix_cursor++ = '"';
+            size_t tag_length = strlen(item->tags[tag_index]);
+            memcpy(prefix_cursor, item->tags[tag_index], tag_length);
+            prefix_cursor += tag_length;
+            *prefix_cursor++ = '"';
         }
 
-        prefix_cursor +=
-            sprintf(prefix_cursor, "],\"rating\":{\"score\":%lld,\"count\":%lld},\"total\":", (long long)item->score,
-                    (long long)item->count);
+        memcpy(prefix_cursor, "],\"rating\":{\"score\":", sizeof("],\"rating\":{\"score\":") - 1);
+        prefix_cursor += sizeof("],\"rating\":{\"score\":") - 1;
+        prefix_cursor += format_i64(prefix_cursor, item->score);
+        memcpy(prefix_cursor, ",\"count\":", sizeof(",\"count\":") - 1);
+        prefix_cursor += sizeof(",\"count\":") - 1;
+        prefix_cursor += format_i64(prefix_cursor, item->count);
+        memcpy(prefix_cursor, "},\"total\":", sizeof("},\"total\":") - 1);
+        prefix_cursor += sizeof("},\"total\":") - 1;
 
         item->prefix_len = (size_t)(prefix_cursor - prefix_buffer);
         item->prefix = malloc(item->prefix_len);
+        if (!item->prefix) {
+            cJSON_Delete(root_array);
+            return false;
+        }
         memcpy(item->prefix, prefix_buffer, item->prefix_len);
     }
 
@@ -134,7 +223,7 @@ size_t json_serialize(size_t count, int64_t multiplier, char *destination_buffer
     }
 
     for (size_t item_index = 0; item_index < count; item_index++) {
-        memcpy(cursor, g_items[item_index].prefix, g_items[item_index].prefix_len);
+        copy_json_prefix(cursor, g_items[item_index].prefix, g_items[item_index].prefix_len);
         cursor += g_items[item_index].prefix_len;
         int64_t total_price =
             (multiplier == 1) ? g_items[item_index].base_total : (g_items[item_index].base_total * multiplier);

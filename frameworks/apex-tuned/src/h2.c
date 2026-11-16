@@ -1,6 +1,7 @@
 #include "h2.h"
 #include "connection.h"
 #include "dataset.h"
+#include "response_builder.h"
 #include "static_files.h"
 
 #include <fcntl.h>
@@ -11,6 +12,10 @@
 void flush_data(worker_t *worker, conn_t *connection, const char *data, size_t length);
 void close_conn(worker_t *worker, conn_t *connection);
 
+#define H2_WRITE_COALESCE_SIZE (64 * 1024)
+
+_Static_assert(H2_WRITE_COALESCE_SIZE <= WRITE_BUF_SIZE, "H2 coalescing buffer exceeds worker write buffer");
+
 static ssize_t h2_send_callback(nghttp2_session *session, const uint8_t *data, size_t length, int flags,
                                 void *user_data) {
     (void)session;
@@ -18,25 +23,52 @@ static ssize_t h2_send_callback(nghttp2_session *session, const uint8_t *data, s
 
     h2_connection_t *h2_conn = (h2_connection_t *)user_data;
     worker_t *worker = h2_conn->worker;
-    conn_t *connection = h2_conn->connection;
 
-    size_t remaining_buffer_space = sizeof(worker->write_buf) - worker->h2_write_pos;
-    if (remaining_buffer_space < length) {
-        if (worker->h2_write_pos > 0) {
-            flush_data(worker, connection, worker->write_buf, worker->h2_write_pos);
+    if (length > H2_WRITE_COALESCE_SIZE) {
+        return NGHTTP2_ERR_CALLBACK_FAILURE;
+    }
+    if (length > H2_WRITE_COALESCE_SIZE - worker->h2_write_pos) {
+        return NGHTTP2_ERR_WOULDBLOCK;
+    }
+
+    memcpy(worker->write_buf + worker->h2_write_pos, data, length);
+    worker->h2_write_pos += length;
+    return (ssize_t)length;
+}
+
+bool h2_connection_drain_send(conn_t *connection, worker_t *worker) {
+    h2_connection_t *h2_conn = (h2_connection_t *)connection->h2;
+    if (!h2_conn || !h2_conn->session) {
+        return false;
+    }
+    if (connection->pending_write) {
+        return true;
+    }
+
+    h2_conn->worker = worker;
+    while (nghttp2_session_want_write(h2_conn->session)) {
+        worker->h2_write_pos = 0;
+        int send_status = nghttp2_session_send(h2_conn->session);
+        size_t buffered_bytes = worker->h2_write_pos;
+        if (send_status != 0) {
             worker->h2_write_pos = 0;
-            remaining_buffer_space = sizeof(worker->write_buf);
+            return false;
+        }
+        if (buffered_bytes == 0) {
+            break;
+        }
+
+        flush_data(worker, connection, worker->write_buf, buffered_bytes);
+        worker->h2_write_pos = 0;
+        if (connection->fd < 0) {
+            return false;
+        }
+        if (connection->pending_write) {
+            break;
         }
     }
 
-    if (length <= remaining_buffer_space) {
-        memcpy(worker->write_buf + worker->h2_write_pos, data, length);
-        worker->h2_write_pos += length;
-    } else {
-        flush_data(worker, connection, (const char *)data, length);
-    }
-
-    return (ssize_t)length;
+    return true;
 }
 
 static ssize_t h2_data_read_callback(nghttp2_session *session, int32_t stream_id, uint8_t *destination_buffer,
@@ -145,6 +177,7 @@ static int h2_on_stream_close_callback(nghttp2_session *session, int32_t stream_
     h2_stream_slot_t *slot = &h2_conn->stream_slots[stream_slot_index];
 
     if (slot->dynamic_response_buffer != NULL) {
+        bool counted_dynamic_stream = !slot->is_dynamic_buffer_static_memory;
         if (slot->is_pooled_buffer) {
             buffer_pool_release(&h2_conn->worker->buffer_pool, slot->dynamic_response_buffer);
         } else if (!slot->is_dynamic_buffer_static_memory) {
@@ -155,7 +188,7 @@ static int h2_on_stream_close_callback(nghttp2_session *session, int32_t stream_
         slot->dynamic_response_sent = 0;
         slot->is_dynamic_buffer_static_memory = false;
         slot->is_pooled_buffer = false;
-        if (h2_conn->active_dynamic_streams > 0) {
+        if (counted_dynamic_stream && h2_conn->active_dynamic_streams > 0) {
             h2_conn->active_dynamic_streams--;
             if (h2_conn->active_dynamic_streams == 0) {
                 conn_unmark_stalled(h2_conn->worker, h2_conn->connection);
@@ -171,62 +204,20 @@ static int h2_on_stream_close_callback(nghttp2_session *session, int32_t stream_
     return 0;
 }
 
-static int64_t parse_query_sum(const char *query_string) {
-    int64_t accumulated_sum = 0;
-    const char *query_cursor = query_string;
-
-    while (*query_cursor != '\0') {
-        const char *key_value_separator = strchr(query_cursor, '=');
-        if (!key_value_separator) {
-            break;
-        }
-
-        const char *value_start = key_value_separator + 1;
-        const char *parameter_separator = strchr(value_start, '&');
-
-        while (*value_start == ' ' || *value_start == '\t') {
-            value_start++;
-        }
-
-        int sign_multiplier = 1;
-        if (*value_start == '-') {
-            sign_multiplier = -1;
-            value_start++;
-        }
-
-        int64_t integer_value = 0;
-        while (*value_start >= '0' && *value_start <= '9') {
-            integer_value = integer_value * 10 + (*value_start - '0');
-            value_start++;
-        }
-
-        accumulated_sum += sign_multiplier * integer_value;
-
-        if (parameter_separator != NULL) {
-            query_cursor = parameter_separator + 1;
-        } else {
-            break;
-        }
-    }
-
-    return accumulated_sum;
-}
-
-
 static int handle_h2_baseline_request(nghttp2_session *session, h2_connection_t *h2_conn, int32_t stream_id,
-                                      const char *request_path) {
+                                       const char *request_path) {
     int stream_slot_index = (stream_id >> 1) & H2_STREAM_SLOT_MASK;
     h2_stream_slot_t *slot = &h2_conn->stream_slots[stream_slot_index];
 
     int64_t calculated_sum = 0;
-    const char *query_delimiter = strchr(request_path, '?');
+    const char *query_delimiter = memchr(request_path, '?', slot->request_path_length);
     if (query_delimiter != NULL) {
-        calculated_sum = parse_query_sum(query_delimiter + 1);
+        const char *query = query_delimiter + 1;
+        size_t query_length = slot->request_path_length - (size_t)(query - request_path);
+        calculated_sum = calculate_query_integer_sum_fast(query, query_length);
     }
 
-    int formatted_length =
-        snprintf(slot->inline_response_buffer, sizeof(slot->inline_response_buffer), "%lld", (long long)calculated_sum);
-    slot->inline_response_length = (size_t)formatted_length;
+    slot->inline_response_length = format_i64(slot->inline_response_buffer, calculated_sum);
 
     nghttp2_nv response_headers[] = {
         {(uint8_t *)":status", (uint8_t *)"200", 7, 3, NGHTTP2_NV_FLAG_NONE},
@@ -239,7 +230,7 @@ static int handle_h2_baseline_request(nghttp2_session *session, h2_connection_t 
 }
 
 static int handle_h2_json_request(nghttp2_session *session, h2_connection_t *h2_conn, int32_t stream_id,
-                                  const char *request_path) {
+                                   const char *request_path) {
     int stream_slot_index = (stream_id >> 1) & H2_STREAM_SLOT_MASK;
     h2_stream_slot_t *slot = &h2_conn->stream_slots[stream_slot_index];
 
@@ -336,10 +327,6 @@ static int handle_h2_static_request(nghttp2_session *session, h2_connection_t *h
     h2_stream_slot_t *slot = &h2_conn->stream_slots[stream_slot_index];
 
     const char *relative_file_path = request_path + 8;
-    if (strstr(relative_file_path, "..") != NULL) {
-        return -1;
-    }
-
     static_file_result_t file_result;
     if (!static_cache_lookup(relative_file_path, slot->accept_br, slot->accept_gzip, &file_result)) {
         return -1;
@@ -351,7 +338,7 @@ static int handle_h2_static_request(nghttp2_session *session, h2_connection_t *h
     slot->is_dynamic_buffer_static_memory = true;
 
     char content_length_str[32];
-    int cl_len = snprintf(content_length_str, sizeof(content_length_str), "%zu", file_result.size);
+    size_t content_length_length = format_i64(content_length_str, (int64_t)file_result.size);
 
     nghttp2_nv response_headers[5];
     size_t header_count = 0;
@@ -363,12 +350,13 @@ static int handle_h2_static_request(nghttp2_session *session, h2_connection_t *h
         strlen(file_result.mime_type), NGHTTP2_NV_FLAG_NONE};
     response_headers[header_count++] = (nghttp2_nv){
         (uint8_t *)"content-length", (uint8_t *)content_length_str, 14,
-        (size_t)cl_len, NGHTTP2_NV_FLAG_NONE};
+        content_length_length, NGHTTP2_NV_FLAG_NONE};
 
     if (file_result.content_encoding != NULL) {
+        size_t content_encoding_length = file_result.content_encoding[0] == 'b' ? 2 : 4;
         response_headers[header_count++] = (nghttp2_nv){
             (uint8_t *)"content-encoding", (uint8_t *)(uintptr_t)file_result.content_encoding, 16,
-            strlen(file_result.content_encoding), NGHTTP2_NV_FLAG_NONE};
+            content_encoding_length, NGHTTP2_NV_FLAG_NONE};
         response_headers[header_count++] = (nghttp2_nv){
             (uint8_t *)"vary", (uint8_t *)"accept-encoding", 4, 15, NGHTTP2_NV_FLAG_NONE};
     }
@@ -461,11 +449,8 @@ bool h2_connection_init(conn_t *connection, worker_t *worker) {
                                                 {NGHTTP2_SETTINGS_INITIAL_WINDOW_SIZE, 65535}};
     nghttp2_submit_settings(h2_conn->session, NGHTTP2_FLAG_NONE, server_settings, 2);
 
-    worker->h2_write_pos = 0;
-    nghttp2_session_send(h2_conn->session);
-    if (worker->h2_write_pos > 0) {
-        flush_data(worker, connection, worker->write_buf, worker->h2_write_pos);
-        worker->h2_write_pos = 0;
+    if (!h2_connection_drain_send(connection, worker)) {
+        return false;
     }
 
     return true;
@@ -484,18 +469,7 @@ bool h2_connection_process_incoming_data(conn_t *connection, worker_t *worker, c
         return false;
     }
 
-    worker->h2_write_pos = 0;
-    int send_status = nghttp2_session_send(h2_conn->session);
-    if (send_status != 0) {
-        return false;
-    }
-
-    if (worker->h2_write_pos > 0) {
-        flush_data(worker, connection, worker->write_buf, worker->h2_write_pos);
-        worker->h2_write_pos = 0;
-    }
-
-    return true;
+    return h2_connection_drain_send(connection, worker);
 }
 
 void h2_connection_destroy(conn_t *connection) {

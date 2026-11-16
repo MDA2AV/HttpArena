@@ -13,6 +13,7 @@ void req_init(request_t *request) {
     request->content_length = -1;
     request->is_chunked = false;
     request->keep_alive = true;
+    request->is_http11 = false;
     request->accept_encoding = (str_view_t){NULL, 0};
     request->content_type = (str_view_t){NULL, 0};
 }
@@ -309,10 +310,9 @@ int parse_http_request(const char *buffer, size_t buffer_length, request_t *requ
     }
 
     str_view_t protocol_view = (str_view_t){space_second + 1, (size_t)(line_end - (space_second + 1))};
-    if (view_eq(protocol_view, "HTTP/1.0")) {
+    request->is_http11 = view_eq(protocol_view, "HTTP/1.1");
+    if (!request->is_http11 && view_eq(protocol_view, "HTTP/1.0")) {
         request->keep_alive = false;
-    } else {
-        request->keep_alive = true;
     }
 
     const char *header_cursor = line_end + 2;
