@@ -128,8 +128,15 @@ fn load_tls_config(cert: &Path, key: &Path) -> io::Result<rustls::ServerConfig> 
     Ok(tls)
 }
 
-#[ntex::main]
-async fn main() -> io::Result<()> {
+fn main() -> io::Result<()> {
+    ntex::rt::System::build()
+        .name("main")
+        .thread_pool_limit(2048)
+        .build(ntex::rt::DefaultRuntime)
+        .block_on(run())
+}
+
+async fn run() -> io::Result<()> {
     // Leaked once at startup so handlers borrow the items instead of cloning
     // every string into each response.
     let dataset: &'static [DatasetItem] = Box::leak(load_dataset().into_boxed_slice());
