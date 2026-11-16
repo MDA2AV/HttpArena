@@ -4,7 +4,7 @@
 #
 #   ./scripts/resilience.sh <framework> [--save] [attack ...]
 #
-# The entry runs in a fixed box (RES_MEM / RES_CPUSET, default 8g / 2 CPUs) so an
+# The entry runs in a fixed box (RES_MEM / RES_CPUSET, default 4g / 2 CPUs) so an
 # attack that exhausts memory OOM-kills the container — a signal we can read —
 # instead of taking the host down. Each attack gets a FRESH container (a crash in
 # one must not cost another its verdict), reusing the normal entry launch path
@@ -44,13 +44,15 @@ done
 [ -n "${POSITIONAL[0]:-}" ] || fail "usage: resilience.sh <framework> [--save] [attack ...]"
 
 # ── Knobs (all env-overridable) ──────────────────────────────────────────────
-RES_MEM="${RES_MEM:-8g}"             # the box the entry runs in
+RES_MEM="${RES_MEM:-4g}"             # the box the entry runs in
 # One physical core + its SMT sibling — a tight "2 hardware threads on 1 core" box,
 # read from the CPU topology. A blind "0-1" is wrong on CPUs whose thread siblings
 # aren't adjacent (e.g. 0,16): it would hand the server two SEPARATE physical cores,
 # twice the compute we intend. Override RES_CPUSET to pin a specific set.
 RES_CPUSET="${RES_CPUSET:-$(cat /sys/devices/system/cpu/cpu0/topology/thread_siblings_list 2>/dev/null || echo 0-1)}"
-RES_DURATION="${RES_DURATION:-25}"   # seconds per attack (verdicts are clear well inside this; the attack ends early if the server dies)
+RES_DURATION="${RES_DURATION:-15}"   # max seconds per attack (verdicts are clear well inside this; an attack ends early if the server dies OR is clearly surviving)
+RES_MIN_DURATION="${RES_MIN_DURATION:-8}"  # never early-exit "clearly surviving" before this many seconds
+RES_SETTLE="${RES_SETTLE:-6}"        # ... and only once peak RSS has been flat (and liveness 100%) this long
 RES_CONNS="${RES_CONNS:-4000}"       # connections the slow attacks hold (< the 28k ephemeral-port ceiling)
 RES_BODY_SIZE="${RES_BODY_SIZE:-104857600}"  # 100 MiB declared body for slow-body (pre-alloc pressure)
 RES_DRIP="${RES_DRIP:-1.0}"          # seconds between drips
@@ -103,6 +105,52 @@ rest = [c for c in range(os.cpu_count() or 2) if c not in srv]
 print(",".join(map(str, rest)) or "0")
 ' "$RES_CPUSET" 2>/dev/null || echo "$GCANNON_CPUS")}"
 ATTACK_PY="$SCRIPT_DIR/resilience/attack.py"
+ATTACK_GO_DIR="$SCRIPT_DIR/resilience/attacker"
+ATTACK_GO_BIN="$ATTACK_GO_DIR/attacker"
+# The GIL-bound floods go to the Go client: CPython's GIL caps frame-construction
+# floods (rapid-reset et al.) near one core of real work no matter how many cores
+# taskset grants, so the ~60-core attack box can't actually outrun the server.
+# The Go client has no GIL. Everything else (slow holds, amplification, parser,
+# WebSocket, dheat) stays on attack.py, where the GIL is not the bottleneck.
+# RES_USE_GO=0 forces the Python client everywhere.
+RES_GO_ATTACKS=" continuation-flood hpack-bomb rapid-reset madeyoureset settings-flood ping-flood empty-frame-flood window-stall large-upload pipelining-flood tls-handshake-flood slow-body slow-headers slow-read huge-chunk trailer-flood chunk-extension-flood keepalive-hoard content-length-prealloc expect-100-continue chunk-size-overflow "
+RES_USE_GO="${RES_USE_GO:-1}"
+
+# Build the Go attack client once per run: native `go build` if the host has go,
+# else build the fallback image and extract the static binary. Any failure drops
+# back to the Python client (RES_USE_GO=0) rather than aborting the run.
+build_go_attacker() {
+    [ "$RES_USE_GO" = "1" ] || return 0
+    if [ -x "$ATTACK_GO_BIN" ] && [ "$ATTACK_GO_BIN" -nt "$ATTACK_GO_DIR/main.go" ]; then
+        info "Go attack client is up to date"; return 0
+    fi
+    if command -v go >/dev/null 2>&1; then
+        info "building the Go attack client (go build)"
+        if ( cd "$ATTACK_GO_DIR" && CGO_ENABLED=0 go build -trimpath -o attacker . ); then
+            return 0
+        fi
+        warn "go build failed — using the Python attack client"; RES_USE_GO=0; return 0
+    fi
+    if command -v docker >/dev/null 2>&1; then
+        info "no native go — building the Go attack client in docker"
+        # Empty DOCKER_CONFIG so the base-image pull skips a broken credential
+        # helper (docker-desktop leaves one that isn't on PATH). create/cp need
+        # no config once the image is local.
+        local _dctmp; _dctmp=$(mktemp -d); printf '{}' > "$_dctmp/config.json"
+        if DOCKER_CONFIG="$_dctmp" docker build -q -t httparena-resilience-attacker:local \
+                -f "$ROOT_DIR/docker/resilience-attacker.Dockerfile" "$ATTACK_GO_DIR" >/dev/null 2>&1; then
+            local cid; cid=$(docker create httparena-resilience-attacker:local 2>/dev/null) || cid=""
+            if [ -n "$cid" ] && docker cp "$cid:/attacker" "$ATTACK_GO_BIN" >/dev/null 2>&1; then
+                docker rm -f "$cid" >/dev/null 2>&1 || true
+                chmod +x "$ATTACK_GO_BIN"; rm -rf "$_dctmp"; return 0
+            fi
+            [ -n "$cid" ] && docker rm -f "$cid" >/dev/null 2>&1 || true
+        fi
+        rm -rf "$_dctmp"
+        warn "docker build/extract of the Go client failed — using the Python client"; RES_USE_GO=0; return 0
+    fi
+    warn "neither go nor docker available — using the Python attack client"; RES_USE_GO=0
+}
 
 # ── Entry ────────────────────────────────────────────────────────────────────
 framework_load_meta "${POSITIONAL[0]}"
@@ -173,6 +221,7 @@ else
     has_tls && ATTACKS+=(tls-handshake-flood dheat)
 fi
 info "attacks: ${ATTACKS[*]}"
+build_go_attacker
 info "box: mem=$RES_MEM cpuset=$RES_CPUSET  duration=${RES_DURATION}s conns=$RES_CONNS"
 
 # ── Measurement helpers ──────────────────────────────────────────────────────
@@ -301,7 +350,17 @@ run_attack() {
     sampler_pid=$!
 
     # The attack itself. tls_flag is set in the case above (TLS handshake attacks).
-    taskset -c "$ATTACK_CPUS" python3 "$ATTACK_PY" \
+    # GIL-bound floods run on the Go client; everything else on attack.py. Both
+    # take the identical flag set — the Go client declares and ignores the flags
+    # it doesn't use — so only the binary changes. NOTE: a new --flag added to the
+    # invocation below must also be declared in attacker/main.go (used or ignored),
+    # or the Go-dispatched attacks exit non-zero (Go errors on an unknown flag).
+    local -a client_cmd=(python3 "$ATTACK_PY")
+    if [ "$RES_USE_GO" = "1" ] && [ -x "$ATTACK_GO_BIN" ] && [[ "$RES_GO_ATTACKS" == *" $name "* ]]; then
+        client_cmd=("$ATTACK_GO_BIN")
+        info "$name: Go attack client (no GIL)"
+    fi
+    taskset -c "$ATTACK_CPUS" "${client_cmd[@]}" \
         --attack "$name" --host 127.0.0.1 --port "$port" --path "$path" \
         --conns "$conns" --duration "$RES_DURATION" \
         --body-size "$RES_BODY_SIZE" --drip-interval "$RES_DRIP" \
@@ -319,12 +378,30 @@ run_attack() {
         --ws-frag-size "$RES_WS_FRAG_SIZE" "${tls_flag[@]}" \
         > "$WORK/$name.client.json" 2> "$WORK/$name.client.log" &
     local attack_pid=$! killed_early=0
-    # Early-exit: once the server is dead (OOM / crash) there's nothing left to
-    # measure, so stop the attack instead of flooding a dead container for the rest
-    # of the duration. Poll the container every 2s while the client is still running.
+    # Early-exit on either settled outcome, so a run never burns the full duration
+    # once the verdict is decided. Poll every 2s while the client runs:
+    #   1. the server DIED (OOM / crash) — nothing left to measure; or
+    #   2. the server is CLEARLY SURVIVING — past RES_MIN_DURATION, liveness has
+    #      been 100% and peak RSS has not grown for RES_SETTLE seconds, so the
+    #      attack isn't biting. A real memory leak keeps raising the peak (blocks
+    #      this); a CPU/liveness hit leaves a "fail" in the probe log (blocks this).
+    #      peak RSS is monotonic, so any genuine growth resets the flat timer —
+    #      the failure mode is "runs longer than needed", never "stops too soon".
+    local aw_start aw_now aw_elapsed aw_peak aw_last_peak=-1 aw_last_grow
+    aw_start=$(date +%s); aw_last_grow=$aw_start
     while kill -0 "$attack_pid" 2>/dev/null; do
         if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_NAME" 2>/dev/null || echo false)" != "true" ]; then
             info "$name: server stopped running — ending the attack early"
+            kill "$attack_pid" 2>/dev/null || true
+            killed_early=1
+            break
+        fi
+        aw_now=$(date +%s); aw_elapsed=$((aw_now - aw_start))
+        aw_peak=$(cat "$peak_file" 2>/dev/null || echo 0)
+        [ "${aw_peak:-0}" -gt "${aw_last_peak:-0}" ] 2>/dev/null && { aw_last_peak=$aw_peak; aw_last_grow=$aw_now; }
+        if [ "$aw_elapsed" -ge "$RES_MIN_DURATION" ] && [ $((aw_now - aw_last_grow)) -ge "$RES_SETTLE" ] \
+           && ! grep -q fail "$live_file" 2>/dev/null; then
+            info "$name: liveness 100% and peak RSS flat ${RES_SETTLE}s — ending early (clearly surviving)"
             kill "$attack_pid" 2>/dev/null || true
             killed_early=1
             break
