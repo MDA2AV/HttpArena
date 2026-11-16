@@ -988,14 +988,13 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   function resilCell(fw){
     var s=resilSurface(), r=resilOf(fw), v=r&&r[s[0]], seg;
     if(!v){
-      seg='<span class="rz rz-none"><span class="rzl">'+s[1]+'</span>'
+      seg='<span class="rz rz-none">'
         + '<span class="rzv">—</span><span class="rzbar"></span></span>';
     } else {
       var ratio=v[1]?v[0]/v[1]:0, pct=Math.round(ratio*100);
       var col=state.heat?heatColor(ratio):'';
       seg='<span class="rz'+(ratio===1?' full':'')+'" data-tip="'
         + esc(s[1]+': '+v[0]+' of '+v[1]+' attacks survived ('+pct+'%). survived = 1 point, degraded = ½.')+'">'
-        + '<span class="rzl">'+s[1]+'</span>'
         + '<span class="rzv">'+pct+'<span class="rzp">%</span></span>'
         + '<span class="rzbar"><i style="width:'+pct+'%'+(col?';background:'+col:'')+'"></i></span></span>';
     }
