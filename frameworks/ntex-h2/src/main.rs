@@ -6,6 +6,8 @@ use ntex::web::{self, App, HttpResponse};
 use rustls::pki_types::{CertificateDer, PrivateKeyDer, pem::PemObject};
 use serde::{Deserialize, Serialize};
 
+mod spec;
+
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
@@ -143,6 +145,7 @@ async fn run() -> io::Result<()> {
     let static_dir: &'static Path = Path::new("/data/static");
     let app = move || {
         App::new()
+            .configure(spec::routes)
             .route("/baseline2", web::get().to(baseline2))
             .route(
                 "/json/{count}",

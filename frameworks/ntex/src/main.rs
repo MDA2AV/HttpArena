@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 
 mod db;
 mod fortunes;
+mod parse;
+mod spec;
 
 const MAX_BODY: usize = 64 * 1024 * 1024;
 type QueryParams = web::types::Query<Vec<(String, String)>>;
@@ -183,6 +185,8 @@ fn routes(
     )
     .service(web::resource("/delay/{ms}").route(web::get().to(delay)))
     .service(web::resource("/echo").route(web::post().to(echo_body)));
+    spec::routes(cfg);
+    parse::routes(cfg);
 }
 
 fn app_config() -> web::WebAppConfig {
