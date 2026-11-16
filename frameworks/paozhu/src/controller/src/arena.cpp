@@ -4,6 +4,8 @@
 #include <asio/this_coro.hpp>
 #include <asio/use_awaitable.hpp>
 
+#include <sys/stat.h>
+
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
@@ -17,9 +19,9 @@
 //
 // Routes are picked up by paozhu_pre at build time: every //@urlpath(...)
 // annotation registers the function that follows it. Path parameters must be
-// the last segment, so /json/:count and /delay/:ms are registered as the
-// fixed prefixes /json and /delay with a parameter-name table. /static/* is
-// served by the framework's native static path (wwwpath=/data), not a route.
+// the last segment, so /json/:count, /static/:filename and /delay/:ms are
+// registered as the fixed prefixes /json, /static and /delay with a
+// parameter-name table.
 namespace
 {
 
@@ -457,6 +459,42 @@ std::string raw_body(const std::shared_ptr<http::httppeer> &peer)
     return body;
 }
 
+const char *mime_of(const std::string &filename)
+{
+    const std::size_t dot = filename.rfind('.');
+    if (dot == std::string::npos)
+    {
+        return "application/octet-stream";
+    }
+    const std::string ext = filename.substr(dot + 1);
+    if (ext == "css")  return "text/css";
+    if (ext == "js")   return "application/javascript";
+    if (ext == "html") return "text/html";
+    if (ext == "json") return "application/json";
+    if (ext == "svg")  return "image/svg+xml";
+    if (ext == "webp") return "image/webp";
+    if (ext == "woff2") return "font/woff2";
+    return "application/octet-stream";
+}
+
+bool safe_filename(const std::string &name)
+{
+    if (name.empty() || name.size() > 128 || name.find("..") != std::string::npos)
+    {
+        return false;
+    }
+    for (char c : name)
+    {
+        const bool allowed = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+                             (c >= '0' && c <= '9') || c == '.' || c == '-' || c == '_';
+        if (!allowed)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
 }  // namespace
 
 namespace http
@@ -535,6 +573,49 @@ asio::awaitable<std::string> arena_json(std::shared_ptr<httppeer> peer)
         co_return "";
     }
     peer->output = render_json(static_cast<std::size_t>(count), multiplier, items);
+    co_return "";
+}
+
+//@urlpath(null,static/:filename)
+asio::awaitable<std::string> arena_static(std::shared_ptr<httppeer> peer)
+{
+    const std::string filename = peer->get["filename"].to_string();
+    struct stat st {};
+    bool stat_ok = false;
+    if (safe_filename(filename))
+    {
+        // stat + read on every request: the validation suite replaces a mounted
+        // file (same length, new bytes, possibly within the same mtime second)
+        // and expects the next response to carry the new bytes, so no resident
+        // body cache — a freshness stamp keyed on mtime/size cannot see that.
+        stat_ok = ::stat(("/data/static/" + filename).c_str(), &st) == 0 &&
+                  (st.st_mode & S_IFREG) != 0;
+    }
+    if (!stat_ok)
+    {
+        peer->status(404);
+        peer->type("text/plain");
+        peer->output = "Not Found";
+        co_return "";
+    }
+
+    // Size the body once, then read straight into it: no per-byte iterator
+    // and no second copy. Short read (file shrank between stat and read):
+    // keep what arrived. A zero-size file is a valid body, not a miss.
+    std::ifstream in("/data/static/" + filename, std::ios::binary);
+    if (!in.is_open())
+    {
+        peer->status(404);
+        peer->type("text/plain");
+        peer->output = "Not Found";
+        co_return "";
+    }
+    std::string body;
+    body.resize(static_cast<std::size_t>(st.st_size));
+    in.read(&body[0], static_cast<std::streamsize>(st.st_size));
+    body.resize(static_cast<std::size_t>(in.gcount()));
+    peer->output = std::move(body);
+    peer->type(mime_of(filename));
     co_return "";
 }
 
