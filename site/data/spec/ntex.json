@@ -5,7 +5,7 @@
     "h1": {
       "tool": "http11probe",
       "version": "d50d818",
-      "passed": 151,
+      "passed": 152,
       "total": 159,
       "warnings": 19,
       "failed": [
@@ -62,14 +62,6 @@
           "expected": "400/close/timeout",
           "got": "408, connection closed",
           "level": "NotApplicable"
-        },
-        {
-          "id": "WS-UPGRADE-POST",
-          "test": "WebSocket upgrade via POST must not be accepted",
-          "expected": "!101",
-          "got": "no response, timed out",
-          "rfc": "RFC 6455 \u00a74.1",
-          "level": "Must"
         }
       ]
     }
