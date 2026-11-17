@@ -42,36 +42,53 @@ import (
 var h2Preface = []byte("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n")
 
 type stats struct {
-	Attack        string  `json:"attack"`
-	ConnsReq      int     `json:"conns_requested"`
-	Established   int64   `json:"established"`
-	Reaped        int64   `json:"reaped"`
-	OpenAtEnd     int64   `json:"open_at_end"`
-	ConnectErrors int64   `json:"connect_errors"`
-	FramesSent    int64   `json:"frames_sent,omitempty"`
-	BytesSent     int64   `json:"bytes_sent,omitempty"`
-	DripSentBytes int64   `json:"drip_sent_bytes,omitempty"` // slow/drip engines (scorer reads this, not bytes_sent)
-	ElapsedS      float64 `json:"elapsed_s"`
-	Client        string  `json:"client"`
+	Attack          string  `json:"attack"`
+	ConnsReq        int     `json:"conns_requested"`
+	Established     int64   `json:"established"`
+	Reaped          int64   `json:"reaped"`
+	OpenAtEnd       int64   `json:"open_at_end"`
+	ConnectErrors   int64   `json:"connect_errors"`
+	FramesSent      int64   `json:"frames_sent,omitempty"`
+	BytesSent       int64   `json:"bytes_sent,omitempty"`
+	DripSentBytes   int64   `json:"drip_sent_bytes,omitempty"`  // slow/drip engines (scorer reads this, not bytes_sent)
+	EndpointMissing int32   `json:"endpoint_missing,omitempty"` // atomic 0/1: parser attack, entry has no /parse → no-endpoint verdict
+	ElapsedS        float64 `json:"elapsed_s"`
+	Client          string  `json:"client"`
 }
 
 type config struct {
-	attack        string
-	host          string
-	port          int
-	path          string
-	conns         int
-	duration      time.Duration
-	useTLS        bool
-	uploadSize    int64
-	pipelineDepth int
-	dripInterval  time.Duration
-	dripBytes     int
-	bodySize      int64
-	clDeclare     int64
-	chunkExtSize  int
-	stallCount    int
-	stallStreams  int
+	attack          string
+	host            string
+	port            int
+	path            string
+	conns           int
+	duration        time.Duration
+	useTLS          bool
+	uploadSize      int64
+	pipelineDepth   int
+	dripInterval    time.Duration
+	dripBytes       int
+	bodySize        int64
+	clDeclare       int64
+	chunkExtSize    int
+	stallCount      int
+	stallStreams    int
+	bombSize        int
+	hashdosKeys     int
+	jsonDepth       int
+	multipartParts  int
+	redosPad        int
+	chunkCount      int
+	headerValueSize int
+	headerCount     int
+	dupHeaders      int
+	qvalueCount     int
+	cookiePairs     int
+	percentCount    int
+	rangeCount      int
+	bignumDigits    int
+	wsFrameLen      uint64
+	wsFragSize      int
 }
 
 func (c *config) addr() string { return fmt.Sprintf("%s:%d", c.host, c.port) }
@@ -783,6 +800,27 @@ var goAttacks = map[string]func(*config, *stats){
 	"content-length-prealloc": contentLengthPrealloc,
 	"expect-100-continue":     expect100Continue,
 	"chunk-size-overflow":     chunkSizeOverflow,
+	// HTTP/1.1 payload / parser-differential (parser.go)
+	"decompression-bomb":       decompressionBomb,
+	"decomp-codec-bypass":      decompCodecBypass,
+	"hashdos":                  hashdos,
+	"json-nesting-bomb":        jsonNestingBomb,
+	"json-bignum":              jsonBignum,
+	"multipart-flood":          multipartFlood,
+	"redos-headers":            redosHeaders,
+	"tiny-chunk-flood":         tinyChunkFlood,
+	"header-bomb":              headerBomb,
+	"header-count-flood":       headerCountFlood,
+	"duplicate-header-merge":   duplicateHeaderMerge,
+	"qvalue-cpu-bomb":          qvalueCPUBomb,
+	"cookie-flood":             cookieFlood,
+	"percent-decode-quadratic": percentDecodeQuadratic,
+	"range-bomb":               rangeBomb,
+	// WebSocket (ws.go)
+	"ws-giant-frame":   wsGiantFrame,
+	"ws-fragment-bomb": wsFragmentBomb,
+	"ws-deflate-bomb":  wsDeflateBomb,
+	"ws-pong-flood":    wsPongFlood,
 }
 
 func main() {
@@ -806,17 +844,23 @@ func main() {
 	flag.IntVar(&c.stallCount, "stall-count", 5000, "window-stall response size (/json/N)")
 	flag.IntVar(&c.stallStreams, "stall-streams", 64, "window-stall streams per connection")
 
-	// attack.py-shared flags this client does not use, declared so a shared
-	// invocation (resilience.sh passes the full set) parses cleanly.
-	for _, name := range []string{
-		"bomb-size", "hashdos-keys", "json-depth", "multipart-parts", "redos-pad",
-		"chunk-count", "header-value-size", "header-count", "dup-headers",
-		"qvalue-count", "cookie-pairs", "percent-count", "range-count",
-		"bignum-digits", "ws-frame-len", "ws-frag-size",
-	} {
-		var ignored string
-		flag.StringVar(&ignored, name, "", "(ignored by the Go client)")
-	}
+	// Payload/parser + WebSocket attack sizes (all now used by the Go client).
+	flag.IntVar(&c.bombSize, "bomb-size", 1<<30, "gzip/deflate bomb inflated size")
+	flag.IntVar(&c.hashdosKeys, "hashdos-keys", 100000, "hashdos form keys")
+	flag.IntVar(&c.jsonDepth, "json-depth", 100000, "json-nesting depth")
+	flag.IntVar(&c.multipartParts, "multipart-parts", 50000, "multipart parts")
+	flag.IntVar(&c.redosPad, "redos-pad", 4000, "redos header padding")
+	flag.IntVar(&c.chunkCount, "chunk-count", 500000, "tiny-chunk count")
+	flag.IntVar(&c.headerValueSize, "header-value-size", 1<<20, "header-bomb value size")
+	flag.IntVar(&c.headerCount, "header-count", 50000, "header-count-flood count")
+	flag.IntVar(&c.dupHeaders, "dup-headers", 20000, "duplicate-header count")
+	flag.IntVar(&c.qvalueCount, "qvalue-count", 5000, "Accept-Language q-values")
+	flag.IntVar(&c.cookiePairs, "cookie-pairs", 100000, "cookie pairs")
+	flag.IntVar(&c.percentCount, "percent-count", 2000, "percent-encoded path tokens")
+	flag.IntVar(&c.rangeCount, "range-count", 1000, "byte ranges")
+	flag.IntVar(&c.bignumDigits, "bignum-digits", 100000, "json-bignum digits")
+	flag.Uint64Var(&c.wsFrameLen, "ws-frame-len", (1<<63)-256, "ws-giant-frame declared length")
+	flag.IntVar(&c.wsFragSize, "ws-frag-size", 4096, "ws-fragment payload size")
 	flag.Parse()
 	c.duration = time.Duration(durSec * float64(time.Second))
 	c.dripInterval = time.Duration(dripSec * float64(time.Second))
@@ -839,13 +883,14 @@ func main() {
 		once.Do(func() {
 			snap := stats{
 				Attack: st.Attack, ConnsReq: st.ConnsReq, Client: st.Client,
-				Established:   atomic.LoadInt64(&st.Established),
-				Reaped:        atomic.LoadInt64(&st.Reaped),
-				ConnectErrors: atomic.LoadInt64(&st.ConnectErrors),
-				FramesSent:    atomic.LoadInt64(&st.FramesSent),
-				BytesSent:     atomic.LoadInt64(&st.BytesSent),
-				DripSentBytes: atomic.LoadInt64(&st.DripSentBytes),
-				ElapsedS:      time.Since(start).Seconds(),
+				Established:     atomic.LoadInt64(&st.Established),
+				Reaped:          atomic.LoadInt64(&st.Reaped),
+				ConnectErrors:   atomic.LoadInt64(&st.ConnectErrors),
+				FramesSent:      atomic.LoadInt64(&st.FramesSent),
+				BytesSent:       atomic.LoadInt64(&st.BytesSent),
+				DripSentBytes:   atomic.LoadInt64(&st.DripSentBytes),
+				EndpointMissing: atomic.LoadInt32(&st.EndpointMissing),
+				ElapsedS:        time.Since(start).Seconds(),
 			}
 			// Connections still held when the attack ended (not reaped) — the
 			// scorer surfaces this next to reaped/established in the PR comment.

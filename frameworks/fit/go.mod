@@ -3,7 +3,7 @@ module httparena/fit
 go 1.27.3
 
 require (
-	github.com/lesismal/fib v1.7.2
+	github.com/lesismal/fib v1.8.0
 	github.com/lesismal/fit v1.0.0
 )
 

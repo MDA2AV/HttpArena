@@ -178,6 +178,15 @@ jobs:
           mkdir -p /tmp/bench_logs
           FAILED=""
           FIRST=true
+          # This file runs from main but the scripts come from the PR, and a branch
+          # cut before the compliance suites (#1777) has no scripts/spec.sh. A
+          # /benchmark there skips the suites instead of marking every entry
+          # failed; a /spec there still fails.
+          have_spec=true
+          if [ ! -f scripts/spec.sh ]; then
+            have_spec=false
+            echo "::notice::scripts/spec.sh is not on this branch (it predates #1777): merge main to run the compliance suites"
+          fi
           for fw in $LIST; do
             # Settle between frameworks. The previous entry's container has only
             # just been torn down: its sockets are still draining through
@@ -205,7 +214,7 @@ jobs:
             # failed that image may be stale, so the suites wait for the next run.
             # Like the benchmark, the scores always go to disk and are committed
             # only on --save.
-            if [ "$SPEC_ONLY" = "true" ] || { [ "$RESILIENCE_ONLY" != "true" ] && [ -z "$PROFILE" ] && $bench_ok; }; then
+            if [ "$SPEC_ONLY" = "true" ] || { $have_spec && [ "$RESILIENCE_ONLY" != "true" ] && [ -z "$PROFILE" ] && $bench_ok; }; then
               echo "::group::spec $fw"
               skip_build=1
               [ "$SPEC_ONLY" = "true" ] && skip_build=0
@@ -218,21 +227,18 @@ jobs:
               fi
               echo "::endgroup::"
             fi
-            # The resilience suite, for entries that opt in with "resilience":
-            # true in meta.json (scripts/resilience.sh). It is destructive and
-            # needs the whole machine, so it rides this exclusive slot: on a full
-            # benchmark (no -t) that succeeded, or on its own via /resilience
-            # (RESILIENCE_ONLY, which builds the image itself since no benchmark
-            # did). resilience.sh self-gates on the flag too, so this is a quick
-            # no-op for an entry that did not opt in. Verdicts go to disk, commit
-            # only on --save.
-            if [ "$SPEC_ONLY" != "true" ] && { [ "$RESILIENCE_ONLY" = "true" ] || { [ -z "$PROFILE" ] && $bench_ok; }; }; then
+            # The resilience suite (scripts/resilience.sh), for entries that opt in
+            # with "resilience": true in meta.json. Destructive and needs the whole
+            # machine, so it runs ONLY on its own via /resilience (RESILIENCE_ONLY) —
+            # a normal /benchmark never triggers it. It builds the image itself
+            # (nothing else did). resilience.sh self-gates on the meta flag too, so
+            # this is a quick no-op for an entry that did not opt in. Verdicts go to
+            # disk, committed only on --save.
+            if [ "$RESILIENCE_ONLY" = "true" ]; then
               res_on=$(python3 -c "import json,sys;print('1' if json.load(open('frameworks/%s/meta.json'%sys.argv[1])).get('resilience') else '0')" "$fw" 2>/dev/null || echo 0)
               if [ "$res_on" = "1" ]; then
                 echo "::group::resilience $fw"
-                res_skip_build=1
-                [ "$RESILIENCE_ONLY" = "true" ] && res_skip_build=0
-                if ! RES_SKIP_BUILD=$res_skip_build ./scripts/resilience.sh "$fw" --save 2>&1 | tee "/tmp/bench_logs/$fw.resilience.log"; then
+                if ! RES_SKIP_BUILD=0 ./scripts/resilience.sh "$fw" --save 2>&1 | tee "/tmp/bench_logs/$fw.resilience.log"; then
                   echo "::error::resilience.sh failed for $fw"
                   case " $FAILED " in
                     *" $fw "*) ;;
@@ -327,7 +333,26 @@ jobs:
             fi
             git commit -m "$MSG"
             git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${PR_REPO}.git"
-            git push origin HEAD:"${PR_BRANCH}" || echo "Warning: could not push to fork (permissions)"
+            # A push that does not land loses the results, so it fails the job
+            # and says so on the PR instead of passing with a warning nobody
+            # reads. Most often a commit reached the branch while this run was
+            # measuring (#1783): the numbers are for the commit checked out at
+            # the start, so they are not put on top of the new one either.
+            if ! git push origin HEAD:"${PR_BRANCH}"; then
+              RAN=$(git rev-parse "refs/remotes/pull/${{ inputs.pr }}/head" 2>/dev/null || true)
+              NOW=$(gh api "/repos/${{ github.repository }}/pulls/${{ inputs.pr }}" --jq '.head.sha' 2>/dev/null || true)
+              if [ -n "$RAN" ] && [ -n "$NOW" ] && [ "$RAN" != "$NOW" ]; then
+                WHY="the branch moved to \`${NOW:0:9}\` while this run was measuring \`${RAN:0:9}\`, so the numbers are for code the branch no longer has"
+              elif [ "$PR_REPO" != "${{ github.repository }}" ]; then
+                WHY="the push to \`${PR_REPO}\` was refused, most likely a fork that does not allow edits from maintainers"
+              else
+                WHY="the push to \`${PR_BRANCH}\` was refused"
+              fi
+              echo "::error::Results not saved: ${WHY}"
+              gh pr comment "${{ inputs.pr }}" --repo "${{ github.repository }}" \
+                --body "⚠️ **This run's results were not saved**: ${WHY}. Nothing was committed, and the board keeps the numbers it has. Save them with a new run."
+              exit 1
+            fi
           fi
 
       - name: Post results to PR
@@ -552,7 +577,7 @@ jobs:
           rm -rf /tmp/bench_logs /tmp/bench_body.txt /tmp/bench_full.txt /tmp/bench_table.txt /tmp/bench_comparison.md /tmp/pr_site_data /tmp/main_site_data /tmp/bench_site_data 2>/dev/null || true
 
       - name: Post resilience report to PR
-        if: always() && inputs.spec_only != 'true'
+        if: always() && inputs.resilience_only == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LIST: ${{ steps.resolve.outputs.list }}

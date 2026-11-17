@@ -2,6 +2,7 @@
 
 package dev.cardigan.httparena;
 
+import dev.cardigan.core.CardiganRuntime;
 import dev.cardigan.http.Get;
 import dev.cardigan.http.Post;
 import dev.cardigan.http.QueryParam;
@@ -15,6 +16,14 @@ import java.util.Arrays;
 
 /** The small arithmetic endpoints shared by the HttpArena transports. */
 public final class HttpArenaController {
+    @Get("/delay/{ms}")
+    public Response delay(long ms) throws InterruptedException {
+        if (ms != 0) {
+            CardiganRuntime.sleep(ms);
+        }
+        return Response.text(ms);
+    }
+
     @Get("/baseline11")
     public Response baseline11(
             @QueryParam("a") int a,

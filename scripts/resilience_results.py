@@ -169,6 +169,11 @@ def score_attack(r):
     # the sampler's last value can undercount. By definition it reached the cap.
     if verdict == "oom-killed" and limit_mb and peak_mb < limit_mb:
         peak_mb = float(limit_mb)
+    # Offered load: the client's own frames/elapsed. Meaningful for the floods;
+    # the slow/hold attacks report 0 frames (their pressure is held connections).
+    _cl = r.get("client") or {}
+    _fr, _el = _cl.get("frames_sent") or 0, _cl.get("elapsed_s") or 0
+    rps = round(_fr / _el) if (_fr and _el) else None
     out = {
         "verdict": verdict,
         "passed": passed,
@@ -182,6 +187,9 @@ def score_attack(r):
         "oom_killed": bool(r.get("oom_killed")),
         "exit_code": r.get("exit_code"),
         "duration_s": r.get("duration_s"),
+        "rps": rps,
+        "client_cpu_cores": r.get("client_cpu_cores"),
+        "server_cpu_cores": r.get("server_cpu_cores"),
     }
     client = r.get("client") or {}
     # A server that reaped most of our connections defended itself; surface it.
@@ -215,7 +223,13 @@ def main():
             scored[name] = score_attack(json.load(f))
 
     # no-endpoint attacks have passed=None — not a pass, not a fail, not counted.
-    passed = sum(1 for a in scored.values() if a.get("passed") is True)
+    # Score: survived = 1 point, degraded (shed load but recovered) = ½ point,
+    # hung/crashed/oom-killed/error = 0. no-endpoint (passed is None) is excluded
+    # from both the score and the total. Keep it an int when whole (33, not 33.0).
+    def _weight(a):
+        return {"survived": 1.0, "degraded": 0.5}.get(a.get("verdict"), 0.0)
+    passed = sum(_weight(a) for a in scored.values() if a.get("passed") is not None)
+    passed = int(passed) if passed == int(passed) else passed
     result = {
         "framework": display,
         "dir": entry,

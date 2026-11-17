@@ -45,21 +45,104 @@ done
 
 # ── Knobs (all env-overridable) ──────────────────────────────────────────────
 RES_MEM="${RES_MEM:-4g}"             # the box the entry runs in
-# One physical core + its SMT sibling — a tight "2 hardware threads on 1 core" box,
-# read from the CPU topology. A blind "0-1" is wrong on CPUs whose thread siblings
-# aren't adjacent (e.g. 0,16): it would hand the server two SEPARATE physical cores,
-# twice the compute we intend. Override RES_CPUSET to pin a specific set.
-RES_CPUSET="${RES_CPUSET:-$(cat /sys/devices/system/cpu/cpu0/topology/thread_siblings_list 2>/dev/null || echo 0-1)}"
-RES_DURATION="${RES_DURATION:-15}"   # max seconds per attack (verdicts are clear well inside this; an attack ends early if the server dies OR is clearly surviving)
+# Server box + attack box, derived together from the CPU topology so they are
+# always disjoint, always a valid cpuset, and sane on a machine of ANY size.
+# Override RES_CPUSET / ATTACK_CPUS to pin a specific split.
+#   • Server: one physical core + its SMT sibling (cpu0's thread_siblings_list).
+#     A blind "0-1" is wrong on CPUs whose siblings aren't adjacent (e.g. 0,16) —
+#     that hands the server two SEPARATE physical cores, twice the compute we mean.
+#   • Attack client: every OTHER logical CPU, so it never shares a physical core
+#     with the (deliberately CPU-starved) server and keeps maximum firepower.
+#   • A no-SMT / SMT-off machine (common on ARM) reports cpu0's siblings as a bare
+#     "0"; it is emitted as "0-0", because framework_start rejects a bare "0" as
+#     the ambiguous --cpus count. A box too small to spare the client a core of its
+#     own (the server set already spans every CPU) pins the server to CPU 0 and
+#     gives the client the rest; a single-CPU box can't isolate at all, so the
+#     client shares CPU 0 with a warning. The bench host (≥32 cores) is unchanged:
+#     the server cpuset string it records is byte-for-byte what it was before.
+_res_cpu_split=$(RES_CPUSET="${RES_CPUSET:-}" ATTACK_CPUS="${ATTACK_CPUS:-}" python3 - <<'PY' 2>/dev/null || true
+import os
+
+def parse(s):
+    out = set()
+    for p in s.replace(" ", "").split(","):
+        if not p:
+            continue
+        if "-" in p:
+            a, b = p.split("-"); out.update(range(int(a), int(b) + 1))
+        else:
+            out.add(int(p))
+    return out
+
+def fmt(cpus):
+    # Compact a CPU set to cpuset-list syntax ("0,16" / "1-7" / "1-3,5"). A single
+    # CPU n -> "n-n", never a bare "n", so framework_start reads it as a cpuset and
+    # not as the ambiguous CPU *count* "0".
+    cpus = sorted(cpus)
+    runs = []; start = prev = cpus[0]
+    for c in cpus[1:]:
+        if c == prev + 1:
+            prev = c; continue
+        runs.append((start, prev)); start = prev = c
+    runs.append((start, prev))
+    return ",".join(str(a) if a == b and len(cpus) > 1 else f"{a}-{b}" for a, b in runs)
+
+ncpu = os.cpu_count() or 2
+allc = set(range(ncpu))
+
+raw = os.environ.get("RES_CPUSET", "").strip()
+if not raw:
+    try:
+        raw = open("/sys/devices/system/cpu/cpu0/topology/thread_siblings_list").read().strip()
+    except OSError:
+        raw = ""
+srv = (parse(raw) & allc) if raw else set()
+if not srv:
+    srv = {0, 1} & allc or {0}
+
+warn = 0
+rest = allc - srv
+if not rest:                 # server set already spans the machine → free CPU 0's peers
+    srv = {0}
+    rest = allc - srv
+if not rest:                 # one logical CPU only → no isolation is possible
+    rest = {0}
+    warn = 1
+
+# Keep an explicit/raw multi-CPU cpuset verbatim when it still fits, so a known-good
+# split (e.g. the bench host's "0,64") is recorded exactly as before.
+srv_str = raw if (raw and any(ch in raw for ch in "-,") and parse(raw) == srv) else fmt(srv)
+atk_env = os.environ.get("ATTACK_CPUS", "").strip()
+atk_str = atk_env if atk_env else fmt(rest)
+
+print(srv_str)
+print(atk_str)
+print(warn)
+PY
+)
+if [ -n "$_res_cpu_split" ]; then
+    RES_CPUSET=$(printf '%s\n' "$_res_cpu_split" | sed -n 1p)
+    ATTACK_CPUS=$(printf '%s\n' "$_res_cpu_split" | sed -n 2p)
+    if [ "$(printf '%s\n' "$_res_cpu_split" | sed -n 3p)" = "1" ]; then
+        warn "only $(nproc 2>/dev/null || echo '?') logical CPU(s): the attack client shares the server's core — resilience verdicts are indicative only on this box"
+    fi
+else
+    # python3 is a hard dependency elsewhere in this script, but never crash the
+    # run on the CPU split alone: fall back to the historical defaults.
+    RES_CPUSET="${RES_CPUSET:-0-1}"
+    ATTACK_CPUS="${ATTACK_CPUS:-$GCANNON_CPUS}"
+fi
+unset _res_cpu_split
+RES_DURATION="${RES_DURATION:-45}"   # max seconds per attack (verdicts are clear well inside this; an attack ends early if the server dies OR is clearly surviving)
 RES_MIN_DURATION="${RES_MIN_DURATION:-8}"  # never early-exit "clearly surviving" before this many seconds
 RES_SETTLE="${RES_SETTLE:-6}"        # ... and only once peak RSS has been flat (and liveness 100%) this long
-RES_CONNS="${RES_CONNS:-4000}"       # connections the slow attacks hold (< the 28k ephemeral-port ceiling)
+RES_CONNS="${RES_CONNS:-32768}"      # connections the slow attacks hold (goroutine-backed now; capped under the ~28k single-IP port ceiling)
 RES_BODY_SIZE="${RES_BODY_SIZE:-104857600}"  # 100 MiB declared body for slow-body (pre-alloc pressure)
 RES_DRIP="${RES_DRIP:-1.0}"          # seconds between drips
 RES_DRIP_BYTES="${RES_DRIP_BYTES:-256}"       # bytes per drip for slow-body/huge-chunk: ~256 B/s, slow
                                               # enough to be low-and-slow but above a bytes-at-zero reaper
-RES_H2_CONNS="${RES_H2_CONNS:-256}"           # connections for the HTTP/2 flood attacks (each floods hard)
-RES_DECOMP_CONNS="${RES_DECOMP_CONNS:-64}"    # connections for the H1 payload/parser floods
+RES_H2_CONNS="${RES_H2_CONNS:-32768}"           # connections for the HTTP/2 flood attacks (each floods hard)
+RES_DECOMP_CONNS="${RES_DECOMP_CONNS:-32768}"    # connections for the H1 payload/parser floods
 RES_BOMB_SIZE="${RES_BOMB_SIZE:-1073741824}"  # 1 GiB decompressed per gzip bomb
 RES_HASHDOS_KEYS="${RES_HASHDOS_KEYS:-100000}"      # form keys for hashdos
 RES_JSON_DEPTH="${RES_JSON_DEPTH:-100000}"          # array nesting depth for json-nesting-bomb
@@ -67,8 +150,8 @@ RES_MULTIPART_PARTS="${RES_MULTIPART_PARTS:-50000}" # parts for multipart-flood
 RES_REDOS_PAD="${RES_REDOS_PAD:-4000}"              # ambiguous-run length for redos-headers
 RES_STALL_COUNT="${RES_STALL_COUNT:-5000}"          # /json/{count} size per stalled stream (window-stall)
 RES_STALL_STREAMS="${RES_STALL_STREAMS:-64}"        # stalled streams per connection (window-stall)
-RES_WS_CONNS="${RES_WS_CONNS:-256}"                 # connections for the WebSocket attacks
-RES_TLS_CONNS="${RES_TLS_CONNS:-128}"               # workers for the TLS handshake attacks
+RES_WS_CONNS="${RES_WS_CONNS:-32768}"                 # connections for the WebSocket attacks
+RES_TLS_CONNS="${RES_TLS_CONNS:-4000}"               # workers for the TLS handshake attacks
 RES_CL_DECLARE="${RES_CL_DECLARE:-2147483648}"      # declared Content-Length (content-length-prealloc/expect-100)
 RES_CHUNK_EXT_SIZE="${RES_CHUNK_EXT_SIZE:-4096}"    # chunk-extension bytes per chunk (chunk-extension-flood)
 RES_CHUNK_COUNT="${RES_CHUNK_COUNT:-500000}"        # 1-byte chunks (tiny-chunk-flood)
@@ -89,21 +172,8 @@ RES_BIGNUM_DIGITS="${RES_BIGNUM_DIGITS:-100000}"    # digits in the JSON number 
 RES_WS_FRAME_LEN="${RES_WS_FRAME_LEN:-9223372036854775552}"  # declared WS frame length (ws-giant-frame)
 RES_WS_FRAG_SIZE="${RES_WS_FRAG_SIZE:-4096}"        # bytes per WS fragment (ws-fragment-bomb)
 RES_RECOVERY="${RES_RECOVERY:-15}"   # seconds to wait for the server to serve again
-# The attack client gets EVERY logical CPU except the server's core+sibling, so it
-# never shares a physical core with the (deliberately CPU-starved) server and has
-# maximum firepower. Derived from RES_CPUSET — GCANNON_CPUS (half the box) could
-# overlap the server's SMT sibling on a non-adjacent-sibling CPU.
-ATTACK_CPUS="${ATTACK_CPUS:-$(python3 -c '
-import os, sys
-srv = set()
-for p in sys.argv[1].replace(" ", "").split(","):
-    if "-" in p:
-        a, b = p.split("-"); srv.update(range(int(a), int(b) + 1))
-    elif p:
-        srv.add(int(p))
-rest = [c for c in range(os.cpu_count() or 2) if c not in srv]
-print(",".join(map(str, rest)) or "0")
-' "$RES_CPUSET" 2>/dev/null || echo "$GCANNON_CPUS")}"
+# ATTACK_CPUS (every logical CPU except the server's core+sibling) is derived
+# alongside RES_CPUSET at the top of this block.
 ATTACK_PY="$SCRIPT_DIR/resilience/attack.py"
 ATTACK_GO_DIR="$SCRIPT_DIR/resilience/attacker"
 ATTACK_GO_BIN="$ATTACK_GO_DIR/attacker"
@@ -113,7 +183,7 @@ ATTACK_GO_BIN="$ATTACK_GO_DIR/attacker"
 # The Go client has no GIL. Everything else (slow holds, amplification, parser,
 # WebSocket, dheat) stays on attack.py, where the GIL is not the bottleneck.
 # RES_USE_GO=0 forces the Python client everywhere.
-RES_GO_ATTACKS=" continuation-flood hpack-bomb rapid-reset madeyoureset settings-flood ping-flood empty-frame-flood window-stall large-upload pipelining-flood tls-handshake-flood slow-body slow-headers slow-read huge-chunk trailer-flood chunk-extension-flood keepalive-hoard content-length-prealloc expect-100-continue chunk-size-overflow "
+RES_GO_ATTACKS=" continuation-flood hpack-bomb rapid-reset madeyoureset settings-flood ping-flood empty-frame-flood window-stall large-upload pipelining-flood tls-handshake-flood slow-body slow-headers slow-read huge-chunk trailer-flood chunk-extension-flood keepalive-hoard content-length-prealloc expect-100-continue chunk-size-overflow decompression-bomb decomp-codec-bypass hashdos json-nesting-bomb json-bignum multipart-flood redos-headers tiny-chunk-flood header-bomb header-count-flood duplicate-header-merge qvalue-cpu-bomb cookie-flood percent-decode-quadratic range-bomb ws-giant-frame ws-fragment-bomb ws-deflate-bomb ws-pong-flood "
 RES_USE_GO="${RES_USE_GO:-1}"
 
 # Build the Go attack client once per run: native `go build` if the host has go,
@@ -222,7 +292,7 @@ else
 fi
 info "attacks: ${ATTACKS[*]}"
 build_go_attacker
-info "box: mem=$RES_MEM cpuset=$RES_CPUSET  duration=${RES_DURATION}s conns=$RES_CONNS"
+info "box: mem=$RES_MEM cpuset=$RES_CPUSET attack_cpus=$ATTACK_CPUS  duration=${RES_DURATION}s conns=$RES_CONNS"
 
 # ── Measurement helpers ──────────────────────────────────────────────────────
 
@@ -265,6 +335,36 @@ sample_mem() {
         v=$(cat "$f" 2>/dev/null || echo 0)
         [ "$v" -gt "$max" ] 2>/dev/null && { max=$v; echo "$max" > "$out"; }
         sleep 0.2
+    done
+}
+
+# Cumulative server CPU time in microseconds (cgroup v2 cpu.stat usage_usec, v1
+# cpuacct.usage in ns → µs). Read once before and once after the attack; the delta
+# over the wall time is the server's CPU utilisation (cores busy).
+read_cpu_usec() {
+    local id="$1" f v
+    if f=$(_cgfile "$id" cpu.stat); then
+        grep -oP 'usage_usec \K\d+' "$f" 2>/dev/null || echo 0
+    elif f=$(_cgfile "$id" cpuacct.usage); then
+        v=$(cat "$f" 2>/dev/null || echo 0); echo $((v / 1000))
+    else
+        echo 0
+    fi
+}
+
+# Poll the ATTACK CLIENT's own CPU time (utime+stime jiffies, process-wide across
+# its threads) from /proc/<pid>/stat into $2 until it exits. The last line written
+# is within one poll of exit — enough to tell a CPU-bound flood (many cores busy)
+# from one idling on server backpressure (near 0). comm (field 2) can hold spaces,
+# so split on the final ')': after it, utime/stime are fields 12/13.
+sample_cpu() {
+    local pid="$1" out="$2" clk j
+    clk=$(getconf CLK_TCK 2>/dev/null || echo 100)
+    echo "0 $clk" > "$out"
+    while [ -r "/proc/$pid/stat" ]; do
+        j=$(awk -F')' '{split($2,a," "); print a[12]+a[13]}' "/proc/$pid/stat" 2>/dev/null) || j=""
+        [ -n "$j" ] && echo "$j $clk" > "$out"
+        sleep 0.3
     done
 }
 
@@ -330,6 +430,24 @@ run_attack() {
     local cid baseline_mem peak_file live_file sampler_pid=""
     cid=$(docker inspect -f '{{.Id}}' "$CONTAINER_NAME" 2>/dev/null || echo "")
     baseline_mem=$(read_mem "$cid")
+
+    # Once per run, report which cgroup memory source we resolved — so the first
+    # run on a new box isn't a silent "every peak is 0". Peak RSS and OOM reads
+    # assume cgroup v2 with host-readable files; say loudly when that is not met.
+    if [ -z "${RES_CG_LOGGED:-}" ]; then
+        RES_CG_LOGGED=1
+        local _src
+        if _src=$(_cgfile "$cid" memory.peak); then
+            info "memory source: $_src (cgroup v2 memory.peak — true high-water)"
+        elif _src=$(_cgfile "$cid" memory.max_usage_in_bytes); then
+            info "memory source: $_src (cgroup v1 max_usage — true high-water)"
+        elif _cgfile "$cid" memory.current >/dev/null 2>&1 || _cgfile "$cid" memory.usage_in_bytes >/dev/null 2>&1; then
+            warn "no high-water cgroup file found — using the memory.current sampler only; a fast spike may be undercounted"
+        else
+            warn "no readable cgroup memory file for this container — peak RSS will read 0. Is this cgroup v2, and are /sys/fs/cgroup files readable by $(id -un)?"
+        fi
+    fi
+
     peak_file="$WORK/$name.peak"
     live_file="$WORK/$name.liveness"
     : > "$live_file"
@@ -360,6 +478,11 @@ run_attack() {
         client_cmd=("$ATTACK_GO_BIN")
         info "$name: Go attack client (no GIL)"
     fi
+    # Instrumentation: wall clock + server CPU counter straddle the attack so the
+    # report can show requests/sec and client-vs-server CPU (which end is the limit).
+    local attack_t0 cpu_srv_start
+    attack_t0=$(date +%s.%N)
+    cpu_srv_start=$(read_cpu_usec "$cid")
     taskset -c "$ATTACK_CPUS" "${client_cmd[@]}" \
         --attack "$name" --host 127.0.0.1 --port "$port" --path "$path" \
         --conns "$conns" --duration "$RES_DURATION" \
@@ -378,6 +501,8 @@ run_attack() {
         --ws-frag-size "$RES_WS_FRAG_SIZE" "${tls_flag[@]}" \
         > "$WORK/$name.client.json" 2> "$WORK/$name.client.log" &
     local attack_pid=$! killed_early=0
+    sample_cpu "$attack_pid" "$WORK/$name.clientcpu" &
+    local client_cpu_pid=$!
     # Early-exit on either settled outcome, so a run never burns the full duration
     # once the verdict is decided. Poll every 2s while the client runs:
     #   1. the server DIED (OOM / crash) — nothing left to measure; or
@@ -410,11 +535,16 @@ run_attack() {
     done
     local arc=0
     wait "$attack_pid" 2>/dev/null || arc=$?
+    # Close the instrumentation window the moment the client exits (before teardown).
+    local attack_t1 cpu_srv_end
+    attack_t1=$(date +%s.%N)
+    cpu_srv_end=$(read_cpu_usec "$cid")
     [ "$killed_early" = 0 ] && [ "$arc" -ne 0 ] && \
         warn "attack client exited non-zero (see $name.client.log)"
 
     kill "$live_pid" 2>/dev/null || true; wait "$live_pid" 2>/dev/null || true
     kill "$sampler_pid" 2>/dev/null || true; wait "$sampler_pid" 2>/dev/null || true
+    kill "$client_cpu_pid" 2>/dev/null || true; wait "$client_cpu_pid" 2>/dev/null || true
 
     # Server-side verdict inputs, captured before we tear the container down.
     local oom exitc running peak sampled
@@ -438,6 +568,21 @@ run_attack() {
     local live_ok live_total
     live_ok=$(grep -c '^ok$' "$live_file" 2>/dev/null) || live_ok=0
     live_total=$(grep -c .   "$live_file" 2>/dev/null) || live_total=0
+
+    # Load/CPU instrumentation: cores busy on each side over the attack's wall time,
+    # so the report shows whether the client (CPU-bound → more cores/conns help) or
+    # the server (its cap pegged → the load is already enough) is the limit. rps is
+    # computed by the comment from the client's own frames_sent/elapsed_s.
+    local attack_wall cpuline client_j clk client_cpu_cores server_cpu_cores
+    attack_wall=$(awk "BEGIN{d=$attack_t1-$attack_t0; printf \"%.2f\", (d>0)?d:1}")
+    cpuline=$(cat "$WORK/$name.clientcpu" 2>/dev/null || echo "0 100")
+    client_j=${cpuline%% *}; clk=${cpuline##* }
+    [ -n "$client_j" ] || client_j=0; [ -n "$clk" ] || clk=100
+    client_cpu_cores=$(awk "BEGIN{v=($client_j/$clk)/$attack_wall; printf \"%.2f\", (v<0)?0:v}")
+    # A crashed/OOM container's cgroup is gone by the end read, so cpu_srv_end can
+    # read 0 and the delta goes negative — clamp to 0 (the verdict already says dead).
+    server_cpu_cores=$(awk "BEGIN{v=(($cpu_srv_end-$cpu_srv_start)/1000000.0)/$attack_wall; printf \"%.2f\", (v<0)?0:v}")
+
     python3 - "$WORK/$name.result.json" <<PY || warn "could not write the $name result record"
 import json, sys
 client = {}
@@ -455,6 +600,9 @@ json.dump({
     "mem_limit": "$RES_MEM",
     "cpuset": "$RES_CPUSET",
     "duration_s": $RES_DURATION,
+    "attack_wall_s": $attack_wall,
+    "client_cpu_cores": $client_cpu_cores,
+    "server_cpu_cores": $server_cpu_cores,
     "recovery": "$recovery",
     "liveness_ok": int("$live_ok" or 0),
     "liveness_total": int("$live_total" or 0),

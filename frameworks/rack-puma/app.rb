@@ -11,6 +11,7 @@ Symbol.alias_method(:to_s, :name)
 class App
   JSON_TYPE = 'application/json'
   PLAINTEXT_TYPE = 'text/plain'
+  OCTET_TYPE = 'application/octet-stream'
   DELAY_REGEXP = %r[\A/delay/(\d+)\z]
   JSON_REGEXP = %r[\A/json/(\d+)\z]
   DATA_DIR = ENV.fetch('DATA_DIR', '/data')
@@ -19,6 +20,8 @@ class App
     case env['PATH_INFO']
     when '/pipeline'
       render_plain 'ok'
+    when '/echo'
+      render_octet env["rack.input"]&.read.to_s
     when '/baseline11'
       params = URI.decode_www_form(env['QUERY_STRING']).to_h
       total = params['a'].to_i + params['b'].to_i
@@ -69,5 +72,9 @@ class App
 
   def render_plain(body)
     [200, {Rack::CONTENT_TYPE => PLAINTEXT_TYPE}, [body]]
+  end
+
+  def render_octet(body)
+    [200, {Rack::CONTENT_TYPE => OCTET_TYPE}, [body]]
   end
 end

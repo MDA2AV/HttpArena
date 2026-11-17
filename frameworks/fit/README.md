@@ -8,7 +8,7 @@ handler module compiled into fit, and the static files by fit's own `static` han
 ## Stack
 
 - **Language:** Go 1.27.3
-- **Server:** fit v1.0.0 on fib v1.7.2
+- **Server:** fit v1.0.0 on fib v1.8.0
 - **Module:** [`httparena`](httparena/httparena.go), registered as fit's own modules are
   (`module.Register` under `http.handlers`), compiled in by [`main.go`](main.go), which is what
   `fit build -with` generates: fit's command line and `modules/standard`, without the providers
