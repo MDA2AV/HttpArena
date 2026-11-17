@@ -59,6 +59,24 @@ const json = (req, res) => {
 
 app.uwsLite.get('/json/:count', { compress }, json);
 
+// /spec, the compliance route for Http11Probe. A HEAD goes to the Express route lite registers.
+const specHeaders = (req, res) => {
+    let out = '';
+    for (const name in req.headers) out += name + ': ' + req.headers[name] + '\n';
+    res.type('text/plain').send(out);
+};
+app.uwsLite.get('/spec', (req, res) => {
+    res.type('text/plain').send('spec ok');
+});
+app.uwsLite.options('/spec', { body: 'lent' }, (req, res) => {
+    res.set('allow', 'GET, HEAD, POST, OPTIONS').end();
+});
+app.uwsLite.post('/spec', { body: 'lent', limit: '1mb' }, (req, res) => {
+    res.type('application/octet-stream').send(req.body);
+});
+app.uwsLite.get('/spec/headers', { headers: true }, specHeaders);
+app.uwsLite.post('/spec/headers', { body: 'lent', headers: true }, specHeaders);
+
 // json-tls and 8gbit over TLS on 8081, when the harness mounts the certs. json-tls never sends
 // Accept-Encoding, so this route has no compress. The echo answers while the body is lent.
 if (fs.existsSync('/certs/server.key') && fs.existsSync('/certs/server.crt')) {
