@@ -1,3 +1,4 @@
+import json
 import pathlib
 import subprocess
 import sys
@@ -142,14 +143,55 @@ h2load_diagnose reads --split-- writes
         self.assertNotIn("rps=", result.stdout)
 
     def test_diagnostic_replay_keeps_process_failure_visible(self):
-        result = subprocess.run(
-            ["bash", "-c", 'source "$1"; GCANNON_CPUS=0; timeout() { echo partial; return 124; }; h2load_diagnose reads --split-- writes',
-             "test", str(ROOT / "scripts/lib/tools/h2load.sh")],
-            capture_output=True, text=True, check=False,
-        )
-        self.assertEqual(result.returncode, 124, result.stderr)
-        self.assertIn("status 124", result.stderr)
-        self.assertIn("no per-request records", result.stdout)
+        for mode in [[], ["--fixed-requests"]]:
+            with self.subTest(mode=mode):
+                result = subprocess.run(
+                    ["bash", "-c", 'source "$1"; shift; GCANNON_CPUS=0; timeout() { echo partial; return 124; }; h2load_diagnose "$@" reads -D 5 --split-- writes -D 5',
+                     "test", str(ROOT / "scripts/lib/tools/h2load.sh"), *mode],
+                    capture_output=True, text=True, check=False,
+                )
+                self.assertEqual(result.returncode, 124, result.stderr)
+                self.assertIn("status 124", result.stderr)
+                self.assertIn("no per-request records", result.stdout)
+
+    def test_fixed_request_diagnostic_drains_both_workloads_without_publishing_scores(self):
+        client = '''
+import json, pathlib, sys
+if sys.argv[1:3] != ["-D", "wrapper-directory"]:
+    raise SystemExit("wrapper-owned -D option was removed")
+role, directory = sys.argv[3:5]
+pathlib.Path(directory, role + ".json").write_text(json.dumps(sys.argv[5:]))
+status = 499 if role == "reads" else 204
+print(f"1000001\\t{status}\\t500")
+'''
+        harness = r'''
+source "$1"
+GCANNON_CPUS=0
+timeout() { shift; "$@"; }
+taskset() { shift 2; "$@"; }
+h2load_diagnose --fixed-requests \
+    "$2" "$3" -D wrapper-directory reads "$4" -c 256 -H "Authorization: Bearer fixture" -D 5 \
+    --split-- "$2" "$3" -D wrapper-directory writes "$4" -c 32 -d "body fixture.json" -D 5
+'''
+        with tempfile.TemporaryDirectory() as tmp:
+            fake = pathlib.Path(tmp) / "client.py"
+            fake.write_text(client)
+            result = subprocess.run(
+                ["bash", "-c", harness, "test", str(ROOT / "scripts/lib/tools/h2load.sh"),
+                 sys.executable, str(fake), tmp],
+                capture_output=True, text=True, check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            for role, count, connections in [("reads", "100000", "256"), ("writes", "10000", "32")]:
+                args = json.loads((pathlib.Path(tmp) / (role + ".json")).read_text())
+                self.assertNotIn("-D", args)
+                self.assertEqual(args[args.index("-n") + 1], count)
+                self.assertEqual(args[args.index("-c") + 1], connections)
+                self.assertIn("--log-file=/dev/stdout", args)
+                self.assertIn("Authorization: Bearer fixture" if role == "reads" else "body fixture.json", args)
+            self.assertIn("reads: HTTP 499=1", result.stdout)
+            self.assertIn("writes: HTTP 204=1", result.stdout)
+            self.assertNotIn("rps=", result.stdout)
 
     def test_native_diagnostic_records_survive_normal_stdout_writes(self):
         client = '''

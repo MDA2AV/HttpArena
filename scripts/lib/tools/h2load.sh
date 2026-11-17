@@ -223,15 +223,35 @@ h2load_parse() {
 
 # A separate replay after a failed production profile; never a scored run.
 h2load_diagnose() {
-    local -a args=()
-    local arg log exit_code=0
-    for arg in "$@"; do
-        if [ "$arg" = --split-- ]; then args+=(--log-file=/dev/stdout); fi
-        args+=("$arg")
+    local -a args=() command=()
+    local arg log duration_index exit_code=0 request_count=""
+    local description="replaying production traffic with per-request status logging"
+    if [ "${1:-}" = --fixed-requests ]; then
+        shift
+        request_count=100000
+        description="fixed-request control: 100000 reads and 10000 writes, draining in-flight requests"
+    fi
+    for arg in "$@" --split--; do
+        if [ "$arg" != --split-- ]; then
+            command+=("$arg")
+            continue
+        fi
+        if [ -n "$request_count" ]; then
+            # Replace only the generated suffix; wrappers may have their own -D.
+            duration_index=$((${#command[@]} - 2))
+            if [ "$duration_index" -lt 0 ] || [ "${command[$duration_index]}" != -D ]; then
+                echo "[diagnostic] fixed-request control requires a trailing -D duration" >&2
+                return 2
+            fi
+            command=("${command[@]:0:$duration_index}" -n "$request_count")
+            request_count=10000
+        fi
+        if [ "${#args[@]}" -gt 0 ]; then args+=(--split--); fi
+        args+=("${command[@]}" --log-file=/dev/stdout)
+        command=()
     done
-    args+=(--log-file=/dev/stdout)
     log=$(mktemp)
-    echo "[diagnostic] replaying production traffic with per-request status logging; excluded from results"
+    echo "[diagnostic] $description; excluded from results"
     h2load_run "${args[@]}" >>"$log" 2>&1 || exit_code=$?
     python3 "${BASH_SOURCE[0]%/*}/h2load_parse.py" --diagnostic <"$log"
     rm -f "$log"

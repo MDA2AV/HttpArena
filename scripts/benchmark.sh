@@ -405,6 +405,7 @@ run_one() {
         warn "$profile/$CONNS: no valid measurements; no result saved"
         if [ "$endpoint" = production-stack ]; then
             h2load_diagnose "${gc_args[@]}" || true
+            h2load_diagnose --fixed-requests "${gc_args[@]}" || true
             dump_benchmark_logs
         fi
         if [ "$SAVE_RESULTS" = true ]; then save_benchmark_logs "$profile" "$CONNS"; fi
