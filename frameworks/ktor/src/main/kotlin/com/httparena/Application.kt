@@ -201,7 +201,7 @@ private fun Application.configureRouting(appData: ArenaApplicationDeps) {
                 val max = call.request.queryParameters["max"]?.toIntOrNull() ?: 50
                 val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 50).coerceIn(1, 50)
                 try {
-                    val items = withContext(Dispatchers.IO) {
+                    val items = withContext(appData.ioDispatcher) {
                         transaction(appData.postgres, readOnly = true) {
                             with(ItemTable) {
                                 selectAll()
@@ -260,7 +260,7 @@ private fun Application.configureRouting(appData: ArenaApplicationDeps) {
         get("/fortunes") {
             val fortunes = mutableListOf<Fortune>()
             try {
-                withContext(Dispatchers.IO) {
+                withContext(appData.ioDispatcher) {
                     transaction(appData.postgres, readOnly = true) {
                         FortuneTable.selectAll()
                             .map(FortuneTable::toFortune)
@@ -375,7 +375,7 @@ fun Route.crudEndpoints(appData: ArenaApplicationDeps, log: Logger = LoggerFacto
             val offset = (page - 1).toLong() * limit
 
             try {
-                val items = withContext(Dispatchers.IO) {
+                val items = withContext(appData.ioDispatcher) {
                     transaction(appData.postgres, readOnly = true) {
                         ItemTable.selectAll()
                             .where { ItemTable.category eq categoryParam }
@@ -405,7 +405,7 @@ fun Route.crudEndpoints(appData: ArenaApplicationDeps, log: Logger = LoggerFacto
             }
 
             try {
-                val row = withContext(Dispatchers.IO) {
+                val row = withContext(appData.ioDispatcher) {
                     transaction(appData.postgres, readOnly = true) {
                         ItemTable.selectAll()
                             .where { ItemTable.id eq id }
@@ -436,7 +436,7 @@ fun Route.crudEndpoints(appData: ArenaApplicationDeps, log: Logger = LoggerFacto
                 return@post
             }
             try {
-                withContext(Dispatchers.IO) {
+                withContext(appData.ioDispatcher) {
                     transaction(appData.postgres) {
                         ItemTable.upsert(
                             keys = arrayOf(ItemTable.id),
@@ -479,7 +479,7 @@ fun Route.crudEndpoints(appData: ArenaApplicationDeps, log: Logger = LoggerFacto
                 return@put
             }
             try {
-                val updated = withContext(Dispatchers.IO) {
+                val updated = withContext(appData.ioDispatcher) {
                     transaction(appData.postgres) {
                         val rows = ItemTable.update({ ItemTable.id eq id }) { stmt ->
                             req.name?.let { v -> stmt[ItemTable.name] = v }

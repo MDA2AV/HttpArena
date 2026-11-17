@@ -4,21 +4,19 @@ import com.ghost.serialization.Ghost
 import com.httparena.DbResponse.Companion.toResponse
 import io.ktor.http.*
 import io.ktor.http.content.*
-import io.ktor.serialization.kotlinx.json.json
+import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.html.*
 import io.ktor.server.http.content.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.compression.*
-import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.utils.io.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -46,6 +44,8 @@ fun main() {
     val server = embeddedServer(Netty, environment, {
         shareWorkGroup = true
         enableH2c = true
+        workerGroupSize = parallelism
+        callGroupSize = 0
 
         // HTTP/1.1
         connector {
@@ -223,7 +223,7 @@ private fun Application.configureRouting(appData: ArenaApplicationDeps) {
                 val max = call.request.queryParameters["max"]?.toIntOrNull() ?: 50
                 val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 50).coerceIn(1, 50)
                 try {
-                    val items = withContext(Dispatchers.IO) {
+                    val items = withContext(appData.ioDispatcher) {
                         transaction(appData.postgres, readOnly = true) {
                             with(ItemTable) {
                                 selectAll()
@@ -282,7 +282,7 @@ private fun Application.configureRouting(appData: ArenaApplicationDeps) {
         get("/fortunes") {
             val fortunes = mutableListOf<Fortune>()
             try {
-                withContext(Dispatchers.IO) {
+                withContext(appData.ioDispatcher) {
                     transaction(appData.postgres, readOnly = true) {
                         FortuneTable.selectAll()
                             .map(FortuneTable::toFortune)
@@ -414,7 +414,7 @@ fun Route.crudEndpoints(appData: ArenaApplicationDeps, log: Logger = LoggerFacto
             val offset = (page - 1).toLong() * limit
 
             try {
-                val items = withContext(Dispatchers.IO) {
+                val items = withContext(appData.ioDispatcher) {
                     transaction(appData.postgres, readOnly = true) {
                         ItemTable.selectAll()
                             .where { ItemTable.category eq categoryParam }
@@ -444,7 +444,7 @@ fun Route.crudEndpoints(appData: ArenaApplicationDeps, log: Logger = LoggerFacto
             }
 
             try {
-                val row = withContext(Dispatchers.IO) {
+                val row = withContext(appData.ioDispatcher) {
                     transaction(appData.postgres, readOnly = true) {
                         ItemTable.selectAll()
                             .where { ItemTable.id eq id }
@@ -475,7 +475,7 @@ fun Route.crudEndpoints(appData: ArenaApplicationDeps, log: Logger = LoggerFacto
                 return@post
             }
             try {
-                withContext(Dispatchers.IO) {
+                withContext(appData.ioDispatcher) {
                     transaction(appData.postgres) {
                         ItemTable.upsert(
                             keys = arrayOf(ItemTable.id),
@@ -518,7 +518,7 @@ fun Route.crudEndpoints(appData: ArenaApplicationDeps, log: Logger = LoggerFacto
                 return@put
             }
             try {
-                val updated = withContext(Dispatchers.IO) {
+                val updated = withContext(appData.ioDispatcher) {
                     transaction(appData.postgres) {
                         val rows = ItemTable.update({ ItemTable.id eq id }) { stmt ->
                             req.name?.let { v -> stmt[ItemTable.name] = v }
