@@ -168,6 +168,20 @@ static inline bool parse_ascii_digits_fast(const char *digits, size_t length, ui
 
 static inline bool sum_two_ascii_digits_fast(const char *first_digits, const char *second_digits, size_t length,
                                               uint64_t *out_sum) {
+    if (__builtin_expect(length == 2, 1)) {
+        unsigned int first_high = (unsigned int)(unsigned char)first_digits[0] - (unsigned int)'0';
+        unsigned int first_low = (unsigned int)(unsigned char)first_digits[1] - (unsigned int)'0';
+        unsigned int second_high = (unsigned int)(unsigned char)second_digits[0] - (unsigned int)'0';
+        unsigned int second_low = (unsigned int)(unsigned char)second_digits[1] - (unsigned int)'0';
+        *out_sum = (uint64_t)(first_high * 10 + first_low + second_high * 10 + second_low);
+        return ((first_high > 9) | (first_low > 9) | (second_high > 9) | (second_low > 9)) == 0;
+    }
+    if (__builtin_expect(length == 1, 0)) {
+        unsigned int first_digit = (unsigned int)(unsigned char)first_digits[0] - (unsigned int)'0';
+        unsigned int second_digit = (unsigned int)(unsigned char)second_digits[0] - (unsigned int)'0';
+        *out_sum = (uint64_t)(first_digit + second_digit);
+        return ((first_digit > 9) | (second_digit > 9)) == 0;
+    }
 #if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     if (__builtin_expect(length == 7, 1)) {
         uint64_t first_bytes = 0;

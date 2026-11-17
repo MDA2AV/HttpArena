@@ -111,6 +111,10 @@ SSL_CTX *tls_init_server_ctx(const char *certificate_chain_file, const char *pri
     SSL_CTX_set_mode(context,
                      SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER | SSL_MODE_RELEASE_BUFFERS);
     SSL_CTX_set_read_ahead(context, 1);
+    SSL_CTX_set_max_send_fragment(context, 16384);
+#ifdef SSL_OP_ENABLE_KTLS
+    SSL_CTX_set_options(context, SSL_OP_ENABLE_KTLS);
+#endif
 
     SSL_CTX_set_alpn_select_cb(context, enable_http2_alpn ? alpn_select_http2_callback : alpn_select_http1_callback,
                                NULL);

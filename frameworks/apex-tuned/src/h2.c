@@ -16,6 +16,23 @@ void close_conn(worker_t *worker, conn_t *connection);
 
 _Static_assert(H2_WRITE_COALESCE_SIZE <= WRITE_BUF_SIZE, "H2 coalescing buffer exceeds worker write buffer");
 
+#define H2_STATIC_NV_FLAGS (NGHTTP2_NV_FLAG_NO_COPY_NAME | NGHTTP2_NV_FLAG_NO_COPY_VALUE)
+
+static const nghttp2_nv h2_text_ok_headers[] = {
+    {(uint8_t *)":status", (uint8_t *)"200", 7, 3, H2_STATIC_NV_FLAGS},
+    {(uint8_t *)"content-type", (uint8_t *)"text/plain", 12, 10, H2_STATIC_NV_FLAGS},
+};
+
+static const nghttp2_nv h2_json_ok_headers[] = {
+    {(uint8_t *)":status", (uint8_t *)"200", 7, 3, H2_STATIC_NV_FLAGS},
+    {(uint8_t *)"content-type", (uint8_t *)"application/json", 12, 16, H2_STATIC_NV_FLAGS},
+};
+
+static const nghttp2_nv h2_text_not_found_headers[] = {
+    {(uint8_t *)":status", (uint8_t *)"404", 7, 3, H2_STATIC_NV_FLAGS},
+    {(uint8_t *)"content-type", (uint8_t *)"text/plain", 12, 10, H2_STATIC_NV_FLAGS},
+};
+
 static ssize_t h2_send_callback(nghttp2_session *session, const uint8_t *data, size_t length, int flags,
                                 void *user_data) {
     (void)session;
@@ -219,13 +236,9 @@ static int handle_h2_baseline_request(nghttp2_session *session, h2_connection_t 
 
     slot->inline_response_length = format_i64(slot->inline_response_buffer, calculated_sum);
 
-    nghttp2_nv response_headers[] = {
-        {(uint8_t *)":status", (uint8_t *)"200", 7, 3, NGHTTP2_NV_FLAG_NONE},
-        {(uint8_t *)"content-type", (uint8_t *)"text/plain", 12, 10, NGHTTP2_NV_FLAG_NONE}};
-
     nghttp2_data_provider data_provider = {.source.ptr = h2_conn, .read_callback = h2_data_read_callback};
 
-    return nghttp2_submit_response(session, stream_id, response_headers, 2,
+    return nghttp2_submit_response(session, stream_id, h2_text_ok_headers, 2,
                                    slot->is_head ? NULL : &data_provider);
 }
 
@@ -296,13 +309,9 @@ static int handle_h2_json_request(nghttp2_session *session, h2_connection_t *h2_
         slot->is_pooled_buffer = is_pooled;
     }
 
-    nghttp2_nv response_headers[] = {
-        {(uint8_t *)":status", (uint8_t *)"200", 7, 3, NGHTTP2_NV_FLAG_NONE},
-        {(uint8_t *)"content-type", (uint8_t *)"application/json", 12, 16, NGHTTP2_NV_FLAG_NONE}};
-
     nghttp2_data_provider data_provider = {.source.ptr = h2_conn, .read_callback = h2_data_read_callback};
 
-    return nghttp2_submit_response(session, stream_id, response_headers, 2,
+    return nghttp2_submit_response(session, stream_id, h2_json_ok_headers, 2,
                                    slot->is_head ? NULL : &data_provider);
 }
 
@@ -314,13 +323,9 @@ static int handle_h2_pipeline_request(nghttp2_session *session, h2_connection_t 
     slot->inline_response_length = 2;
     slot->dynamic_response_sent = 0;
 
-    nghttp2_nv response_headers[] = {
-        {(uint8_t *)":status", (uint8_t *)"200", 7, 3, NGHTTP2_NV_FLAG_NONE},
-        {(uint8_t *)"content-type", (uint8_t *)"text/plain", 12, 10, NGHTTP2_NV_FLAG_NONE}};
-
     nghttp2_data_provider data_provider = {.source.ptr = h2_conn, .read_callback = h2_data_read_callback};
 
-    return nghttp2_submit_response(session, stream_id, response_headers, 2,
+    return nghttp2_submit_response(session, stream_id, h2_text_ok_headers, 2,
                                    slot->is_head ? NULL : &data_provider);
 }
 
@@ -384,13 +389,9 @@ static int handle_h2_not_found(nghttp2_session *session, h2_connection_t *h2_con
     memcpy(slot->inline_response_buffer, "Not Found", 9);
     slot->inline_response_length = 9;
 
-    nghttp2_nv response_headers[] = {
-        {(uint8_t *)":status", (uint8_t *)"404", 7, 3, NGHTTP2_NV_FLAG_NONE},
-        {(uint8_t *)"content-type", (uint8_t *)"text/plain", 12, 10, NGHTTP2_NV_FLAG_NONE}};
-
     nghttp2_data_provider data_provider = {.source.ptr = h2_conn, .read_callback = h2_data_read_callback};
 
-    return nghttp2_submit_response(session, stream_id, response_headers, 2,
+    return nghttp2_submit_response(session, stream_id, h2_text_not_found_headers, 2,
                                    slot->is_head ? NULL : &data_provider);
 }
 

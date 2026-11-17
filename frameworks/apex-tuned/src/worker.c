@@ -138,9 +138,9 @@ static inline size_t append_pipeline_responses(char *destination_buffer, size_t 
     return (size_t)(cursor - destination_buffer);
 }
 
-static inline bool parse_json_gzip_request_fast(const char *buffer, size_t buffer_length,
-                                                size_t *out_consumed_bytes, size_t *out_item_count,
-                                                int64_t *out_multiplier) {
+static inline bool parse_json_request_fast(const char *buffer, size_t buffer_length,
+                                           size_t *out_consumed_bytes, size_t *out_item_count,
+                                           int64_t *out_multiplier, bool *out_accepts_gzip) {
     static const char request_prefix[] = "GET /json/";
     static const char request_line_suffix[] = " HTTP/1.1\r\n";
     if (buffer_length < sizeof(request_prefix) - 1 + sizeof(request_line_suffix) - 1 + 8 ||
@@ -197,12 +197,10 @@ static inline bool parse_json_gzip_request_fast(const char *buffer, size_t buffe
         header_cursor = line_end + 2;
     }
 
-    if (!accepts_gzip) {
-        return false;
-    }
     *out_consumed_bytes = (size_t)(header_end + 4 - buffer);
     *out_item_count = item_count;
     *out_multiplier = multiplier;
+    *out_accepts_gzip = accepts_gzip;
     return true;
 }
 
@@ -316,13 +314,16 @@ void process_requests(worker_t *worker, conn_t *connection) {
         size_t json_consumed_bytes;
         size_t json_item_count;
         int64_t json_multiplier;
-        if (__builtin_expect(parse_json_gzip_request_fast(request_buffer, request_buffer_length,
-                                                          &json_consumed_bytes, &json_item_count,
-                                                          &json_multiplier),
+        bool json_accepts_gzip;
+        if (__builtin_expect(parse_json_request_fast(request_buffer, request_buffer_length,
+                                                     &json_consumed_bytes, &json_item_count,
+                                                     &json_multiplier, &json_accepts_gzip),
                              0)) {
             const char *response_start = NULL;
             size_t response_length =
-                json_gzip_cached_http1_response(json_item_count, json_multiplier, &response_start);
+                json_accepts_gzip
+                    ? json_gzip_cached_http1_response(json_item_count, json_multiplier, &response_start)
+                    : json_cached_http1_response(json_item_count, json_multiplier, &response_start);
             if (response_length > 0) {
                 if (write_pos > 0) {
                     flush_data(worker, connection, worker->write_buf, write_pos);
