@@ -216,16 +216,8 @@ const ALPN_H1: &[&[u8]] = &[b"http/1.1"];
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-fn main() -> std::io::Result<()> {
-    ntex::rt::System::build()
-        .name("main")
-        .timer_resolution(2)
-        .thread_pool_limit(2048)
-        .build(ntex::rt::DefaultRuntime)
-        .block_on(run())
-}
-
-async fn run() -> std::io::Result<()> {
+#[ntex::main(timer_resolution = 2)]
+async fn main() -> std::io::Result<()> {
     // Leaked once at startup so handlers borrow the items instead of cloning
     // every string into each response.
     let dataset: &'static [DatasetItem] = Box::leak(load_dataset().into_boxed_slice());
