@@ -1,5 +1,6 @@
 #include "httppeer.h"
 #include "orm_query.h"
+#include "func.h"
 
 #include <algorithm>
 #include <charconv>
@@ -118,35 +119,6 @@ namespace
         out.push_back('"');
     }
 
-    void append_html_escaped(std::string &out, std::string_view value)
-    {
-        if (value.empty())
-        {
-            return;
-        }
-        // Copy the plain runs in bulk; only the five escaped bytes need per-
-        // character work. The seed puts &, ', " and multi-byte UTF-8 in almost
-        // every row, so this is the hot loop of /fortunes.
-        std::size_t plain_begin = 0;
-        for (std::size_t i = 0; i < value.size(); ++i)
-        {
-            const char *escaped = nullptr;
-            switch (value[i])
-            {
-                case '&':  escaped = "&amp;";  break;
-                case '<':  escaped = "&lt;";   break;
-                case '>':  escaped = "&gt;";   break;
-                case '"':  escaped = "&quot;"; break;
-                case '\'': escaped = "&#39;";  break;
-                default:   continue;
-            }
-            out.append(value.data() + plain_begin, i - plain_begin);
-            out += escaped;
-            plain_begin = i + 1;
-        }
-        out.append(value.data() + plain_begin, value.size() - plain_begin);
-    }
-
     std::string render_items(const std::vector<item_row> &rows)
     {
         std::string out;
@@ -209,7 +181,7 @@ namespace
             out += "<tr><td>";
             out += std::to_string(r.id);
             out += "</td><td>";
-            append_html_escaped(out, r.message);
+            http::html_escape(out, r.message);
             out += "</td></tr>";
         }
         out += "</table></body></html>";
