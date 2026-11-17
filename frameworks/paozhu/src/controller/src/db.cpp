@@ -234,19 +234,19 @@ asio::awaitable<std::string> arena_async_db(std::shared_ptr<httppeer> peer)
     if (limit < 1) limit = 1;
     if (limit > 50) limit = 50;
 
-    std::string sql = "SELECT id,name,category,price,quantity,active,tags,rating_score,rating_count FROM items WHERE price BETWEEN ";
-    sql += std::to_string(min_price);
-    sql += " AND ";
-    sql += std::to_string(max_price);
-    sql += " LIMIT ";
-    sql += std::to_string(limit);
+    // 预处理：参数绑定，驱动按连接缓存 statement，池化连接跨请求复用 warm 路径。
+    const std::string sql = "SELECT id,name,category,price,quantity,active,tags,rating_score,rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT ?";
+    std::vector<http::obj_val> params;
+    params.emplace_back(min_price);
+    params.emplace_back(max_price);
+    params.emplace_back(limit);
 
     std::vector<item_row> rows;
     rows.reserve(static_cast<std::size_t>(limit));
     try
     {
         auto link = std::make_unique<orm::db_conn>("pg");
-        co_await link->async_query(sql, rows);
+        co_await link->async_query_prepared(sql, params, rows);
         if (link->iserror || !link->error_msg.empty())
         {
             respond_db_error(peer, "database query failed");
@@ -277,7 +277,7 @@ asio::awaitable<std::string> arena_fortunes(std::shared_ptr<httppeer> peer)
     try
     {
         auto link = std::make_unique<orm::db_conn>("pg");
-        co_await link->async_query("SELECT id,message FROM fortune", rows);
+        co_await link->async_query_prepared("SELECT id,message FROM fortune", {}, rows);
         if (link->iserror || !link->error_msg.empty())
         {
             respond_db_error(peer, "database query failed");
