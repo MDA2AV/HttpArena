@@ -1,0 +1,29 @@
+{
+  "display_name": "apex-tuned",
+  "language": "C",
+  "type": "engine",
+  "engine": "apex",
+  "description": "Apex HTTP engine in C23: shared-nothing thread-per-core epoll runtime, CPU affinity pinning, zero-copy buffer recycling, streaming HTTP parser with TCP fragmentation resilience, route parameter trie, middleware pipeline, Brotli compression, and tuned TLS 1.3.",
+  "repo": "https://github.com/xdearboy/apex",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "limited-conn",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
+    "pipelined",
+    "json-comp",
+    "json-tls",
+    "8gbit",
+    "static-tls",
+    "baseline-h2c",
+    "baseline-h2",
+    "json-h2c",
+    "static-h2"
+  ],
+  "maintainers": [
+    "xdearboy"
+  ]
+}

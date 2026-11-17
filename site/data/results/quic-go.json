@@ -1,0 +1,43 @@
+{
+  "framework": "quic-go",
+  "results": {
+    "baseline-h3-64": {
+      "framework": "quic-go",
+      "language": "Go",
+      "rps": 370591,
+      "avg_latency": "9.54ms",
+      "p99_latency": "33.39ms",
+      "cpu": "2924.6%",
+      "memory": "141MiB",
+      "connections": 64,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "12.75MB/s",
+      "reconnects": 0,
+      "status_2xx": 1856664,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
+    "static-h3-64": {
+      "framework": "quic-go",
+      "language": "Go",
+      "rps": 79661,
+      "avg_latency": "51.17ms",
+      "p99_latency": "193.92ms",
+      "cpu": "1372.5%",
+      "memory": "449MiB",
+      "connections": 64,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "1.20GB/s",
+      "reconnects": 0,
+      "status_2xx": 399104,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    }
+  }
+}

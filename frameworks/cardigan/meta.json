@@ -8,8 +8,8 @@
   "enabled": true,
   "tests": [
     "baseline",
+    "async",
     "latency-1m", "latency-10k",
-    "pipelined",
     "limited-conn",
     "8gbit",
     "json-tls",

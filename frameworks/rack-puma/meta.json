@@ -13,7 +13,8 @@
     "latency-10k",
     "limited-conn",
     "json-tls",
-    "pipelined"
+    "pipelined",
+    "8gbit"
   ],
   "maintainers": ["p8"]
 }

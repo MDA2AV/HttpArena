@@ -57,35 +57,36 @@ fn baseline(req: *http.Request, res: *http.Response) !void {
     try res.print(.text, "{d}", .{sum});
 }
 
-fn pipeline(_: *http.Request, res: *http.Response) !void {
+fn pipeline(res: *http.Response) !void {
     res.content_type = .text;
     res.body = "ok";
 }
 
-fn delay(req: *http.Request, res: *http.Response) !void {
-    const ms = req.params.getInt(u32, "ms") orelse 0;
-    if (ms > 0) {
-        try req.io.sleep(.fromMilliseconds(ms), .awake);
+fn delay(req: *http.Request, ms: http.Path("ms", u32), res: *http.Response) !void {
+    if (ms.value > 0) {
+        try req.io.sleep(.fromMilliseconds(ms.value), .awake);
     }
-    try res.print(.text, "{d}", .{ms});
+    try res.print(.text, "{d}", .{ms.value});
 }
 
-fn jsonItems(req: *http.Request, res: *http.Response) !void {
+fn jsonItems(
+    req: *http.Request,
+    count_param: http.Path("count", usize),
+    m_param: http.Query("m", ?i64),
+    res: *http.Response,
+) !void {
     const items = dataset orelse {
         res.status = .service_unavailable;
         return;
     };
 
-    const count = req.params.getInt(usize, "count") orelse {
-        res.status = .bad_request;
-        return;
-    };
+    const count = count_param.value;
     if (count < 1 or count > items.len) {
         res.status = .bad_request;
         return;
     }
 
-    const m: i64 = req.query.getInt(i64, "m") orelse 1;
+    const m: i64 = m_param.value orelse 1;
 
     const resp_items = try req.arena.alloc(ResponseItem, count);
     for (items[0..count], 0..) |item, i| {
@@ -126,12 +127,18 @@ const DbResponse = struct {
 
 const empty_db_response: DbResponse = .{ .items = &.{}, .count = 0 };
 
-fn asyncDb(req: *http.Request, res: *http.Response) !void {
+fn asyncDb(
+    req: *http.Request,
+    min_param: http.Query("min", ?i32),
+    max_param: http.Query("max", ?i32),
+    limit_param: http.Query("limit", ?i32),
+    res: *http.Response,
+) !void {
     const p = pool orelse return res.encode(.json, json.encode, empty_db_response);
 
-    const min = req.query.getInt(i32, "min") orelse 10;
-    const max = req.query.getInt(i32, "max") orelse 50;
-    const limit = std.math.clamp(req.query.getInt(i32, "limit") orelse 50, 1, 50);
+    const min = min_param.value orelse 10;
+    const max = max_param.value orelse 50;
+    const limit = std.math.clamp(limit_param.value orelse 50, 1, 50);
 
     var result = p.queryOpts(
         "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3",
@@ -191,29 +198,31 @@ fn fortunes(req: *http.Request, res: *http.Response) !void {
     try res.render(.html, templates.FortunesPage, .{list.items});
 }
 
-fn wsEcho(req: *http.Request, res: *http.Response) !void {
-    var ws = try res.upgradeWebSocket(req) orelse {
-        res.status = .not_found;
-        return;
-    };
-    defer ws.deinit();
-    ws.autoflush = false;
-    while (true) {
-        for (try ws.receiveMany()) |msg| {
-            switch (msg.type) {
-                .text, .binary => try ws.send(msg.type, msg.data),
-                .close => return,
-                else => {},
-            }
-        }
-        try ws.flush();
-    }
-}
-
 fn echoBody(req: *http.Request, res: *http.Response) !void {
     const body = try req.body() orelse "";
     try res.header("Content-Type", "application/octet-stream");
     res.body = body;
+}
+
+fn specGet(res: *http.Response) !void {
+    res.content_type = .text;
+    res.body = "spec ok";
+}
+
+fn specOptions(req: *http.Request, res: *http.Response) !void {
+    _ = try req.body();
+    try res.header("Allow", "GET, HEAD, POST, OPTIONS");
+}
+
+fn specHeaders(req: *http.Request, res: *http.Response) !void {
+    var body = res.writer();
+    var it = req.headers.iterator();
+    while (it.next()) |h| {
+        try body.interface.print("{s}: {s}\n", .{ h.key, h.value });
+    }
+    try body.end();
+    res.content_type = .text;
+    _ = try req.body();
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -230,7 +239,7 @@ pub fn main(init: std.process.Init) !void {
             256;
         pool = pg.Pool.initUri(rt.io(), init.gpa, uri, .{
             .size = max_conn,
-            .connect_on_init_count = 1,
+            .connect_on_init_count = 0,
         }) catch null;
     }
 
@@ -266,9 +275,13 @@ pub fn main(init: std.process.Init) !void {
     server.router.get("/delay/:ms", delay);
     server.router.get("/json/:count", jsonItems);
     server.router.post("/echo", echoBody);
-    server.router.get("/ws", wsEcho);
     server.router.get("/async-db", asyncDb);
     server.router.get("/fortunes", fortunes);
+    server.router.get("/spec", specGet);
+    server.router.options("/spec", specOptions);
+    server.router.post("/spec", echoBody);
+    server.router.get("/spec/headers", specHeaders);
+    server.router.post("/spec/headers", specHeaders);
 
     // Mounted by the harness; absent when the server is run on its own.
     const static_dir: ?std.Io.Dir = std.Io.Dir.cwd().openDir(rt.io(), "/data/static", .{}) catch null;

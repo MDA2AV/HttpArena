@@ -1,0 +1,5 @@
+{
+  "framework": "go-stdlib",
+  "tls": "pass",
+  "check": "none"
+}

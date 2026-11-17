@@ -2213,12 +2213,14 @@ def _static_board(rows, fw_lang, round_name, spec=None):
         s = spec.get(fw)
         cell = ("-" if s is None or "e" in s
                 else "%s%%" % ("100" if s["p"] == s["t"] else "%.1f" % (100.0 * s["p"] / s["t"])))
+        # red when the server crashed during the suite, as the board's Spec cell
+        crash = " crash" if s is not None and s.get("c") else ""
         # the name links to the entry's own page: the only internal links to
         # those pages that exist without running a script
         body.append('<tr><td class="n%s">%d</td><td><a href="%s">%s</a></td>'
-                    '<td class="sb-lang">%s</td><td class="n">%.0f</td><td class="n">%s</td></tr>'
+                    '<td class="sb-lang">%s</td><td class="n">%.0f</td><td class="n%s">%s</td></tr>'
                     % (" r%d" % rank if rank <= 3 else "", rank, _fw_url(fw),
-                       _html.escape(fw), _html.escape(fw_lang.get(fw, "") or ""), score, cell))
+                       _html.escape(fw), _html.escape(fw_lang.get(fw, "") or ""), score, crash, cell))
     others = ", ".join(SCOPE_NAME[s] for s in SCOPE_NAME if s != DEFAULT_SCOPE)
     return ('<table class="sb"><thead><tr><th>#</th><th>Framework</th><th>Language</th>'
             '<th class="n">Composite</th><th class="n">Spec</th></tr></thead><tbody>' + "".join(body) + "</tbody></table>"

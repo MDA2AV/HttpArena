@@ -164,7 +164,11 @@ jobs:
       # merge happens inside benchmark-pr.yml after maintainer approval;
       # doing the dry-run here lets us reject conflicting PRs before
       # asking a maintainer to approve a run that's guaranteed to abort.
-      # Skipped for non-save runs since they don't push back.
+      # Skipped for non-save runs since they don't push back. The fetch takes
+      # no --depth: the checkout has full history, and a shallow fetch cuts
+      # main's tip off from its parents, so the dry run fails with "refusing
+      # to merge unrelated histories" for any branch behind main and passes
+      # only for one already up to date with it.
       - name: Check main merges into PR
         if: steps.parse.outputs.save == 'true' && steps.parse.outputs.framework != ''
         env:
@@ -172,7 +176,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin main --depth=1
+          git fetch origin main
           if ! git merge --no-commit --no-ff origin/main; then
             git merge --abort 2>/dev/null || true
             gh pr comment "${{ steps.parse.outputs.pr }}" \
@@ -296,7 +300,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin main --depth=1
+          git fetch origin main
           if ! git merge --no-commit --no-ff origin/main; then
             git merge --abort 2>/dev/null || true
             gh pr comment "${{ steps.parse.outputs.pr }}" \
@@ -415,7 +419,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin main --depth=1
+          git fetch origin main
           if ! git merge --no-commit --no-ff origin/main; then
             git merge --abort 2>/dev/null || true
             gh pr comment "${{ steps.parse.outputs.pr }}" \
