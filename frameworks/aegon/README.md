@@ -5,11 +5,13 @@
 ## Stack
 
 - **Language:** C++26 (GCC 14)
-- **Engine:** Linux `io_uring` multishot accept/recv, provided buffer rings
+- **Engine:** Linux `io_uring`, one event loop per core: multishot accept and recv over provided buffer rings, requests parsed in place from the receive buffer, responses written with a direct `send()`, userspace timers
 - **Serialization:** Glaze (compile-time reflection, zero-copy JSON) & Google Protobuf
-- **Compression:** `libdeflate` gzip/deflate streaming middleware
-- **Crypto & TLS:** Linux Kernel TLS (kTLS) TX offload with OpenSSL TLS 1.3 handshake and ALPN (`h2`, `http/1.1`)
-- **gRPC:** Native zero-overhead gRPC over HTTP/2 with direct wire framing, synchronous & asynchronous coroutine RPC dispatch, and kTLS TX offload
+- **Compression:** `Compress` middleware: `libdeflate` gzip/deflate, plus brotli (opt-in for dynamic responses), negotiated by `Accept-Encoding` q-values
+- **Crypto & TLS:** OpenSSL TLS 1.3 with ALPN (`h2`, `http/1.1`) through a zero-copy connection BIO (ciphertext read straight from the receive buffer, records written straight to the socket); kernel TLS TX available as an option
+- **gRPC:** Native gRPC over HTTP/2 with direct wire framing and synchronous & asynchronous coroutine RPC dispatch
+- **HTTP/2 & HTTP/3:** nghttp2 and ngtcp2/nghttp3 with per-connection stream pools
+- **Static files:** `router.static_files`: per-worker cache of the files, kept in step with the disk through inotify, serving precompressed `.br`/`.gz` variants with ETag and Last-Modified
 - **WebSocket:** RFC 6455 frame parser with AVX2 SIMD payload unmasking and fast-path batched echo engine
 - **Build:** CMake with Ninja on Arch Linux
 
@@ -52,3 +54,4 @@ Worker thread allocation dynamically inspects container resource constraints:
 - Evaluates cgroup v2 (`/sys/fs/cgroup/cpu.max`) and cgroup v1 CFS bandwidth quotas.
 - Evaluates CPU affinity masks (`sched_getaffinity`).
 - Falls back to hardware concurrency, guaranteeing at least one worker and avoiding thread over-subscription under restricted CPU quotas (e.g., `latency-500k-8cpu`).
+- Workers are not pinned to individual CPUs (Aegon's default); the scheduler places them within the container's CPU set.

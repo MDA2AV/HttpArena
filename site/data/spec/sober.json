@@ -1,0 +1,45 @@
+{
+  "framework": "sober",
+  "dir": "sober",
+  "suites": {
+    "h1": {
+      "tool": "http11probe",
+      "version": "d50d818",
+      "passed": 155,
+      "total": 159,
+      "warnings": 20,
+      "failed": [
+        {
+          "id": "COMP-OPTIONS-STAR",
+          "test": "OPTIONS * is the only valid asterisk-form request",
+          "expected": "2xx or 405; close/timeout = warn",
+          "got": "404, connection left open",
+          "rfc": "RFC 9112 \u00a73.2.4",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-DATE-HEADER",
+          "test": "Origin server must include Date header in responses",
+          "expected": "2xx with Date header",
+          "got": "200, connection left open",
+          "rfc": "RFC 9110 \u00a76.6.1",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-NON-ASCII-URL",
+          "test": "Non-ASCII bytes (UTF-8 \u00e9) in URL must be rejected",
+          "expected": "400 or close",
+          "got": "404, connection left open",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-CHUNK-SIZE-OVERFLOW",
+          "test": "Chunk size with integer overflow must be rejected",
+          "expected": "400 or close",
+          "got": "413, connection closed",
+          "level": "Must"
+        }
+      ]
+    }
+  }
+}

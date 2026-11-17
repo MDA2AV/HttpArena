@@ -60,8 +60,10 @@ public static class Project
 
     private static LayoutBuilder AddWebsocket(this LayoutBuilder app)
     {
+        // Frames of up to 64 KiB, rather than the 16 KiB default
         var websocket = Websocket.Imperative()
                                  .DoNotAllocateFrameData()
+                                 .MaxFrameSize(64 * 1024)
                                  .Handler(new EchoHandler());
 
         return app.Add("ws", websocket);

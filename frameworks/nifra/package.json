@@ -1,0 +1,12 @@
+{
+  "name": "httparena-nifra",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@nifrajs/core": "5.13.0",
+    "@nifrajs/middleware": "5.13.0",
+    "@nifrajs/node": "5.13.0",
+    "handlebars": "4.7.10",
+    "pg": "8.23.1"
+  }
+}

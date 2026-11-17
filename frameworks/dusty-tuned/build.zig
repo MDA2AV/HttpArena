@@ -8,6 +8,8 @@ pub fn build(b: *std.Build) void {
     const dusty_dep = b.dependency("dusty", .{
         .target = target,
         .optimize = optimize,
+        .tls = .ztls,
+        .compression = true,
     });
     const dusty_mod = dusty_dep.module("dusty");
 
@@ -27,6 +29,7 @@ pub fn build(b: *std.Build) void {
     const pg_dep = b.dependency("pg", .{
         .target = target,
         .optimize = optimize,
+        .tls = .none,
     });
 
     const zt_dep = b.dependency("zt", .{

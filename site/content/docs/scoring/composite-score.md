@@ -4,7 +4,7 @@ seo_title: "Composite Score Methodology"
 description: "The composite score explained: per-profile normalization, the sum across scored profiles, the compression adjustment and the memory bonus."
 ---
 
-The composite score combines results from multiple test profiles into a single number that reflects overall framework performance. Each profile is normalized to a 0–1,000 scale, then **summed** across the scored profiles of one protocol family - HTTP/1.1, HTTP/2, HTTP/3, Gateway, gRPC or WebSocket. Each family has its own composite, and the board shows one at a time. An optional memory toggle adds a 0–500 bonus per profile for memory-efficient frameworks on top of their raw-throughput score.
+The composite score combines results from multiple test profiles into a single number that reflects overall framework performance. Each profile is normalized to a 0–1,000 scale, then **summed** across the scored profiles of one protocol family - HTTP/1.1, HTTP/2, HTTP/3, Gateway, gRPC or WebSocket. Each family has its own composite, and the board shows one at a time - or five of them side by side in the [overall composite](#overall-composite), which adds them up. An optional memory toggle adds a 0–500 bonus per profile for memory-efficient frameworks on top of their raw-throughput score.
 
 ## How it works
 
@@ -47,6 +47,20 @@ Summing instead of averaging means the composite scales with the number of score
 Frameworks that don't participate in a scored profile receive 0 for that profile, which lowers their composite by the full 1,000-point ceiling of that profile.
 
 The finished sum is then cut by the entry's [completeness factor](../completeness/): 2.5% for each of routing, middleware, the request it hands you and the response it builds that the framework leaves to you, so an entry that does all four keeps its full score and one that does none keeps 90% of it. It is applied once to the total rather than per profile, and only to framework entries; engine, infrastructure and unassessed entries score ×1.00. It is also not applied on the WebSocket and gRPC boards, which do not measure the HTTP request-to-response path the four axes are about.
+
+## Overall composite
+
+The **Overall** view, first under Composite on the board, adds the family composites together:
+
+```
+overall = H/1.1 + H/2 + H/3 + gRPC + WebSocket
+```
+
+Each family is scored exactly as its own board scores it - its own scored profiles for the entry's type, its own leaders, the completeness factor where that board applies it - and nothing is re-weighted on top. Every scored profile is worth 1,000 to its leader there and here, so a family counts for as many profiles as it scores: for framework entries that is 8 on HTTP/1.1, 4 on HTTP/2, 2 on HTTP/3, 2 on gRPC and 3 on WebSocket. A family an entry does not serve adds nothing, so the overall rewards breadth as well as speed.
+
+Each family gets a column with the entry's score on that board and the place it holds there. A type with no scored profile in a family has no column for it: infrastructure entries are scored on no gRPC or WebSocket profile.
+
+Gateway is left out. Its profiles rank a whole stack - an edge proxy, a cache, an auth service - put in front of the entry, which is a different question from how the entry's own server does.
 
 ## Scored vs reference-only profiles
 

@@ -1,5 +1,4 @@
 #include "httppeer.h"
-#include "pzcache.h"
 
 #include <asio/steady_timer.hpp>
 #include <asio/this_coro.hpp>
@@ -20,8 +19,9 @@
 //
 // Routes are picked up by paozhu_pre at build time: every //@urlpath(...)
 // annotation registers the function that follows it. Path parameters must be
-// the last segment, so /json/:count and /static/:filename are registered as the
-// fixed prefixes /json and /static with a parameter-name table.
+// the last segment, so /json/:count, /static/:filename and /delay/:ms are
+// registered as the fixed prefixes /json, /static and /delay with a
+// parameter-name table.
 namespace
 {
 
@@ -417,78 +417,6 @@ std::string render_json(std::size_t count, long long multiplier,
     return out;
 }
 
-// Split "a=1&b=2" without decoding: the harness sends plain decimal values.
-// Returns false once the segment is exhausted.
-bool next_query_pair(const std::string &q, std::size_t &pos,
-                     std::string &key, std::string &value)
-{
-    if (pos >= q.size())
-    {
-        return false;
-    }
-    if (q[pos] == '?' || q[pos] == '&')
-    {
-        ++pos;
-    }
-    const std::size_t amp = q.find('&', pos);
-    const std::size_t end = (amp == std::string::npos) ? q.size() : amp;
-    const std::size_t eq  = q.find('=', pos);
-    if (eq != std::string::npos && eq < end)
-    {
-        key   = q.substr(pos, eq - pos);
-        value = q.substr(eq + 1, end - eq - 1);
-    }
-    else
-    {
-        key   = q.substr(pos, end - pos);
-        value.clear();
-    }
-    pos = end + 1;
-    return true;
-}
-
-long long sum_query(const std::string &q)
-{
-    long long sum = 0;
-    std::size_t pos = 0;
-    std::string key, value;
-    while (next_query_pair(q, pos, key, value))
-    {
-        if (value.empty())
-        {
-            continue;
-        }
-        char *end = nullptr;
-        const long long n = std::strtoll(value.c_str(), &end, 10);
-        if (end != value.c_str())
-        {
-            sum += n;
-        }
-    }
-    return sum;
-}
-
-long long query_multiplier(const std::string &q)
-{
-    long long multiplier = 1;
-    std::size_t pos = 0;
-    std::string key, value;
-    while (next_query_pair(q, pos, key, value))
-    {
-        if (key == "m" && !value.empty())
-        {
-            char *end = nullptr;
-            const long long n = std::strtoll(value.c_str(), &end, 10);
-            if (end != value.c_str())
-            {
-                multiplier = n;
-            }
-            break;
-        }
-    }
-    return multiplier;
-}
-
 long long body_number(const std::string &body)
 {
     char buf[32];
@@ -567,18 +495,6 @@ bool safe_filename(const std::string &name)
     return true;
 }
 
-// pzcache payload for one /data/static file. The mtime/size stamp is the
-// freshness check: it is compared against a fresh stat() on EVERY request, so
-// a file the validation suite replaces mid-run is reloaded immediately and a
-// stale body can never outlive the inode it was read from. Only the
-// open+read is cached; the stat stays.
-struct static_file_entry
-{
-    std::string body;
-    long long mtime_sec = 0;
-    long long file_size = 0;
-};
-
 }  // namespace
 
 namespace http
@@ -592,10 +508,30 @@ asio::awaitable<std::string> arena_pipeline(std::shared_ptr<httppeer> peer)
     co_return "";
 }
 
+//@urlpath(null,echo)
+asio::awaitable<std::string> arena_echo(std::shared_ptr<httppeer> peer)
+{
+    // Echo the raw request body byte-for-byte (8gbit profile). raw_body covers
+    // both the in-memory fast path and the >2MB spilled file; chunked framing is
+    // decoded by the parser into rawcontent. An empty body echoes as 200 empty.
+    peer->type("application/octet-stream");
+    peer->output = raw_body(peer);
+    co_return "";
+}
+
 //@urlpath(null,baseline11)
 asio::awaitable<std::string> arena_baseline11(std::shared_ptr<httppeer> peer)
 {
-    long long sum = sum_query(peer->querystring);
+    // get is parsed from the querystring at request time; sum every value.
+    // is_object() guards as_object(), which would otherwise allocate on NIL.
+    long long sum = 0;
+    if (peer->get.is_object())
+    {
+        for (const auto &kv : peer->get.as_object())
+        {
+            sum += kv.second.to_int();
+        }
+    }
     if (peer->method == POST)
     {
         sum += body_number(raw_body(peer));
@@ -608,8 +544,16 @@ asio::awaitable<std::string> arena_baseline11(std::shared_ptr<httppeer> peer)
 //@urlpath(null,baseline2)
 asio::awaitable<std::string> arena_baseline2(std::shared_ptr<httppeer> peer)
 {
+    long long sum = 0;
+    if (peer->get.is_object())
+    {
+        for (const auto &kv : peer->get.as_object())
+        {
+            sum += kv.second.to_int();
+        }
+    }
     peer->type("text/plain");
-    peer->output = std::to_string(sum_query(peer->querystring));
+    peer->output = std::to_string(sum);
     co_return "";
 }
 
@@ -618,7 +562,8 @@ asio::awaitable<std::string> arena_json(std::shared_ptr<httppeer> peer)
 {
     const std::vector<arena_item> &items = dataset();
     const long long count      = peer->get["count"].to_int();
-    const long long multiplier = query_multiplier(peer->querystring);
+    const obj_val &g           = peer->get;
+    const long long multiplier = g["m"].is_null() ? 1 : g["m"].to_int();
 
     peer->type("application/json");
     if (items.empty() || count < 1 || count > static_cast<long long>(items.size()))
@@ -635,15 +580,49 @@ asio::awaitable<std::string> arena_json(std::shared_ptr<httppeer> peer)
 asio::awaitable<std::string> arena_static(std::shared_ptr<httppeer> peer)
 {
     const std::string filename = peer->get["filename"].to_string();
+    if (!safe_filename(filename))
+    {
+        peer->status(404);
+        peer->type("text/plain");
+        peer->output = "Not Found";
+        co_return "";
+    }
+
+    // The Accept-Encoding header decides whether compression is wanted at all:
+    // state.br / state.gzip are set only for codings the client accepts (q=0 is
+    // rejected upstream). Prefer brotli, then gzip; each twin is used only when
+    // the client accepts that coding AND the twin exists. Otherwise serve the
+    // identity file. Reading per request (no resident cache) keeps the validation
+    // suite's mid-run replacement visible and costs no q11 on the request path;
+    // binary assets (woff2/webp) ship no twin and stay identity.
+    std::string path = "/data/static/" + filename;
+    unsigned char enc = 0;
     struct stat st {};
     bool stat_ok = false;
-    if (safe_filename(filename))
+    if (peer->state.br)
     {
-        // stat on every request: the validation suite replaces a mounted file
-        // and expects the next response to carry the new bytes. The pzcache
-        // entry only spares the open+read, never this freshness check.
-        stat_ok = ::stat(("/data/static/" + filename).c_str(), &st) == 0 &&
-                  (st.st_mode & S_IFREG) != 0;
+        const std::string twin = path + ".br";
+        if (::stat(twin.c_str(), &st) == 0 && (st.st_mode & S_IFREG) != 0)
+        {
+            path    = twin;
+            enc     = 2;
+            stat_ok = true;
+        }
+    }
+    if (!stat_ok && peer->state.gzip)
+    {
+        const std::string twin = path + ".gz";
+        if (::stat(twin.c_str(), &st) == 0 && (st.st_mode & S_IFREG) != 0)
+        {
+            path    = twin;
+            enc     = 1;
+            stat_ok = true;
+        }
+    }
+    if (!stat_ok)
+    {
+        enc     = 0;
+        stat_ok = ::stat(path.c_str(), &st) == 0 && (st.st_mode & S_IFREG) != 0;
     }
     if (!stat_ok)
     {
@@ -653,53 +632,28 @@ asio::awaitable<std::string> arena_static(std::shared_ptr<httppeer> peer)
         co_return "";
     }
 
-    pzcache<static_file_entry> &cache = pzcache<static_file_entry>::conn();
-    const long long mtime_sec = static_cast<long long>(st.st_mtime);
-    const long long file_size = static_cast<long long>(st.st_size);
-    try
-    {
-        // get() throws "Not in pzcache" on miss, and the background exptime
-        // sweeper may erase between check() and get(), so the miss path is a
-        // catch rather than a check-then-get. expnum=0: the stat stamp above
-        // decides freshness, not a TTL.
-        const static_file_entry &hit = cache.get(filename);
-        if (hit.mtime_sec == mtime_sec && hit.file_size == file_size)
-        {
-            peer->output = hit.body;
-            peer->type(mime_of(filename));
-            co_return "";
-        }
-    }
-    catch (...)
-    {
-    }
-
-    // Size the body once, then read straight into it: no per-byte iterator
-    // and no second copy. Short read (file shrank between stat and read):
-    // keep what arrived. A zero-size file is a valid body, not a miss.
-    std::ifstream in("/data/static/" + filename, std::ios::binary);
-    std::string body;
-    bool read_ok = false;
-    if (in.is_open())
-    {
-        body.resize(static_cast<std::size_t>(file_size));
-        in.read(&body[0], file_size);
-        body.resize(static_cast<std::size_t>(in.gcount()));
-        read_ok = true;
-    }
-    if (!read_ok)
+    // Size the body once, then read straight into it. Short read (file shrank
+    // between stat and read): keep what arrived. A zero-size file is valid.
+    std::ifstream in(path, std::ios::binary);
+    if (!in.is_open())
     {
         peer->status(404);
         peer->type("text/plain");
         peer->output = "Not Found";
         co_return "";
     }
-    // cover_data=true: a replaced file overwrites the old body instead of
-    // leaving it while only bumping exptime (pzcache's default).
-    static_file_entry entry{std::move(body), mtime_sec, file_size};
-    cache.save(filename, entry, 0, true);
-    peer->output = std::move(entry.body);
+    std::string body;
+    body.resize(static_cast<std::size_t>(st.st_size));
+    in.read(&body[0], static_cast<std::streamsize>(st.st_size));
+    body.resize(static_cast<std::size_t>(in.gcount()));
+
+    peer->output = std::move(body);
+    // Content-Type stays the original asset type; Content-Encoding (from compress)
+    // carries the coding. compress=1/2 tells the send layer the body is already
+    // compressed so it does not compress again; 0 leaves it identity.
     peer->type(mime_of(filename));
+    peer->compress = enc;
+    peer->length(peer->output.size());
     co_return "";
 }
 

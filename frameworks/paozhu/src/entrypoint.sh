@@ -2,7 +2,8 @@
 # paozhu has one plaintext and one TLS port per process. HttpArena needs four
 # listeners, so run two instances with two conf files: the main one serves
 # :8080 (HTTP/1.1) and :8443 (ALPN h2), the second serves :8081 with ALPN
-# pinned to http/1.1 for json-tls plus :8082 cleartext h2c for json-h2c.
+# pinned to http/1.1 for json-tls plus :8082 cleartext h2c for
+# baseline-h2c and json-h2c.
 # See README.md.
 set -euo pipefail
 
@@ -38,6 +39,17 @@ if [ -n "${DATABASE_URL:-}" ]; then
     case "$db_max" in ''|*[!0-9]*) db_max=256 ;; esac
     if [ "$db_max" -lt 8 ]; then db_max=8; fi
     if [ "$db_max" -gt 255 ]; then db_max=255; fi
+    # The select pool IS the process-wide ceiling now (db.cpp has no gate):
+    # cap it at db_max - 24 so 24 backends stay free for the edit pool,
+    # readiness probes and PG maintenance. async_get_pg_select_conn() parks
+    # and is woken on connection return once this quota is full.
+    db_select_max=$(( db_max - 24 ))
+    if [ "$db_select_max" -lt 1 ]; then db_select_max=$db_max; fi
+    # Per-slot prebuild = ceil(select_max / 4 slots) so the resident set covers
+    # the whole ceiling and a request never waits for a lazy connect.
+    # 4 = orm_ioc_num in conf/main/server.conf.
+    db_select_min=$(( (db_select_max + 3) / 4 ))
+    if [ "$db_select_min" -lt 1 ]; then db_select_min=1; fi
 
     # Bash parameter substitution, not sed: passwords may contain '&', '\'
     # or '/', all of which are special in a sed replacement.
@@ -47,7 +59,8 @@ if [ -n "${DATABASE_URL:-}" ]; then
         line="${line//__DB_NAME__/$db_name}"
         line="${line//__DB_USER__/$db_user}"
         line="${line//__DB_PASSWORD__/$db_password}"
-        line="${line//__DB_MAX_CONN__/$db_max}"
+        line="${line//__DB_SELECT_MAX__/$db_select_max}"
+        line="${line//__DB_SELECT_MIN__/$db_select_min}"
         printf '%s\n' "$line"
     done < /app/conf/orm.conf.tpl > /app/conf/main/orm.conf
 fi
