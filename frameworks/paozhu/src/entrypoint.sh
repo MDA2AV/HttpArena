@@ -65,19 +65,6 @@ if [ -n "${DATABASE_URL:-}" ]; then
     done < /app/conf/orm.conf.tpl > /app/conf/main/orm.conf
 fi
 
-# Bind the io-thread count to the CPUs this container actually gets.
-# std::thread::hardware_concurrency() reports the HOST's online CPUs and ignores
-# the cpuset; cothreadnum=0 means "no cap", i.e. that host count. Left alone,
-# latency-500k-8cpu would run ~host-core-count io threads per process on 8
-# logical CPUs, and the oversubscription costs both throughput and tail latency.
-# nproc counts via sched_getaffinity, i.e. the cpuset: 8 on that profile, 32 on
-# the big ones. Render it into both confs (overrides whatever the conf ships).
-cpu_num="$(nproc)"
-case "$cpu_num" in ''|*[!0-9]*) cpu_num=8 ;; esac
-for d in /app/conf/main /app/conf/h1; do
-    sed -i "s/^cothreadnum[[:space:]]*=.*/cothreadnum = $cpu_num ; rendered from cpuset by entrypoint.sh/" "$d/server.conf"
-done
-
 # No /app/conf/server.conf exists, so httpserver::run() falls back to argv[1]
 # and each instance loads its own ports (8080/8443 vs 8082/8081).
 /server /app/conf/h1/server.conf &
