@@ -12,6 +12,8 @@ COPY --from=build /app/build/libs/ktor-httparena.jar .
 EXPOSE 8080 8081 8082 8443
 ENTRYPOINT ["java", \
   "-server", \
+  "-XX:+UseContainerSupport", \
+  "-XX:MaxRAMPercentage=75.0", \
   "-XX:+UseG1GC", \
   "-XX:+UseNUMA", \
   "-XX:+AlwaysPreTouch", \
