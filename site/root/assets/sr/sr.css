@@ -922,12 +922,12 @@ html.maint .sortctl{display:none !important}
 .face>*{flex:none}
 /* the service label: the rank; gold, silver and bronze for the first three */
 .svc{flex:0 0 40px; display:flex; align-items:center; justify-content:center; font:600 .86rem/1 var(--mono); color:var(--silk); font-variant-numeric:tabular-nums}
-.svc.r1,.svc.r2,.svc.r3{margin:9px 6px 9px 8px; flex-basis:32px; border-radius:2px; color:#201603; font-weight:700; box-shadow:0 1px 2px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.6)}
+.svc.r1,.svc.r2,.svc.r3{margin:9px 5px 9px 7px; flex-basis:28px; border-radius:2px; color:#201603; font-weight:700; box-shadow:0 1px 2px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.6)}
 .svc.r1{background:linear-gradient(135deg,#f9e08a,#d9a521 55%,#f3d36b)}
 .svc.r2{background:linear-gradient(135deg,#f1f4f7,#aab3bd 55%,#e3e8ed); color:#1a1f24}
 .svc.r3{background:linear-gradient(135deg,#f0bf95,#b9713a 55%,#e3a878); color:#241003}
 /* the locator LED (favourite) */
-.uid, .uidslot{flex:0 0 24px}
+.uid, .uidslot{flex:0 0 22px}
 .uid{border:0; background:none; padding:0; cursor:pointer; display:flex; align-items:center; justify-content:center; color:inherit}
 .uid i{width:11px; height:11px; border-radius:50%; background:var(--led-off); box-shadow:inset 0 0 0 1px rgba(0,0,0,.4), 0 0 0 2px var(--plate-line); display:block}
 .uid:hover i{box-shadow:inset 0 0 0 1px rgba(0,0,0,.4), 0 0 0 2px var(--led-b)}
@@ -936,7 +936,7 @@ html.maint .sortctl{display:none !important}
 .unit.fav .nm{color:var(--accent)}
 .uid.star, .uid.star.on, .uid.star:hover{color:inherit !important; font-size:0}
 /* the name plate */
-.plate{flex:0 0 clamp(190px, 18vw, 262px); min-width:0; display:flex; align-items:center; gap:.45rem; margin:7px 4px 7px 2px; padding:0 .55rem; background:var(--plate); border:1px solid var(--plate-line); border-radius:2px; box-shadow:inset 0 1px 2px rgba(0,0,0,.12)}
+.plate{flex:0 0 clamp(180px, 16vw, 250px); min-width:0; display:flex; align-items:center; gap:.45rem; margin:7px 4px 7px 2px; padding:0 .55rem; background:var(--plate); border:1px solid var(--plate-line); border-radius:2px; box-shadow:inset 0 1px 2px rgba(0,0,0,.12)}
 .vend{flex:none; max-width:86px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:.16rem .34rem .16rem .4rem; border-left:3px solid var(--vc, var(--muted)); background:var(--bay); color:var(--text-2); font:600 .62rem/1 var(--label); letter-spacing:.07em; text-transform:uppercase; border-radius:1px}
 .nm{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:600 1rem/1.1 var(--label); letter-spacing:.01em; color:var(--text)}
 .plate .ty{margin-left:auto; flex:none; display:inline-flex; align-items:center; font-size:0; padding:4px 0 4px 4px; cursor:help}
@@ -950,7 +950,7 @@ html.maint .sortctl{display:none !important}
 .unit.tuned>.face::after{content:""; position:absolute; right:0; top:0; bottom:0; width:5px; background:var(--hazard)}
 .unit.tuned.fav>.face::before{display:none}
 /* status LEDs */
-.leds{flex:0 0 48px; display:flex; align-items:center; justify-content:center; gap:5px}
+.leds{flex:0 0 40px; display:flex; align-items:center; justify-content:center; gap:5px}
 .led{width:7px; height:7px; border-radius:50%; background:var(--led-off); box-shadow:inset 0 0 0 1px rgba(0,0,0,.35); display:block}
 .led.pwr, .led.act, .led.sts.ok{background:var(--led-g); box-shadow:0 0 6px var(--led-g)}
 .led.sts.warn{background:var(--led-a); box-shadow:0 0 6px var(--led-a)}
@@ -961,7 +961,7 @@ html.maint .sortctl{display:none !important}
 .leds.ph{gap:2px; flex-direction:column; cursor:help}
 .leds.ph b{font:600 .46rem/1 var(--label); letter-spacing:.08em; color:var(--silk)}
 /* the display: the composite, or the number the profile ranks on */
-.lcd{flex:0 0 98px; position:relative; display:flex; align-items:center; justify-content:flex-end; gap:.3rem; margin:7px 5px; padding:0 7px; background:var(--lcd-bg); border-radius:2px; box-shadow:inset 0 1px 3px rgba(0,0,0,.55), 0 1px 0 var(--edge-hi)}
+.lcd{flex:0 0 92px; position:relative; display:flex; align-items:center; justify-content:flex-end; gap:.3rem; margin:7px 5px; padding:0 7px; background:var(--lcd-bg); border-radius:2px; box-shadow:inset 0 1px 3px rgba(0,0,0,.55), 0 1px 0 var(--edge-hi)}
 .lcd b{position:relative; font:700 1.16rem/1 var(--seg); letter-spacing:.02em; color:var(--lcd-fg); text-shadow:0 0 9px var(--lcd-glow); white-space:nowrap}
 .lcd b::before{content:attr(data-g); position:absolute; right:0; top:0; opacity:var(--lcd-ghost); text-shadow:none; pointer-events:none}
 .lcd .cmp{position:absolute; left:5px; top:3px; font:600 .58rem/1 var(--mono); color:var(--lcd-amber)}
@@ -970,16 +970,16 @@ html.maint .sortctl{display:none !important}
 .v-prof .lcd{flex-basis:158px}
 .v-prof .lcd b{font-size:1.02rem}
 /* modules and bays */
-.mod{flex:0 0 54px; position:relative; display:flex; flex-direction:column; align-items:flex-end; justify-content:center; padding:0 7px 3px; margin:6px 2px 6px 1px; background:var(--bay); border:1px solid var(--bay-line); border-radius:2px; overflow:hidden}
+.mod{flex:0 0 50px; position:relative; display:flex; flex-direction:column; align-items:flex-end; justify-content:center; padding:0 5px 3px; margin:6px 2px 6px 1px; background:var(--bay); border:1px solid var(--bay-line); border-radius:2px; overflow:hidden}
 .mod.spec{cursor:help}
 .mv{font:600 .74rem/1 var(--mono); color:var(--text); font-variant-numeric:tabular-nums}
 .mod.empty .mv, .mod.nc .mv{color:var(--muted)}
 .mod.crashed .mv{color:var(--led-r)}
 .mod.lead .mv{color:var(--lead)}
 .bays{flex:1 1 0; min-width:0; display:grid; grid-template-columns:repeat(var(--n,1), minmax(0,1fr)); gap:3px; padding:6px 4px 6px 2px}
-.bay{position:relative; min-width:0; display:flex; flex-direction:column; align-items:flex-end; justify-content:center; padding:0 4px 3px; background:var(--bay); border:1px solid var(--bay-line); border-radius:2px; overflow:hidden}
-.bay::before{content:""; position:absolute; left:3px; top:3px; width:3px; height:3px; border-radius:50%; background:var(--led-g); opacity:calc(.18 + .82 * var(--p,0))}
-.bv{font:600 .76rem/1.15 var(--mono); color:var(--text); font-variant-numeric:tabular-nums; white-space:nowrap}
+.bay{position:relative; min-width:0; display:flex; flex-direction:column; align-items:flex-end; justify-content:center; padding:0 3px 3px; background:var(--bay); border:1px solid var(--bay-line); border-radius:2px}
+.bay::before{content:none; position:absolute; border-radius:50%; background:var(--led-g); opacity:calc(.18 + .82 * var(--p,0))}
+.bv{font:600 .72rem/1.2 var(--mono); color:var(--text); font-variant-numeric:tabular-nums; white-space:nowrap}
 .bm{font:400 .56rem/1.1 var(--mono); color:var(--muted); white-space:nowrap}
 .bl{position:absolute; left:0; right:0; bottom:0; height:3px; background:var(--bar); transform:scaleX(var(--p,0)); transform-origin:left center}
 .bay.lead .bv{color:var(--lead)}
@@ -1006,15 +1006,15 @@ html.maint .sortctl{display:none !important}
 .unit.patch>.face{height:42px; background:var(--patch); cursor:default; border-bottom:2px solid var(--edge-lo)}
 .patch .svc{font-family:var(--label); font-size:.7rem}
 .port{position:relative; cursor:pointer; user-select:none}
-.port .pl{font:600 .6rem/1.15 var(--label); letter-spacing:.04em; text-transform:uppercase; color:var(--silk); text-align:right; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow-wrap:anywhere}
+.port .pl{font:600 .58rem/1.15 var(--label); letter-spacing:.01em; text-transform:uppercase; color:var(--silk); text-align:right; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow-wrap:anywhere}
 .port:hover .pl{color:var(--text)}
 .port.sorted .pl{color:var(--accent)}
 .port .ar{font-style:normal; font-size:.56rem; margin-left:.2rem}
 .patch .plate{background:none; border-color:transparent; box-shadow:none}
 .patch .plate .pl{text-align:left}
-.port.lcdh{flex:0 0 98px; margin:0 5px; padding:0 7px; display:flex; align-items:center; justify-content:flex-end; gap:.3rem}
+.port.lcdh{flex:0 0 92px; margin:0 5px; padding:0 7px; display:flex; align-items:center; justify-content:flex-end; gap:.3rem}
 .v-prof .port.lcdh{flex-basis:158px}
-.patch .mod, .patch .bay{background:none; border-color:transparent; padding-bottom:0}
+.patch .mod, .patch .bay{background:none; border-color:transparent; padding:0 1px}
 .patch .bay::before{display:none}
 .patch .bay.refcol .pl{opacity:.6; font-style:italic}
 .pnav{position:absolute; left:1px; top:1px; display:flex; gap:2px; opacity:0; transition:opacity .12s}
@@ -1129,6 +1129,29 @@ table.runs{border-collapse:collapse; width:100%; font:500 .76rem/1.3 var(--mono)
 .board-seo p, .board-seo li{break-inside:avoid}
 .board-seo ul{columns:2 150px}
 
+/* ── between a phone and a wide desk: a unit becomes 2U, its bays on a row of their own ── */
+@media (min-width:901px) and (max-width:1399px){
+  .rack.many:not(.aisle) .face{height:auto; flex-wrap:wrap}
+  .rack.many:not(.aisle) .unit:not(.blank) .face>*{height:46px}
+  .rack.many:not(.aisle) .unit:not(.blank) .face>.lcd, .rack.many:not(.aisle) .unit:not(.blank) .face>.mod, .rack.many:not(.aisle) .unit:not(.blank) .face>.plate, .rack.many:not(.aisle) .svc.r1, .rack.many:not(.aisle) .svc.r2, .rack.many:not(.aisle) .svc.r3{height:32px}
+  .rack.many:not(.aisle) .plate{flex:1 1 200px}
+  .rack.many:not(.aisle) .unit:not(.blank) .face>.bays{flex:1 1 100%; order:9; height:40px; padding:0 6px 6px 40px}
+  .rack.many:not(.aisle) .patch .face>.bays{height:30px !important; padding-bottom:2px}
+  .rack.many:not(.aisle) .patch .face>*{height:34px !important}
+  .rack.many:not(.aisle) .bv{font-size:.78rem}
+  .rack.many:not(.aisle) .bm{font-size:.62rem}
+  .rack.many:not(.aisle) .port .pl{font-size:.64rem; letter-spacing:.04em}
+}
+@media (min-width:901px) and (max-width:1120px){
+  .rack.v-prof:not(.aisle) .face{height:auto; flex-wrap:wrap}
+  .rack.v-prof:not(.aisle) .unit:not(.blank) .face>*{height:46px}
+  .rack.v-prof:not(.aisle) .unit:not(.blank) .face>.lcd, .rack.v-prof:not(.aisle) .unit:not(.blank) .face>.plate, .rack.v-prof:not(.aisle) .svc.r1, .rack.v-prof:not(.aisle) .svc.r2, .rack.v-prof:not(.aisle) .svc.r3{height:32px}
+  .rack.v-prof:not(.aisle) .plate{flex:1 1 200px}
+  .rack.v-prof:not(.aisle) .unit:not(.blank) .face>.bays{flex:1 1 100%; order:9; height:36px; padding:0 6px 6px 40px}
+  .rack.v-prof:not(.aisle) .patch .face>.bays{height:26px !important}
+  .rack.v-prof:not(.aisle) .patch .face>*{height:34px !important}
+}
+
 /* ── phones and narrow windows ── */
 @media (max-width:1180px){
   .plate{flex-basis:clamp(170px, 20vw, 240px)}
@@ -1191,7 +1214,7 @@ table.runs{border-collapse:collapse; width:100%; font:500 .76rem/1.3 var(--mono)
   .bays{grid-column:6/9; grid-row:2; height:16px; padding:0 4px 0 2px; gap:2px}
   .v-comp .bay{padding:0}
   .v-comp .bay .bv, .v-comp .bay .bm{display:none}
-  .v-comp .bay::before{left:50%; top:50%; margin:-2.5px 0 0 -2.5px; width:5px; height:5px}
+  .v-comp .bay::before{content:""; left:50%; top:50%; margin:-2.5px 0 0 -2.5px; width:5px; height:5px}
   .v-comp .bay .bl{height:2px}
   .v-all .bay .bv{display:block; font-size:.62rem; line-height:14px}
   .v-all .bay{align-items:center} .v-all .bay::before{display:none}
@@ -1490,3 +1513,36 @@ a.cpu:hover{outline:2px solid var(--led-g); outline-offset:2px}
   .fan i, .e404 .msg .led{animation:none !important}
 }
 .u-st .svc:empty{flex-basis:14px}
+
+/* ── aisle view: step back, the whole field as a row of cabinets ── */
+.unit{scroll-margin-top:calc(var(--top-h) + 60px)}
+html.aisle .sortctl{display:inline-flex}
+.rack.aisle{columns:250px; column-gap:18px; background:none; box-shadow:none; min-height:0}
+.rack.aisle::after{display:none}
+.rack.aisle .rack-cap{column-span:all; margin:0 0 14px; border-radius:4px; border:1px solid var(--edge-lo)}
+.rack.aisle .unit.patch, .rack.aisle .rack-tail{display:none}
+.rack.aisle .unit{break-inside:avoid; grid-template-columns:14px minmax(0,1fr) 14px; box-shadow:0 0 0 1px var(--rack-in)}
+.rack.aisle .ear, .rack.aisle .ear.r{background:var(--post)}
+.rack.aisle .ear::after{left:50%; width:5px; height:5px; margin:-2.5px 0 0 -2.5px}
+.rack.aisle .upos, .rack.aisle .uid, .rack.aisle .mod, .rack.aisle .bays, .rack.aisle .pull, .rack.aisle .vend, .rack.aisle .ty, .rack.aisle .tun, .rack.aisle .tlssec, .rack.aisle .lcd .cmp, .rack.aisle .lcd .statwrap{display:none}
+.rack.aisle .face{display:flex; flex-wrap:nowrap; height:27px; min-height:0; padding:0}
+.rack.aisle .svc{flex:0 0 30px; height:auto; font-size:.68rem}
+.rack.aisle .svc.r1,.rack.aisle .svc.r2,.rack.aisle .svc.r3{flex-basis:22px; margin:4px 4px}
+.rack.aisle .plate{flex:1 1 0; height:auto; margin:3px 2px; padding:0 .35rem; background:none; border-color:transparent; box-shadow:none}
+.rack.aisle .nm{font-size:.84rem}
+.rack.aisle .leds{flex:0 0 30px; height:auto; gap:3px; margin:0}
+.rack.aisle .led{width:5px; height:5px}
+.rack.aisle .lcd, .rack.aisle.v-prof .lcd{flex:0 0 54px; min-width:0; height:auto; margin:4px 4px 4px 2px; padding:0 4px}
+.rack.aisle.v-all .lcd{flex-basis:64px}
+.rack.aisle.v-prof .lcd{flex-basis:92px}
+.rack.aisle .lcd b, .rack.aisle.v-prof .lcd b{font-size:.74rem}
+.rack.aisle .lcd-bar{height:1px}
+.rack.aisle .unit.tuned>.face::before, .rack.aisle .unit.tuned>.face::after{width:3px}
+.rack.aisle.thermal{--text:#fff}
+.rack.aisle.thermal .unit:not(.blank)>.face{background:color-mix(in srgb, var(--hc,#2e1078) 46%, #06070d)}
+.rack.aisle.thermal .lcd{background:rgba(0,0,0,.45)}
+.rack.aisle.thermal .nm{text-shadow:0 1px 2px #000}
+.rack.thermal .svc:not(.r1):not(.r2):not(.r3){color:#fff; text-shadow:0 1px 2px #000}
+/* on a generated page the LEDs are furniture, not data: they stay lit, steady */
+.u-st .led.act{animation:none}
+.cm .hcrown svg{fill:#20170a !important}

@@ -1960,10 +1960,16 @@ def compute_achievements(agg, profiles, meta, badge_index):
 #     as plain text, for readers that will never run a script.
 
 OG_SIZE = (1200, 630)
-OG_BG = (26, 27, 30)
-OG_ACCENT = (138, 180, 248)
-OG_TEXT = (232, 234, 237)
-OG_MUTED = (154, 160, 166)
+OG_BG = (9, 11, 14)
+OG_ACCENT = (98, 196, 255)
+OG_TEXT = (231, 234, 237)
+OG_MUTED = (152, 162, 173)
+# the hardware of the cards: a unit's face, its seam, an LED, a display
+OG_FACE = (34, 38, 43)
+OG_EDGE = (59, 66, 74)
+OG_LED = (61, 255, 143)
+OG_LCD = (125, 251, 216)
+OG_HAZARD = (242, 189, 0)
 
 SCOPE_NAME = {"h1": "HTTP/1.1", "h2": "HTTP/2", "h3": "HTTP/3",
               "gw": "Gateway", "grpc": "gRPC", "ws": "WebSocket"}
@@ -2037,7 +2043,10 @@ def _og_card(dest, kicker, title, rows, footer, blurb=""):
     from PIL import Image, ImageDraw
     img = Image.new("RGB", OG_SIZE, OG_BG)
     d = ImageDraw.Draw(img)
-    d.rectangle([0, 0, OG_SIZE[0], 9], fill=OG_ACCENT)
+    # the hazard tape that runs under the site's header
+    d.rectangle([0, 0, OG_SIZE[0], 12], fill=(24, 27, 31))
+    for x in range(-12, OG_SIZE[0], 28):
+        d.polygon([(x, 12), (x + 12, 0), (x + 26, 0), (x + 14, 12)], fill=OG_HAZARD)
 
     mark = _og_font(36, bold=True)
     d.text((72, 58), "Http", font=mark, fill=OG_ACCENT)
@@ -2067,11 +2076,17 @@ def _og_card(dest, kicker, title, rows, footer, blurb=""):
     if rows:
         y = max(y + 22, 350)
         fr = _og_font(29, bold=True)
+        y -= 6
         for i, (name, right) in enumerate(rows[:5]):
-            d.text((72, y), f"{i + 1}.", font=fr, fill=OG_MUTED)
-            d.text((122, y), name, font=fr, fill=OG_TEXT)
-            d.text((1128 - d.textlength(right, font=fr), y), right, font=fr, fill=OG_ACCENT)
-            y += 40
+            # one unit of the rack per row: face, rank, LED, name, display
+            d.rounded_rectangle([60, y, 1140, y + 38], radius=4, fill=OG_FACE, outline=OG_EDGE)
+            d.text((80, y + 3), f"{i + 1}", font=fr, fill=OG_MUTED)
+            d.ellipse([118, y + 14, 128, y + 24], fill=OG_LED)
+            d.text((146, y + 3), name, font=fr, fill=OG_TEXT)
+            w = d.textlength(right, font=fr)
+            d.rounded_rectangle([1116 - w - 12, y + 4, 1132, y + 34], radius=3, fill=(3, 6, 5))
+            d.text((1124 - w, y + 3), right, font=fr, fill=OG_LCD)
+            y += 42
 
     if footer:
         f = _og_font(23)

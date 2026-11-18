@@ -82,6 +82,8 @@
           <a class="fw-btn cmp-btn" href="/compare/all/" data-tip="Put any two entries side by side - every profile they both run, requests per second, p99 and the delta. Any two, in any language."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg><span>Head to Head Comparison</span></a>
           <button class="fw-btn heat-btn" id="heatBtn" type="button" aria-pressed="false"
                   data-tip="Thermal camera: colour every panel and bay by its score as a share of that column’s leader, instead of printing the number. For reading the shape of the rack at a glance; the figures stay in the hover popup."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/><path d="M12 9v8"/></svg><span>Thermal camera</span></button>
+          <button class="fw-btn aisle-btn" id="aisleBtn" type="button" aria-pressed="false"
+                  data-tip="Aisle view: step back and see the whole field at once, a row of cabinets with one slim unit per entry. Press a unit to walk up to it."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="3" width="5" height="18" rx="1"/><rect x="9.5" y="3" width="5" height="18" rx="1"/><rect x="16.5" y="3" width="5" height="18" rx="1"/></svg><span>Aisle view</span></button>
           <button class="fw-btn maint-btn" id="maintBtn" type="button" aria-pressed="false"
                   data-tip="Maintenance view: the same ranking as a plain table with every column, sortable, with the collapsible name column and the column scroller."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9.5h18M3 15h18M9 4v16M15 4v16"/></svg><span>Maintenance view</span></button>
           <span class="count" id="count"></span>
@@ -209,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // useless as an addressable filter - q=C matches 73 of 78 entries, q=V matches
   // 33. The language rank badges link here, so the field they claim has to be
   // the field the page shows.
-  var state = { view:'composite', profile:null, conns:null, sortKey:'score', sortDir:-1, types:['flagship','emerging'], q:'', lang:'', useMem:false, scope:'h1', showTuned:true, rescale:false, compactFw:false, heat:false, maint:false, open:'' };
+  var state = { view:'composite', profile:null, conns:null, sortKey:'score', sortDir:-1, types:['flagship','emerging'], q:'', lang:'', useMem:false, scope:'h1', showTuned:true, rescale:false, compactFw:false, heat:false, maint:false, aisle:false, open:'' };
   // The maintenance view (the plain table) is remembered per reader; the rack is the default.
   try{ state.maint=localStorage.getItem('sr-maint')==='1'; }catch(e){}
 
@@ -566,6 +568,8 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     var on = state.view==='composite';
     if(btn){ btn.style.display = on ? '' : 'none'; btn.setAttribute('aria-pressed', state.heat?'true':'false'); }
     var mb=document.getElementById('maintBtn'); if(mb) mb.setAttribute('aria-pressed', state.maint?'true':'false');
+    var ab=document.getElementById('aisleBtn'); if(ab){ ab.setAttribute('aria-pressed', state.aisle?'true':'false'); ab.style.display=state.maint?'none':''; }
+    document.documentElement.classList.toggle('aisle', !!state.aisle && !state.maint);
     if(key) key.style.display = (on && state.heat) ? '' : 'none';
   }
 
@@ -1451,7 +1455,8 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     if(state.lang) p.push('lang='+encodeURIComponent(state.lang));
     if(state.q) p.push('q='+encodeURIComponent(state.q));
     if(state.maint) p.push('table=1');
-    if(state.open && !state.maint) p.push('open='+encodeURIComponent(state.open));
+    if(state.aisle && !state.maint) p.push('aisle=1');
+    if(state.open && !state.maint && !state.aisle) p.push('open='+encodeURIComponent(state.open));
     var nh=p.length?('#'+p.join('&')):'';
     if(location.hash!==nh){ try{ history.replaceState(null,'', nh||(location.pathname+location.search)); }catch(e){} }
   }
@@ -1467,6 +1472,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     state.q = p.q || '';
     if(p.hasOwnProperty('table')) state.maint = p.table==='1';
     state.open = p.open || '';
+    state.aisle = p.aisle==='1';
     if(p.p && PROF[p.p]){
       state.view='profile'; state.profile=p.p;
       var cc=+p.conns; state.conns=(PROF[p.p].conns.indexOf(cc)>=0)?cc:PROF[p.p].conns[0];
@@ -1938,7 +1944,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     var head=(cell.score!=null)?cell.score.toFixed(1):fmtK(cell.rps), p=Math.max(0,Math.min(100,cell.bar))/100;
     return '<span class="bay pc'+(cell.best?' lead':'')+(cell.c?'':' nc')+'" data-pid="'+esc(pid)+'" data-fw="'+esc(r.fw)+'"'+(cell.c?'':' data-nc="1"')
       + ' style="--p:'+p.toFixed(3)+(state.heat?';--hc:'+heatColor(p):'')+'">'
-      + '<span class="bv">'+head+'</span><span class="bm">'+fmtMem(cell.mem)+'</span><i class="bl"></i></span>';
+      + '<span class="bv">'+head+'</span><span class="bm">'+fmtMem(cell.mem).replace(' ','')+'</span><i class="bl"></i></span>';
   }
   function unitComposite(r, M){
     var fw=r.fw, rank=M.rankMap[fw], share=r.score/M.maxScore;
@@ -2105,14 +2111,14 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       + '<div class="tag-badges"><span class="badge b-'+t+'" data-tip="'+esc(typeTip(t))+'">'+typeAbbr(t)+'</span>'+tunedPill(fw)+'</div>'
       + '<div class="tag-meta">'+esc([lang, m.engine&&m.engine!==fw?'engine '+m.engine:'',
           cmpDecl(fw)&&CMP_TYPES.indexOf(t)>=0 ? 'completeness '+(4-cmpMissing(fw).length)+'/4' : ''].filter(Boolean).join(' · '))+'</div>'
-      + (m.desc?'<p class="tag-desc">'+esc(m.desc)+'</p>':'')
       + '<div class="tag-links">'
       + '<a class="go" href="/frameworks/'+encodeURIComponent(slugOf(fw))+'/"><span>Results page</span><span>→</span></a>'
       + (m.repo?'<a href="'+esc(m.repo)+'" target="_blank" rel="noopener"><span>Official repository</span><span>↗</span></a>':'')
       + (m.website?'<a href="'+esc(m.website)+'" target="_blank" rel="noopener"><span>Official website</span><span>↗</span></a>':'')
       + '<a href="'+impl+'" target="_blank" rel="noopener"><span>Benchmark implementation</span><span>↗</span></a>'
       + '<a href="/compare/all/#'+encodeURIComponent(fw)+'"><span>Put it on the bench against another</span><span>→</span></a>'
-      + '</div>';
+      + '</div>'
+      + (m.desc?'<p class="tag-desc">'+esc(m.desc)+'</p>':'');
     var mdl=medalsOf(fw);
     if(mdl.length){
       h+='<div class="tag-sub">Achievements</div><div class="tag-mdl">';
@@ -2166,7 +2172,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     var animate=!REDUCED && !RACK.first && !!rack.animate;
     if(RACK.first){ rack.textContent=''; }
     if(animate){ before={}; Object.keys(old).forEach(function(fw){
-      var r=old[fw].getBoundingClientRect(); if(r.bottom>-240 && r.top<vh+240) before[fw]=r.top; }); }
+      var r=old[fw].getBoundingClientRect(); if(r.bottom>-240 && r.top<vh+240) before[fw]=[r.top, r.left]; }); }
     if(!RACK.cap){ RACK.cap=document.createElement('div'); RACK.cap.className='rack-cap';
                    RACK.patch=document.createElement('div');
                    RACK.tail=document.createElement('div'); RACK.tail.className='rack-tail'; }
@@ -2177,7 +2183,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     units.forEach(function(u, idx){
       var el=old[u.fw];
       if(!el){ el=document.createElement('div'); el.setAttribute('data-fw-row', u.fw); el._new=true; if(rackIO) rackIO.observe(el); }
-      var open=state.open===u.fw;
+      var open=state.open===u.fw && !state.aisle;
       var cls='unit '+u.cls+(favs.has(u.fw)?' fav':'')+(open?' out':'')+(el.classList.contains('live')?' live':'');
       if(el.className!==cls) el.className=cls;
       if(el._s!==u.style){ el.style.cssText=u.style; el._s=u.style; }
@@ -2200,10 +2206,10 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
         var el=els[u.fw], r=el.getBoundingClientRect(), b=before[u.fw];
         var vis=r.bottom>-60 && r.top<vh+60;
         if(b!=null){
-          var dy=b-r.top;
-          if(Math.abs(dy)>1){ dy=Math.max(-vh, Math.min(vh, dy));
-            el.animate([{transform:'translateY('+dy+'px)'},{transform:'none'}],
-                       {duration:Math.min(680, 240+Math.abs(dy)*0.5), easing:'cubic-bezier(.2,.75,.2,1)'}); }
+          var dy=b[0]-r.top, dx=b[1]-r.left;
+          if(Math.abs(dy)>1 || Math.abs(dx)>1){ dy=Math.max(-vh, Math.min(vh, dy));
+            el.animate([{transform:'translate('+dx+'px,'+dy+'px)'},{transform:'none'}],
+                       {duration:Math.min(680, 240+(Math.abs(dy)+Math.abs(dx))*0.5), easing:'cubic-bezier(.2,.75,.2,1)'}); }
         } else if(vis){
           el.animate(el._new ? [{transform:'translateX(-36px)', opacity:0},{transform:'none', opacity:1}]
                              : [{transform:'translateY(46px)', opacity:0},{transform:'none', opacity:1}],
@@ -2251,7 +2257,8 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       COLS.forEach(function(c){ sortOpts.push([c.k, c.label]); });
     }
     rack.className='rack '+(comp?'v-comp':'v-prof')+(comp&&M.all?' v-all':'')+(comp&&state.heat?' thermal':'')
-      + (comp&&specSuite()?' has-spec':'')+(comp&&resilCol()?' has-resil':'');
+      + (comp&&specSuite()?' has-spec':'')+(comp&&resilCol()?' has-resil':'')+(state.aisle?' aisle':'')
+      + (comp&&M.pids.length>8?' many':'');
     rack.style.setProperty('--n', comp?M.pids.length:COLS.length-1);
     var cap='<span class="rc-id"><i class="kled"></i>Rack '+esc(label)+'</span>'
       + '<span class="rc-n">'+n+(n===1?' unit':' units')+' racked · '
@@ -2273,7 +2280,11 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       var port=c('.port[data-k]'); if(port){ sortBy(port.dataset.k); return; }
       if(c('[data-close]')){ var u0=c('[data-fw-row]'); if(u0) toggleTray(u0.getAttribute('data-fw-row')); return; }
       if(c('.tray')) return;                       // reading the tray must not close it
-      var u=c('[data-fw-row]'); if(u && c('.face')) toggleTray(u.getAttribute('data-fw-row'));
+      var u=c('[data-fw-row]');
+      if(u && c('.face')){
+        if(state.aisle){ state.aisle=false; state.open=''; }   // walk up to it: back to the rack, with this unit out
+        toggleTray(u.getAttribute('data-fw-row'));
+      }
     });
     rack.addEventListener('keydown', function(e){
       if(e.key!=='Enter' && e.key!==' ') return;
@@ -2286,6 +2297,8 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       if(e.key==='Escape' && state.open && !state.maint && document.getElementById('spanel').style.display!=='block'){ var fw=state.open; state.open=''; render();
         var el=RACK.els[fw], b=el&&el.querySelector('.pull'); if(b) b.focus(); }
     });
+    var ab=document.getElementById('aisleBtn');
+    if(ab) ab.onclick=function(){ state.aisle=!state.aisle; render(); };
     var mb=document.getElementById('maintBtn');
     if(mb) mb.onclick=function(){ state.maint=!state.maint; try{ localStorage.setItem('sr-maint', state.maint?'1':'0'); }catch(e){} render(); };
   }
