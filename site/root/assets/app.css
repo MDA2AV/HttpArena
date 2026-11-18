@@ -352,10 +352,10 @@ a.kpi:hover{border-color:var(--line-strong); box-shadow:var(--shadow-sm)}
 .vs-bar{display:grid; grid-template-columns:52px minmax(0,1fr) 112px 44px; align-items:center; gap:8px; font-family:var(--mono); font-size:11.5px; color:var(--muted)}
 .vs-bar .trk{height:8px; border-radius:2px; background:var(--bar-track); overflow:hidden}
 .vs-bar .trk i{display:block; height:100%; min-width:2px; background:var(--bar); border-radius:2px}
-.vs-bar.top .trk i{background:var(--accent-solid)}
+.vs-bar.best .trk i{background:var(--accent-solid)}
 .vs-bar .val{text-align:right; color:var(--text); white-space:nowrap}
 .vs-bar .pct{text-align:right}
-.vs-bar.top .pct{color:var(--accent)}
+.vs-bar.best .pct{color:var(--accent)}
 .vs-note{font-size:12.5px; color:var(--muted); margin:0}
 /* sortable tables */
 table.sortable th{cursor:pointer; user-select:none}
@@ -366,9 +366,9 @@ table.sortable th[aria-sort="ascending"]::after{border-bottom:5px solid var(--ac
 table.sortable th[aria-sort="descending"]::after{border-top:5px solid var(--accent); opacity:1}
 .cellbar{display:inline-block; width:72px; height:4px; border-radius:2px; background:var(--bar-track); overflow:hidden; vertical-align:middle; margin-right:8px}
 .cellbar i{display:block; height:100%; background:var(--bar); border-radius:2px}
-tr:first-child .cellbar.lead i,.cellbar.top i{background:var(--accent-solid)}
+tr:first-child .cellbar.lead i,.cellbar.best i{background:var(--accent-solid)}
 .t-filter{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:12px 0}
-.t-filter input{height:32px; width:260px; max-width:100%; padding:0 10px; border:1px solid var(--line); border-radius:var(--r); background:var(--panel); font-size:13px}
+.t-filter input{height:32px; width:400px; max-width:100%; padding:0 10px; border:1px solid var(--line); border-radius:var(--r); background:var(--panel); font-size:13px}
 .t-filter input:focus{border-color:var(--accent-solid); box-shadow:0 0 0 3px var(--accent-weak)}
 .t-filter .cnt{font-size:12px; color:var(--muted); font-family:var(--mono)}
 .chips{display:flex; flex-wrap:wrap; gap:6px; margin:12px 0}
@@ -443,7 +443,9 @@ tr:first-child .cellbar.lead i,.cellbar.top i{background:var(--accent-solid)}
 .pal{width:100%; max-width:620px; max-height:min(560px,76vh); display:flex; flex-direction:column; background:var(--panel); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow-lg); overflow:hidden; animation:cardIn .14s ease}
 .pal-in{display:flex; align-items:center; gap:10px; padding:0 14px; height:50px; border-bottom:1px solid var(--line); flex:none}
 .pal-in svg{width:16px; height:16px; color:var(--muted); flex:none}
-.pal-in input{flex:1; min-width:0; height:100%; border:0; background:transparent; font-size:15px; color:var(--text)}
+.pal-in input{flex:1; min-width:0; height:100%; border:0; background:transparent; font-size:15px; color:var(--text); outline:none}
+.pal-in input:focus-visible{outline:none}
+.pal:focus-within{border-color:var(--line-strong)}
 .pal-in input::placeholder{color:var(--muted)}
 .pal-list{overflow-y:auto; padding:6px; flex:1; scrollbar-width:thin; overscroll-behavior:contain}
 .pal-g{padding:8px 10px 4px; font-size:11px; font-family:var(--mono); text-transform:uppercase; letter-spacing:.06em; color:var(--muted)}

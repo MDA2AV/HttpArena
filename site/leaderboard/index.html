@@ -2328,7 +2328,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       });
     }
     btn.onclick=function(e){ e.stopPropagation(); if(pop) close(); else open(); };
-    document.addEventListener('click', function(e){ if(pop && !pop.contains(e.target) && !btn.contains(e.target)) close(); });
+    document.addEventListener('click', function(e){ if(pop && e.target.isConnected && !pop.contains(e.target) && !btn.contains(e.target)) close(); });
     document.addEventListener('keydown', function(e){ if(e.key==='Escape' && pop){ close(); btn.focus(); } });
     window.addEventListener('resize', close);
     var lb=document.getElementById('linkBtn'); if(lb) lb.onclick=copyViewLink;
