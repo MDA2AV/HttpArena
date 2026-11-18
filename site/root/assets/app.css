@@ -491,7 +491,7 @@ tr:first-child .cellbar.lead i,.cellbar.best i{background:var(--accent-solid)}
 .nf{min-height:calc(100vh - var(--hdr)); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:40px 20px 80px; gap:6px}
 .nf-code{font-family:var(--mono); font-size:13px; color:var(--accent); border:1px solid var(--accent-line); background:var(--accent-weak); border-radius:99px; padding:2px 10px}
 .nf h1{font-size:34px; letter-spacing:-.03em; font-weight:650; margin:14px 0 2px}
-.nf p{color:var(--text-2); margin:0; max-width:46ch}
+.nf p{color:var(--text-2); margin:0; max-width:64ch}
 .nf code{font-family:var(--mono); font-size:12.5px; background:var(--panel-2); border:1px solid var(--line-soft); border-radius:var(--r-sm); padding:1px 5px; overflow-wrap:anywhere}
 .nf-act{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:22px}
 .nf-grid{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-top:34px; width:100%; max-width:760px; text-align:left}

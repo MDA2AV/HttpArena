@@ -2498,6 +2498,9 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   try{ var _fc=localStorage.getItem('lb-fwcompact'); if(_fc!==null) state.compactFw=_fc==='1'; }catch(e){}
   document.getElementById('tunedToggle').addEventListener('click', function(){ state.showTuned=!state.showTuned; saveTuned(); render(); });
   restoreFromHash();
+  // A composite view has no 'rps' column: without this the default view sorted on
+  // a key no header owns, so no arrow showed and the address grew a #sort=rps.
+  if(state.view==='composite' && state.sortKey==='rps'){ state.sortKey='score'; state.sortDir=-1; }
   initTips(); initSpecPanel(); initHeat(); initModal(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initNavSearch(); initDisplay(); initMview(); initKeys(); hw(); buildNav(); renderHead(); render();
   document.body.classList.remove('booting','rl');
   (function(){ var b=document.getElementById('brandHome'); if(b) b.onclick=function(e){ e.preventDefault(); pickScope('h1'); }; })();
