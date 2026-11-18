@@ -1058,7 +1058,9 @@ def _fw_bench(fw, m, lang, ranks, runs, achievements=()):
             best[pid] = (p, c, r)
     cage = "".join(
         '<div class="hdd"><span class="hl">%s</span><b>%s</b><span class="hs">req/s &middot; %sc</span></div>'
-        % (e(best[pid][0]["label"]), _fmt_k(best[pid][2].get("rps")), f"{best[pid][1]:,}")
+        % (e((FAMILY_LABEL[FAMILY_OF_CAT[best[pid][0]["category"]]] + " "
+              if best[pid][0]["category"] in FAMILY_OF_CAT else "") + best[pid][0]["label"]),
+           _fmt_k(best[pid][2].get("rps")), f"{best[pid][1]:,}")
         for pid in order)
 
     bezel = _hw_unit(fw, lang=lang, tuned=tuned,
@@ -3179,12 +3181,13 @@ def _lang_page(lang, scopes, all_entries, round_name, siblings=(), updated="",
         if len(leagues) > 1:
             cab.append(_hw_label(_league_head(league)))
         for fw, kind, tuned, score, rank, of, link, lrank, lof in lrows:
+            # No position is printed on the unit, for the reason the tables
+            # give: the only ranks shown are the published ones, in the note.
             cab.append(_hw_unit(fw, href=_fw_url(fw), lang=lang, lcd="%.0f" % score,
-                                svc=lrank if lrank else "-",
-                                medal=lrank if lrank and lrank <= 3 else 0, tuned=tuned,
+                                tuned=tuned,
                                 note="%d of %d in its league" % (rank, of)))
     cabinet = (_hw_rack("%s cabinet · %s composite" % (lang, SCOPE_NAME[lead_scope]), cab,
-                        "%d racked · the label is the rank among %s" % (len(cab) - (len(leagues) if len(leagues) > 1 else 0), lang))
+                        "%d racked · best first, league by league" % (len(cab) - (len(leagues) if len(leagues) > 1 else 0)))
                if cab else "")
     body = ('<div class="docs-layout one-col"><main class="doc-main wide">'
             '<article class="doc-wrap">'

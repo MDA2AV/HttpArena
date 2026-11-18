@@ -1,9 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="">
 <head>
 <meta charset="utf-8">
-<title>HttpArena</title>
+<title>Unit not found (404) – HttpArena</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <script>
 /* The Hugo site is retired — the standalone board at / is the whole site now.
    The site is served as files, with no server-side rewrites, so this 404 page is the redirect
@@ -39,20 +42,33 @@
   if (to && to.split(/[?#]/)[0] !== raw) location.replace(to);
 })();
 </script>
-<style>
-  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f3f4f6;color:#111827}
-  .box{text-align:center;padding:2rem}
-  h1{font-size:3rem;margin:0 0 .25rem;color:#2563eb;letter-spacing:-.02em}
-  p{color:#4b5563;margin:.4rem 0}
-  a{color:#2563eb;text-decoration:none;font-weight:600}
-  a:hover{text-decoration:underline}
-</style>
+<script>try{var t=localStorage.getItem('lb-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<link rel="stylesheet" href="/assets/sr/sr.css">
 </head>
-<body>
-  <div class="box">
-    <h1>404</h1>
-    <p>That page doesn’t exist.</p>
-    <p><a href="/">← Back to the leaderboard</a></p>
-  </div>
+<body class="pg pg-404">
+  <header class="top">
+    <div class="brand"><a class="brand-name" href="/" aria-label="HttpArena home"><svg class="brand-ico" viewBox="0 0 28 28" aria-hidden="true"><rect x="2.5" y="1.5" width="23" height="25" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="5.5" y="5" width="17" height="4.6" rx="1" fill="currentColor" opacity=".9"/><rect x="5.5" y="11.7" width="17" height="4.6" rx="1" fill="currentColor" opacity=".55"/><rect x="5.5" y="18.4" width="17" height="4.6" rx="1" fill="currentColor" opacity=".3"/><circle class="bi-led" cx="19.6" cy="7.3" r="1.25"/><circle class="bi-led" cx="19.6" cy="14" r="1.25"/></svg><span><b>Http</b>Arena</span></a></div>
+    <nav class="top-nav" aria-label="Site"><a class="tn" data-sec="board" href="/" data-tip="The leaderboard: every entry racked by its composite score."><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M4 9h16M4 15h16"/></svg><span>Racks</span></a>
+      <a class="tn fw-btn" data-sec="frameworks" href="/frameworks/" data-tip="A results page for every entry, grouped by language, plus a summary comparing the entries of each language."><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Frameworks</span></a>
+      <a class="tn" data-sec="compare" href="/compare/" data-tip="Put any two entries side by side on the bench."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg><span>Compare</span></a>
+      <a class="tn" data-sec="docs" href="/docs/" data-tip="The Knowledge Base: how the benchmark is run, scored and extended."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Knowledge Base</span></a></nav>
+    <div class="top-links"><button class="icon-btn" id="theme" title="Toggle theme" aria-label="Toggle light / dark theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg></button></div>
+  </header>
+  <main class="e404">
+    <h1>Unit not found</h1>
+    <div class="rack r-st" data-live>
+      <div class="rack-cap"><span class="rc-id"><i class="kled"></i>Rack 404</span><span class="rc-n">this address has nothing racked</span></div>
+      <div class="unit blank"><div class="ear l"></div><div class="face"></div><div class="ear r"></div></div>
+      <div class="unit slot"><div class="ear l"></div><div class="face">
+        <span class="code">404</span>
+        <span class="msg"><i class="led"></i>Empty slot &middot; no unit at this address</span>
+      </div><div class="ear r"></div></div>
+      <div class="unit blank"><div class="ear l"></div><div class="face"></div><div class="ear r"></div></div>
+      <div class="rack-tail"><div class="rack-foot"><i></i><i></i></div></div>
+    </div>
+    <p class="tagline">That page doesn’t exist. The server you are looking for may have been re-racked under another address, or was never installed.</p>
+    <p class="links"><a href="/">← Back to the leaderboard</a><a href="/frameworks/">Every entry</a><a href="/docs/">Knowledge Base</a></p>
+  </main>
+  <script src="/assets/sr/sr.js"></script>
 </body>
 </html>
