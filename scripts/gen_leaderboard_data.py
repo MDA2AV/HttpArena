@@ -399,7 +399,7 @@ def _row(line):
 
 def _scroll(table):
     """A table in a box of its own that scrolls sideways when the table is wider
-    than the screen. Styled by .tbl-x in _docs_css(), which says why."""
+    than the screen. Styled by .tbl-x in /assets/app.css."""
     return '<div class="tbl-x">' + table + "</div>"
 
 
@@ -812,8 +812,10 @@ def _sidebar(tree, curid):
         'aria-controls="navResults"></div></div>'
         '<div class="nav-results" id="navResults" role="listbox" aria-label="Search results" '
         'style="display:none"></div>'
+        '<button class="nav-toggle" type="button" aria-expanded="false">'
+        '<span>Browse the Knowledge Base</span>' + _ICON_CHEV + '</button>'
         '<div id="navTree">'
-        '<a class="nav-item" href="/">\u2190 Leaderboard</a>'
+        '<a class="nav-item nav-back" href="/">' + _ICON_BACK + '<span>Leaderboard</span></a>'
         '<div class="nav-sec"><div class="nav-grp lvl0 open">'
         '<div class="nav-grp-h%s"><a class="nav-grp-link" href="/docs/">%s</a>'
         '<span class="caret">\u25b8</span></div>'
@@ -827,143 +829,82 @@ def _sidebar(tree, curid):
 
 BOARD = ROOT / "site" / "leaderboard" / "index.html"
 
-# Selectors the doc pages share with the board. Everything else in the board's
-# stylesheet is leaderboard furniture - the table, the filters, its own nav -
-# and stays there.
-_SHARED_EXACT = {
-    ":root", "html", "body", "a", "*",
-    ".top", ".brand", ".brand-name", ".brand-name b", ".brand-name:hover",
-    ".icon-btn", ".icon-btn:hover", ".icon-btn svg", ".top-links",
-    ".fw-btn", ".fw-btn svg", ".fw-btn:hover",
-}
-_SHARED_PREFIX = (".doc-", ".type-rules", ".tr-sq", ".nav", ".ns-box", ".caret")
-
-
-def _top_level_rules(css):
-    """Split a stylesheet into top-level rules, keeping @media blocks whole."""
-    out, buf, depth = [], "", 0
-    for ch in css:
-        buf += ch
-        if ch == "{":
-            depth += 1
-        elif ch == "}":
-            depth -= 1
-            if depth == 0:
-                out.append(buf.strip())
-                buf = ""
-    return out
-
-
-def _is_shared(rule):
-    # a rule can carry a leading /* comment */; that is not part of the selector
-    sel = re.sub(r"/\*.*?\*/", " ", rule.split("{", 1)[0], flags=re.S).strip()
-    if sel.startswith("@media"):
-        # the dark-mode preference block defines the same variables as :root
-        return "prefers-color-scheme" in sel
-    first = sel.split(",")[0].strip()
-    return first in _SHARED_EXACT or first.startswith(_SHARED_PREFIX)
-
-
 def board_chrome():
-    """Header markup and shared CSS, read out of the board at build time.
+    """The site header, read out of the board at build time.
 
-    The board is the single source of truth for site chrome. Copying it by hand
-    is what let the doc pages drift twice - the type-rules widget lost the rules
-    that hide its inactive panels, and the header lost its icon buttons - so
-    this reads the real thing instead. Editing the board now updates the doc
-    pages automatically, and a structural change here fails the build loudly
-    rather than silently shipping a half-styled page.
+    The board is the single source of truth for site chrome: copying the header
+    by hand is what let the generated pages drift from it. This lifts the whole
+    <header> and drops the two things that are the board's own - its in-page
+    home link and the round selector - so every page carries the same bar. The
+    styles are not lifted any more: they live in /assets/app.css, which the
+    board and every generated page link.
     """
     html = BOARD.read_text(encoding="utf-8")
-    brand = re.search(r'<div class="brand">(.*?)</div>', html, re.S)
-    links = re.search(r'<div class="top-links">(.*?)</div>', html, re.S)
-    style = re.search(r"<style>(.*?)</style>", html, re.S)
-    # The Frameworks button lives beside the board's round selector, which no
-    # generated page has, so it is lifted separately rather than riding along
-    # inside .top-links. Same rule as the rest of the chrome: read the board,
-    # never retype it.
-    fwbtn = re.search(r'<a class="fw-btn".*?</a>', html, re.S)
-    if not (brand and links and style and fwbtn):
+    m = re.search(r'<header class="top">.*?</header>', html, re.S)
+    if not m:
         raise SystemExit(f"gen: cannot read site chrome from {BOARD.relative_to(ROOT)} - "
-                         "expected .brand, .top-links, .fw-btn and a <style> block")
-    shared = [r for r in _top_level_rules(style.group(1)) if _is_shared(r)]
-    if len(shared) < 40:
-        raise SystemExit(f"gen: only {len(shared)} shared CSS rules found in "
-                         f"{BOARD.relative_to(ROOT)} - the selector list is stale")
-    # the board's brand link drives its in-page router; on a doc page it goes home
-    brand_html = brand.group(1).strip().replace('href="#" id="brandHome"', 'href="/"')
-    return (brand_html, links.group(1).strip(), "\n".join(shared),
-            fwbtn.group(0).strip())
+                         "expected a <header class=\"top\">")
+    header = m.group(0)
+    for needle, repl in (('href="#" id="brandHome"', 'href="/"'),
+                         ('<div class="round" id="round"></div>', ""),
+                         ('data-nav="board" class="on"', 'data-nav="board"')):
+        if header.count(needle) != 1:
+            raise SystemExit(f"gen: site chrome in {BOARD.relative_to(ROOT)} moved - "
+                             f"expected exactly one {needle!r} in the header")
+        header = header.replace(needle, repl)
+    return header
 
 
-# Resolved once at import: the board's chrome, shared by every generated page.
+# Resolved once at import: the board's header, shared by every generated page.
 _CHROME = board_chrome()
+
+
+def _page_top(section):
+    """<body> and the site header, with `section` (board, frameworks, compare,
+    docs) marked as the current one in the navigation."""
+    needle = 'data-nav="%s"' % section
+    if needle not in _CHROME:
+        raise SystemExit(f"gen: no {needle} link in the site header")
+    return "<body>" + _CHROME.replace(needle, needle + ' class="on" aria-current="page"')
+
 
 _THEME_INIT = ("<script>try{var t=localStorage.getItem('lb-theme');"
                "if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>")
-# search.js is the whole Knowledge Base as text - 290KB - and it was loaded on
-# every doc page for a search box most readers never open. It is fetched on the
-# first use of the box instead.
-_NAV_JS = ("<script>(function(){"
-           # accordion: same behaviour as the board's toggleGrp
-           "document.querySelectorAll('.nav-grp-h .caret').forEach(function(c){"
-           "c.onclick=function(e){e.preventDefault();e.stopPropagation();"
-           "c.closest('.nav-grp').classList.toggle('open');};});"
-           # page search over the index the generator emits
-           "var inp=document.getElementById('navq'),box=document.getElementById('navResults'),"
-           "tree=document.getElementById('navTree');if(!inp)return;"
-           "var req=null,cb=null;"
-           "function need(f){if(window.LB_SEARCH){f();return;}cb=f;if(req)return;"
-           "req=document.createElement('script');req.src='/search.js';"
-           "req.onload=function(){var g=cb;cb=null;if(g)g();};"
-           # Run the pending callback on failure too, so the box answers "no
-           # page matches" instead of staying blank forever, and clear req so
-           # the next keystroke can retry the fetch.
-           "req.onerror=function(){req=null;var g=cb;cb=null;if(g)g();};"
-           "document.head.appendChild(req);}"
-           "inp.addEventListener('focus',function(){need(function(){});},{once:true});"
-           "function esc(s){return String(s).replace(/[&<>\"]/g,function(c){"
-           "return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});}"
-           "function snip(x,t){var i=x.toLowerCase().indexOf(t);if(i<0)return esc(x.slice(0,110));"
-           "var a=Math.max(0,i-45),b=Math.min(x.length,i+t.length+75);"
-           "return (a>0?'\u2026':'')+esc(x.slice(a,i))+'<mark>'+esc(x.slice(i,i+t.length))+'</mark>'"
-           "+esc(x.slice(i+t.length,b))+(b<x.length?'\u2026':'');}"
-           "function run(){var q=inp.value.trim().toLowerCase();"
-           "if(!q){box.style.display='none';tree.style.display='';inp.setAttribute('aria-expanded','false');return;}"
-           "var terms=q.split(/\\s+/).filter(Boolean),hits=[];"
-           # Guarded the way the board's buildSearchIndex() guards it: a script
-           # that loads but defines nothing (proxy error page, blocked fetch)
-           # would otherwise throw on every keystroke for the rest of the visit.
-           "(window.LB_SEARCH||[]).forEach(function(e){var t=(e.t||'').toLowerCase(),"
-           "b=((e.d||'')+' '+(e.x||'')).toLowerCase(),sc=0;"
-           "for(var i=0;i<terms.length;i++){var ti=t.indexOf(terms[i]),bi=b.indexOf(terms[i]);"
-           "if(ti<0&&bi<0)return;sc+=ti===0?60:ti>0?35:0;if(bi>=0)sc+=5;}"
-           "if(t===q)sc+=50;hits.push({e:e,sc:sc});});"
-           "hits.sort(function(a,b){return b.sc-a.sc||a.e.t.length-b.e.t.length;});"
-           "hits=hits.slice(0,25);"
-           "tree.style.display='none';box.style.display='';inp.setAttribute('aria-expanded','true');"
-           "if(!hits.length){box.innerHTML='<div class=\"nav-empty\">No page matches <b>'+esc(inp.value)+'</b>.</div>';return;}"
-           "var h='<div class=\"nav-res-h\"><span>Pages</span><span>'+hits.length+'</span></div>';"
-           "hits.forEach(function(hit){var e=hit.e;"
-           "h+='<a class=\"nav-res\" href=\"/docs/'+(e.u?e.u+'/':'')+'\">'"
-           "+'<span class=\"nav-res-t\">'+esc(e.t)+'</span>'"
-           "+'<span class=\"nav-res-c\">'+esc(e.c||'')+'</span>'"
-           "+'<span class=\"nav-res-s\">'+snip((e.d||'')+' '+(e.x||''),terms[0])+'</span></a>';});"
-           "box.innerHTML=h;}"
-           "var t;inp.addEventListener('input',function(){clearTimeout(t);"
-           "t=setTimeout(function(){if(!inp.value.trim())run();else need(run);},90);});"
-           "inp.addEventListener('keydown',function(e){if(e.key==='Escape'){inp.value='';run();inp.blur();}});"
-           "})();</script>")
+# The stylesheet and the two faces it sets everything in. The fonts are
+# preloaded because the first paint is text.
+_ASSETS = ('<link rel="preload" href="/assets/fonts/geist.woff2" as="font" type="font/woff2" crossorigin>'
+           '<link rel="stylesheet" href="/assets/app.css">')
+_SITE_FOOT = ('<footer class="site-foot"><span>HttpArena - open HTTP framework benchmarks</span>'
+              '<span class="sp"></span>'
+              '<a href="/">Leaderboard</a><a href="/frameworks/">Frameworks</a>'
+              '<a href="/compare/">Compare</a><a href="/docs/">Knowledge Base</a>'
+              '<a href="/llms.txt">llms.txt</a>'
+              '<a href="https://github.com/MDA2AV/HttpArena" rel="noopener">GitHub</a></footer>')
+# Everything a generated page ends with: the footer and the shared script
+# (theme toggle, command palette, shortcuts, sidebar search, "On this page",
+# copy buttons, sortable tables). search.js is fetched by it on first use.
+_PAGE_END = _SITE_FOOT + '<script src="/assets/app.js"></script>'
+_ICON_BACK = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" '
+              'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+              '<path d="M19 12H5M11 6l-6 6 6 6"/></svg>')
+_ICON_CHEV = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" '
+              'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+              '<path d="m6 9 6 6 6-6"/></svg>')
 
-_THEME_TOGGLE = ("<script>var b=document.getElementById('theme');if(b)b.onclick=function(){"
-                 "var d=document.documentElement,c=d.getAttribute('data-theme')==='dark'||"
-                 "(d.getAttribute('data-theme')!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);"
-                 "var n=c?'light':'dark';d.setAttribute('data-theme',n);"
-                 "try{localStorage.setItem('lb-theme',n);}catch(e){}};</script>")
+
+def _crumbs_html(crumbs):
+    """The visible trail: the same list the BreadcrumbList node carries."""
+    if not crumbs or len(crumbs) < 2:
+        return ""
+    e = _html.escape
+    parts = ['<a href="%s">%s</a>' % (href, e(name)) for name, href in crumbs[:-1]]
+    parts.append('<span aria-current="page">%s</span>' % e(crumbs[-1][0]))
+    return ('<nav class="crumbs" aria-label="Breadcrumb">'
+            + '<span class="sep" aria-hidden="true">/</span>'.join(parts) + "</nav>")
 
 
 def _doc_page(did, title, body_html, tree, seo_title="", description="",
-              crumbs=None, og_url="", updated=""):
+              crumbs=None, og_url="", updated="", prev=None, nxt=None):
     url = SITE + _doc_url(did)
     # Authored metadata wins; the scraped first paragraph stays as the fallback
     # so a page that hasn't been given frontmatter yet still renders sensibly.
@@ -1003,71 +944,30 @@ def _doc_page(did, title, body_html, tree, seo_title="", description="",
             + '<meta property="og:url" content="' + url + '">'
             + _og_meta(og_url)
             + _jsonld({"@context": "https://schema.org", "@graph": graph})
-            + '<link rel="stylesheet" href="/docs/docs.css">'
+            + _ASSETS
             + "</head>")
-    # Same markup and classes as the board's header, so crossing between /
-    # and /docs/ doesn't change the chrome. The board-only controls (type
-    # filters, round selector, hardware chips) are leaderboard state, not site
-    # chrome, so they aren't carried over; everything else is identical.
-    header = ('<body><header class="top">'
-              '<div class="brand">' + _CHROME[0] + '</div>'
-              '<a class="brand-sub" href="/docs/">Knowledge Base</a>'
-              + _CHROME[3]
-              + '<div class="top-links">' + _CHROME[1] + '</div>'
-              '</header>')
+    # The Knowledge Base as a docs product: the tree on the left, the article in
+    # the middle under its breadcrumb and date, "On this page" on the right
+    # (built by app.js from the headings), and the neighbours at the foot.
+    meta = ('<p class="doc-meta"><span>Updated <time datetime="%s">%s</time></span></p>'
+            % (updated, updated) if updated else "")
+    foot = ""
+    if prev or nxt:
+        foot = ('<nav class="doc-foot" aria-label="Pages">'
+                + ('<a class="prev" href="%s"><small>Previous</small><span>%s</span></a>'
+                   % (_doc_url(prev[0]), _html.escape(prev[1])) if prev else "")
+                + ('<a class="next" href="%s"><small>Next</small><span>%s</span></a>'
+                   % (_doc_url(nxt[0]), _html.escape(nxt[1])) if nxt else "")
+                + "</nav>")
     body = ('<div class="docs-layout">'
             '<aside class="nav">' + _sidebar(tree, did) + '</aside>'
             '<main class="doc-main"><article class="doc-wrap">'
-            '<h1 class="doc-title">' + t + "</h1>"
+            + _crumbs_html(crumbs)
+            + '<h1 class="doc-title">' + t + "</h1>" + meta
             + _static_links(body_html)
-            + "</article></main></div>")
-    return head + header + body + _NAV_JS + _THEME_TOGGLE + "</body></html>"
-
-
-def _docs_css():
-    """The board's shared chrome, plus the rules only these pages need.
-
-    Everything shared - theme variables, reset, header, doc body, cards and the
-    shortcode widgets - comes from the board itself, so the two can't diverge.
-    Only the standalone-page shell is defined here: the board has no two-column
-    docs layout and no sidebar of its own.
-    """
-    return _CHROME[2] + """
-/* ── standalone doc-page shell (not present on the board) ─────────────── */
-.brand-sub{color:var(--text-2);font-size:.9rem;padding-left:.7rem;border-left:1px solid var(--line)}
-.top-links{margin-left:auto}
-/* Same two-column shape as the board's .layout; the rail itself is the board's
-   .nav, styled by the board's own CSS. */
-/* wider than the board's 264px rail: this tree goes five levels deep and
-   each level costs .8rem of indent, so names would truncate. */
-.docs-layout{display:grid;grid-template-columns:320px 1fr;align-items:start}
-/* framework pages have no sidebar to sit next to */
-.docs-layout.one-col{grid-template-columns:1fr;justify-items:center}
-.docs-layout.one-col .doc-main{width:100%}
-.fw-kind{color:var(--muted);font-size:.78rem}
-/* the "compare these N entries" line under each language heading on /frameworks/ */
-.fw-compare{margin:-.4rem 0 .6rem;font-size:.85rem}
-/* the head-to-head picker and its table */
-.cmp-pick{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:1rem 0}
-.cmp-pick select{font:inherit;font-size:.9rem;padding:.35rem .5rem;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--text)}
-.doc-body td.n,.doc-body th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
-/* A table wider than the screen scrolls sideways inside its own box. Left to
-   itself it widened the page, so on a phone everything panned: the head-to-head
-   table is 625px across on a 375px screen and an entry's results table 688px.
-   The table's margin moves out to the box, so the space around it is unchanged. */
-.tbl-x,#cmpOut{overflow-x:auto;margin:1.1rem 0}
-.tbl-x>table,#cmpOut>table{margin:0}
-/* the line over each group of rows in a head-to-head table, naming its unit */
-.cmp-table tr.cmp-sub th{text-align:left;font-weight:600;font-size:.8rem;color:var(--text-2);background:var(--panel-2)}
-/* the date the numbers were last published, on every generated page */
-.updated{color:var(--muted);font-size:.82rem;margin-top:1.6rem}
-/* the one-sentence answer at the top of a language page, before any table */
-.lead-answer{font-size:1.02rem;line-height:1.6;padding:.85rem 1rem;margin:0 0 1rem;border-left:3px solid var(--accent);background:var(--panel-2);border-radius:0 8px 8px 0}
-.doc-main{min-width:0;padding:1.6rem 2rem 4rem;max-width:900px}
-.doc-wrap{max-width:none}
-.nav-grp-link{display:block;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit;font:inherit;text-decoration:none}
-@media (max-width:820px){.docs-layout{grid-template-columns:1fr}.nav{position:static;height:auto;width:100%;border-right:0;border-bottom:1px solid var(--line)}.doc-main{padding:1.1rem 1.1rem 4rem;max-width:100%}.brand{width:auto}}
-"""
+            + foot
+            + '</article></main><aside class="toc" id="toc" aria-label="On this page"></aside></div>')
+    return head + _page_top("docs") + body + _PAGE_END + "</body></html>"
 
 
 def build_doc_pages(tree, content, trails=None, with_og=False):
@@ -1077,14 +977,26 @@ def build_doc_pages(tree, content, trails=None, with_og=False):
     if DOCS_OUT.exists():
         shutil.rmtree(DOCS_OUT)
     DOCS_OUT.mkdir(parents=True, exist_ok=True)
-    (DOCS_OUT / "docs.css").write_text(_docs_css(), encoding="utf-8")
     trails = trails or {}
+    # reading order, for the previous / next links at the foot of each page
+    order = []
+
+    def walk(node):
+        if node["u"] in content:
+            order.append((node["u"], node["t"] or "Knowledge Base"))
+        for child in node.get("c") or []:
+            walk(child)
+    walk(tree)
+    place = {u: i for i, (u, _t) in enumerate(order)}
     for did, d in content.items():
+        i = place.get(did)
         page = _doc_page(did, d["t"] or "Knowledge Base", d["html"], tree,
                          seo_title=d.get("st", ""), description=d.get("d", ""),
                          crumbs=trails.get(did),
                          og_url=(_doc_url(did) + "og.png") if with_og else "",
-                         updated=_site_dates().get(_doc_source_path(did), ""))
+                         updated=_site_dates().get(_doc_source_path(did), ""),
+                         prev=order[i - 1] if i else None,
+                         nxt=order[i + 1] if i is not None and i + 1 < len(order) else None)
         dest = (DOCS_OUT / did / "index.html") if did else (DOCS_OUT / "index.html")
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(page, encoding="utf-8")
@@ -2093,6 +2005,24 @@ def js_payload(name, payload):
     return f"window.{name} = JSON.parse('" + body.replace("\\", "\\\\").replace("'", "\\'") + "');\n"
 
 
+def write_palette_index(profiles, fw_entries, meta, lang_pages, members_by_lang, compare_langs):
+    """site/generated/palette.js: what the command palette can jump to that is
+    not a Knowledge Base page - every entry, language and test profile, with
+    the URL segment each one lives at. A few kilobytes, fetched the first time
+    the palette opens, so no page has to load data.js to offer search."""
+    payload = {
+        "e": [[fw, _slug(fw), lang or "", TYPE_LABEL.get(kind, kind),
+               1 if (meta.get(fw) or {}).get("mode") == "tuned" else 0]
+              for fw, lang, kind in fw_entries],
+        "l": [[lang, _lang_slug(lang), len(members_by_lang.get(lang, ())),
+               1 if lang in compare_langs else 0] for lang in lang_pages],
+        "p": [[p["id"], p["label"], p["category"], p["conns"][0], p.get("blurb", "")]
+              for p in profiles],
+    }
+    GEN.mkdir(parents=True, exist_ok=True)
+    (GEN / "palette.js").write_text(js_payload("HA_NAV", payload), encoding="utf-8")
+
+
 def write_data_json(payload):
     """The same document data.js assigns to window.LB_DATA, as plain JSON.
 
@@ -2808,19 +2738,15 @@ def _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url="", achievem
             + '<meta property="og:url" content="' + url + '">'
             + _og_meta(og_url)
             + _jsonld({"@context": "https://schema.org", "@graph": graph})
-            + '<link rel="stylesheet" href="/docs/docs.css">'
+            + _ASSETS
             + "</head>")
-    header = ('<body><header class="top">'
-              '<div class="brand">' + _CHROME[0] + '</div>'
-              '<a class="brand-sub" href="/frameworks/">Frameworks</a>'
-              '<div class="top-links">' + _CHROME[1] + '</div>'
-              '</header>')
+    header = _page_top("frameworks")
     body = ('<div class="docs-layout one-col"><main class="doc-main">'
             '<article class="doc-wrap"><h1 class="doc-title">' + e(fw) + "</h1>"
             + _fw_body(fw, m, lang, ranks, runs, round_name, lang_url, achievements,
                        lang_scopes, updated, has_compare, spec)
             + "</article></main></div>")
-    return head + header + body + _THEME_TOGGLE + "</body></html>"
+    return head + header + body + _PAGE_END + "</body></html>"
 
 
 def _lead_scope(scopes):
@@ -3004,13 +2930,9 @@ def _lang_page(lang, scopes, all_entries, round_name, siblings=(), updated="",
             + '<meta property="og:description" content="' + e(desc) + '">'
             + '<meta property="og:url" content="' + url + '">'
             + _jsonld({"@context": "https://schema.org", "@graph": graph})
-            + '<link rel="stylesheet" href="/docs/docs.css">'
+            + _ASSETS
             + "</head>")
-    header = ('<body><header class="top">'
-              '<div class="brand">' + _CHROME[0] + '</div>'
-              '<a class="brand-sub" href="/frameworks/">Frameworks</a>'
-              '<div class="top-links">' + _CHROME[1] + '</div>'
-              '</header>')
+    header = _page_top("frameworks")
     # The answer first, in a sentence, before any table. Both a reader skimming
     # and an assistant summarising take the first paragraph.
     answer = ""
@@ -3085,7 +3007,7 @@ def _lang_page(lang, scopes, all_entries, round_name, siblings=(), updated="",
                             + '<a href="/frameworks/">All languages</a> · '
                               '<a href="/">Open the leaderboard</a>')
             + "</div></article></main></div>")
-    return head + header + body + _THEME_TOGGLE + "</body></html>"
+    return head + header + body + _PAGE_END + "</body></html>"
 
 
 def _fw_index_page(entries, lang_pages=(), updated="", compare_langs=()):
@@ -3141,13 +3063,9 @@ def _fw_index_page(entries, lang_pages=(), updated="", compare_langs=()):
             + '<meta property="og:description" content="' + e(desc) + '">'
             + '<meta property="og:url" content="' + url + '">'
             + _jsonld({"@context": "https://schema.org", "@graph": graph})
-            + '<link rel="stylesheet" href="/docs/docs.css">'
+            + _ASSETS
             + "</head>")
-    header = ('<body><header class="top">'
-              '<div class="brand">' + _CHROME[0] + '</div>'
-              '<a class="brand-sub" href="/frameworks/">Frameworks</a>'
-              '<div class="top-links">' + _CHROME[1] + '</div>'
-              '</header>')
+    header = _page_top("frameworks")
     body = ('<div class="docs-layout one-col"><main class="doc-main">'
             '<article class="doc-wrap"><h1 class="doc-title">' + e(title) + "</h1>"
             '<div class="doc-body"><p>' + e(desc) + " Ranks and every per-profile number live on "
@@ -3155,7 +3073,7 @@ def _fw_index_page(entries, lang_pages=(), updated="", compare_langs=()):
             '<a href="/compare/">the comparisons</a> put any two of one language side by side.</p>'
             + "".join(sections)
             + _updated_line(updated) + "</div></article></main></div>")
-    return head + header + body + _THEME_TOGGLE + "</body></html>"
+    return head + header + body + _PAGE_END + "</body></html>"
 
 
 # -- head to head -------------------------------------------------------------
@@ -3587,13 +3505,9 @@ def _compare_page(lang, ranked, members, profiles, results, round_name, updated,
             + '<meta property="og:url" content="' + url + '">'
             + _og_meta(og_url)
             + _jsonld({"@context": "https://schema.org", "@graph": graph})
-            + '<link rel="stylesheet" href="/docs/docs.css">'
+            + _ASSETS
             + "</head>")
-    header = ('<body><header class="top">'
-              '<div class="brand">' + _CHROME[0] + '</div>'
-              '<a class="brand-sub" href="/compare/">Comparisons</a>'
-              '<div class="top-links">' + _CHROME[1] + '</div>'
-              '</header>')
+    header = _page_top("compare")
     picker = ('<div class="cmp-pick"><label for="cmpA">Compare</label>'
               '<select id="cmpA">' + opts(a) + "</select>"
               '<label for="cmpB">with</label>'
@@ -3644,7 +3558,7 @@ def _compare_page(lang, ranked, members, profiles, results, round_name, updated,
                                  "g": list(CMP_GROUPS),
                                  "c": SCOPE_NAME[DEFAULT_SCOPE]})
     return (head + header + body + "<script>" + payload + "</script>" + _CMP_JS
-            + _THEME_TOGGLE + "</body></html>")
+            + _PAGE_END + "</body></html>")
 
 
 def _compare_index_page(langs, updated, og_url=""):
@@ -3684,13 +3598,9 @@ def _compare_index_page(langs, updated, og_url=""):
             + '<meta property="og:url" content="' + url + '">'
             + _og_meta(og_url)
             + _jsonld({"@context": "https://schema.org", "@graph": graph})
-            + '<link rel="stylesheet" href="/docs/docs.css">'
+            + _ASSETS
             + "</head>")
-    header = ('<body><header class="top">'
-              '<div class="brand">' + _CHROME[0] + '</div>'
-              '<a class="brand-sub" href="/compare/">Comparisons</a>'
-              '<div class="top-links">' + _CHROME[1] + '</div>'
-              '</header>')
+    header = _page_top("compare")
     body = ('<div class="docs-layout one-col"><main class="doc-main">'
             '<article class="doc-wrap"><h1 class="doc-title">' + e(title) + "</h1>"
             '<div class="doc-body"><p>' + e(desc) + " Every entry runs the same profiles on the "
@@ -3707,7 +3617,7 @@ def _compare_index_page(langs, updated, og_url=""):
                                      '<a href="/frameworks/">Every entry, one page each</a> · '
                                      '<a href="/docs/">How the benchmark works</a>')
             + "</div></article></main></div>")
-    return head + header + body + _THEME_TOGGLE + "</body></html>"
+    return head + header + body + _PAGE_END + "</body></html>"
 
 
 def build_compare_pages(profiles, results, lang_rows, members_by_lang, compare_langs,
@@ -4280,6 +4190,7 @@ def main():
     compare_pages, n_cmp_cards = build_compare_pages(
         profiles, results, {l: s.get(DEFAULT_SCOPE, []) for l, s in lang_scopes.items()},
         members_by_lang, compare_langs, round_name, updated, has_og, fw_lang)
+    write_palette_index(profiles, fw_entries, meta, lang_pages, members_by_lang, compare_langs)
     n_urls, n_dated = write_sitemap(docs_content, fw_entries, lang_pages,
                                     [l for l, _n in compare_pages])
 

@@ -30,6 +30,7 @@ cp generated/sitemap.xml "$out/sitemap.xml"                                 # ro
 cp -r generated/badge "$out/badge"                                          # shields.io endpoints behind the README badges, /badge/<fw>/<family>.json
 cp -r generated/frameworks "$out/frameworks"                                # a real page per entry at /frameworks/<slug>/, plus the index over them
 cp -r generated/compare "$out/compare"                                      # head-to-head pages, one per language, at /compare/<language>/
+cp generated/palette.js "$out/palette.js"                                    # entries, languages and profiles for the command palette (assets/app.js fetches it on first use)
 cp generated/data.json "$out/data.json"                                     # every result as plain JSON: what the Dataset structured data points at
 cp generated/llms.txt generated/llms-full.txt "$out/"                       # the ranking and the Knowledge Base as text, for readers that never run JS
 if [ -f generated/og.png ]; then cp generated/og.png "$out/og.png"; fi      # social card for the board; the per-doc ones ride along inside generated/docs
