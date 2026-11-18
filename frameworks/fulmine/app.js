@@ -303,13 +303,19 @@ if (hasPair('/certs-tls')) {
         setInterval(() => {
             const now = pairStamp();
             if (!now || now === stamp) return;
-            stamp = now;
             const next = tlsApp('/certs-tls');
-            next.listen(9000, (e) => {
-                if (e) return;
-                live.close();
-                live = next;
-            });
+            try {
+                next.listen(9000, (e) => {
+                    if (e) return;
+                    live.close();
+                    live = next;
+                });
+            } catch {
+                // listen() builds the SSL context: mid-swap the key and the certificate do not
+                // match yet and it throws, so the next tick tries again
+                return;
+            }
+            stamp = now;
         }, 1000).unref();
     });
 }
