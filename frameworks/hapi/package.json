@@ -1,0 +1,7 @@
+{
+  "name": "httparena-hapi",
+  "private": true,
+  "dependencies": {
+    "@hapi/hapi": "^21.4.13"
+  }
+}
