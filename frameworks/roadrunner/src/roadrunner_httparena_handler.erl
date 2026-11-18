@@ -31,6 +31,10 @@ routes() ->
             middlewares => [roadrunner_compress]
         },
         {~"/ws", ?MODULE, ws},
+        %% The protocol-compliance suites (Http11Probe, h2spec) run
+        %% against these.
+        {~"/spec", ?MODULE, spec},
+        {~"/spec/headers", ?MODULE, spec_headers},
         #{
             path => ~"/static/*path",
             handler => roadrunner_static,
@@ -80,6 +84,10 @@ handle_route(async_db, Req) ->
     async_db_endpoint(Req);
 handle_route(fortunes, Req) ->
     fortunes_endpoint(Req);
+handle_route(spec, Req) ->
+    spec_endpoint(roadrunner_req:method(Req), Req);
+handle_route(spec_headers, Req) ->
+    spec_headers_endpoint(Req);
 handle_route(ws, Req) ->
     {{websocket, roadrunner_httparena_ws, undefined}, Req};
 handle_route(item_get, Req) ->
@@ -271,3 +279,19 @@ leading_digits(_Rest, Acc, true) ->
 %% chunks), not one binary — flatten before parsing.
 body_int(Body) ->
     bin_int(iolist_to_binary(Body), 0).
+
+%% GET and HEAD share one response (roadrunner drops the body on HEAD),
+%% OPTIONS lists the methods, POST echoes the body like /echo.
+spec_endpoint(~"POST", Req) ->
+    echo_endpoint(Req);
+spec_endpoint(~"OPTIONS", Req) ->
+    {ok, _Body, Req2} = roadrunner_req:read_body(Req),
+    {{200, [{~"allow", ~"GET, HEAD, POST, OPTIONS"}, {~"content-length", ~"0"}], ~""}, Req2};
+spec_endpoint(_Method, Req) ->
+    {roadrunner_resp:text(200, ~"spec ok"), Req}.
+
+%% Every request header as received, one `Name: Value` line each.
+spec_headers_endpoint(Req) ->
+    {ok, _Body, Req2} = roadrunner_req:read_body(Req),
+    Lines = [[Name, ~": ", Value, ~"\n"] || {Name, Value} <- roadrunner_req:headers(Req2)],
+    {roadrunner_resp:text(200, Lines), Req2}.

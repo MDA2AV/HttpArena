@@ -36,5 +36,7 @@
     "unary-grpc",
     "unary-grpc-tls"
   ],
+  "spec": ["h1", "h2", "h3", "ws"],
+  "resilience": true,
   "maintainers": ["williamthome"]
 }
