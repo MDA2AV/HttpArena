@@ -14,6 +14,8 @@
   "repo": "https://github.com/nigrosimone/fulmine.js",
   "website": "https://fulmine.sndesign.it/",
   "enabled": true,
+  "resilience": true,
+  "spec": ["h1"],
   "tests": [
     "baseline",
     "limited-conn",
