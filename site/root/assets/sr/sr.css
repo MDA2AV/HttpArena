@@ -1165,18 +1165,23 @@ table.runs{border-collapse:collapse; width:100%; font:500 .76rem/1.3 var(--mono)
   .top-links, .pg .top-links{margin-left:auto; gap:.2rem}
   .top .icon-btn{width:31px; height:31px}
   .top-nav{order:3; flex:1 1 100%; display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:.2rem}
-  .tn, .top-nav .fw-btn{justify-content:center; padding:.5rem .2rem; border-color:var(--line); background:var(--panel); font-size:.68rem; letter-spacing:0; min-width:0}
-  .tn span, .top-nav .fw-btn span{display:inline; overflow:hidden; text-overflow:ellipsis}
+  .tn, .top-nav .fw-btn{justify-content:center; padding:.5rem .2rem; border-color:var(--line); background:var(--panel); font-size:.66rem; letter-spacing:0; min-width:0; white-space:normal; text-align:center; line-height:1.05}
+  .tn span, .top-nav .fw-btn span{display:inline}
   .tn svg, .top-nav .fw-btn svg{display:none}
   .top .nav-search{order:5; flex:1 1 150px; max-width:none; margin:0}
   .top .nav-results{left:0; right:auto; width:min(100vw - 1.4rem, 440px)}
   .round{order:6}
   .round-btn{height:34px}
   .main, .main.cmfull{padding:.9rem .7rem 3rem}
-  .console{grid-template-columns:1fr}
-  .asset{max-width:none; min-width:0}
+  /* the rack comes first on a small screen: the machine's plate moves under it */
+  .main, .main.cmfull{display:flex; flex-direction:column}
+  .console{display:contents}
+  .placard{order:1} .kvm{order:2} .tools{order:3; margin:.6rem 0 .5rem} .legend{order:4; margin-bottom:.5rem} .hall{order:5} #grid{order:5}
+  .asset{order:6; max-width:none; min-width:0; margin:0 0 1rem} #docview{order:7} .board-seo{order:8}
+  .phead h1{font-size:1.3rem; margin-top:.25rem}
+  .phead p{font-size:.8rem; line-height:1.45; margin-top:.35rem}
   .hw{display:flex; flex-direction:row; flex-wrap:wrap; gap:.1rem .9rem}
-  .placard{padding:.9rem 1.3rem 1rem}
+  .placard{padding:.7rem 1.2rem .8rem}
   .nav-mobile{display:block; padding:.7rem .7rem 0}
   .nav-mobile select{width:100%; height:38px; font:600 .9rem var(--sans); padding:0 .6rem; border-radius:3px; border:1px solid var(--line); background:var(--panel); color:var(--text)}
   .kvm{display:none}
@@ -1195,20 +1200,22 @@ table.runs{border-collapse:collapse; width:100%; font:500 .76rem/1.3 var(--mono)
   .ear.r::after{left:50%}
   .ear, .ear.r{background:var(--post)}
   .upos{display:none}
-  .face{height:auto; min-height:64px; display:grid; grid-template-columns:32px 40px 24px auto auto minmax(0,1fr) auto 24px; grid-template-rows:30px auto; align-items:center; row-gap:4px; padding:6px 2px 7px 0}
+  .face{height:auto; min-height:64px; display:grid; grid-template-columns:30px 30px 22px var(--c4,0px) var(--c5,0px) minmax(0,1fr) auto 22px; grid-template-rows:30px auto; align-items:center; row-gap:4px; padding:6px 2px 7px 0}
   .svc{grid-column:1; grid-row:1; font-size:.8rem; height:100%}
   .svc.r1,.svc.r2,.svc.r3{margin:3px 4px; height:auto; align-self:stretch}
   .plate{grid-column:2/7; grid-row:1; margin:0 3px 0 0; height:30px}
   .vend{max-width:70px}
-  .lcd, .v-prof .lcd{grid-column:7; grid-row:1; min-width:76px; height:30px; margin:0 2px}
+  .lcd, .v-prof .lcd{grid-column:7; grid-row:1; min-width:72px; height:30px; margin:0 2px}
   .lcd b, .v-prof .lcd b{font-size:.98rem}
   .pull{grid-column:8; grid-row:1; height:30px}
   .leds{grid-column:1/3; grid-row:2; height:16px}
   .uid, .uidslot{grid-column:3; grid-row:2; height:16px}
-  .mod{grid-row:2; width:54px; height:16px; margin:0 2px; padding:0 4px; flex-direction:row; align-items:center; justify-content:flex-end}
+  .rack.has-spec{--c4:56px} .rack.has-resil{--c5:56px}
+  .lcd .cmp{display:none}
+  .mod{grid-row:2; width:auto; min-width:0; height:16px; margin:0 1px; padding:0 2px; flex-direction:row; align-items:center; justify-content:flex-end; overflow:hidden}
   .mod.spec{grid-column:4} .mod.resil{grid-column:5}
-  .mod .mv{font-size:.64rem}
-  .mod::before{font:600 .5rem/1 var(--label); letter-spacing:.06em; color:var(--muted); margin-right:auto}
+  .mod .mv{font-size:.6rem}
+  .mod::before{font:600 .46rem/1 var(--label); letter-spacing:.02em; color:var(--muted); margin-right:auto}
   .mod.spec::before{content:"SPEC"} .mod.resil::before{content:"RES"}
   .mod .bl{height:2px}
   .bays{grid-column:6/9; grid-row:2; height:16px; padding:0 4px 0 2px; gap:2px}
@@ -1546,3 +1553,7 @@ html.aisle .sortctl{display:inline-flex}
 /* on a generated page the LEDs are furniture, not data: they stay lit, steady */
 .u-st .led.act{animation:none}
 .cm .hcrown svg{fill:#20170a !important}
+.rack.v-comp:not(.many):not(.aisle) .bv{font-size:.84rem}
+.rack.v-comp:not(.many):not(.aisle) .bm{font-size:.62rem}
+.rack.v-comp:not(.many):not(.aisle) .port .pl{font-size:.66rem; letter-spacing:.05em}
+@media (max-width:350px){ .rack.has-resil{--c5:0px} .mod.resil{display:none} }
