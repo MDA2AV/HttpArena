@@ -4,7 +4,7 @@ WORKDIR /src
 # Unreleased roadrunner and its Protocol Buffers adapter, fetched as source
 # archives at fixed commits into _checkouts (rebar3 uses them in place of
 # the git deps), with the version pinned since an archive has no git tags.
-ARG RR_SHA=d3f018ed8a9610f473dbe6519ddde36815611217
+ARG RR_SHA=6d5e1ef965d677f102c07fe326582f121a8d6540
 ARG RR_PROTOBUF_SHA=13a22a68adf6d185a2f675bf164b448173f62a1a
 RUN set -eux; mkdir -p _checkouts; \
     fetch() { \
