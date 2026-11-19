@@ -1,10 +1,15 @@
 import java.net.InetSocketAddress
+import java.nio.file.{Files, Paths}
+import java.security.{KeyFactory, KeyStore}
+import java.security.cert.CertificateFactory
+import java.security.spec.PKCS8EncodedKeySpec
 import java.util.concurrent.Executors
+import javax.net.ssl.{KeyManagerFactory, SSLContext}
 
 import ba.sake.potateh.ServerConfig
 import ba.sake.querson.QueryStringRW
 import ba.sake.sharaf.{*, given}
-import ba.sake.sharaf.potateh.PotatehSharafServer
+import ba.sake.sharaf.potateh.{PotatehSharafServer, PotatehTls}
 import ba.sake.tupson.*
 import sttp.model.StatusCode
 
@@ -69,17 +74,32 @@ object Main {
       .withBindAddress(new InetSocketAddress("0.0.0.0", 8080))
       .withMaxConnections(32768)
       .withBacklog(8192)
+      .withExecutor(virtualThreads)
     val routesHandler = SharafHandler.routes(routes)
     val gzipHandler = SharafHandler.gzip(routesHandler, GzipSettings.default.withLevel(1))
+    val filesHandler = SharafHandler.files(Paths.get("/data"))
     val jsonCompression: SharafHandler = context =>
       if context.params.path.segments.headOption.contains("json") then gzipHandler.handle(context)
+      else if context.params.path.segments.headOption.contains("static") then filesHandler.handle(context)
       else routesHandler.handle(context)
     val handler = SharafHandler.exceptions(jsonCompression, ExceptionMapper.default)
-    val server = PotatehSharafServer.start(config, handler, virtualThreads)
+    val cert = Paths.get(sys.env.getOrElse("TLS_CERT", "/certs/server.crt"))
+    val key = Paths.get(sys.env.getOrElse("TLS_KEY", "/certs/server.key"))
+    val servers = if Files.isRegularFile(cert) && Files.isRegularFile(key) then {
+      val tlsConfig = PotatehTls.configure(
+        config.withBindAddress(new InetSocketAddress("0.0.0.0", 8081)),
+        new TlsConfig(serverTlsContext(cert, key))
+      )
+      Seq(
+        PotatehSharafServer(handler, "0.0.0.0", 8080).withConfig(config),
+        PotatehSharafServer(handler, "0.0.0.0", 8081).withConfig(tlsConfig)
+      )
+    } else Seq(PotatehSharafServer(handler, "0.0.0.0", 8080).withConfig(config))
+    servers.foreach(_.start())
     Runtime.getRuntime.addShutdownHook(
       new Thread(
         () => {
-          server.stop()
+          servers.foreach(_.stop())
           database.foreach(_.close())
           virtualThreads.shutdownNow()
           ()
@@ -87,6 +107,27 @@ object Main {
         "sharaf-potateh-shutdown"
       )
     )
+  }
+
+  private def serverTlsContext(certPath: java.nio.file.Path, keyPath: java.nio.file.Path): SSLContext = {
+    val certificate = scala.util.Using.resource(Files.newInputStream(certPath)) { input =>
+      CertificateFactory.getInstance("X.509").generateCertificate(input)
+    }
+    val pem = Files.readString(keyPath)
+      .replace("-----BEGIN PRIVATE KEY-----", "")
+      .replace("-----END PRIVATE KEY-----", "")
+      .replaceAll("\\s", "")
+    val keyBytes = java.util.Base64.getDecoder.decode(pem)
+    val key = KeyFactory.getInstance(certificate.getPublicKey.getAlgorithm)
+      .generatePrivate(new PKCS8EncodedKeySpec(keyBytes))
+    val store = KeyStore.getInstance(KeyStore.getDefaultType)
+    store.load(null, null)
+    store.setKeyEntry("server", key, Array.emptyCharArray, Array(certificate))
+    val managers = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm)
+    managers.init(store, Array.emptyCharArray)
+    val context = SSLContext.getInstance("TLS")
+    context.init(managers.getKeyManagers, null, null)
+    context
   }
 
   private def querySum(using Request): Long = {

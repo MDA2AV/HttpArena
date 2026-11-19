@@ -19,6 +19,8 @@
     "limited-conn",
     "async",
     "json-comp",
+    "json-tls",
+    "static-tls",
     "async-db",
     "fortunes",
     "latency-1m",

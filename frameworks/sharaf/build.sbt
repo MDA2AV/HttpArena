@@ -4,7 +4,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "httparena-sharaf",
     libraryDependencies ++= Seq(
-      "ba.sake" %% "sharaf-potateh" % "0.23.0",
+      "ba.sake" %% "sharaf-potateh" % "0.24.0",
       "ba.sake" %% "squery" % "0.13.0",
       "com.zaxxer" % "HikariCP" % "7.1.0",
       "org.postgresql" % "postgresql" % "42.7.14"
