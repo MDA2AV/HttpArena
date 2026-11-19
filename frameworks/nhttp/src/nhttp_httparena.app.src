@@ -1,0 +1,15 @@
+{application, nhttp_httparena, [
+    {description, "HttpArena entry for the nhttp HTTP server"},
+    {vsn, "0.1.0"},
+    {registered, [nhttp_httparena_sup]},
+    {mod, {nhttp_httparena_app, []}},
+    {applications, [
+        kernel,
+        stdlib,
+        ssl,
+        nhttp
+    ]},
+    {env, []},
+    {modules, []},
+    {licenses, ["Apache-2.0"]}
+]}.
