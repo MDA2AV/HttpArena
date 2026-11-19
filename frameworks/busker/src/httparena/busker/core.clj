@@ -106,14 +106,52 @@
     (str/ends-with? filename ".webp") "image/webp"
     :else "application/octet-stream"))
 
-(defn static-response [uri]
-  (let [filename (subs uri (count "/static/"))
+(defn coding-quality
+  "Returns the q-value that the Accept-Encoding value `accept` gives `coding`.
+  An entry for `coding` wins over `*`. A coding that `accept` does not name
+  gets 0."
+  ^double [accept ^String coding]
+  (loop [[entry & more] (some-> accept (str/split #","))
+         star 0.0]
+    (if (nil? entry)
+      star
+      (let [[entry-coding & params] (map str/trim (str/split entry #";"))
+            q (double (or (some #(when (str/starts-with? (str/lower-case %) "q=")
+                                   (parse-double (subs % 2)))
+                                params)
+                          1.0))]
+        (cond
+          (.equalsIgnoreCase coding entry-coding) q
+          (= "*" entry-coding) (recur more q)
+          :else (recur more star))))))
+
+(def precompressed-variants
+  [["br" ".br"] ["gzip" ".gz"]])
+
+(defn- regular-file? [^Path path]
+  (Files/isRegularFile path (make-array java.nio.file.LinkOption 0)))
+
+(defn static-response
+  "Serves the file under `static-root` that the request URI names. It sends
+  the `.br`, then the `.gz`, file next to it when Accept-Encoding accepts that
+  coding. It reads the disk on each request."
+  [request]
+  (let [filename (subs (:uri request) (count "/static/"))
         ^Path path (.normalize (.resolve static-root ^String filename))]
-    (if (and (.startsWith path static-root)
-             (Files/isRegularFile path (make-array java.nio.file.LinkOption 0)))
-      {:status 200
-       :headers {"content-type" (content-type filename)}
-       :body (Files/readAllBytes path)}
+    (if (and (.startsWith path static-root) (regular-file? path))
+      (let [accept (get-in request [:headers "accept-encoding"])
+            [coding ^Path body-path]
+            (or (some (fn [[coding suffix]]
+                        (let [variant (.resolveSibling path (str (.getFileName path) suffix))]
+                          (when (and (pos? (coding-quality accept coding)) (regular-file? variant))
+                            [coding variant])))
+                      precompressed-variants)
+                [nil path])]
+        {:status 200
+         :headers (cond-> {"content-type" (content-type filename)
+                           "vary" "Accept-Encoding"}
+                    coding (assoc "content-encoding" coding))
+         :body (Files/readAllBytes body-path)})
       (text-response 404 "not found"))))
 
 (defn echo-response [request]
@@ -143,7 +181,7 @@
       (json-items-response request)
 
       (str/starts-with? uri "/static/")
-      (static-response uri)
+      (static-response request)
 
       :else
       (text-response 404 "not found"))))
