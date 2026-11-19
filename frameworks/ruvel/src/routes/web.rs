@@ -41,4 +41,45 @@ pub fn routes(router: &mut Router) {
     router.get("delay/{ms}", async move |req| {
         HttpArenaController.r#async(req).await
     });
+
+    router.get("spec", async |_req| {
+        Response::new(Status::Ok)
+            .text("5 bytes")
+            .header("Content-Type", "text/plain")
+    });
+    router.head("spec", async |_req| {});
+
+    router.options("spec", async |_req| {
+        Response::ok().header("Allow", "GET, HEAD, POST, OPTIONS")
+    });
+
+    router.get("spec/headers", async |req| {
+        let mut s = String::from("");
+
+        for (name, value) in req.headers() {
+            s.push_str(&format!("{}: {}\r\n", name, value));
+        }
+
+        Response::new(Status::Ok)
+            .text(s)
+            .header("Content-Type", "text/plain")
+    });
+
+    router.post("spec", async move |_req| {
+        Response::new(Status::Ok)
+            .text(str::from_utf8(&_req.body).unwrap_or_default())
+            .header("Content-Type", "application/octet-stream")
+    });
+
+    router.post("spec/headers", async |req| {
+        let mut s = String::from("");
+
+        for (name, value) in req.headers() {
+            s.push_str(&format!("{}: {}\r\n", name, value));
+        }
+
+        Response::new(Status::Ok)
+            .text(s)
+            .header("Content-Type", "text/plain")
+    });
 }
