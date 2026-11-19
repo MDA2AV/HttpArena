@@ -24,9 +24,12 @@ source "$SOURCE_DIR/redis.sh"
 source "$SOURCE_DIR/gateway.sh"
 source "$SOURCE_DIR/framework.sh"
 source "$SOURCE_DIR/profiles.sh"
-# Optional host profile (HOST_PROFILE=lite -> scripts/lib/hosts/lite.sh).
+# Optional host profile (HOST_PROFILE=<name> -> scripts/lib/hosts/<name>.sh) for
+# machines other than the bench host. Its results go to results-hosts/<name>/.
 if [ -n "${HOST_PROFILE:-}" ]; then
     [ -f "$SOURCE_DIR/hosts/$HOST_PROFILE.sh" ] || fail "unknown HOST_PROFILE: $HOST_PROFILE (no scripts/lib/hosts/$HOST_PROFILE.sh)"
+    RESULTS_DIR="$ROOT_DIR/results-hosts/$HOST_PROFILE"
+    LOGS_DIR="$RESULTS_DIR/_logs"
     source "$SOURCE_DIR/hosts/$HOST_PROFILE.sh"
 fi
 source "$SOURCE_DIR/tools/gcannon.sh"
@@ -63,7 +66,10 @@ if [ -n "$PROFILE_FILTER" ]; then
     IFS=',' read -ra _wanted <<< "$PROFILE_FILTER"
     for _p in "${_wanted[@]}"; do
         [ -n "$_p" ] || continue
-        [ -n "${PROFILES[$_p]+x}" ] || fail "unknown profile: $_p (see PROFILE_ORDER in scripts/lib/profiles.sh)"
+        case " ${PROFILE_ORDER[*]} " in
+            *" $_p "*) ;;
+            *) fail "unknown profile: $_p (not in PROFILE_ORDER${HOST_PROFILE:+ of host profile $HOST_PROFILE})" ;;
+        esac
         case ",$(IFS=,; echo "${profiles_to_run[*]}")," in
             *",$_p,"*) ;;
             *) profiles_to_run+=("$_p") ;;
@@ -110,6 +116,7 @@ docker volume prune -f >/dev/null 2>&1 || true
 docker image prune  -f >/dev/null 2>&1 || true
 
 info "available CPUs: $(nproc 2>/dev/null || echo ?)"
+[ -n "${HOST_PROFILE:-}" ] && info "host profile: $HOST_PROFILE (results in ${RESULTS_DIR#$ROOT_DIR/})"
 
 # ── Docker-mode setup — BEFORE system_tune() ────────────────────────────────
 #
@@ -604,7 +611,7 @@ save_result() {
   "status_5xx": ${BEST_M[status_5xx]:-0}${tpl_extra}${eff_extra}${cpu_extra}
 }
 EOF
-    info "saved results/$profile/$CONNS/${FRAMEWORK}.json"
+    info "saved ${dir#$ROOT_DIR/}/${FRAMEWORK}.json"
 
     # Persist container logs alongside results for post-mortem.
     local log_dir="${LOGS_DIR:-$ROOT_DIR/site/static/logs}/$profile/$CONNS"
