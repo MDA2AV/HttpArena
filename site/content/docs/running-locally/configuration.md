@@ -84,7 +84,7 @@ pipeline | req_per_conn | cpu_limit | connections | endpoint
 - **connections** - comma-separated list; each value becomes a separate iteration.
 - **endpoint** - dispatch key. Tells `endpoint_tool()` which load generator to use and `gcannon_build_args()` (etc.) how to shape the request.
 
-`benchmark-lite.sh` overrides `PROFILES` and `PROFILE_ORDER` with a smaller subset and blanks the `cpu_limit` column; everything else parses identically.
+A host profile (`HOST_PROFILE=<name>` loads `scripts/lib/hosts/<name>.sh` after `profiles.sh`) can override `PROFILES`, `PROFILE_ORDER` and any of the variables above. `benchmark-lite.sh` is `benchmark.sh` with `HOST_PROFILE=lite`, which swaps in a smaller subset and blanks the `cpu_limit` column; everything else parses identically.
 
 ## Profile → tool dispatch
 

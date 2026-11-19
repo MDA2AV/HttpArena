@@ -5,7 +5,7 @@ description: "The laptop-friendly benchmark driver: Docker-only load generators,
 weight: 4
 ---
 
-`scripts/benchmark-lite.sh` is the local-dev variant of `benchmark.sh`. Same module structure, same metrics, same output layout - but with defaults tuned for "laptop with Docker and nothing else installed".
+`scripts/benchmark-lite.sh` runs `benchmark.sh` with the `lite` host profile (`HOST_PROFILE=lite`, defined in `scripts/lib/hosts/lite.sh`). Same driver, same metrics, same output layout - but with defaults tuned for "laptop with Docker and nothing else installed".
 
 ## What's different
 
@@ -44,12 +44,7 @@ First time you invoke it (or after a `docker rmi`), the script builds every load
 - `h2load:latest` - Ubuntu 24.04 + `apt install nghttp2-client` (glibc build, not musl).
 - `h2load-h3:local` - Ubuntu 24.04 + builds `quictls` + `nghttp3` + `ngtcp2` + `nghttp2 --enable-http3` from source. Takes 5–10 minutes the first time.
 - `wrk:local` - Ubuntu 24.04 + `wrk` source build.
-
-The one image it does **not** build is `zrk:local`, which `8gbit` needs. Build it once yourself:
-
-```bash
-docker build -t zrk:local -f docker/zrk.Dockerfile docker/
-```
+- `zrk:local` - for `8gbit`.
 
 All images are built **before** the host tuning step, because `system_tune()` restarts the Docker daemon and buildkit DNS takes a few seconds to recover - long enough to break `git clone` inside a build container.
 
@@ -66,10 +61,9 @@ Everything in [benchmark.sh → Environment variables](../benchmark/#environment
 
 | Variable | Default in lite | Notes |
 |---|---|---|
-| `LOADGEN_DOCKER` | `true` (forced, non-overridable) | `export` at the top of the script. |
-| `GCANNON_MODE` | `docker` (forced) | Same. |
+| `LOADGEN_DOCKER` | `true` (forced, non-overridable) | Set by the `lite` host profile. |
 | `GCANNON_CPUS` | `0-$(nproc-1)` | Effectively "all cores" - the `--cpuset-cpus` value covers the whole CPU. |
-| `THREADS` | `$(( $(nproc) / 2 ))` (min 1) | Half the cores, leaving room for the framework container. |
+| `THREADS` | `$(( $(nproc) / 2 ))` (min 1) | Half the cores, leaving room for the framework container. An explicit `THREADS` or `--load-threads` wins. |
 | `H2THREADS` | Same as `THREADS` | |
 | `H3THREADS` | Same as `THREADS` | |
 
@@ -93,7 +87,7 @@ Everything in [benchmark.sh → Environment variables](../benchmark/#environment
 
 ## Requirements
 
-The only hard requirement is **Docker Engine**. Everything else - gcannon, h2load, h2load-h3, wrk - is built automatically inside containers (zrk, for `8gbit`, once by hand as shown above). You don't need `io_uring` on the host kernel (the gcannon container carries its own `liburing 2.9`), you don't need `nghttp2-client` installed, and you don't need a Rust/Go toolchain.
+The only hard requirement is **Docker Engine**. Everything else - gcannon, h2load, h2load-h3, wrk - is built automatically inside containers. You don't need `io_uring` on the host kernel (the gcannon container carries its own `liburing 2.9`), you don't need `nghttp2-client` installed, and you don't need a Rust/Go toolchain.
 
 Host tuning (CPU governor, sysctl, docker daemon restart, MTU, page-cache drop) is still best-effort - it uses `sudo` where needed and warns + continues if you don't have it. Numbers without tuning are noisier but still usable for relative comparisons.
 
