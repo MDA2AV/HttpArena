@@ -32,7 +32,11 @@
     "static-h3",
     "echo-ws",
     "echo-ws-pipeline",
-    "echo-ws-limited"
+    "echo-ws-limited",
+    "unary-grpc",
+    "unary-grpc-tls"
   ],
+  "spec": ["h1", "h2", "h3", "ws"],
+  "resilience": true,
   "maintainers": ["williamthome"]
 }
