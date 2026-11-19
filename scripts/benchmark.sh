@@ -24,6 +24,11 @@ source "$SOURCE_DIR/redis.sh"
 source "$SOURCE_DIR/gateway.sh"
 source "$SOURCE_DIR/framework.sh"
 source "$SOURCE_DIR/profiles.sh"
+# Optional host profile (HOST_PROFILE=lite -> scripts/lib/hosts/lite.sh).
+if [ -n "${HOST_PROFILE:-}" ]; then
+    [ -f "$SOURCE_DIR/hosts/$HOST_PROFILE.sh" ] || fail "unknown HOST_PROFILE: $HOST_PROFILE (no scripts/lib/hosts/$HOST_PROFILE.sh)"
+    source "$SOURCE_DIR/hosts/$HOST_PROFILE.sh"
+fi
 source "$SOURCE_DIR/tools/gcannon.sh"
 source "$SOURCE_DIR/tools/h2load.sh"
 source "$SOURCE_DIR/tools/h2load-h3.sh"
