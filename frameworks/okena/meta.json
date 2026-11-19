@@ -25,7 +25,13 @@
     "baseline-h3",
     "static-h3"
   ],
-  "spec": ["h1", "h2"],
+  "spec": [
+    "h1",
+    "h2"
+  ],
   "resilience": true,
-  "maintainers": ["Lu4nScr1pt1ng"]
+  "tls_check": true,
+  "maintainers": [
+    "Lu4nScr1pt1ng"
+  ]
 }
