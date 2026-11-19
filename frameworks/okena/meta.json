@@ -1,0 +1,31 @@
+{
+  "display_name": "okena",
+  "language": "Assembly",
+  "type": "infrastructure",
+  "engine": "okena",
+  "description": "okena, a load balancer, reverse proxy and API gateway written in x86-64 assembly (no libc, io_uring), with HttpArena's handler module assembled into the binary (make MODULES=httparena.inc): /baseline sums the query and body, /json/{count} serializes the parsed dataset per request (compressed per request by okena's own gzip/brotli for json-comp), /echo returns the body okena read, /delay/{ms} holds the request on okena's timers without blocking the worker. Static files from okena's own file server with its precompressed .br/.gz. Its own TLS 1.3 / 1.2, HTTP/2 and HTTP/3. HTTP/1.1 on :8080, h1 over TLS on :8081, h2c on :8082, h2 and h3 on :8443.",
+  "repo": "https://github.com/Lu4nScr1pt1ng/okena",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "latency-10k",
+    "latency-1m",
+    "latency-500k-8cpu",
+    "async",
+    "json-comp",
+    "json-tls",
+    "8gbit",
+    "static-tls",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c",
+    "baseline-h3",
+    "static-h3"
+  ],
+  "spec": ["h1", "h2"],
+  "resilience": true,
+  "maintainers": ["Lu4nScr1pt1ng"]
+}
