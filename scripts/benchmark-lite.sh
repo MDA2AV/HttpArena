@@ -6,7 +6,7 @@
 #   ./scripts/benchmark-lite.sh                     # every enabled framework
 #   ./scripts/benchmark-lite.sh <framework>         # one framework, all profiles
 #   ./scripts/benchmark-lite.sh <framework> <profile[,profile...]>
-#   ./scripts/benchmark-lite.sh <framework> --save  # persist results
+#   ./scripts/benchmark-lite.sh <framework> --save  # keep results in results-hosts/lite/
 #   ./scripts/benchmark-lite.sh --load-threads 4 <framework>
 
 set -euo pipefail

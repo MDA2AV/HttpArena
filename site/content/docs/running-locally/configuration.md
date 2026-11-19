@@ -5,7 +5,7 @@ description: "Every environment variable the benchmark driver accepts, plus the 
 weight: 5
 ---
 
-Everything the benchmark driver can be told to do via environment variables, plus the shape of a profile definition. For the full flag-by-flag walkthrough see [benchmark.sh](scripts/benchmark) and [benchmark-lite.sh](scripts/benchmark-lite).
+Everything the benchmark driver can be told to do via environment variables, plus the shape of a profile definition. For the full flag-by-flag walkthrough see [benchmark.sh](../scripts/benchmark/) and [benchmark-lite.sh](../scripts/benchmark-lite/). The defaults below are the bench host's; a [host profile](../host-profiles/) replaces many of them for other machines.
 
 ## Run settings
 
@@ -20,8 +20,6 @@ Defined in `scripts/lib/common.sh`. Override by exporting before you run the scr
 | `H2THREADS` | `64` | h2load worker threads (HTTP/2, h2c gRPC). |
 | `H3THREADS` | `64` | h2load-h3 worker threads (HTTP/3 over QUIC). |
 | `SKIP_TUNE` | `false` | When `true`, skips kernel/hardware tuning (CPU governor, socket limits) that requires `sudo`. Useful for local development. |
-
-In `benchmark-lite.sh`, `THREADS` defaults to `max(nproc / 2, 1)` and `H2THREADS` / `H3THREADS` mirror `$THREADS`. Pass `--load-threads N` to override all three in one shot.
 
 ## Ports
 
@@ -38,7 +36,7 @@ Every framework `Dockerfile` reads the same defaults from its env, so you rarely
 
 | Variable | Default | Description |
 |---|---|---|
-| `LOADGEN_DOCKER` | `false` | When `true`, every load generator runs from its Docker image instead of the host binary. Builds missing images automatically from `docker/*.Dockerfile`. Forced `true` by `benchmark-lite.sh`. |
+| `LOADGEN_DOCKER` | `false` | When `true`, every load generator runs from its Docker image instead of the host binary. Builds missing images automatically from `docker/*.Dockerfile`. Set by the `lite` and `rpi` host profiles. |
 | `GCANNON_MODE` | `native` | `native` or `docker`. Implied by `LOADGEN_DOCKER`. |
 | `GCANNON_CPUS` | dynamic | CPU list the load generators run on. Native mode wraps calls in `taskset -c $GCANNON_CPUS`; docker mode passes it via `--cpuset-cpus`. Defaults to the upper half of available cores on smaller machines to avoid resource contention with the server. |
 | `DB_SERVER_CPUS` | `0-15,64-79` | Server cpuset on the database profiles. |
@@ -84,7 +82,7 @@ pipeline | req_per_conn | cpu_limit | connections | endpoint
 - **connections** - comma-separated list; each value becomes a separate iteration.
 - **endpoint** - dispatch key. Tells `endpoint_tool()` which load generator to use and `gcannon_build_args()` (etc.) how to shape the request.
 
-A host profile (`HOST_PROFILE=<name>` loads `scripts/lib/hosts/<name>.sh` after `profiles.sh`) can override `PROFILES`, `PROFILE_ORDER` and any of the variables above. `benchmark-lite.sh` is `benchmark.sh` with `HOST_PROFILE=lite`, which swaps in a smaller subset and blanks the `cpu_limit` column; everything else parses identically. `HOST_PROFILE=rpi` targets a Raspberry Pi 4 and keeps its results in `results-hosts/rpi/`, away from the site data.
+`PROFILE_ORDER` lists the profiles that run, in order; a profile filter on the command line must name profiles from it. A [host profile](../host-profiles/) overrides entries of `PROFILES` and replaces `PROFILE_ORDER`.
 
 ## Profile → tool dispatch
 
@@ -98,18 +96,29 @@ From `endpoint_tool()` in `scripts/lib/profiles.sh`:
 | `h3`, `static-h3`, `gateway-h3` | h2load-h3 |
 | everything else (`""`, `pipeline`, `async-db`, `async`, `fortunes`, `json-compressed`, `ws-echo`, `connections-5m`, `connections-1m-tls`) | gcannon |
 
+## Host profiles
+
+| Variable | Default | Description |
+|---|---|---|
+| `HOST_PROFILE` | unset | Name of a host profile in `scripts/lib/hosts/` (`lite`, `rpi`, or your own). Unset = bench-host defaults. See [Host profiles](../host-profiles/). |
+| `READY_TIMEOUT` | `30` | Seconds to wait for a framework to answer before its profile is skipped. `rpi` sets 120. |
+| `FAIL_FAST` | unset | When `true`, a framework that does not come up for one profile skips its remaining profiles. Set by `rpi`. |
+| `SKIP_H3_LOADGEN` | unset | When `true`, the `h2load-h3` image is not built in Docker mode. For hosts that run no HTTP/3 profile. |
+
+With a host profile, `--save` writes to `results-hosts/<name>/` (container logs in `results-hosts/<name>/_logs/`) and leaves `results/` and the site data alone.
+
 ## Small-machine overrides
 
-The defaults in `benchmark.sh` assume the reference 64-core benchmark host. On a laptop, three variables usually get you to something reasonable:
+The defaults in `benchmark.sh` assume the reference 64-core benchmark host. On any other machine, use a host profile:
 
 ```bash
-THREADS=8 H2THREADS=16 H3THREADS=4 ./scripts/benchmark.sh actix baseline
+./scripts/benchmark-lite.sh actix baseline    # same as HOST_PROFILE=lite ./scripts/benchmark.sh actix baseline
 ```
 
-If native gcannon / h2load / h2load-h3 aren't installed, flip the whole thing to docker mode instead of installing each tool:
+For a one-off tweak, the variables above can also be set directly - e.g. fewer threads with Docker load generators and the bench-host profile table:
 
 ```bash
-LOADGEN_DOCKER=true ./scripts/benchmark.sh actix --save
+LOADGEN_DOCKER=true THREADS=8 H2THREADS=16 H3THREADS=4 ./scripts/benchmark.sh actix baseline
 ```
 
-Or just use `benchmark-lite.sh`, which is this combination pre-baked.
+For a machine you benchmark regularly, [write a host profile](../host-profiles/#writing-your-own) instead.

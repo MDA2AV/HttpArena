@@ -1,71 +1,41 @@
 ---
 title: benchmark-lite.sh
 seo_title: "benchmark-lite.sh: Local Benchmark Driver"
-description: "The laptop-friendly benchmark driver: Docker-only load generators, no CPU pinning, reduced thread counts and a smaller profile subset."
+description: "The laptop-friendly way to run benchmarks: benchmark.sh with the lite host profile - Docker-only load generators, no CPU pinning, fewer threads and a smaller profile set."
 weight: 4
 ---
 
-`scripts/benchmark-lite.sh` runs `benchmark.sh` with the `lite` host profile (`HOST_PROFILE=lite`, defined in `scripts/lib/hosts/lite.sh`). Same driver, same metrics, same output layout - but with defaults tuned for "laptop with Docker and nothing else installed".
-
-## What's different
-
-| | `benchmark.sh` | `benchmark-lite.sh` |
-|---|---|---|
-| Default load generators | Native binaries | **Always** docker (forced - no env override) |
-| CPU pinning | Per-profile `--cpuset-cpus` | None - all containers see every core |
-| `THREADS` default | 64 | `nproc / 2` |
-| `H2THREADS` / `H3THREADS` default | 64 / 64 | Same as `THREADS` |
-| Profile set | 29 profiles | 13 - skips `json-tls`, `static-tls`, `async`, `latency-1m`, `latency-10k`, `connections-5m`, `connections-1m-tls`, `connections-1m`, `fortunes`, `baseline-h2c`, `json-h2c`, `gateway-64`, `gateway-h3`, `production-stack`, `echo-ws-pipeline`, `echo-ws-limited` |
-| Connection counts | Varies (512, 1024, 4096, 16384, …) | One per profile (mostly 512; h3 64) |
-| Framework selection | One framework, always | Optional - runs every enabled framework if omitted |
-
-Everything that isn't listed stays identical: `--save` behavior, host tuning, result layout, postgres sidecar for `async-db`, `gcannon_parse` version fallbacks, etc.
+`scripts/benchmark-lite.sh` runs [`benchmark.sh`](../benchmark/) with the `lite` [host profile](../../host-profiles/) (`scripts/lib/hosts/lite.sh`). It is made for a laptop with Docker and nothing else installed: the driver, metrics and output format are the same as for a full run, only scaled to the machine.
 
 ## Synopsis
 
 ```bash
-./scripts/benchmark-lite.sh [framework] [profile] [--save] [--load-threads N]
+./scripts/benchmark-lite.sh [framework] [profile[,profile...]] [--save] [--load-threads N]
 ```
 
 | Argument | Description |
 |---|---|
-| `[framework]` | Framework directory name. If omitted, every framework with `"enabled": true` in its `meta.json` is run in sequence. |
-| `[profile]` | Optional - restrict to a single profile. |
-| `--save` | Persist result JSONs + rebuild site data. |
-| `--load-threads N` | Shortcut for `THREADS=N H2THREADS=N H3THREADS=N` for a specific run. |
+| `[framework]` | Framework directory name. If omitted, every framework with `"enabled": true` in its `meta.json` is run in turn. |
+| `[profile]` | Optional - one profile or a comma-separated list. Must be in the [lite profile set](#profile-set). |
+| `--save` | Keep the results in `results-hosts/lite/`. Without it, numbers are printed and nothing is written. |
+| `--load-threads N` | Load-generator threads for this run (all generators). `THREADS=N` in the environment does the same. |
 
-Arguments can appear in any order; flags and positionals are separated during parsing.
+Arguments can appear in any order.
 
-## First run
+`./scripts/benchmark-lite.sh actix baseline` is the same as `HOST_PROFILE=lite ./scripts/benchmark.sh actix baseline`.
 
-First time you invoke it (or after a `docker rmi`), the script builds every load-generator image it needs from `docker/*.Dockerfile`:
+## What lite changes
 
-- `gcannon:latest` - clones `github.com/MDA2AV/gcannon` main, pulls `liburing-2.9`, compiles.
-- `h2load:latest` - Ubuntu 24.04 + `apt install nghttp2-client` (glibc build, not musl).
-- `h2load-h3:local` - Ubuntu 24.04 + builds `quictls` + `nghttp3` + `ngtcp2` + `nghttp2 --enable-http3` from source. Takes 5–10 minutes the first time.
-- `wrk:local` - Ubuntu 24.04 + `wrk` source build.
-- `zrk:local` - for `8gbit`.
-
-All images are built **before** the host tuning step, because `system_tune()` restarts the Docker daemon and buildkit DNS takes a few seconds to recover - long enough to break `git clone` inside a build container.
-
-To force a rebuild (e.g. to pick up a new gcannon commit):
-
-```bash
-docker rmi gcannon:latest
-./scripts/benchmark-lite.sh actix baseline
-```
-
-## Environment variables
-
-Everything in [benchmark.sh → Environment variables](../benchmark/#environment-variables) applies, with these lite-specific defaults / overrides:
-
-| Variable | Default in lite | Notes |
+| | `benchmark.sh` | `benchmark-lite.sh` |
 |---|---|---|
-| `LOADGEN_DOCKER` | `true` (forced, non-overridable) | Set by the `lite` host profile. |
-| `GCANNON_CPUS` | `0-$(nproc-1)` | Effectively "all cores" - the `--cpuset-cpus` value covers the whole CPU. |
-| `THREADS` | `$(( $(nproc) / 2 ))` (min 1) | Half the cores, leaving room for the framework container. An explicit `THREADS` or `--load-threads` wins. |
-| `H2THREADS` | Same as `THREADS` | |
-| `H3THREADS` | Same as `THREADS` | |
+| Load generators | Native binaries by default | Docker, always |
+| CPU pinning | Server and generators on separate cores | None - every container sees every core |
+| Generator threads | 64 | `nproc / 2` (at least 1) |
+| Profiles | 27, several connection counts each | 13, one connection count each |
+| Framework argument | Required | Optional - all enabled frameworks if omitted |
+| `--save` writes to | `results/` + site data | `results-hosts/lite/` only |
+
+Everything else is shared with `benchmark.sh`: host tuning, the Postgres sidecar for `async-db`, readiness checks, result format.
 
 ## Profile set
 
@@ -85,29 +55,50 @@ Everything in [benchmark.sh → Environment variables](../benchmark/#environment
 | `unary-grpc-tls` | 1 | ∞ | 512 | h2load | `GetSum` TLS |
 | `echo-ws` | 1 | ∞ | 512 | gcannon `--ws` | `/ws` |
 
+Not included: `json-tls`, `static-tls`, `async`, `latency-1m`, `latency-10k`, `latency-500k-8cpu`, `fortunes`, `baseline-h2c`, `json-h2c`, `gateway-64`, `gateway-h3`, `production-stack`, `echo-ws-pipeline`, `echo-ws-limited`. A framework subscribed to them simply skips them here.
+
+## First run
+
+The first invocation (or the first after a `docker rmi`) builds every load-generator image from `docker/*.Dockerfile`:
+
+- `gcannon:latest` - clones `github.com/MDA2AV/gcannon` main, pulls `liburing-2.9`, compiles.
+- `h2load:latest` - Ubuntu 24.04 + `apt install nghttp2-client` (glibc build, not musl).
+- `h2load-h3:local` - Ubuntu 24.04 + `quictls` + `nghttp3` + `ngtcp2` + `nghttp2 --enable-http3` from source. Takes 5–10 minutes the first time.
+- `wrk:local` - Ubuntu 24.04 + `wrk` source build.
+- `zrk:local` - the zrk release for the host's architecture (x86_64 or aarch64).
+
+The images are built before host tuning, because tuning restarts the Docker daemon and buildkit DNS takes a few seconds to recover - long enough to break a `git clone` inside a build container.
+
+To force a rebuild (e.g. to pick up a new gcannon commit):
+
+```bash
+docker rmi gcannon:latest
+./scripts/benchmark-lite.sh actix baseline
+```
+
 ## Requirements
 
-The only hard requirement is **Docker Engine**. Everything else - gcannon, h2load, h2load-h3, wrk - is built automatically inside containers. You don't need `io_uring` on the host kernel (the gcannon container carries its own `liburing 2.9`), you don't need `nghttp2-client` installed, and you don't need a Rust/Go toolchain.
+Docker Engine, bash and python3. You need no load generator on the host, no `io_uring`-capable kernel (the gcannon container carries its own `liburing 2.9`) and no compiler toolchain.
 
-Host tuning (CPU governor, sysctl, docker daemon restart, MTU, page-cache drop) is still best-effort - it uses `sudo` where needed and warns + continues if you don't have it. Numbers without tuning are noisier but still usable for relative comparisons.
+Host tuning (CPU governor, sysctl, Docker daemon restart, MTU, page-cache drop) uses `sudo` where needed and warns and continues without it. Runs without tuning are noisier but still fine for relative comparisons; `SKIP_TUNE=true` skips it altogether.
 
 ## Examples
 
 ```bash
-# Every enabled framework, every subset profile (dry run)
+# Every enabled framework, every lite profile (dry run)
 ./scripts/benchmark-lite.sh
 
 # One framework, one profile
 ./scripts/benchmark-lite.sh actix baseline
 
-# Persist results and rebuild site data
+# Keep the results (results-hosts/lite/)
 ./scripts/benchmark-lite.sh actix --save
 
-# 4-thread load generators for a low-core machine
+# 4 load-generator threads on a low-core machine
 ./scripts/benchmark-lite.sh --load-threads 4 actix baseline
 
-# Shorter iterations while debugging a framework
+# Shorter iterations while working on a framework
 DURATION=2s RUNS=1 ./scripts/benchmark-lite.sh actix baseline
 ```
 
-Lite runs are great for CI-style smoke tests and for comparing frameworks relative to each other on your own hardware. Absolute numbers will not match the published leaderboard - that's produced on a dedicated 64-core (128-thread) host with CPU isolation and native load generators.
+Lite runs are for smoke tests and for comparing frameworks, or two builds of one framework, on your own machine. Absolute numbers will not match the published leaderboard, which comes from a dedicated 64-core host with CPU isolation and native load generators.
