@@ -123,7 +123,7 @@ if [ "$LOADGEN_DOCKER" = "true" ]; then
     info "load generators: docker mode"
     GCANNON_MODE=docker
     DOCKER_FLAGS=(
-        --rm --network host
+        --rm --init --network host
         --cpuset-cpus="$GCANNON_CPUS"
         --security-opt seccomp=unconfined
         --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576
@@ -141,6 +141,7 @@ if [ "$LOADGEN_DOCKER" = "true" ]; then
     for i in "${!_loadgen_images[@]}"; do
         img="${_loadgen_images[$i]}"
         df="${_loadgen_files[$i]}"
+        if [ "$df" = "h2load-h3.Dockerfile" ] && [ "${SKIP_H3_LOADGEN:-}" = "true" ]; then continue; fi
         if ! docker image inspect "$img" >/dev/null 2>&1; then
             info "building $img from docker/$df"
             _build_args=""
@@ -197,7 +198,7 @@ if { framework_subscribes_to "latency-1m" || framework_subscribes_to "latency-10
         info "building $ZRK_IMAGE from docker/zrk.Dockerfile (no native zrk on PATH)"
         docker build -t "$ZRK_IMAGE" -f "$ROOT_DIR/docker/zrk.Dockerfile" "$ROOT_DIR/docker"             || fail "$ZRK_IMAGE build failed — the fixed-rate profiles cannot run without it"
     fi
-    ZRK_CMD="docker run --rm --network host --cpuset-cpus=$GCANNON_CPUS --security-opt seccomp=unconfined --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576 -v $REQUESTS_DIR:$REQUESTS_DIR:ro $ZRK_IMAGE"
+    ZRK_CMD="docker run --rm --init --network host --cpuset-cpus=$GCANNON_CPUS --security-opt seccomp=unconfined --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576 -v $REQUESTS_DIR:$REQUESTS_DIR:ro $ZRK_IMAGE"
     info "zrk: docker mode ($ZRK_IMAGE)"
 fi
 
@@ -606,7 +607,7 @@ EOF
     info "saved results/$profile/$CONNS/${FRAMEWORK}.json"
 
     # Persist container logs alongside results for post-mortem.
-    local log_dir="$ROOT_DIR/site/static/logs/$profile/$CONNS"
+    local log_dir="${LOGS_DIR:-$ROOT_DIR/site/static/logs}/$profile/$CONNS"
     mkdir -p "$log_dir"
     # Cap what a noisy container can write. A framework that logs per request
     # produces a log proportional to throughput: sanic's static run emitted a
@@ -645,13 +646,18 @@ for profile in "${profiles_to_run[@]}"; do
     parse_profile "${PROFILES[$profile]}"
     IFS=',' read -ra CONN_COUNTS <<< "$PROF_CONNS"
     for CONNS in "${CONN_COUNTS[@]}"; do
-        run_one "$profile" "$CONNS" || continue
+        run_one "$profile" "$CONNS" && continue
+        if [ "${FAIL_FAST:-}" = "true" ]; then
+            warn "FAIL_FAST: $FRAMEWORK did not come up - skipping its remaining profiles"
+            break 2
+        fi
     done
 done
 
 # ── Rebuild site data ───────────────────────────────────────────────────────
 
-if [ "$SAVE_RESULTS" = "true" ]; then
+# Only results in the default results/ dir feed the site.
+if [ "$SAVE_RESULTS" = "true" ] && [ "$RESULTS_DIR" = "$ROOT_DIR/results" ]; then
     info "rebuilding site/data/*.json"
     python3 "$SCRIPT_DIR/rebuild_site_data.py" --root "$ROOT_DIR"
 fi
