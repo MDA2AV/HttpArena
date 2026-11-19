@@ -169,9 +169,9 @@ checksum = "87a0cf66fd1eb2fb7b822cb78370d82303750809bc6ba855f3f58e517d3238db"
 
 [[package]]
 name = "bytes"
-version = "1.12.1"
+version = "1.12.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc652a48c352aef3ea3aed32080501cf3ef6ed5da78602a020c991775b0aff04"
+checksum = "776dfebd015e2d8732c684a2c71003674ccb49457b539b9e82151ba38e96dd7c"
 
 [[package]]
 name = "cc"
@@ -255,12 +255,12 @@ dependencies = [
 
 [[package]]
 name = "ctrlc"
-version = "3.5.2"
+version = "3.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0b1fab2ae45819af2d0731d60f2afe17227ebb1a1538a236da84c93e9a60162"
+checksum = "11247e6c4f83c2b15748f4873805483deaa2bbc855e773817c07a9f987f55c62"
 dependencies = [
  "dispatch2",
- "nix",
+ "nix 0.32.0",
  "windows-sys 0.61.2",
 ]
 
@@ -831,6 +831,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "nix"
+version = "0.32.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77730ed34f01f4990cb2ea67fec715ecebc6fab9a6396cf83c5529b13f581bdc"
+dependencies = [
+ "bitflags",
+ "cfg-if",
+ "cfg_aliases",
+ "libc",
+]
+
+[[package]]
 name = "nom"
 version = "7.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -842,9 +854,9 @@ dependencies = [
 
 [[package]]
 name = "ntex"
-version = "4.9.1"
+version = "4.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34b0cf7c85fc27baf5d4527fba7d06f0a2c280357470262a155408543de82365"
+checksum = "c7c43680ec91d6607665795891edb1d5f0219c407916ba3ad65a077bcee8dab0"
 dependencies = [
  "atoi_simd",
  "base64",
@@ -889,9 +901,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-bytes"
-version = "1.15.4"
+version = "1.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4cdda494c2768eb94bcbe248d874ec433f828f44f5bff112c4609104ae3e6631"
+checksum = "f3c2d88c8af57df3f05e80a48381c4326b6e9087b823b129164b552ac8689a78"
 dependencies = [
  "bytes",
  "serde",
@@ -909,9 +921,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-dispatcher"
-version = "4.4.1"
+version = "4.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52a5843a55131cf719fddb22a17cb542c2151e78d7e1d1b7d00cadf1926b1e3f"
+checksum = "d7935537f0976378641da25069cfe2f8fdc5e604800c68b38669ed7847bec148"
 dependencies = [
  "log",
  "ntex-codec",
@@ -958,9 +970,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-h2"
-version = "4.5.1"
+version = "4.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c2ab82126a310eab8c293de6b5f3342c6ee7ba7b4be94c4e734f0fdc2572e55"
+checksum = "801d33d852901ff87cb43ab5bd8ecaed16e7466a3493233f314bad0d477d04c7"
 dependencies = [
  "bitflags",
  "fastrand",
@@ -1006,9 +1018,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-io"
-version = "4.7.3"
+version = "4.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "03cd9f94ea536a520dd17afd7a2082174c9cecdaf768e0db67786de43c52d16a"
+checksum = "6189bbc3da76e1aec3139199d02140d7c18840b9713be04d1b9ff4c17517e4db"
 dependencies = [
  "bitflags",
  "log",
@@ -1114,7 +1126,7 @@ dependencies = [
  "libc",
  "log",
  "loom",
- "nix",
+ "nix 0.31.4",
  "ntex-error",
  "oneshot",
  "parking_lot",
@@ -1150,9 +1162,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-service"
-version = "5.7.5"
+version = "5.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d27e336b7b56b33bcfb755927911e98f2a042d8d36437f902d3dccb2597e628"
+checksum = "1ec364e1f38b45a9c63464a57013b84648058fcb44939dead9d77263066b3c27"
 dependencies = [
  "foldhash",
  "log",
@@ -1162,9 +1174,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-tls"
-version = "4.8.0"
+version = "4.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94890868264e04ba1d63fcc810e317340e474541e091b83fd985e0bba9e7b37b"
+checksum = "8c95414b43dfc7c5aed05f18922c0b5c92e1f7fd748ded7b0db4bfbe02fcdf01"
 dependencies = [
  "base64",
  "hex",
@@ -1175,6 +1187,7 @@ dependencies = [
  "ntex-net",
  "ntex-service",
  "ntex-util",
+ "pin-project-lite",
  "rustls",
  "rustls-webpki",
  "sha1",
@@ -1187,9 +1200,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-util"
-version = "4.11.0"
+version = "4.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1ccfbc525b3b9db6f5be352f75ceb42febf1234ab97b01e8d2fd85f37275cbec"
+checksum = "f899c498e31750b9a91fc6a8eca5b77cf4120b3e0dee697a1710f61d8d42d65f"
 dependencies = [
  "backoff",
  "bitflags",
@@ -1330,9 +1343,9 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 
 [[package]]
 name = "pin-project-lite"
-version = "0.2.17"
+version = "0.2.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
+checksum = "c938015719552d665fd0553b90d96cd7ff58e83e4c061ca99e6bb78865a72752"
 
 [[package]]
 name = "powerfmt"
@@ -1414,9 +1427,9 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.13.1"
+version = "1.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f020237b6c8eed93db2e2cb53c00c60a8e1bc73da7d073199a1180401450218d"
+checksum = "9807af0e638c12e753aa1b4e601791bf2a8f71274023c8bbeec12fc149950857"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -1426,9 +1439,9 @@ dependencies = [
 
 [[package]]
 name = "regex-automata"
-version = "0.4.18"
+version = "0.4.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad8553b9b26413251cbf30e620595c7a41b3887f03da04579c0e6b0d6a06b4b2"
+checksum = "41d60ef07df457506a0a1a2073112eb4aae5733dbd2813c3da77d1b0fd441158"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -1437,9 +1450,9 @@ dependencies = [
 
 [[package]]
 name = "regex-syntax"
-version = "0.8.11"
+version = "0.8.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
+checksum = "d902046e6a28a1e4c3cab97258a0ce11e994903f01c2d97a9447a0b3df85f4f6"
 
 [[package]]
 name = "ring"
@@ -1689,9 +1702,9 @@ checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
 
 [[package]]
 name = "smallvec"
-version = "1.16.5"
+version = "1.16.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "149309498a5f7334b12ddae0cad8aba81ce785fe91755068867e017cf98fee46"
+checksum = "3244542535d5de959d90ec55d1b5ff0fd2bb7b1310223907d5f11932847f7b59"
 
 [[package]]
 name = "socket2"
@@ -1903,9 +1916,9 @@ dependencies = [
 
 [[package]]
 name = "uuid"
-version = "1.29.2"
+version = "1.29.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bed99139f7dac9b5cfe5f17be4d66dc7079a34dee1d74bcc77217119240e267c"
+checksum = "3c14b15dffa2f4bd712103e857140aa04a4f2ff6e955c77d7eb8e53ee02a3b64"
 dependencies = [
  "getrandom 0.4.3",
  "js-sys",
@@ -2207,9 +2220,9 @@ dependencies = [
 
 [[package]]
 name = "zeroize"
-version = "1.9.1"
+version = "1.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e13084392c5e4bc371903e2935a5eaeed24905a7511356b883835e18a78f6879"
+checksum = "85ccff8a4805aba1eaa4cd4afcd49f7557dd2cf5fd79ffc37f8959466effc5aa"
 
 [[package]]
 name = "zmij"
