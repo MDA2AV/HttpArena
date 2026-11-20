@@ -2262,6 +2262,13 @@
       "response": true
     }
   },
+  "roxygen": {
+    "dir": "roxygen",
+    "description": "Meta's Roxygen, an HTTP/1.1 and HTTP/2 library that brings Proxygen's design to Rust. Serves h2c and HTTP/2 over rustls on Roxygen's owned HTTP/2 driver, which polls every stream of a connection from one future instead of running a task per request.",
+    "repo": "https://github.com/facebookincubator/roxygen",
+    "type": "engine",
+    "engine": "roxygen"
+  },
   "rust-epoll": {
     "dir": "rust-epoll",
     "description": "Zero-dependency Rust HTTP engine using raw epoll syscalls, one-thread-per-core with SO_REUSEPORT.",
