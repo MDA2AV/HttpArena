@@ -208,7 +208,9 @@ impl HttpHandler for Handler {
             if path == b"/spec" || path == b"/spec/headers" {
                 let list_headers = path == b"/spec/headers";
                 let method = head.headers_mut().method().map_err(internal)?;
-                return spec(&worker.heads, request, head, method, list_headers).await;
+                // Boxed so that the rarely used /spec state does not grow every request's
+                // future.
+                return Box::pin(spec(&worker.heads, request, head, method, list_headers)).await;
             }
             respond(request, heads.not_found.clone(), Bytes::new())
         })
