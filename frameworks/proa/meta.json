@@ -1,0 +1,20 @@
+{
+  "display_name": "Proa + Axum",
+  "language": "Rust",
+  "engine": "hyper",
+  "type": "emerging",
+  "mode": "standard",
+  "description": "Compiled Proa HTML components rendered over Axum with a tokio-postgres PostgreSQL connection pool.",
+  "repo": "https://github.com/Proa-Labs/proa",
+  "website": "https://proa.so",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "async",
+    "latency-10k",
+    "fortunes"
+  ],
+  "maintainers": ["hariria"]
+}

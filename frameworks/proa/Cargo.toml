@@ -1,0 +1,18 @@
+[package]
+name = "httparena-proa"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+arrayvec = "0.7.8"
+axum = "0.8.9"
+deadpool-postgres = "0.14.1"
+itoa = "1.0"
+proa = { git = "https://github.com/Proa-Labs/proa.git", rev = "141a0c7d88e312269f0715130f9fceb421dfe3a5", default-features = false }
+serde = { version = "1.0", features = ["derive"] }
+tokio = { version = "1", features = ["macros", "net", "rt-multi-thread", "time"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
