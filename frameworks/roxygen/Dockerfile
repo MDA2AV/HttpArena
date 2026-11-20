@@ -3,7 +3,18 @@ ENV RUSTFLAGS="-C target-cpu=native"
 WORKDIR /arena
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
-RUN cargo build --release --locked \
+# A ferroxygen release changes these crates.io index entries, which reruns the
+# update and build below against the newest 0.1 release.
+ADD https://index.crates.io/fe/rr/ferroxygen_codec /tmp/ferroxygen-index/
+ADD https://index.crates.io/fe/rr/ferroxygen_core /tmp/ferroxygen-index/
+ADD https://index.crates.io/fe/rr/ferroxygen_http1 /tmp/ferroxygen-index/
+ADD https://index.crates.io/fe/rr/ferroxygen_http2 /tmp/ferroxygen-index/
+ADD https://index.crates.io/fe/rr/ferroxygen_runtime /tmp/ferroxygen-index/
+ADD https://index.crates.io/fe/rr/ferroxygen_server /tmp/ferroxygen-index/
+ADD https://index.crates.io/fe/rr/ferroxygen_session /tmp/ferroxygen-index/
+ADD https://index.crates.io/fe/rr/ferroxygen_transport /tmp/ferroxygen-index/
+RUN cargo update $(sed -n 's/^name = "\(ferroxygen_[a-z0-9_]*\)"/-p \1/p' Cargo.lock) \
+    && cargo build --release --locked \
     && cp target/release/roxygen-arena /usr/local/bin/roxygen-arena
 
 FROM debian:bookworm-slim
