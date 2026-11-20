@@ -1667,7 +1667,9 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     // Resilience, beside Spec: a standalone robustness read (adversarial-attack
     // survival, H1 / H2 / WS), shown on every composite view since the
     // measurement does not change with the board. Not part of the composite.
-    if(resilCol()) th+='<th class="num pcol resilh" data-k="resil" data-tip="'+esc(TIP.resil)+'">Resilience'+ar('resil')
+    // "Resil.", as on the rack's patch panel: the column is narrow and the
+    // full word is in the tooltip and the accessible name.
+    if(resilCol()) th+='<th class="num pcol resilh" data-k="resil" aria-label="Resilience" data-tip="'+esc(TIP.resil)+'">Resil.'+ar('resil')
       + '<span class="pnav"><a class="pico" href="/docs/test-profiles/resilience/"'
       +   ' data-tip="'+esc('What the resilience suite attacks, the box it runs the entry in, and how an entry opts in.')+'"'
       +   ' aria-label="How the resilience score works">?</a></span></th>';
