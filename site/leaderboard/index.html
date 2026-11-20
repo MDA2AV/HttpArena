@@ -43,6 +43,9 @@
   <div class="nav-mobile"><select id="navSelect" aria-label="Choose a view"></select></div>
 
   <div class="layout">
+    <!-- the views rail: every composite and every detailed view, collapsed to a
+         row of keys by default, opened into the full list (buildRail) -->
+    <aside class="vrail" id="rail" aria-label="Views"></aside>
     <main class="main">
       <section class="console">
         <div class="phead placard">
@@ -742,6 +745,92 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     });
     r2.appendChild(g2); nav.appendChild(r2);
     buildMobileNav(byCat);
+    buildRail(byCat);
+  }
+  // ── the views rail ───────────────────────────────────────
+  // On a desk the composites and the detailed views sit in a rail on the left
+  // instead of the KVM rows. Collapsed (the default) it is a column of keys,
+  // every composite and every family, the one on screen lit - and under its
+  // family, the profile on screen by name. Open, it lays the whole list over
+  // the page, each family's profiles under it, and closes again on a pick.
+  var railOpen=false, railFocus=null;
+  // The address a pick leads to, as writeHash would write it after the pick: the
+  // view, plus what carries over (types, Tuned, compact names, the room's view),
+  // so a key opened in a new tab lands on the same board.
+  function railHref(prof, v){
+    var p=[];
+    if(prof){ p.push('p='+encodeURIComponent(v)); p.push('conns='+PROF[v].conns[0]); }
+    else if(v!=='h1') p.push('scope='+v);
+    var ts=state.types.slice().sort().join(','); if(ts!=='emerging,flagship') p.push('type='+ts);
+    if(!state.showTuned) p.push('tuned=0');
+    if(state.compactFw) p.push('fw=compact');
+    if(state.maint) p.push('table=1');
+    if(state.aisle && !state.maint) p.push('aisle=1');
+    return esc(p.length ? '#'+p.join('&') : location.pathname+location.search);
+  }
+  var RAIL_CHEV='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+  function buildRail(byCat){
+    var rail=document.getElementById('rail'); if(!rail) return;
+    var cur=state.view==='profile' ? PROF[state.profile] : null;
+    var h='<div class="rail-in"><button class="rail-tog" type="button" id="railTog" aria-expanded="'+railOpen+'"'
+      + ' aria-label="'+(railOpen?'Close the list of views':'Open every view, with the test profiles of each family')+'">'+RAIL_CHEV+'<span>'+(railOpen?'Close':'Views')+'</span></button>'
+      + '<div class="rail-sec"><div class="rail-h">Composite</div>';
+    SCOPES.forEach(function(sc){
+      var on=state.view==='composite' && state.scope===sc.k;
+      h+='<a class="rail-key'+(on?' on':'')+'" href="'+railHref(false, sc.k)+'" data-scope="'+sc.k+'"'+(on?' aria-current="page"':'')+'><i class="kled"></i><span>'+esc(sc.label)+'</span></a>';
+    });
+    h+='</div><div class="rail-sec"><div class="rail-h">Detailed views</div>';
+    FAMILIES.forEach(function(fam){
+      var profs=[]; fam.cats.forEach(function(cat){ (byCat[cat]||[]).forEach(function(p){ profs.push(p); }); });
+      if(!profs.length) return;
+      var mine=!!cur && profs.some(function(p){ return p.id===cur.id; });
+      h+='<div class="rail-fam'+(mine?' on':'')+'" data-fam="'+fam.k+'">'
+        + '<button class="rail-key fam'+(mine?' on':'')+'" type="button" data-fam="'+fam.k+'"'+(railOpen?' tabindex="-1"':'')+'><i class="kled"></i><span>'+esc(fam.label)+'</span>'+(railOpen?'':RAIL_CHEV)+'</button>';
+      if(railOpen){
+        h+='<div class="rail-list">';
+        var lastCat=null;
+        profs.forEach(function(p){
+          if(fam.cats.length>1 && p.category!==lastCat){ lastCat=p.category; h+='<div class="rail-cat">'+esc(p.category)+'</div>'; }
+          var on=!!cur && cur.id===p.id;
+          h+='<a class="rail-item'+(on?' on':'')+'" href="'+railHref(true, p.id)+'" data-pid="'+esc(p.id)+'"'+(on?' aria-current="page"':'')+(p.blurb?' data-tip="'+esc(p.blurb)+'"':'')+'>'+esc(p.label)+'</a>';
+        });
+        h+='</div>';
+      } else if(mine){
+        h+='<div class="rail-cur" title="'+esc(cur.label)+'">'+esc(cur.label)+'</div>';
+      }
+      h+='</div>';
+    });
+    rail.innerHTML=h+'</div></div>';
+    rail.classList.toggle('open', railOpen);
+    if(railOpen && railFocus){
+      // focus the view on screen, or the first profile of the family asked for
+      var fam=railFocus==='cur' ? null : rail.querySelector('.rail-fam[data-fam="'+railFocus+'"]');
+      var a=fam ? fam.querySelector('.rail-item')
+                : (rail.querySelector('.rail-item.on') || rail.querySelector('a.rail-key.on') || rail.querySelector('a.rail-key'));
+      // scroll the list only (scrollIntoView would move the page too): a family to
+      // the top, the view on screen into sight
+      var box=rail.querySelector('.rail-in'), bb=box.getBoundingClientRect();
+      if(fam) box.scrollTop+=fam.getBoundingClientRect().top-bb.top-8;
+      else if(a){ var ar=a.getBoundingClientRect(); if(ar.top<bb.top || ar.bottom>bb.bottom) box.scrollTop+=ar.top-bb.top-bb.height/3; }
+      if(a) a.focus({preventScroll:true});
+      railFocus=null;
+    }
+  }
+  function railSet(open, focus){ railOpen=open; railFocus=focus||null; buildNav(); if(!open){ var t=document.getElementById('railTog'); if(t && focus==='tog') t.focus(); } }
+  function initRail(){
+    var rail=document.getElementById('rail'); if(!rail) return;
+    rail.addEventListener('click', function(e){
+      var t=e.target.closest('#railTog, .rail-key, .rail-item'); if(!t) return;
+      var plain=!(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey||e.button);
+      if(t.id==='railTog'){ railSet(!railOpen, railOpen?'tog':'cur'); return; }
+      if(t.dataset.scope){ if(!plain) return; e.preventDefault(); railOpen=false; pickScope(t.dataset.scope); return; }
+      if(t.dataset.pid){ if(!plain) return; e.preventDefault(); railOpen=false; pickProfile(t.dataset.pid); return; }
+      if(t.dataset.fam){ railSet(true, t.dataset.fam); }
+    });
+    // A click outside closes it. The path, not the target: a click inside rebuilds
+    // the rail, so by the time it reaches the document its target is detached.
+    document.addEventListener('click', function(e){ if(railOpen && e.composedPath().indexOf(rail)<0) railSet(false); });
+    document.addEventListener('keydown', function(e){ if(e.key==='Escape' && railOpen){ railSet(false, 'tog'); } });
   }
   document.addEventListener('click', function(e){
     if(kvmOpen && !(e.target.closest && e.target.closest('.kvm-fam'))){ kvmOpen=null; buildNav(); }
@@ -2771,7 +2860,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     +'<div><b>Patch panel</b>The strip above the first unit names every column. Press a port to sort by it.</div>'
     +'<div><b>Pull handle</b>Press a unit to slide it out on its rails: every number, the run logs, Spec, Resilience, medals and the link to its results page.</div>'; });
   }
-  initLegend(); initTips(); init3d(); initSpecPanel(); initHeat(); initModal(); initRack(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initNavSearch(); hw(); buildNav(); renderHead(); render();
+  initRail(); initLegend(); initTips(); init3d(); initSpecPanel(); initHeat(); initModal(); initRack(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initNavSearch(); hw(); buildNav(); renderHead(); render();
   (function(){ var b=document.getElementById('brandHome'); if(b) b.onclick=function(e){ e.preventDefault(); pickScope('h1'); }; })();
   window.addEventListener('hashchange', function(){ restoreFromHash(); buildNav(); renderHead(); render(); });
   var _rz; window.addEventListener('resize', function(){ clearTimeout(_rz); _rz=setTimeout(function(){ if(state.view==='profile') render(); else if(state.view==='composite'){ syncTopScroll(); if(FLOAT.measure){ FLOAT.measure(); floatCheck(); } } }, 150); });
