@@ -1653,3 +1653,60 @@ html:not([data-theme="dark"]) .str-m::after{filter:none}
 .cfloat-in table.cm{table-layout:fixed; min-width:0}
 .cfloat-in .cm thead th{position:static}
 .cfloat-in .cm thead th.sticky{position:sticky}
+
+/* ── maintenance view, softer ──
+   The plain table as a quiet sheet: a rounded box, rows parted by one hairline
+   and no grid of lines around every cell, no zebra, the figures in the text
+   face with tabular numerals, column names in sentence case, and View / Guide
+   as quiet chips. Only the maintenance view: the rack keeps its hardware.
+   (border-radius needs !important against the sheet-wide sharp-edge reset.) */
+#grid{background:none; border:0; padding:0}
+#grid .cwrap{border:1px solid var(--line); border-radius:12px !important; background:var(--panel); box-shadow:0 1px 2px rgba(0,0,0,.08)}
+#grid .cm th, #grid .cm td{border-right:0; border-bottom:1px solid var(--line-soft); background:var(--panel); padding:9px 10px}
+#grid .cm tbody tr:nth-child(even) td{background:var(--panel)}
+#grid .cm tbody tr:hover td{background:var(--panel-2)}
+#grid .cm tbody tr:last-child td{border-bottom:0}
+#grid .cm td.pc, #grid .cm th.pcol{border-left:1px solid var(--line-soft)}
+#grid .cm .scoreh + th, #grid .cm .scorec + td{border-left:0}
+#grid .cm .scorec{box-shadow:6px 0 10px -8px rgba(0,0,0,.35)}
+#grid .cm thead th{font:600 .8rem/1.25 var(--sans); letter-spacing:0; text-transform:none; color:var(--text-2); background:var(--panel-2); border-bottom:1px solid var(--line); padding-top:11px; vertical-align:top}
+#grid .cm thead th:hover, #grid .cm thead th.sorted{color:var(--text)}
+#grid .cm td, #grid .cm td.num, #grid .cm .rankc, #grid .cm .rankh{font-family:var(--sans); font-variant-numeric:tabular-nums}
+#grid .cm .rankc{color:var(--text-2)}
+#grid .cm .nm{font:600 .9rem/1.3 var(--sans); letter-spacing:0}
+#grid .cm .fwcell .lang{font:600 .8rem/1.2 var(--sans); letter-spacing:0}
+#grid .cm .tnd{font:600 .7rem/1.6 var(--sans); letter-spacing:0; text-transform:capitalize; padding:0 .4rem; border-radius:5px !important}
+#grid .cm .tsq{border-radius:3px !important}
+#grid .cm td.pc .crps, #grid .cm td.resil .rzv, #grid .statwrap .err, #grid .row .rank{font-family:var(--sans); font-variant-numeric:tabular-nums}
+#grid .cm td.pc .crps{font-weight:500}
+#grid .cm td.pc.lead .crps{font-weight:700}
+#grid .cm td.pc .cmem{font-size:.72rem}
+#grid .cm td.pc .cbar{opacity:.55}
+#grid .cm .scorec .sc b{font:650 .92rem/1.2 var(--sans); font-variant-numeric:tabular-nums}
+#grid .cm .scorec .sc .bar, #grid .cm .scorec .sc .bar i{border-radius:2px !important}
+#grid .cm th.pcol .pnav{background:none; border-top:0; gap:4px; margin:.5rem 0 -.25rem}
+#grid .cm th.pcol .pico{height:24px; border:0; border-radius:6px !important; background:color-mix(in srgb, var(--text) 6%, transparent); color:var(--text-2); font:500 .74rem/1 var(--sans); letter-spacing:0; text-transform:none}
+#grid .cm th.pcol .pico:hover{background:var(--accent); color:var(--bg)}
+#grid .cm .scoreh .hq, #grid .cm th .pico.hq, #grid .cm th:not(.pcol) .pico{border-radius:50% !important}
+#grid .cm .fwh .fwtog{border:0; border-radius:6px !important; background:color-mix(in srgb, var(--text) 6%, transparent)}
+#grid .cm.heat td.pc .cbar{border-radius:4px !important}
+#grid .cscroll-end{border-radius:6px !important}
+#grid .cscroll{border-radius:6px !important}
+/* a profile's own maintenance view: the same quiet rows */
+#grid .thead{font:600 .8rem/1.25 var(--sans); letter-spacing:0; text-transform:none; color:var(--text-2); background:var(--panel-2); border:1px solid var(--line); border-bottom-color:var(--line); border-radius:12px 12px 0 0 !important; padding:.35rem 0}
+#grid .thead .th.sorted{color:var(--text)}
+#grid #rows:has(>.row){border:1px solid var(--line); border-top:0; border-radius:0 0 12px 12px !important; overflow:hidden; background:var(--panel)}
+#grid .row, #grid .row:nth-child(even){background:var(--panel)}
+#grid .row:hover{background:var(--panel-2)}
+#grid .row .num, #grid .row .rank{font-family:var(--sans); font-variant-numeric:tabular-nums}
+#grid .row .nm{font:600 .9rem/1.3 var(--sans); letter-spacing:0}
+#grid .row .meter .v{font-family:var(--sans); font-variant-numeric:tabular-nums; font-weight:600}
+#grid .row .tnd{font:600 .7rem/1.6 var(--sans); letter-spacing:0; text-transform:capitalize; padding:0 .4rem; border-radius:5px !important}
+#grid .row .fw .lang{font:600 .8rem/1.2 var(--sans); letter-spacing:0}
+#grid .row .meter .bar, #grid .row .meter .bar i{border-radius:2px !important}
+/* A profile's maintenance view on a phone (the columns are narrowed by
+   renderProfile): a little less padding in the cells. */
+@media (max-width:599px){
+  #grid .row .c, #grid .thead .th{padding-left:.35rem; padding-right:.35rem}
+  #grid .row .fw .tndslot, #grid .row .fw .lang{display:none}
+}

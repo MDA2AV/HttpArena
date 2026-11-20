@@ -1894,8 +1894,20 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     var M=profileModel(), all=M.all, rows=M.rows, rankMap=M.rankMap, maxRps=M.maxRps;
     renderTypes();
     document.getElementById('count').textContent=rows.length+(rows.length===1?' framework':' frameworks');
-    var dark=DARK(), COLS=profileCols();
-    document.getElementById('grid').style.setProperty('--cols', COLS.map(function(c){return c.w;}).join(' '));
+    // On a phone the columns' floors (54px rank, 200px name, 150px rate) add up
+    // to more than the screen. There the table keeps the rank, the name and the
+    // profile's first two figures, the rank narrows and no figure asks for more
+    // than 72-88px, so it fits without panning (the rest is one tap away, on the
+    // entry's card).
+    var narrow=window.innerWidth<600;
+    var dark=DARK(), COLS=narrow ? profileCols().slice(0,4) : profileCols();
+    document.getElementById('grid').style.setProperty('--cols', COLS.map(function(c){
+      if(!narrow) return c.w;
+      if(c.k==='rank') return '34px';
+      if(c.k==='fw') return 'minmax(0,1.5fr)';
+      return String(c.w).replace(/minmax\((\d+)px/, function(m, n){ return 'minmax('+Math.min(+n, 88)+'px'; })
+                        .replace(/^(\d+)px$/, function(m, n){ return Math.min(+n, 72)+'px'; });
+    }).join(' '));
     var thEl=document.getElementById('thead'); thEl.innerHTML='';
     COLS.forEach(function(col){
       var d=document.createElement('div'); d.className='th'+(col.num?' num':'')+(state.sortKey===col.k?' sorted':'');
