@@ -1591,3 +1591,17 @@ html:not([data-theme="dark"]) .str-m::after{filter:none}
   .str-radar{max-width:240px; justify-self:center; width:100%}
   .str-sub, .modal-card .str-sub{padding-left:0}
 }
+
+/* ── maintenance view: the table runs its whole height ──
+   No box with a vertical scrollbar of its own: the page scrolls the table.
+   The header row floats under the site header once the real one has gone by
+   (a copy, setupFloatHead()), and the horizontal bar under the table stays at
+   the bottom of the window while the table is in view. */
+#rows .cwrap{max-height:none; overflow-y:hidden}
+#cscrollRow{position:sticky; bottom:0; z-index:12; padding:.35rem 0 .3rem; margin-top:0; background:var(--panel)}
+.cfloat{position:sticky; top:calc(var(--top-h) + 3px); z-index:13; height:0}
+.cfloat-in{position:absolute; top:0; display:none; overflow:hidden; box-shadow:0 10px 16px -10px rgba(0,0,0,.6)}
+.cfloat.on .cfloat-in{display:block}
+.cfloat-in table.cm{table-layout:fixed; min-width:0}
+.cfloat-in .cm thead th{position:static}
+.cfloat-in .cm thead th.sticky{position:sticky}

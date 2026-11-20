@@ -1522,7 +1522,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     var top=document.getElementById('cscrollTop'), wrap=document.getElementById('cwrap'); if(!top||!wrap) return;
     var prog=false;  // true during a programmatic smooth-scroll, so the bar->table mirror doesn't cancel it
     top.onscroll=function(){ if(prog) return; wrap.scrollLeft=top.scrollLeft; };
-    wrap.onscroll=function(){ top.scrollLeft=wrap.scrollLeft; updateEndBtn(); };
+    wrap.onscroll=function(){ top.scrollLeft=wrap.scrollLeft; if(FLOAT.inner) FLOAT.inner.scrollLeft=wrap.scrollLeft; updateEndBtn(); };
     function jump(){
       var max=wrap.scrollWidth-wrap.clientWidth, atEnd=wrap.scrollLeft>=max-2;
       prog=true; wrap.scrollTo({left:atEnd?0:max, behavior:'smooth'}); setTimeout(function(){ prog=false; }, 700);
@@ -1531,6 +1531,57 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     var b2=document.getElementById('cscrollEndTop'); if(b2) b2.onclick=jump;
     syncTopScroll();
   }
+  // The maintenance table runs its whole height and the page scrolls it (no
+  // box with a scrollbar of its own inside the page). So the header row is
+  // copied into a strip that floats under the site header once the real one
+  // has scrolled away - natively sticky, so it does not lag the scroll. The
+  // copy has the real columns' widths, follows the table sideways, and hands
+  // its clicks to the real header: sorting, View, Guide and the name-column
+  // toggle all work from it. The horizontal bar under the table stays at the
+  // bottom of the window while the table is in view (CSS, #cscrollRow).
+  var FLOAT={};
+  function setupFloatHead(){
+    var old=document.getElementById('cfloat'); if(old) old.parentNode.removeChild(old);
+    FLOAT={};
+    var wrap=document.getElementById('cwrap'), tbl=wrap&&wrap.querySelector('table.cm'), head=tbl&&tbl.tHead;
+    if(!head) return;
+    var fl=document.createElement('div'); fl.className='cfloat'; fl.id='cfloat'; fl.setAttribute('aria-hidden','true');
+    var inner=document.createElement('div'); inner.className='cfloat-in';
+    var t2=document.createElement('table'); t2.className=tbl.className;
+    var cg=document.createElement('colgroup'), h2=head.cloneNode(true);
+    t2.appendChild(cg); t2.appendChild(h2); inner.appendChild(t2); fl.appendChild(inner);
+    Array.prototype.forEach.call(h2.querySelectorAll('[id]'), function(e){ e.removeAttribute('id'); });
+    Array.prototype.forEach.call(h2.querySelectorAll('a,button,[tabindex]'), function(e){ e.setAttribute('tabindex','-1'); });
+    wrap.parentNode.insertBefore(fl, wrap);
+    function measure(){
+      if(!fl.isConnected) return;
+      var cells=head.rows[0].cells; cg.textContent='';
+      for(var i=0;i<cells.length;i++){ var c=document.createElement('col'); c.style.width=cells[i].getBoundingClientRect().width+'px'; cg.appendChild(c); }
+      t2.style.width=tbl.getBoundingClientRect().width+'px';
+      inner.style.left=wrap.clientLeft+'px'; inner.style.width=wrap.clientWidth+'px';
+      inner.scrollLeft=wrap.scrollLeft;
+    }
+    inner.addEventListener('click', function(e){
+      var th=e.target.closest('th'); if(!th) return;
+      var a=e.target.closest('a[href]');
+      if(a && !a.hasAttribute('role')) return;               // a real link (Guide, the docs) goes by itself
+      e.preventDefault(); e.stopPropagation();
+      var o=head.rows[0].cells[Array.prototype.indexOf.call(th.parentNode.children, th)]; if(!o) return;
+      var src=e.target.closest('a,button,[role="button"]')||th;
+      var k=src===th ? -1 : Array.prototype.indexOf.call(th.querySelectorAll('*'), src);
+      ((k>=0 && o.querySelectorAll('*')[k]) || o).click();
+    });
+    FLOAT={el:fl, inner:inner, head:head, wrap:wrap, measure:measure};
+    measure(); floatCheck();
+    if(document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+  }
+  function floatCheck(){
+    var fl=FLOAT.el; if(!fl || !fl.isConnected) return;
+    var r=FLOAT.head.getBoundingClientRect(), wr=FLOAT.wrap.getBoundingClientRect(), top=parseFloat(getComputedStyle(fl).top)||0;
+    var on=r.height>0 && r.top<top && wr.bottom>top+r.height+40;
+    if(on!==fl.classList.contains('on')) fl.classList.toggle('on', on);
+  }
+  window.addEventListener('scroll', function(){ if(FLOAT.el) floatCheck(); }, {passive:true});
   // ── overall view: one column per family ──────────────────
   var FAM_NAME={h1:'HTTP/1.1',h2:'HTTP/2',h3:'HTTP/3',grpc:'gRPC',ws:'WebSocket'};
   // The same two-part control a profile column has: the left half opens that
@@ -1692,7 +1743,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     var _ft=document.getElementById('fwTog');
     if(_ft){ _ft.onclick=function(ev){ ev.stopPropagation(); toggleCompactFw(); };
              _ft.onkeydown=function(ev){ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); ev.stopPropagation(); toggleCompactFw(); } }; }
-    setupTopScroll();
+    setupTopScroll(); setupFloatHead();
   }
 
   function val(r,k){ if(k==='rps')return r.rps||0; if(k==='bw')return bw(r.bandwidth); if(k==='bwreq'){var b=bw(r.bandwidth),q=r.rps||0;return q>0?b/q:0;} if(k==='inbw')return bw(r.input_bw); if(k==='avg')return lat(r.avg_latency); if(k==='p99')return lat(r.p99_latency); if(k==='l1mscore')return latScore(state.profile,r.fw); if(k==='p999')return lat(r.p99_9_latency); if(k==='cpureq')return (r.cpu_per_req_us!=null)?+r.cpu_per_req_us:Infinity; if(k==='cputot'){var t=cpuTotPct(r); return t==null?Infinity:t;} if(k==='cpu')return cpu(r.cpu); if(k==='mem')return mem(r.memory); if(k==='fw')return (r.fw||'').toLowerCase(); return 0; }
@@ -2454,7 +2505,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   initLegend(); initTips(); initSpecPanel(); initHeat(); initModal(); initRack(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initNavSearch(); hw(); buildNav(); renderHead(); render();
   (function(){ var b=document.getElementById('brandHome'); if(b) b.onclick=function(e){ e.preventDefault(); pickScope('h1'); }; })();
   window.addEventListener('hashchange', function(){ restoreFromHash(); buildNav(); renderHead(); render(); });
-  var _rz; window.addEventListener('resize', function(){ clearTimeout(_rz); _rz=setTimeout(function(){ if(state.view==='profile') render(); else if(state.view==='composite') syncTopScroll(); }, 150); });
+  var _rz; window.addEventListener('resize', function(){ clearTimeout(_rz); _rz=setTimeout(function(){ if(state.view==='profile') render(); else if(state.view==='composite'){ syncTopScroll(); if(FLOAT.measure){ FLOAT.measure(); floatCheck(); } } }, 150); });
 });
 </script>
 </body>
