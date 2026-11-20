@@ -2,8 +2,8 @@
  :deps {org.clojure/clojure {:mvn/version "1.12.5"}
         org.clojure/data.json {:mvn/version "2.5.2"}
         com.outskirtslabs/busker {:git/url "https://github.com/outskirtslabs/busker"
-                                  :git/sha "c13d9ea63235bf141fb6f561cadffee1ac72a7e7"}
-        com.outskirtslabs.busker/linux-x86-64 {:mvn/version "0.0.6"}}
+                                  :git/sha "5871d311fb6b2e6fa034bbcb833bc516d5c73253"}
+        com.outskirtslabs.busker/linux-x86-64 {:mvn/version "0.0.7"}}
  :aliases {:test {:extra-paths ["test"]}
            :aot {:extra-paths ["classes"]
                  :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}}}
