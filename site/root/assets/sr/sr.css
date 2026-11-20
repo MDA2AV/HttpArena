@@ -1655,13 +1655,14 @@ html:not([data-theme="dark"]) .str-m::after{filter:none}
 .cfloat-in .cm thead th.sticky{position:sticky}
 
 /* ── maintenance view, softer ──
-   The plain table as a quiet sheet: a rounded box, rows parted by one hairline
+   The plain table as a quiet sheet: a square-cornered box, rows parted by one hairline
    and no grid of lines around every cell, no zebra, the figures in the text
    face with tabular numerals, column names in sentence case, and View / Guide
    as quiet chips. Only the maintenance view: the rack keeps its hardware.
-   (border-radius needs !important against the sheet-wide sharp-edge reset.) */
+   (The chips' rounding needs !important against the sheet-wide sharp-edge
+   reset; the box's own corners stay sharp, as everywhere in the room.) */
 #grid{background:none; border:0; padding:0}
-#grid .cwrap{border:1px solid var(--line); border-radius:12px !important; background:var(--panel); box-shadow:0 1px 2px rgba(0,0,0,.08)}
+#grid .cwrap{border:1px solid var(--line); background:var(--panel); box-shadow:0 1px 2px rgba(0,0,0,.08)}
 #grid .cm th, #grid .cm td{border-right:0; border-bottom:1px solid var(--line-soft); background:var(--panel); padding:9px 10px}
 #grid .cm tbody tr:nth-child(even) td{background:var(--panel)}
 #grid .cm tbody tr:hover td{background:var(--panel-2)}
@@ -1690,12 +1691,10 @@ html:not([data-theme="dark"]) .str-m::after{filter:none}
 #grid .cm .scoreh .hq, #grid .cm th .pico.hq, #grid .cm th:not(.pcol) .pico{border-radius:50% !important}
 #grid .cm .fwh .fwtog{border:0; border-radius:6px !important; background:color-mix(in srgb, var(--text) 6%, transparent)}
 #grid .cm.heat td.pc .cbar{border-radius:4px !important}
-#grid .cscroll-end{border-radius:6px !important}
-#grid .cscroll{border-radius:6px !important}
 /* a profile's own maintenance view: the same quiet rows */
-#grid .thead{font:600 .8rem/1.25 var(--sans); letter-spacing:0; text-transform:none; color:var(--text-2); background:var(--panel-2); border:1px solid var(--line); border-bottom-color:var(--line); border-radius:12px 12px 0 0 !important; padding:.35rem 0}
+#grid .thead{font:600 .8rem/1.25 var(--sans); letter-spacing:0; text-transform:none; color:var(--text-2); background:var(--panel-2); border:1px solid var(--line); border-bottom-color:var(--line); padding:.35rem 0}
 #grid .thead .th.sorted{color:var(--text)}
-#grid #rows:has(>.row){border:1px solid var(--line); border-top:0; border-radius:0 0 12px 12px !important; overflow:hidden; background:var(--panel)}
+#grid #rows:has(>.row){border:1px solid var(--line); border-top:0; overflow:hidden; background:var(--panel)}
 #grid .row, #grid .row:nth-child(even){background:var(--panel)}
 #grid .row:hover{background:var(--panel-2)}
 #grid .row .num, #grid .row .rank{font-family:var(--sans); font-variant-numeric:tabular-nums}
