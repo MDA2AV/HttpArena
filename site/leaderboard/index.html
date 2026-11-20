@@ -181,11 +181,6 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
 
   // ── maps ─────────────────────────────────────────────────
   var PROF = {}; D.profiles.forEach(function(p){ PROF[p.id]=p; });
-  // Medals, gold first, computed at build time by gen_leaderboard_data.py out of
-  // the same fields the badges rank. Deliberately not recomputed against the
-  // filters in view: an entry holds a medal, it does not stop holding it while
-  // someone is looking at another league.
-  var ACHV = D.achievements || {};
   var FWLANG = {};
   Object.keys(D.results).forEach(function(k){ D.results[k].forEach(function(r){ if(r.lang) FWLANG[r.fw]=r.lang; }); });
 
@@ -427,12 +422,6 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   function langOf(fw){ return FWLANG[fw] || ''; }
   function engineOf(fw){ return (D.meta[fw] && D.meta[fw].engine) || ''; }
 
-  // ── medals ───────────────────────────────────────────────
-  var MEDAL_ICO={gold:'🥇',silver:'🥈',bronze:'🥉'};
-  var AXIS_LABEL={family:'Family composite', language:'Within its language', profile:'Test profile'};
-  // Listed in the entry's modal only. The table used to carry a count of each
-  // after the name, which cost the name column 53px the profiles need more.
-  function medalsOf(fw){ return ACHV[fw] || []; }
   // Search: comma-separated terms matched against name/language/engine. Positive
   // terms are OR'd; a "!term" excludes any match. Show if (no positive terms or
   // one matches) AND no negative term matches.
@@ -610,16 +599,6 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
           cmpDecl(fw)&&CMP_TYPES.indexOf(t)>=0 ? 'completeness '+(4-cmpMissing(fw).length)+'/4' : ''].filter(Boolean).join(' · '))+'</div>';
     if(m.desc) h+='<p class="modal-desc">'+esc(m.desc)+'</p>';
     h+=strengthHtml(fw);
-    var mdl=medalsOf(fw);
-    if(mdl.length){
-      h+='<div class="modal-sub">Achievements</div><div class="modal-mdl">';
-      mdl.forEach(function(a){
-        h+='<a href="'+esc(a.link)+'"><span class="mi">'+MEDAL_ICO[a.medal]+'</span>'
-         + '<span class="mw">'+esc(a.group+' · '+a.label)+'<em>'+esc(AXIS_LABEL[a.axis])+'</em></span>'
-         + '<span class="mr">'+a.rank+' of '+a.of+'</span></a>';
-      });
-      h+='</div>';
-    }
     h+='<div class="modal-links">';
     h+='<a href="/frameworks/'+encodeURIComponent(slugOf(fw))+'/"><span>Results page</span><span>→</span></a>';
     if(m.repo) h+='<a href="'+esc(m.repo)+'" target="_blank" rel="noopener"><span>Official repository</span><span>↗</span></a>';
@@ -2249,16 +2228,6 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       + '<a href="/compare/all/#'+encodeURIComponent(fw)+'"><span>Put it on the bench against another</span><span>→</span></a>'
       + '</div>'
       + (m.desc?'<p class="tag-desc">'+esc(m.desc)+'</p>':'');
-    var mdl=medalsOf(fw);
-    if(mdl.length){
-      h+='<div class="tag-sub">Achievements</div><div class="tag-mdl">';
-      mdl.forEach(function(a){
-        h+='<a href="'+esc(a.link)+'" class="md-'+a.medal+'"><span class="mi">'+MEDAL_ICO[a.medal]+'</span>'
-         + '<span class="mw">'+esc(a.group+' · '+a.label)+'<em>'+esc(AXIS_LABEL[a.axis])+'</em></span>'
-         + '<span class="mr">'+a.rank+' of '+a.of+'</span></a>';
-      });
-      h+='</div>';
-    }
     h+='</div><div class="sheet">'+strengthHtml(fw);
     if(comp && row && row.r){
       var r=row.r, M=row.M;

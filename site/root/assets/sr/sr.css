@@ -493,14 +493,6 @@ html[data-theme="dark"]{
   .modal-h h3{margin:0; font-size:1.2rem; font-weight:750; letter-spacing:-.01em}
   .modal-meta{color:var(--text-2); font-size:.8rem; margin-bottom:.8rem}
   .modal-desc{color:var(--text-2); font-size:.86rem; line-height:1.55; margin:0 0 1.1rem}
-  .modal-sub{font-size:.68rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:0 0 .45rem}
-  .modal-mdl{display:flex; flex-direction:column; gap:.15rem; margin:0 0 1.1rem; max-height:196px; overflow:auto}
-  .modal-mdl a{display:flex; align-items:center; gap:.55rem; padding:.3rem .35rem; border-radius:7px}
-  .modal-mdl a:hover{background:var(--panel-2)}
-  .modal-mdl .mi{flex:none; font-size:.9rem}
-  .modal-mdl .mw{flex:1; min-width:0; font-size:.8rem; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-  .modal-mdl .mw em{display:block; font-style:normal; font-size:.68rem; font-weight:500; color:var(--muted)}
-  .modal-mdl .mr{flex:none; font-family:var(--mono); font-size:.7rem; color:var(--text-2)}
   .modal-links{display:flex; flex-direction:column; gap:.5rem}
   .modal-links a{display:flex; align-items:center; justify-content:space-between; gap:.5rem; color:var(--accent); font-weight:600; font-size:.86rem; padding:.55rem .75rem; border:1px solid var(--line); border-radius:9px; transition:background .12s, border-color .12s}
   .modal-links a:hover{background:var(--accent-weak); border-color:var(--accent)}
@@ -1077,14 +1069,6 @@ html.maint .sortctl{display:none !important}
 .tag-links a:hover{border-color:var(--accent); background:var(--accent-weak)}
 .tag-links a.go{background:var(--accent); border-color:var(--accent); color:var(--bg)}
 .tag-links a.go:hover{background:var(--text); border-color:var(--text); color:var(--bg)}
-.tag-sub{margin:.95rem 0 .35rem; font:600 .62rem/1 var(--label); letter-spacing:.16em; text-transform:uppercase; color:var(--muted)}
-.tag-mdl{display:flex; flex-direction:column; gap:.1rem; max-height:210px; overflow:auto}
-.tag-mdl a{display:flex; align-items:center; gap:.5rem; padding:.26rem .3rem; border-radius:3px}
-.tag-mdl a:hover{background:var(--panel-2)}
-.tag-mdl .mi{flex:none; font-size:.9rem}
-.tag-mdl .mw{flex:1; min-width:0; font-size:.78rem; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.tag-mdl .mw em{display:block; font-style:normal; font-size:.66rem; font-weight:500; color:var(--muted)}
-.tag-mdl .mr{flex:none; font:500 .7rem var(--mono); color:var(--text-2)}
 .sheet{min-width:0}
 .kv{display:grid; grid-template-columns:150px minmax(0,1fr); gap:.2rem .8rem; padding:.36rem 0; border-bottom:1px dashed var(--line); font-size:.82rem; line-height:1.45}
 .kv .k{font:600 .64rem/1.6 var(--label); letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
