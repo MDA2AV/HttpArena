@@ -369,10 +369,10 @@ const std::vector<arena_item> &dataset()
     return items;
 }
 
-void render_json(std::string &out, std::size_t count, long long multiplier,
-                 const std::vector<arena_item> &items)
+std::string render_json(std::size_t count, long long multiplier,
+                        const std::vector<arena_item> &items)
 {
-    out.clear();
+    std::string out;
     out.reserve(32 + count * 256);
     out += "{\"items\":[";
     for (std::size_t i = 0; i < count; ++i)
@@ -416,6 +416,7 @@ void render_json(std::string &out, std::size_t count, long long multiplier,
     out += "],\"count\":";
     out += std::to_string(count);
     out += '}';
+    return out;
 }
 
 long long body_number(const std::string &body)
@@ -623,7 +624,7 @@ asio::awaitable<std::string> arena_json(std::shared_ptr<httppeer> peer)
         peer->output = "{}";
         co_return "";
     }
-    render_json(peer->output, static_cast<std::size_t>(count), multiplier, items);
+    peer->output = render_json(static_cast<std::size_t>(count), multiplier, items);
     co_return "";
 }
 
@@ -675,6 +676,7 @@ asio::awaitable<std::string> arena_static(std::shared_ptr<httppeer> peer)
     };
     const variant_t candidates[3] = {{".br", 2}, {".gz", 1}, {"", 0}};
 
+    std::string served;
     unsigned char served_enc = 0;
     bool found               = false;
     for (const variant_t &v : candidates)
@@ -709,9 +711,9 @@ asio::awaitable<std::string> arena_static(std::shared_ptr<httppeer> peer)
                                 (v.enc == 1 && peer->state.gzip);
         if (!found && acceptable)
         {
-            peer->output = std::move(body);
-            served_enc   = v.enc;
-            found        = true;
+            served     = std::move(body);
+            served_enc = v.enc;
+            found      = true;
         }
     }
     if (!found)
@@ -723,7 +725,8 @@ asio::awaitable<std::string> arena_static(std::shared_ptr<httppeer> peer)
     }
     peer->type(mime_of(filename));
     peer->compress = served_enc;
-    peer->length(peer->output.size());
+    peer->length(served.size());
+    peer->output = std::move(served);
     co_return "";
 }
 
