@@ -1,0 +1,24 @@
+{
+  "framework": "Proa",
+  "results": {
+    "fortunes-1024": {
+      "framework": "Proa",
+      "language": "Rust",
+      "rps": 328245,
+      "avg_latency": "3.15ms",
+      "p99_latency": "6.59ms",
+      "cpu": "4566.2%",
+      "memory": "305MiB",
+      "connections": 1024,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "7.28GB/s",
+      "reconnects": 0,
+      "status_2xx": 1641228,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    }
+  }
+}
