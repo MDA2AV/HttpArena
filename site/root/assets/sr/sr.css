@@ -1882,9 +1882,10 @@ html.aisle .tools .a3d-btn{display:inline-flex}
    Collapsed by default to a column of KVM keys - every composite and every
    family, the one on screen lit, and the profile on screen named under its
    family. Open, the full list lies over the page (the table keeps its width)
-   and closes again on a pick. Phones keep the select. */
+   and closes again on a pick. Below 1024px the rack needs the width: the KVM
+   rows stay there, and phones keep the select. */
 .vrail{display:none}
-@media (min-width:901px){
+@media (min-width:1024px){
   .layout{display:grid; grid-template-columns:144px minmax(0,1fr); align-items:start}
   .kvm{display:none}
   .vrail{display:block; position:sticky; top:calc(var(--top-h) + 3px); height:calc(100vh - var(--top-h) - 3px); z-index:30}
