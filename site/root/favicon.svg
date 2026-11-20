@@ -1,10 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <style>
-    .bg { fill: #17181c; } .fg { fill: #fbfbfc; } .ac { stroke: #9d9bff; }
-    @media (prefers-color-scheme: dark) { .bg { fill: #ededf0; } .fg { fill: #0b0b0d; } .ac { stroke: #5b5bd6; } }
+    .s { stroke: #111; fill: none; }
+    .f { fill: #111; }
+    @media (prefers-color-scheme: dark) {
+      .s { stroke: #fff; }
+      .f { fill: #fff; }
+    }
   </style>
-  <rect class="bg" width="24" height="24" rx="6"/>
-  <rect class="fg" x="6" y="6" width="2.8" height="12" rx="1.4"/>
-  <rect class="fg" x="15.2" y="6" width="2.8" height="12" rx="1.4"/>
-  <path class="ac" d="M8.9 14.3 15.1 9.7" fill="none" stroke-width="2.8" stroke-linecap="round"/>
+  <!-- Blade -->
+  <path d="M16 1 L19 21 L16 23 L13 21 Z" class="f"/>
+  <!-- Fuller -->
+  <line x1="16" y1="4" x2="16" y2="19" class="s" stroke-width="0.8" opacity="0.3"/>
+  <!-- Crossguard -->
+  <path d="M7 22.5 Q7 21 9 21 L23 21 Q25 21 25 22.5 Q25 24 23 24 L9 24 Q7 24 7 22.5 Z" class="f"/>
+  <!-- Grip -->
+  <rect x="14" y="24" width="4" height="4" rx="0.5" class="f"/>
+  <!-- Grip wrap -->
+  <line x1="14" y1="25.5" x2="18" y2="25.5" class="s" stroke-width="0.5" opacity="0.3"/>
+  <line x1="14" y1="27" x2="18" y2="27" class="s" stroke-width="0.5" opacity="0.3"/>
+  <!-- Pommel -->
+  <ellipse cx="16" cy="30" rx="2.5" ry="1.8" class="f"/>
 </svg>

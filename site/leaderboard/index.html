@@ -17,21 +17,54 @@
   html{--row-py:7px; --cell-fs:12.5px}
   html[data-density="compact"]{--row-py:3px; --cell-fs:12px}
 
-  .layout{display:grid; grid-template-columns:248px minmax(0,1fr); align-items:start}
-  .main{padding:26px 28px 64px; min-width:0; max-width:1200px}
-  .main.cmfull{max-width:none}
+  /* No sidebar: the views are tabs in the bar under the header (.viewbar), and
+     the board takes the whole width of the window, however wide it is. */
+  .layout{display:block}
+  .main{padding:22px 24px 64px; min-width:0}
+
+  /* view bar: the composite of each family as tabs, the test profiles in one
+     labelled menu next to them */
+  .viewbar{border-bottom:1px solid var(--line); background:var(--bg)}
+  .vb-in{display:flex; align-items:stretch; gap:6px; min-height:48px; padding:0 12px}
+  .vb-tabs{display:flex; align-items:stretch; gap:2px; min-width:0; overflow-x:auto; scrollbar-width:none}
+  .vb-tabs::-webkit-scrollbar{display:none}
+  .vb-tab{position:relative; display:inline-flex; align-items:center; padding:0 12px; font-size:14px; font-weight:550; color:var(--text-2); white-space:nowrap; border-radius:var(--r) var(--r) 0 0; transition:color .12s ease, background .12s ease}
+  .vb-tab:hover{color:var(--text); background:var(--panel-2)}
+  .vb-tab.on{color:var(--text)}
+  .vb-tab.on::after{content:""; position:absolute; left:10px; right:10px; bottom:-1px; height:2px; border-radius:2px 2px 0 0; background:var(--accent-solid)}
+  .vb-tab.fam{color:var(--text)}
+  .vb-tab:focus-visible{outline-offset:-2px}
+  .vb-div{width:1px; background:var(--line); margin:12px 8px; flex:none}
+  .vb-prof{position:relative; display:flex; align-items:center; flex:none}
+  .vb-pbtn{display:inline-flex; align-items:center; gap:8px; height:34px; padding:0 10px 0 12px; border:1px solid var(--line); border-radius:var(--r); background:var(--panel); cursor:pointer; font-size:14px; color:var(--text); white-space:nowrap; transition:border-color .12s ease, background .12s ease}
+  .vb-pbtn:hover{border-color:var(--line-strong)}
+  .vb-pbtn .vb-pl{font-weight:500; color:var(--text-2)}
+  .vb-pbtn .vb-pv{font-weight:600}
+  .vb-pbtn.on{border-color:var(--accent-solid); box-shadow:0 0 0 3px var(--accent-weak)}
+  .vb-pbtn svg{width:13px; height:13px; color:var(--text-2); transition:transform .16s ease}
+  .vb-pbtn[aria-expanded="true"] svg{transform:rotate(180deg)}
+  .prof-pop{position:absolute; top:calc(100% + 6px); left:0; z-index:60; width:min(900px,calc(100vw - 32px)); max-height:min(76vh,640px); overflow:auto; padding:6px 10px 10px; background:var(--panel); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--shadow); animation:popIn .14s ease}
+  .prof-pop[hidden]{display:none}
+  .pp-block + .pp-block{border-top:1px solid var(--line); margin-top:8px; padding-top:4px}
+  .pp-title{margin:10px 8px 0; font-size:14px; font-weight:650; color:var(--text)}
+  .pp-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:0 8px}
+  .pp-h{margin:10px 8px 4px; font-size:12.5px; font-weight:550; color:var(--muted)}
+  .pp-h.fam{font-size:14px; font-weight:650; color:var(--text)}
+  .pp-item{display:flex; align-items:center; min-height:30px; padding:4px 8px; border-radius:var(--r); font-size:14px; color:var(--text-2)}
+  .pp-item:hover,.pp-item:focus-visible{background:var(--panel-2); color:var(--text); outline-offset:-2px}
+  .pp-item.on{background:var(--accent-weak); color:var(--accent); font-weight:600}
 
   .phead{display:flex; align-items:flex-end; justify-content:space-between; gap:20px 32px; flex-wrap:wrap}
   .phead>div:first-child{min-width:0; flex:1 1 420px}
-  .phead .cat{display:inline-flex; align-items:center; gap:7px; font-family:var(--mono); font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.07em}
-  .phead .cat::before{content:""; width:6px; height:6px; border-radius:2px; background:var(--accent-solid)}
+  .phead .cat{display:inline-flex; align-items:center; gap:8px; font-size:13px; font-weight:550; color:var(--text-2)}
+  .phead .cat::before{content:""; width:8px; height:8px; border-radius:2px; background:var(--accent-solid)}
   .phead h1{margin:6px 0 0; font-size:26px; font-weight:650; letter-spacing:-.028em; line-height:1.2; text-wrap:balance}
   .phead p{margin:8px 0 0; color:var(--text-2); font-size:13.5px; line-height:1.55; max-width:76ch}
   .phead p a{color:var(--accent); text-decoration:underline; text-decoration-color:var(--accent-line); text-underline-offset:3px}
   .phead p a:hover{text-decoration-color:currentColor}
   .hw{display:flex; flex-wrap:wrap; gap:6px; margin-top:12px}
-  .chip{display:inline-flex; align-items:center; height:22px; padding:0 8px; border:1px solid var(--line); border-radius:99px; background:var(--panel); font-family:var(--mono); font-size:11px; color:var(--muted); white-space:nowrap}
-  .chip b{color:var(--text-2); font-weight:550; margin-right:.35em}
+  .chip{display:inline-flex; align-items:center; height:24px; padding:0 9px; border:1px solid var(--line); border-radius:99px; background:var(--panel); font-size:12.5px; color:var(--text-2); white-space:nowrap; font-variant-numeric:tabular-nums}
+  .chip b{color:var(--text); font-weight:600; margin-right:.35em}
 
   #headctl{display:flex; flex-direction:column; align-items:stretch; gap:6px; flex:none}
   .toggle{display:inline-flex; align-items:center; justify-content:space-between; gap:14px; font-size:13px; font-weight:500; color:var(--text-2); cursor:pointer; user-select:none; white-space:nowrap; flex-direction:row-reverse; padding:2px 0; border-radius:var(--r-sm)}
@@ -41,7 +74,9 @@
   .toggle.on{color:var(--text)} .toggle.on .sw{background:var(--accent-solid)} .toggle.on .sw i{transform:translateX(12px)}
   .seg{position:relative; display:inline-flex; background:var(--panel-2); border:1px solid var(--line); border-radius:var(--r); padding:2px}
   .seg-thumb{position:absolute; top:2px; bottom:2px; left:0; border-radius:4px; background:var(--panel); box-shadow:var(--shadow-sm), 0 0 0 1px var(--line); transition:transform .2s cubic-bezier(.4,0,.2,1), width .2s cubic-bezier(.4,0,.2,1); z-index:0; pointer-events:none}
-  .seg button{position:relative; z-index:1; border:0; background:transparent; color:var(--muted); cursor:pointer; font-family:var(--mono); font-size:12px; font-weight:500; height:26px; padding:0 11px; border-radius:4px; font-variant-numeric:tabular-nums; transition:color .14s ease}
+  .seg-l{font-size:13px; font-weight:550; color:var(--text-2); margin-right:10px}
+  .seg-wrap{display:flex; align-items:center}
+  .seg button{position:relative; z-index:1; border:0; background:transparent; color:var(--text-2); cursor:pointer; font-size:13px; font-weight:550; height:28px; padding:0 12px; border-radius:4px; font-variant-numeric:tabular-nums; transition:color .14s ease}
   .seg button:hover{color:var(--text)}
   .seg button.on{color:var(--text)}
 
@@ -56,14 +91,14 @@
   .search>kbd{position:absolute; right:7px; top:50%; transform:translateY(-50%); pointer-events:none}
   .search input:focus ~ kbd, .search input:not(:placeholder-shown) ~ kbd{display:none}
   .search-pop{position:absolute; top:calc(100% + 6px); left:0; min-width:300px; max-width:min(400px,90vw); width:max-content; background:var(--panel); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--shadow); padding:4px; z-index:50; animation:popIn .14s ease}
-  .search-pop-h{font-size:11px; font-family:var(--mono); text-transform:uppercase; letter-spacing:.06em; color:var(--muted); padding:7px 9px 5px}
+  .search-pop-h{font-size:12px; font-weight:600; color:var(--text-2); padding:7px 9px 5px}
   .search-ex{display:flex; align-items:center; gap:10px; padding:6px 9px; border-radius:var(--r); cursor:pointer}
   .search-ex:hover{background:var(--panel-2)}
   .search-ex code{font-family:var(--mono); font-size:12px; color:var(--accent); background:var(--accent-weak); border-radius:var(--r-sm); padding:1px 6px; white-space:nowrap; flex:none}
   .search-ex .ex-d{font-size:12.5px; color:var(--muted)}
   .type-filter{display:flex; align-items:center; gap:2px; background:var(--panel-2); border:1px solid var(--line); border-radius:var(--r); padding:2px; flex:none; max-width:100%; overflow-x:auto; scrollbar-width:none}
   .type-filter::-webkit-scrollbar{display:none}
-  .type-filter button{display:inline-flex; align-items:center; gap:6px; border:1px solid transparent; background:transparent; color:var(--muted); cursor:pointer; font-size:12.5px; font-weight:500; height:26px; padding:0 9px; border-radius:4px; white-space:nowrap; transition:color .12s ease, background .12s ease}
+  .type-filter button{display:inline-flex; align-items:center; gap:6px; border:1px solid transparent; background:transparent; color:var(--text-2); cursor:pointer; font-size:13px; font-weight:550; height:28px; padding:0 10px; border-radius:4px; white-space:nowrap; transition:color .12s ease, background .12s ease}
   .type-filter button::before{content:""; width:7px; height:7px; border-radius:2px; background:var(--faint); opacity:.55; transition:opacity .12s ease}
   .type-filter button:hover{color:var(--text)}
   .type-filter button.on{background:var(--panel); color:var(--text); border-color:var(--line); box-shadow:var(--shadow-sm)}
@@ -78,12 +113,12 @@
 
   /* table toolbar: the strip the table hangs from */
   .tbar{display:flex; align-items:center; gap:6px; min-height:44px; padding:6px 6px 6px 12px; border:1px solid var(--line); border-bottom:0; border-radius:var(--r-lg) var(--r-lg) 0 0; background:var(--panel); flex-wrap:wrap}
-  .count{color:var(--text-2); font-size:12.5px; font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap}
+  .count{color:var(--text); font-size:13px; font-weight:550; font-variant-numeric:tabular-nums; white-space:nowrap}
   .tbar .sp{flex:1; min-width:0}
-  .tbar .btn{height:30px; padding:0 9px; font-size:12.5px}
+  .tbar .btn{height:30px; padding:0 10px; font-size:13px}
   .tbar .btn.sq{width:30px; padding:0}
   .heat-btn svg{fill:currentColor}
-  .heatkey{display:flex; align-items:center; flex-wrap:wrap; gap:2px 10px; font-size:11.5px; color:var(--muted); margin-left:8px}
+  .heatkey{display:flex; align-items:center; flex-wrap:wrap; gap:2px 10px; font-size:12.5px; color:var(--text-2); margin-left:8px}
   .heatkey .hk-l{margin-right:2px}
   .heatkey .hk{display:inline-flex; align-items:center; gap:5px; white-space:nowrap}
   .heatkey .hk i{width:10px; height:10px; border-radius:2px; display:inline-block}
@@ -99,8 +134,8 @@
 
   /* display popover */
   .pop{position:absolute; z-index:60; min-width:260px; max-width:min(340px,calc(100vw - 24px)); max-height:min(70vh,560px); overflow:auto; background:var(--panel); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--shadow); padding:6px; animation:popIn .14s ease; scrollbar-width:thin}
-  .pop-h{display:flex; align-items:center; justify-content:space-between; font-size:11px; font-family:var(--mono); text-transform:uppercase; letter-spacing:.06em; color:var(--muted); padding:8px 8px 5px}
-  .pop-h button{border:0; background:none; color:var(--accent); font-size:11.5px; cursor:pointer; padding:0; font-family:var(--sans); text-transform:none; letter-spacing:0}
+  .pop-h{display:flex; align-items:center; justify-content:space-between; font-size:12.5px; font-weight:600; color:var(--text); padding:8px 8px 5px}
+  .pop-h button{border:0; background:none; color:var(--accent); font-size:12.5px; font-weight:500; cursor:pointer; padding:0}
   .pop-row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:5px 8px; font-size:13px; color:var(--text-2)}
   .pop-seg{display:inline-flex; background:var(--panel-2); border:1px solid var(--line); border-radius:var(--r); padding:2px}
   .pop-seg button{border:0; background:transparent; height:24px; padding:0 9px; border-radius:4px; font-size:12px; color:var(--muted); cursor:pointer}
@@ -110,7 +145,7 @@
   .pop-col i{width:14px; height:14px; border:1px solid var(--line-strong); border-radius:3px; flex:none; display:inline-flex; align-items:center; justify-content:center; background:var(--panel)}
   .pop-col.on i{background:var(--accent-solid); border-color:var(--accent-solid)}
   .pop-col.on i::after{content:""; width:7px; height:4px; border-left:1.5px solid #fff; border-bottom:1.5px solid #fff; transform:rotate(-45deg) translate(1px,-1px)}
-  .pop-col small{margin-left:auto; font-family:var(--mono); font-size:10.5px; color:var(--muted)}
+  .pop-col small{margin-left:auto; font-size:12px; color:var(--muted)}
   .pop hr{border:0; border-top:1px solid var(--line); margin:6px 0}
 
   /* Build-time ranking, written into #rows by gen_leaderboard_data.py and thrown
@@ -120,13 +155,13 @@
   #rows:has(>.sb){border:1px solid var(--line); border-radius:0 0 var(--r-lg) var(--r-lg); background:var(--panel); overflow-x:auto}
   .sb{width:100%; border-collapse:collapse; font-size:var(--cell-fs)}
   .sb th,.sb td{padding:calc(var(--row-py) + 2px) 10px; border-bottom:1px solid var(--line-soft); text-align:left; white-space:nowrap}
-  .sb th{color:var(--muted); font-size:11.5px; font-weight:500; background:var(--panel-2); border-bottom:1px solid var(--line); height:36px}
-  .sb td.n,.sb th.n{text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums}
+  .sb th{color:var(--text-2); font-size:12.5px; font-weight:600; background:var(--panel-2); border-bottom:1px solid var(--line); height:36px}
+  .sb td.n,.sb th.n{text-align:right; font-variant-numeric:tabular-nums}
   .sb td:first-child,.sb th:first-child{text-align:left; width:44px; padding-left:14px; color:var(--muted)}
   .sb td:nth-child(2){font-weight:550}
   .sb td:nth-child(2) a:hover{color:var(--accent)}
   .sb td.r1{color:var(--gold); font-weight:600} .sb td.r2{color:var(--silver); font-weight:600} .sb td.r3{color:var(--bronze); font-weight:600}
-  .sb .sb-lang{color:var(--muted); font-family:var(--mono); font-size:11.5px}
+  .sb .sb-lang{color:var(--text-2); font-size:12.5px; font-weight:550}
   .sb td.crash{color:var(--danger)}
   .sb-note{color:var(--muted); font-size:12.5px; margin:0; padding:12px 14px}
   .sb-note a{color:var(--accent)}
@@ -146,8 +181,6 @@
   .tskel div{display:grid; grid-template-columns:30px 220px 90px 1fr; gap:18px; align-items:center; padding:11px 14px; border-bottom:1px solid var(--line-soft)}
   .tskel div:last-child{border-bottom:0}
   body.rl .tskel{display:block} body.rl #rows{display:none}
-  .nav-skel{display:flex; flex-direction:column; gap:14px; padding:10px 8px}
-  .nav-skel .skel:nth-child(odd){width:62%} .nav-skel .skel:nth-child(3n){width:44%}
   .empty{padding:56px 16px; text-align:center; color:var(--muted); display:flex; flex-direction:column; align-items:center; gap:6px; border:1px solid var(--line); border-radius:0 0 var(--r-lg) var(--r-lg); background:var(--panel)}
   td.empty{display:table-cell; border:0; border-radius:0}
   .empty svg{width:28px; height:28px; color:var(--faint); margin-bottom:4px}
@@ -160,7 +193,7 @@
   /* profile (detail) grid */
   .grid{--cols:54px minmax(250px,2fr) minmax(150px,1fr) 112px 92px 92px 96px 86px}
   .thead,.row{display:grid; grid-template-columns:var(--cols); align-items:center}
-  .thead{position:sticky; top:var(--hdr); z-index:10; background:var(--panel-2); height:36px; border:1px solid var(--line); font-size:11.5px; font-weight:500; color:var(--muted)}
+  .thead{position:sticky; top:var(--hdr); z-index:10; background:var(--panel-2); height:38px; border:1px solid var(--line); font-size:12.5px; font-weight:600; color:var(--text-2)}
   .thead .th{padding:0 10px; cursor:pointer; user-select:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
   .thead .th.num{text-align:right}
   .thead .th:hover{color:var(--text)}
@@ -171,44 +204,49 @@
   .row:last-child{border-bottom:0}
   .row:hover{background:var(--panel-2)}
   .row .c{padding:calc(var(--row-py) + 3px) 10px; min-width:0}
-  .row .num{text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:var(--cell-fs); color:var(--text)}
+  .row .num{text-align:right; font-variant-numeric:tabular-nums; font-size:var(--cell-fs); color:var(--text)}
   .row .sub{color:var(--text-2)}
-  .rank{font-family:var(--mono); font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; padding-left:14px !important}
+  .rank{font-size:13px; color:var(--text-2); font-variant-numeric:tabular-nums; padding-left:14px !important}
   .rank.r1{color:var(--gold); font-weight:600} .rank.r2{color:var(--silver); font-weight:600} .rank.r3{color:var(--bronze); font-weight:600}
   .fw{display:flex; align-items:center; gap:8px; min-width:0}
-  .fw .nm{font-weight:550; font-size:13px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0}
-  .fw .lang,.cm .fwcell .lang{width:44px; flex:none; overflow:hidden; text-overflow:ellipsis; font-family:var(--mono); font-size:11px; color:var(--muted); white-space:nowrap}
-  .tnd{font-family:var(--mono); font-size:9.5px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; padding:0 4px; border-radius:3px; line-height:14px; white-space:nowrap; flex:none; cursor:default; color:var(--t-tuned); background:color-mix(in srgb, var(--t-tuned) 12%, transparent); border:0}
+  .fw .nm{font-weight:600; font-size:13.5px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0}
+  /* The language in its own colour, as on the board before: --lt (light),
+     --ld (dark) and --lr (the bars' rgb) are set per row by lcVars(), which
+     only nudges the few colours too pale to read at AA contrast. */
+  .fw .lang,.cm .fwcell .lang,.card-sub .lang{flex:none; overflow:hidden; text-overflow:ellipsis; font-size:12.5px; font-weight:600; white-space:nowrap; color:var(--lt, var(--text-2))}
+  html[data-theme="dark"] .lang.lang{color:var(--ld, var(--text-2))}
+  @media (prefers-color-scheme: dark){ html:not([data-theme="light"]) .lang.lang{color:var(--ld, var(--text-2))} }
+  .fw .lang,.cm .fwcell .lang{width:52px}
+  .tnd{font-size:11px; font-weight:600; text-transform:capitalize; padding:0 6px; border-radius:4px; line-height:17px; white-space:nowrap; flex:none; cursor:default; color:var(--t-tuned); background:color-mix(in srgb, var(--t-tuned) 14%, transparent); border:0}
   .tnd::before{display:none}
-  .tndslot{width:40px; flex:none; display:flex; justify-content:flex-end; align-items:center}
+  .tndslot{width:48px; flex:none; display:flex; justify-content:flex-end; align-items:center}
   .tlssec{display:inline-flex; color:var(--ok); flex:none}
   .meter{position:relative; display:flex; flex-direction:column; align-items:flex-end; gap:4px; padding:calc(var(--row-py) + 1px) 10px !important}
-  .meter .v{font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:550; font-size:var(--cell-fs)}
+  .meter .v{font-variant-numeric:tabular-nums; font-weight:600; font-size:var(--cell-fs)}
   .meter .bar{height:3px; width:100%; background:var(--bar-track); border-radius:2px; overflow:hidden}
-  .meter .bar i{display:block; height:100%; border-radius:2px; background:var(--bar)}
-  .row.lead .meter .bar i{background:var(--accent-solid)}
+  .meter .bar i{display:block; height:100%; border-radius:2px; background:rgba(var(--lr, 148,163,184), .5)}
   .zero{color:var(--muted)}
   .meter .mtop{display:flex; align-items:baseline; gap:6px}
   .statwrap{position:relative; display:inline-flex; align-items:center}
-  .statwrap .err{color:var(--danger); font-weight:600; font-size:11px; font-family:var(--mono); cursor:default}
+  .statwrap .err{color:var(--danger); font-weight:600; font-size:12px; cursor:default}
   .statwrap .ok{color:var(--ok); font-size:11px; cursor:default}
-  .stattip{position:absolute; bottom:calc(100% + 7px); right:0; z-index:25; display:none; flex-direction:column; gap:2px; background:var(--panel); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow); padding:7px 9px; white-space:nowrap; font-size:11.5px; font-family:var(--mono); color:var(--text-2)}
+  .stattip{position:absolute; bottom:calc(100% + 7px); right:0; z-index:25; display:none; flex-direction:column; gap:2px; background:var(--panel); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow); padding:7px 9px; white-space:nowrap; font-size:12.5px; font-variant-numeric:tabular-nums; color:var(--text-2)}
   .stattip span{display:flex; justify-content:space-between; gap:12px}
   .stattip b{color:var(--text); font-weight:550}
   .statwrap:hover .stattip{display:flex}
 
   /* cell popups */
-  #dtip,#spanel{position:fixed; z-index:101; display:none; background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--shadow); padding:10px 12px; font-size:12px; line-height:1.45; max-width:340px}
+  #dtip,#spanel{position:fixed; z-index:101; display:none; background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--shadow); padding:10px 12px; font-size:13px; line-height:1.45; max-width:360px}
   #dtip{pointer-events:none}
-  #dtip .dh,#spanel .dh{font-weight:620; font-size:13px}
-  #dtip .dsub,#spanel .dsub{color:var(--muted); font-size:11.5px; margin-bottom:6px}
-  #dtip .dc,#spanel .dc{color:var(--muted); font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; margin:8px 0 3px; padding-top:7px; border-top:1px solid var(--line-soft)}
+  #dtip .dh,#spanel .dh{font-weight:650; font-size:14px}
+  #dtip .dsub,#spanel .dsub{color:var(--text-2); font-size:12.5px; margin-bottom:6px}
+  #dtip .dc,#spanel .dc{color:var(--text); font-size:12.5px; font-weight:600; margin:8px 0 3px; padding-top:7px; border-top:1px solid var(--line-soft)}
   #dtip .dc .dtag,#spanel .dc .dtag{float:right; text-transform:none; letter-spacing:0; color:var(--muted)}
   #dtip table,#spanel table{border-collapse:collapse; width:100%}
   #dtip td,#spanel td{padding:1px 0; vertical-align:baseline}
   #dtip td.k,#spanel td.k{color:var(--text-2); padding-right:16px; white-space:nowrap}
-  #dtip td.v,#spanel td.v{text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap}
-  #dtip .dfoot,#spanel .dfoot{margin-top:8px; padding-top:7px; border-top:1px solid var(--line-soft); color:var(--muted); font-size:11px}
+  #dtip td.v,#spanel td.v{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; font-weight:550}
+  #dtip .dfoot,#spanel .dfoot{margin-top:8px; padding-top:7px; border-top:1px solid var(--line-soft); color:var(--text-2); font-size:12px}
   #spanel{z-index:102; max-width:360px}
   #spanel.pinned{border-color:var(--accent-solid); box-shadow:var(--shadow), 0 0 0 3px var(--accent-weak)}
   #spanel .dh{padding-right:22px}
@@ -216,7 +254,7 @@
   #spanel.pinned .sx{display:block}
   #spanel .sx:hover{color:var(--text); background:var(--panel-2)}
   #spanel .sscore{margin:2px 0 6px; color:var(--text-2)}
-  #spanel .sbig{font-family:var(--mono); font-size:20px; font-weight:600; letter-spacing:-.02em; margin-right:8px; color:var(--text)}
+  #spanel .sbig{font-size:21px; font-weight:650; letter-spacing:-.02em; margin-right:8px; color:var(--text); font-variant-numeric:tabular-nums}
   #spanel p,#spanel .snote{margin:5px 0; color:var(--text-2)}
   #spanel .swarn{color:var(--danger)}
   #spanel code{font-family:var(--mono); font-size:11px}
@@ -233,17 +271,17 @@
   .modal-h{display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:0 34px 6px 0}
   .modal-h .dot{width:10px; height:10px; border-radius:3px; flex:none}
   .modal-h h3{margin:0; font-size:19px; font-weight:650; letter-spacing:-.02em}
-  .modal-meta{color:var(--muted); font-family:var(--mono); font-size:11.5px; margin-bottom:12px}
+  .modal-meta{color:var(--text-2); font-size:13px; margin-bottom:12px}
   .modal-desc{color:var(--text-2); font-size:13.5px; line-height:1.55; margin:0 0 16px; max-height:140px; overflow:auto; scrollbar-width:thin}
-  .modal-sub{font-size:11px; font-family:var(--mono); letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:0 0 6px}
+  .modal-sub{font-size:13px; font-weight:600; color:var(--text); margin:0 0 6px}
   .modal-mdl{display:flex; flex-direction:column; margin:0 -8px 16px; max-height:190px; overflow:auto; scrollbar-width:thin}
   .modal-mdl a{display:flex; align-items:center; gap:10px; padding:6px 8px; border-radius:var(--r)}
   .modal-mdl a:hover{background:var(--panel-2)}
   .modal-mdl .mi{flex:none; display:inline-flex}
   .modal-mdl .mi .medal{margin:0}
   .modal-mdl .mw{flex:1; min-width:0; font-size:13px; font-weight:500; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-  .modal-mdl .mw em{display:block; font-style:normal; font-size:11.5px; font-weight:400; color:var(--muted)}
-  .modal-mdl .mr{flex:none; font-family:var(--mono); font-size:11.5px; color:var(--text-2)}
+  .modal-mdl .mw em{display:block; font-style:normal; font-size:12.5px; font-weight:400; color:var(--text-2)}
+  .modal-mdl .mr{flex:none; font-size:12.5px; color:var(--text-2); font-variant-numeric:tabular-nums}
   .modal-act{display:flex; gap:8px; margin:0 0 12px}
   .modal-act .btn{flex:1}
   .modal-act .btn.sq{flex:none}
@@ -252,7 +290,7 @@
   .modal-links{display:flex; flex-direction:column; margin:0 -8px}
   .modal-links a{display:flex; align-items:center; justify-content:space-between; gap:8px; color:var(--text-2); font-size:13px; padding:7px 8px; border-radius:var(--r); transition:background .1s ease, color .1s ease}
   .modal-links a:hover{background:var(--panel-2); color:var(--text)}
-  .modal-links a span:last-child{color:var(--faint); font-family:var(--mono)}
+  .modal-links a span:last-child{color:var(--muted)}
 
   /* ── Composite matrix ────────────────────────────────────── */
   .cscroll-row{display:flex; align-items:stretch; gap:0; border:1px solid var(--line); border-bottom:0; background:var(--panel-2)}
@@ -270,16 +308,14 @@
   .cwrap::-webkit-scrollbar-thumb{background:var(--line-strong); border:3px solid var(--panel); border-radius:8px}
   .cwrap::-webkit-scrollbar-track{background:transparent}
   @media (hover: none) and (pointer: coarse){ .cwrap{max-height:none} }
-  table.cm{--w-rank:46px; --w-fw:290px; border-collapse:separate; border-spacing:0; width:100%; min-width:max-content; font-size:var(--cell-fs); line-height:1.25}
+  table.cm{--w-rank:46px; --w-fw:304px; border-collapse:separate; border-spacing:0; width:100%; min-width:max-content; font-size:var(--cell-fs); line-height:1.25}
   .cm th,.cm td{padding:var(--row-py) 10px; border-bottom:1px solid var(--line-soft); white-space:nowrap; background:var(--panel)}
   .cm tbody tr:last-child td{border-bottom:0}
-  .cm thead th{position:sticky; top:0; z-index:3; background:var(--panel-2); border-bottom:1px solid var(--line); font-size:11.5px; color:var(--muted); font-weight:500; text-align:left; cursor:pointer; padding-top:8px; padding-bottom:0; vertical-align:top; height:58px}
+  .cm thead th{position:sticky; top:0; z-index:3; background:var(--panel-2); border-bottom:1px solid var(--line); font-size:12.5px; color:var(--text-2); font-weight:600; text-align:left; cursor:pointer; padding-top:9px; padding-bottom:0; vertical-align:top; height:60px}
   .cm thead th:hover{color:var(--text)}
   .cm thead th.sorted{color:var(--text)}
   .cm thead th .sar{color:var(--accent); font-size:9px; margin-left:3px}
-  .cm th.num,.cm td.num{text-align:left; font-variant-numeric:tabular-nums; font-family:var(--mono)}
-  .cm thead th.num{font-family:var(--sans)}
-  .cm th.pcol,.cm td.pc{width:1px}
+  .cm th.num,.cm td.num{text-align:left; font-variant-numeric:tabular-nums}
   .cm th.pcol{white-space:nowrap; position:sticky}
   .cm td.pc{color:var(--text-2); vertical-align:middle; position:relative; border-left:1px solid var(--line-soft)}
   .cm th.pcol{border-left:1px solid var(--line)}
@@ -294,8 +330,8 @@
   .cm.heat td.pc.nc .cbar{opacity:.5}
   .cm td.pc.lead .cbar{background:var(--accent-solid); opacity:1}
   .cm td.pc .pcv{display:flex; align-items:baseline; justify-content:space-between; gap:10px}
-  .cm td.pc .crps{font-family:var(--mono); font-variant-numeric:tabular-nums; color:var(--text)}
-  .cm td.pc .cmem{font-size:10.5px; color:var(--muted)}
+  .cm td.pc .crps{font-variant-numeric:tabular-nums; color:var(--text); font-weight:500}
+  .cm td.pc .cmem{font-size:11.5px; color:var(--muted)}
   .cm.nomem td.pc .cmem{display:none}
   .cm td.pc.empty{color:var(--faint); text-align:center}
   .cm td.pc.lead .crps{font-weight:650; color:var(--accent)}
@@ -307,15 +343,15 @@
   .cm td.resil{vertical-align:middle}
   .cm td.resil .rzrow{display:flex; gap:8px; align-items:flex-end}
   .cm td.resil .rz{display:flex; flex-direction:column; align-items:flex-start; min-width:34px}
-  .cm td.resil .rzv{font-family:var(--mono); font-variant-numeric:tabular-nums; color:var(--text); line-height:1.25}
-  .cm td.resil .rzp{font-size:10px; color:var(--muted); margin-left:1px}
+  .cm td.resil .rzv{font-variant-numeric:tabular-nums; color:var(--text); line-height:1.25}
+  .cm td.resil .rzp{font-size:11px; color:var(--muted); margin-left:1px}
   .cm td.resil .rz.full .rzv{font-weight:650; color:var(--accent)}
   .cm td.resil .rzbar{position:absolute; left:0; right:0; bottom:0; height:2px; background:transparent; overflow:hidden}
   .cm td.resil .rzbar i{position:absolute; left:0; top:0; height:100%; background:var(--bar)}
   .cm td.resil .rz.full .rzbar i{background:var(--accent-solid)}
   .cm td.resil .rz-none .rzv{color:var(--faint)}
-  .cm th.pcol.refcol{color:var(--faint)}
-  .cm th.pcol.refcol::after{content:"ref"; font-family:var(--mono); font-size:9.5px; margin-left:5px; color:var(--faint); border:1px solid var(--line); border-radius:3px; padding:0 3px}
+  .cm th.pcol.refcol{color:var(--muted)}
+  .cm th.pcol.refcol::after{content:"ref"; font-size:11px; font-weight:600; margin-left:6px; color:var(--muted); border:1px solid var(--line-strong); border-radius:4px; padding:0 4px}
   .cm th.famcol{min-width:136px}
   /* the two ways into a profile from its column: its detail view and its guide */
   .cm th.pcol .pnav{display:flex; gap:2px; margin:5px -4px 0}
@@ -323,28 +359,26 @@
   .cm th.pcol .pico svg{width:12px; height:12px}
   .cm th.pcol .pico:hover{background:var(--panel-3); color:var(--text)}
   .cm th.pcol .pico:focus-visible{outline:2px solid var(--accent-solid); outline-offset:-2px}
-  .cm .spacer{width:auto; min-width:0; padding:0; cursor:default; border-left:1px solid var(--line-soft)}
-  .cm thead .spacer{border-left-color:var(--line)}
   .cm .sticky{position:sticky}
   .cm thead th.sticky{z-index:5}
   .cm tbody td.sticky{z-index:2}
-  .cm .rankh,.cm .rankc{left:0; width:var(--w-rank); min-width:var(--w-rank); max-width:var(--w-rank); padding-left:14px; padding-right:4px; text-align:left; color:var(--muted); font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:12px}
+  .cm .rankh,.cm .rankc{left:0; width:var(--w-rank); min-width:var(--w-rank); max-width:var(--w-rank); padding-left:14px; padding-right:4px; text-align:left; color:var(--text-2); font-variant-numeric:tabular-nums; font-size:13px}
   .cm .rankc.r1{color:var(--gold); font-weight:600} .cm .rankc.r2{color:var(--silver); font-weight:600} .cm .rankc.r3{color:var(--bronze); font-weight:600}
   .cm .fwh,.cm .fwcell{left:var(--w-rank); width:var(--w-fw); min-width:var(--w-fw); max-width:var(--w-fw); text-align:left}
   .cm .fwcell .fl{display:flex; align-items:center; gap:8px}
-  .cm .fwcell .nm{font-family:var(--sans); font-weight:550; font-size:13px; color:var(--text); overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0}
+  .cm .fwcell .nm{font-weight:600; font-size:13.5px; color:var(--text); overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0}
   .cm .scoreh,.cm .scorec{left:calc(var(--w-rank) + var(--w-fw)); width:128px; min-width:128px; border-right:1px solid var(--line)}
   .cm .scorec{box-shadow:6px 0 10px -8px rgba(0,0,0,.35); clip-path:inset(0 -12px 0 0)}
   .cm .scoreh + th, .cm .scorec + td{border-left:0}
-  .cm .scoreh .hq{display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; margin-left:5px; border:1px solid var(--line-strong); border-radius:50%; font:600 9.5px/1 var(--mono); color:var(--muted); vertical-align:1px}
+  .cm .scoreh .hq{display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; margin-left:6px; border:1px solid var(--line-strong); border-radius:50%; font:650 10.5px/1 var(--sans); color:var(--text-2); vertical-align:1px}
   .cm .scoreh .hq:hover{color:var(--accent); border-color:var(--accent)}
   .cm .scorec .sc{display:flex; flex-direction:column; align-items:stretch; gap:4px}
-  .cm .scorec .sc b{font-weight:600; color:var(--text); font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:13px; letter-spacing:-.01em}
-  .cm .scorec .sc b .cmp{font-weight:450; font-size:10.5px; margin-left:5px}
+  .cm .scorec .sc b{font-weight:650; color:var(--text); font-variant-numeric:tabular-nums; font-size:14px; letter-spacing:-.01em}
+  .cm .scorec .sc b .cmp{font-weight:500; font-size:11.5px; margin-left:5px}
   .cm .scorec .sc b .cmp.pen{color:var(--danger)}
   .cm .scorec .sc .bar{width:100%; height:3px; border-radius:2px; background:var(--bar-track); overflow:hidden}
-  .cm .scorec .sc .bar i{display:block; height:100%; border-radius:2px; background:var(--bar)}
-  .cm tr.lead .scorec .sc .bar i{background:var(--accent-solid)}
+  .cm .scorec .sc .bar{height:4px}
+  .cm .scorec .sc .bar i{display:block; height:100%; border-radius:2px; background:rgba(var(--lr, 148,163,184), .62)}
   .cm tbody tr:hover td{background:var(--panel-2)}
   .cm.compact{--w-fw:190px}
   .cm.compact .tsq.tuned{box-shadow:-5px 0 0 -1px var(--t-tuned)}
@@ -374,30 +408,28 @@
   .card{border:1px solid var(--line); border-radius:var(--r-lg); background:var(--panel); padding:11px 12px 12px; scroll-margin-top:calc(var(--hdr) + 12px)}
   .card.fav{background:var(--fav-bg); border-color:color-mix(in srgb, var(--fav) 40%, var(--line))}
   .card-h{display:flex; align-items:center; gap:8px; min-width:0}
-  .card-h .rk{font-family:var(--mono); font-size:12px; color:var(--muted); min-width:22px}
+  .card-h .rk{font-size:13px; color:var(--text-2); min-width:22px; font-variant-numeric:tabular-nums}
   .card-h .rk.r1{color:var(--gold); font-weight:600} .card-h .rk.r2{color:var(--silver); font-weight:600} .card-h .rk.r3{color:var(--bronze); font-weight:600}
   .card-h .nm{font-weight:600; font-size:14.5px; letter-spacing:-.01em; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .card-h .star{padding:6px; margin:-6px}
   .card-h .star svg{width:16px; height:16px}
-  .card-sub{display:flex; align-items:center; gap:6px; margin:3px 0 0 30px; font-family:var(--mono); font-size:11px; color:var(--muted)}
+  .card-sub{display:flex; align-items:center; gap:6px; margin:3px 0 0 30px; font-size:12.5px; color:var(--text-2)}
   .card-main{display:flex; align-items:baseline; gap:8px; margin:9px 0 5px}
-  .card-main b{font-family:var(--mono); font-size:22px; font-weight:600; letter-spacing:-.03em; line-height:1}
-  .card-main span{font-size:11.5px; color:var(--muted)}
-  .card-main .cmp{font-family:var(--mono); color:var(--danger)}
+  .card-main b{font-size:23px; font-weight:650; letter-spacing:-.03em; line-height:1; font-variant-numeric:tabular-nums}
+  .card-main span{font-size:12.5px; color:var(--text-2)}
+  .card-main .cmp{color:var(--danger)}
   .card .bar{height:3px; border-radius:2px; background:var(--bar-track); overflow:hidden}
-  .card .bar i{display:block; height:100%; background:var(--bar); border-radius:2px}
-  .card.lead .bar i{background:var(--accent-solid)}
+  .card .bar i{display:block; height:100%; background:rgba(var(--lr, 148,163,184), .62); border-radius:2px}
   .card-k{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px 6px; margin-top:10px}
   .card-k div{display:flex; flex-direction:column; min-width:0}
-  .card-k span{font-size:10.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-  .card-k b{font-family:var(--mono); font-size:12.5px; font-weight:550; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .card-k span{font-size:12px; color:var(--text-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .card-k b{font-size:13.5px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums}
   .card-k b.bad{color:var(--danger)} .card-k b.na{color:var(--faint); font-weight:400}
-  .cards-note{font-size:12px; color:var(--muted); text-align:center; padding:10px 0 0}
-  .cards-note button{border:0; background:none; color:var(--accent); cursor:pointer; padding:0; font-size:12px; text-decoration:underline; text-underline-offset:3px}
+  .cards-note{font-size:13px; color:var(--text-2); text-align:center; padding:10px 0 0}
+  .cards-note button{border:0; background:none; color:var(--accent); cursor:pointer; padding:0; font-size:13px; text-decoration:underline; text-underline-offset:3px}
 
   @media (max-width:820px){
-    .layout{grid-template-columns:minmax(0,1fr)}
-    .layout>.nav{display:none}
+    .viewbar{display:none}
     .nav-mobile{display:block; padding:12px 14px 0}
     .nav-mobile select{width:100%; height:36px; padding:0 30px 0 10px; border-radius:var(--r); border:1px solid var(--line); background:var(--panel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8d97' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center; color:var(--text); font-size:14px; font-weight:500; appearance:none; -webkit-appearance:none}
     .main{padding:18px 14px 56px}
@@ -431,14 +463,14 @@
     .rank{padding-left:8px !important}
   }
 </style>
-<noscript><style>.nav-skel,.bootbar,.tskel{display:none !important} .tbar .btn{display:none}</style></noscript>
+<noscript><style>.bootbar,.tskel,.viewbar,.nav-mobile{display:none !important} .tbar .btn{display:none}</style></noscript>
 </head>
 <body class="booting">
   <script>if(/[?&]round=/.test(location.search))document.body.classList.add('rl');try{var _d=localStorage.getItem('lb-density');if(_d)document.documentElement.setAttribute('data-density',_d);}catch(e){}</script>
   <div class="bootbar" aria-hidden="true"><i></i></div>
   <header class="top">
     <div class="brand">
-      <a class="brand-name" href="#" id="brandHome" aria-label="HttpArena home"><svg viewBox="0 0 24 24" aria-hidden="true"><rect class="bm-bg" width="24" height="24" rx="6"/><rect class="bm-fg" x="6" y="6" width="2.8" height="12" rx="1.4"/><rect class="bm-fg" x="15.2" y="6" width="2.8" height="12" rx="1.4"/><path class="bm-ac" d="M8.9 14.3 15.1 9.7" fill="none" stroke-width="2.8" stroke-linecap="round"/></svg><span>HttpArena</span></a>
+      <a class="brand-name" href="#" id="brandHome" aria-label="HttpArena home"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 1 19 21 16 23 13 21Z"/><path d="M7 22.5Q7 21 9 21H23Q25 21 25 22.5 25 24 23 24H9Q7 24 7 22.5Z"/><rect x="14" y="24" width="4" height="4" rx=".5"/><ellipse cx="16" cy="30" rx="2.5" ry="1.8"/></svg><span>HttpArena</span></a>
     </div>
     <nav class="top-nav" aria-label="Site">
       <a href="/" data-nav="board" class="on">Leaderboard</a>
@@ -460,20 +492,31 @@
     </div>
   </header>
 
+  <!-- The views: each family's composite as a tab, every test profile in the
+       menu beside them (buildNav() marks the one on screen). The tabs are
+       plain hash links, so they open in a new tab too; on phones the select
+       below does the same job. -->
+  <nav class="viewbar" id="viewbar" aria-label="Board views">
+    <div class="vb-in">
+      <div class="vb-tabs" id="vbTabs">
+        <a class="vb-tab" href="#scope=all" data-scope="all">Overall</a>
+        <a class="vb-tab" href="#scope=h1" data-scope="h1">H/1.1</a>
+        <a class="vb-tab" href="#scope=h2" data-scope="h2">H/2</a>
+        <a class="vb-tab" href="#scope=h3" data-scope="h3">H/3</a>
+        <a class="vb-tab" href="#scope=gw" data-scope="gw">Gateway</a>
+        <a class="vb-tab" href="#scope=grpc" data-scope="grpc">gRPC</a>
+        <a class="vb-tab" href="#scope=ws" data-scope="ws">WebSocket</a>
+      </div>
+      <span class="vb-div" aria-hidden="true"></span>
+      <div class="vb-prof">
+        <button class="vb-pbtn" id="profBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="profPop"><span class="vb-pl">Test profile</span><span class="vb-pv" id="profCur">All profiles</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="prof-pop" id="profPop" hidden></div>
+      </div>
+    </div>
+  </nav>
   <div class="nav-mobile"><select id="navSelect" aria-label="View"></select></div>
 
   <div class="layout">
-    <aside class="nav" id="nav">
-      <div class="nav-search">
-        <div class="ns-box">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-          <input id="navq" type="search" placeholder="Search pages" autocomplete="off" spellcheck="false"
-                 aria-label="Search pages" role="combobox" aria-expanded="false" aria-controls="navResults">
-        </div>
-      </div>
-      <div class="nav-results" id="navResults" role="listbox" aria-label="Search results" style="display:none"></div>
-      <div id="navTree"><div class="nav-skel" aria-hidden="true"><i class="skel"></i><i class="skel"></i><i class="skel"></i><i class="skel"></i><i class="skel"></i><i class="skel"></i><i class="skel"></i><i class="skel"></i><i class="skel"></i></div></div>
-    </aside>
     <main class="main">
       <div id="notice"></div>
       <div class="phead">
@@ -567,7 +610,6 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // never run the generator) gets the build instruction.
   if(!D){ var _r=document.getElementById('rows');
           document.body.classList.remove('booting','rl');
-          var _nt=document.getElementById('navTree'); if(_nt) _nt.innerHTML='';
           if(_r && !_r.firstElementChild) _r.innerHTML='<div class="empty">data.js not found - run scripts/gen_leaderboard_data.py</div>';
           else { var _n=document.getElementById('notice');
                  if(_n) _n.innerHTML='<div class="notice" role="status"><span><b>The interactive board did not load.</b> This is the published HTTP/1.1 ranking; filters, the other families and per-profile numbers need the results file.</span><button class="btn" type="button" onclick="location.reload()">Retry</button></div>'; }
@@ -594,7 +636,6 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // from Detailed Views entirely while still ranking on the composite --
   // which is how async and latency-1m went missing when they were added.
   var FAMILIES=[{k:'h1',label:'HTTP/1.1',cats:['Connection','Concurrency','Efficiency','Workload','Database']},{k:'h2',label:'HTTP/2',cats:['HTTP/2']},{k:'h3',label:'HTTP/3',cats:['HTTP/3']},{k:'gw',label:'Gateway',cats:['Gateway']},{k:'grpc',label:'gRPC',cats:['gRPC']},{k:'ws',label:'WebSocket',cats:['WebSocket']}];
-  var expanded=new Set(['composite']);
   // state.lang is an exact language filter, distinct from the q search box: q
   // matches substrings across name/language/engine, which is fine for typing but
   // useless as an addressable filter - q=C matches 73 of 78 entries, q=V matches
@@ -1045,6 +1086,35 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     return '<span class="statwrap">'+ind+'<span class="stattip"><span><b>2xx</b>'+s2.toLocaleString()+'</span><span><b>3xx</b>'+s3.toLocaleString()+'</span><span><b>4xx</b>'+s4.toLocaleString()+'</span><span><b>5xx</b>'+s5.toLocaleString()+'</span></span></span>';
   }
   function lc(lang){ return D.langColors[lang] || {accent:'#94a3b8', text:'#64748b', textDark:'#94a3b8', rgb:'148,163,184'}; }
+  // A row's language colours as CSS variables: the language name and the bars
+  // read them (--lt light, --ld dark, --lr the bar's rgb), so a theme switch
+  // recolours the table without drawing it again.
+  function lcVars(lang){
+    var k=lang||'', v=LCV[k];
+    if(!v){ var c=lc(lang); v=LCV[k]=' style="--lt:'+legible(c.text,'#f4f4f6','#000000')+';--ld:'+legible(c.textDark,'#19191c','#ffffff')+';--lr:'+c.rgb+'"'; }
+    return v;
+  }
+  var LCV={};
+  // The language colours are data (langcolors.json) and a few of them are too
+  // pale to read as small text - Nim's yellow is 2.3:1 on white. legible() moves
+  // a colour toward black or white in small steps until it reaches 4.6:1 on the
+  // row's hover background, so most languages keep their colour exactly.
+  function relLum(hex){
+    var n=parseInt(hex.slice(1),16);
+    return [n>>16&255, n>>8&255, n&255].map(function(v){ v/=255; return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4); })
+      .reduce(function(s,v,i){ return s+v*[0.2126,0.7152,0.0722][i]; }, 0);
+  }
+  function contrast(a,b){ var x=relLum(a), y=relLum(b); return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05); }
+  function mixHex(a,b,t){
+    var x=parseInt(a.slice(1),16), y=parseInt(b.slice(1),16), o=0;
+    for(var s=16;s>=0;s-=8){ var u=x>>s&255, w=y>>s&255; o=o*256+Math.round(u+(w-u)*t); }
+    return '#'+(o+0x1000000).toString(16).slice(1);
+  }
+  function legible(hex, bg, toward){
+    if(!/^#[0-9a-f]{6}$/i.test(hex||'')) return hex;
+    for(var t=0, c=hex; t<=1; t+=0.04, c=mixHex(hex,toward,t)) if(contrast(c,bg)>=4.6) return c;
+    return toward;
+  }
   function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   var DARK = function(){ var t=document.documentElement.getAttribute('data-theme'); return t==='dark' || (t!=='light' && matchMedia('(prefers-color-scheme: dark)').matches); };
 
@@ -1060,73 +1130,87 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   var STAR_SVG='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="m12 2.6 2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.5l-5.9 3.1 1.2-6.5L2.5 9.5l6.6-.9z"/></svg>';
   function starHtml(fw){ return '<span class="star'+(favs.has(fw)?' on':'')+'" data-fw="'+esc(fw)+'" title="Favourite - highlights this framework across every view">'+STAR_SVG.replace('fill="none"','')+'</span>'; }
 
-  // ── sidebar ──────────────────────────────────────────────
-  // Collapsible body: an inner wrapper enables the grid-rows accordion. Append
-  // children to body.firstChild.
-  function navBody(){
-    var b=document.createElement('div'); b.className='nav-grp-body';
-    var inner=document.createElement('div'); inner.className='nav-grp-inner';
-    b.appendChild(inner); return b;
-  }
-  // Small icons for the level-0 groups.
-  var NAVICO={
-    kb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
-    composite:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="20" x2="6" y2="14"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="10"/></svg>',
-    detailed:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>'
-  };
-  function navIco(k){ return '<span class="nav-ico">'+NAVICO[k]+'</span>'; }
+  // ── views: the family tabs and the test-profile menu ─────
+  // The tabs are static markup (index.html, .viewbar); this marks the one on
+  // screen, fills the profile menu and the phone select. Runs on every change
+  // of view. With a profile on screen, its family's tab keeps a quieter mark,
+  // so the bar still says where in the board the reader is.
   function buildNav(){
-    // #navTree, not #nav — the search box above it is static markup and must
-    // survive the rebuilds that every navigation triggers, or typing would
-    // lose focus mid-query.
-    var nav=document.getElementById('navTree'); nav.innerHTML='';
     var byCat={}; D.profiles.forEach(function(p){ (byCat[p.category]=byCat[p.category]||[]).push(p); });
-
-    // 1. Knowledge Base (top) - a plain link out to /docs/. The docs are real
-    // pages now, so every leaf navigated away anyway; expanding the tree here
-    // just duplicated the nav that the Knowledge Base already carries.
-    if(D.docs && D.docs.c && D.docs.c.length){
-      var ks=document.createElement('div'); ks.className='nav-sec';
-      var kb=document.createElement('a');
-      kb.className='nav-grp-h lvl0-link'; kb.href=docUrl('');
-      kb.innerHTML=navIco('kb')+'<span class="nav-grp-t">'+esc(D.docs.t||'Knowledge Base')+'</span>';
-      ks.appendChild(kb);
-      nav.appendChild(ks);
+    var cur=state.view==='profile' ? PROF[state.profile] : null, fam=cur ? familyOf(cur) : null;
+    Array.prototype.forEach.call(document.querySelectorAll('#vbTabs .vb-tab'), function(a){
+      var k=a.getAttribute('data-scope'), on=state.view==='composite' && state.scope===k;
+      a.classList.toggle('on', on); a.classList.toggle('fam', !on && fam===k);
+      if(on) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current');
+    });
+    var btn=document.getElementById('profBtn'), val=document.getElementById('profCur'), pop=document.getElementById('profPop');
+    if(btn && val && pop){
+      val.textContent=cur ? cur.label+' · '+scopeLabel(fam) : 'Choose one';
+      btn.classList.toggle('on', !!cur);
+      // Two blocks of columns: a family with several categories (HTTP/1.1) gets
+      // a column per category under its name, the one-category families sit
+      // side by side, one column each.
+      var items=function(list){ return list.map(function(p){
+        return '<a class="pp-item'+(cur&&cur.id===p.id?' on':'')+'" href="#p='+encodeURIComponent(p.id)+'&amp;conns='+p.conns[0]+'" data-pid="'+esc(p.id)+'">'+esc(p.label)+'</a>';
+      }).join(''); };
+      var many='', single='';
+      FAMILIES.forEach(function(f){
+        var cats=f.cats.filter(function(c){ return (byCat[c]||[]).length; });
+        if(!cats.length) return;
+        if(f.cats.length>1){
+          many+='<div class="pp-block"><div class="pp-title">'+esc(f.label)+'</div><div class="pp-grid">'
+            + cats.map(function(c){ return '<div class="pp-col"><div class="pp-h">'+esc(c)+'</div>'+items(byCat[c])+'</div>'; }).join('')
+            + '</div></div>';
+        } else {
+          single+='<div class="pp-col"><div class="pp-h fam">'+esc(f.label)+'</div>'+items(byCat[cats[0]])+'</div>';
+        }
+      });
+      pop.innerHTML=many+(single?'<div class="pp-block"><div class="pp-grid">'+single+'</div></div>':'');
     }
-
-    // 2. Composite - scope options nested under it
-    var cs=document.createElement('div'); cs.className='nav-sec';
-    var cgrp=document.createElement('div'); cgrp.className='nav-grp lvl0'+(expanded.has('composite')?' open':'');
-    var cgh=document.createElement('div'); cgh.className='nav-grp-h'; cgh.innerHTML=navIco('composite')+'<span class="nav-grp-t">Composite</span><span class="caret">▸</span>';
-    cgh.onclick=function(){ toggleGrp(cgrp,'composite'); }; cgrp.appendChild(cgh);
-    var cbody=navBody();
-    SCOPES.forEach(function(sc,si){
-      var it=document.createElement('div'); it.className='nav-item'+(state.view==='composite'&&state.scope===sc.k?' active':'');
-      it.innerHTML=esc(sc.label)+'<span class="n">'+(si+1)+'</span>'; it.onclick=function(){ pickScope(sc.k); }; cbody.firstChild.appendChild(it);
-    });
-    cgrp.appendChild(cbody); cs.appendChild(cgrp); nav.appendChild(cs);
-
-    // 3. Detailed Views - families (→ profiles) nested inside one collapsible group
-    var bs=document.createElement('div'); bs.className='nav-sec';
-    var dgrp=document.createElement('div'); dgrp.className='nav-grp lvl0'+(expanded.has('detailed')?' open':'');
-    var dgh=document.createElement('div'); dgh.className='nav-grp-h'; dgh.innerHTML=navIco('detailed')+'<span class="nav-grp-t">Detailed Views</span><span class="caret">▸</span>';
-    dgh.onclick=function(){ toggleGrp(dgrp,'detailed'); }; dgrp.appendChild(dgh);
-    var dbody=navBody();
-    FAMILIES.forEach(function(fam){
-      var grp=document.createElement('div'); grp.className='nav-grp'+(expanded.has(fam.k)?' open':'');
-      var gh=document.createElement('div'); gh.className='nav-grp-h'; gh.innerHTML='<span>'+esc(fam.label)+'</span><span class="caret">▸</span>';
-      gh.onclick=function(){ toggleGrp(grp, fam.k); }; grp.appendChild(gh);
-      var body=navBody();
-      fam.cats.forEach(function(cat){ (byCat[cat]||[]).forEach(function(p){ body.firstChild.appendChild(profItem(p)); }); });
-      grp.appendChild(body); dbody.firstChild.appendChild(grp);
-    });
-    dgrp.appendChild(dbody); bs.appendChild(dgrp); nav.appendChild(bs);
     buildMobileNav(byCat);
   }
-  function expandDocAncestors(id){
-    expanded.add('');  // the Knowledge Base root group
-    var parts=id.split('/'), acc='';
-    for(var i=0;i<parts.length;i++){ acc=acc?(acc+'/'+parts[i]):parts[i]; expanded.add(acc); }
+  // The tabs and the menu items are links to the view's hash, so a middle click
+  // or a modified click opens the view in a new tab; a plain click switches in
+  // place, the way the rest of the board does.
+  function plainClick(e){ return !(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey||e.button); }
+  function initViewbar(){
+    var tabs=document.getElementById('vbTabs');
+    if(tabs) tabs.addEventListener('click', function(e){
+      var a=e.target.closest('.vb-tab'); if(!a || !plainClick(e)) return;
+      e.preventDefault(); pickScope(a.getAttribute('data-scope'));
+    });
+    var btn=document.getElementById('profBtn'), pop=document.getElementById('profPop');
+    if(!btn || !pop) return;
+    function items(){ return Array.prototype.slice.call(pop.querySelectorAll('.pp-item')); }
+    function open(kb){
+      pop.hidden=false; btn.setAttribute('aria-expanded','true');
+      // under the button, moved left as far as it takes to stay on screen
+      pop.style.left='0px';
+      var over=pop.getBoundingClientRect().right-(document.documentElement.clientWidth-16);
+      if(over>0) pop.style.left=(-over)+'px';
+      if(kb){ var on=pop.querySelector('.pp-item.on')||items()[0]; if(on) on.focus(); }
+    }
+    function close(focusBtn){
+      if(pop.hidden) return;
+      pop.hidden=true; btn.setAttribute('aria-expanded','false');
+      if(focusBtn) btn.focus();
+    }
+    btn.addEventListener('click', function(e){ e.stopPropagation(); if(pop.hidden) open(e.detail===0); else close(); });
+    btn.addEventListener('keydown', function(e){ if(e.key==='ArrowDown'){ e.preventDefault(); open(true); } });
+    pop.addEventListener('click', function(e){
+      var a=e.target.closest('.pp-item'); if(!a || !plainClick(e)) return;
+      e.preventDefault(); close(); pickProfile(a.getAttribute('data-pid'));
+    });
+    pop.addEventListener('keydown', function(e){
+      if(e.key==='Escape'){ e.preventDefault(); close(true); return; }
+      if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+        e.preventDefault();
+        var l=items(), i=l.indexOf(document.activeElement);
+        i=(i+(e.key==='ArrowDown'?1:-1)+l.length)%l.length; l[i].focus();
+      }
+    });
+    document.addEventListener('click', function(e){ if(!pop.hidden && !pop.contains(e.target) && !btn.contains(e.target)) close(); });
+    document.addEventListener('keydown', function(e){ if(e.key==='Escape' && !pop.hidden) close(true); });
   }
   // Docs are pre-rendered static pages at /docs/<id>/ (real, indexable URLs).
   function docUrl(id){ return id ? '/docs/'+id+'/' : '/docs/'; }
@@ -1203,12 +1287,6 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       var q=r.getAttribute('data-q'); inp.value=q; state.q=q; render(); hide();
     });
   }
-  function profItem(p){
-    var it=document.createElement('div'); it.className='nav-item'+(state.view==='profile'&&p.id===state.profile?' active':'');
-    it.textContent=p.label;
-    it.onclick=function(){ pickProfile(p.id); }; return it;
-  }
-  function toggleGrp(elm,key){ if(expanded.has(key)){ expanded.delete(key); elm.classList.remove('open'); } else { expanded.add(key); elm.classList.add('open'); } }
   function buildMobileNav(byCat){
     var sel=document.getElementById('navSelect'); sel.innerHTML='';
     var cg=document.createElement('optgroup'); cg.label='★ Composite';
@@ -1233,156 +1311,14 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     sel.onchange=function(){ var v=sel.value; if(v.indexOf('doc:')===0){ pickDoc(v.slice(4)); } else if(v.indexOf('scope:')===0) pickScope(v.slice(6)); else pickProfile(v.slice(3)); };
   }
 
-  // ── page search ─────────────────────────────────────────
-  // Searches the Knowledge Base (titles + full body text) and every
-  // leaderboard view. docs.js already ships the rendered HTML of every page,
-  // so the index is built from what is already in memory — no fetch, no
-  // prebuilt index file, no dependency. Built on the first keystroke and then
-  // cached — it is only ~5 ms over the whole corpus, but there is no reason to
-  // spend it on visitors who never search.
-  var SIDX=null, SIDX_HAS_DOCS=false, SHITS=[], SSEL=-1;
-
-  function buildSearchIndex(){
-    // Rebuild once the Knowledge Base arrives: search.js is fetched lazily, so
-    // an index built before it landed holds only profiles and views, and
-    // memoizing that would make the docs permanently unsearchable.
-    if(SIDX && (SIDX_HAS_DOCS || !window.LB_SEARCH)) return SIDX;
-    SIDX=[]; SIDX_HAS_DOCS=!!window.LB_SEARCH;
-    // Docs come from search.js — plain text prepared by the generator. They are
-    // real pages now (/docs/<id>/), so a hit navigates out rather than rendering
-    // in place; the entry carries its own crumb, so no tree walk is needed.
-    (window.LB_SEARCH || []).forEach(function(e){
-      var body=(e.d ? e.d + ' ' : '') + (e.x || '');
-      SIDX.push({ kind:'doc', title:e.t, crumb:e.c, body:body,
-                  tl:(e.t || '').toLowerCase(), bl:body.toLowerCase(),
-                  go:(function(id){ return function(){ pickDoc(id); }; })(e.u) });
-    });
-    D.profiles.forEach(function(p){
-      var body=p.blurb||'';
-      SIDX.push({ kind:'view', title:p.label, crumb:'Detailed Views › '+p.category, body:body,
-                  tl:(p.label+' '+p.id+' '+p.category).toLowerCase(), bl:body.toLowerCase(),
-                  go:function(){ pickProfile(p.id); } });
-    });
-    SCOPES.forEach(function(sc){
-      SIDX.push({ kind:'view', title:sc.label+' Composite', crumb:'Composite', body:'',
-                  tl:(sc.label+' composite').toLowerCase(), bl:'',
-                  go:function(){ pickScope(sc.k); } });
-    });
-    return SIDX;
-  }
-  // Every term must match somewhere (AND), title hits outrank body hits.
-  function searchPages(q){
-    var ql=q.toLowerCase(), terms=ql.split(/\s+/).filter(Boolean);
-    if(!terms.length) return [];
-    var out=[];
-    buildSearchIndex().forEach(function(e){
-      var score=0;
-      for(var i=0;i<terms.length;i++){
-        var t=terms[i], ti=e.tl.indexOf(t), bi=e.bl.indexOf(t);
-        if(ti<0 && bi<0) return;
-        score += ti===0 ? 60 : ti>0 ? 35 : 0;
-        if(bi>=0) score+=5;
-      }
-      if(e.tl===ql) score+=50;
-      if(e.kind==='view') score+=8;
-      out.push({e:e, score:score, term:terms[0]});
-    });
-    out.sort(function(a,b){ return b.score-a.score || a.e.title.length-b.e.title.length; });
-    return out.slice(0,25);
-  }
-  function snippet(body, term){
-    if(!body) return '';
-    var i=body.toLowerCase().indexOf(term);
-    if(i<0) return esc(body.slice(0,110))+(body.length>110?'…':'');
-    var s=Math.max(0,i-45), e=Math.min(body.length,i+term.length+75);
-    return (s>0?'…':'')+esc(body.slice(s,i))+'<mark>'+esc(body.slice(i,i+term.length))+'</mark>'
-          +esc(body.slice(i+term.length,e))+(e<body.length?'…':'');
-  }
-  function renderSearch(q){
-    var box=document.getElementById('navResults'), tree=document.getElementById('navTree'),
-        inp=document.getElementById('navq');
-    if(!q){
-      SHITS=[]; SSEL=-1; box.style.display='none'; box.innerHTML='';
-      tree.style.display=''; inp.setAttribute('aria-expanded','false'); return;
-    }
-    SHITS=searchPages(q); SSEL=SHITS.length?0:-1;
-    tree.style.display='none'; box.style.display=''; inp.setAttribute('aria-expanded','true');
-    if(!SHITS.length){ box.innerHTML='<div class="nav-empty">No page matches <b>'+esc(q)+'</b>.</div>'; return; }
-    var h='<div class="nav-res-h"><span>Pages</span><span>'+SHITS.length+(SHITS.length===25?'+':'')+'</span></div>';
-    SHITS.forEach(function(hit,i){
-      var e=hit.e, sn=e.kind==='doc' ? snippet(e.body,hit.term) : esc(e.body||'');
-      h+='<button type="button" class="nav-res'+(i===SSEL?' sel':'')+'" role="option" data-i="'+i+'"'
-        +' aria-selected="'+(i===SSEL)+'"><span class="nav-res-t">'+esc(e.title)+'</span>'
-        +'<span class="nav-res-c">'+esc(e.crumb)+'</span>'
-        +(sn?'<span class="nav-res-s">'+sn+'</span>':'')+'</button>';
-    });
-    box.innerHTML=h;
-  }
-  function moveSel(d){
-    if(!SHITS.length) return;
-    SSEL=(SSEL+d+SHITS.length)%SHITS.length;
-    Array.prototype.forEach.call(document.querySelectorAll('#navResults .nav-res'), function(el,i){
-      var on=(i===SSEL); el.classList.toggle('sel',on); el.setAttribute('aria-selected',on);
-      if(on && el.scrollIntoView) el.scrollIntoView({block:'nearest'});
-    });
-  }
-  function clearSearch(){
-    var inp=document.getElementById('navq'); if(inp) inp.value='';
-    renderSearch('');
-  }
-  // Clear before navigating: pickDoc/pickProfile rebuild the tree, and the
-  // user should land back on a normal menu showing where they now are.
-  function openSel(i){ var hit=SHITS[i]; if(!hit) return; var go=hit.e.go; clearSearch(); go(); }
-  // The Knowledge Base index is only needed by this box, so it is fetched the
-  // first time the box is used and never on a visit that ignores it.
-  // The callback re-reads the input rather than closing over the query it was
-  // created with: on a slow connection the box can be cleared before search.js
-  // lands, and a captured string would re-open the panel with results for a
-  // query that is no longer there.
-  var _searchReq=null, _searchCb=null;
-  function ensureSearch(cb){
-    if(window.LB_SEARCH){ if(cb) cb(); return; }
-    _searchCb=cb;
-    if(_searchReq) return;
-    _searchReq=document.createElement('script'); _searchReq.src='search.js';
-    _searchReq.onload=function(){ var f=_searchCb; _searchCb=null; if(f) f(); };
-    // Run the callback anyway: buildSearchIndex() still indexes the profiles
-    // and composite views from LB_DATA, so the box keeps working without the
-    // Knowledge Base instead of silently returning nothing forever.
-    _searchReq.onerror=function(){ _searchReq=null; var f=_searchCb; _searchCb=null; if(f) f(); };
-    document.head.appendChild(_searchReq);
-  }
-  function initNavSearch(){
-    var inp=document.getElementById('navq'), box=document.getElementById('navResults');
-    if(!inp||!box) return;
-    var t;
-    inp.addEventListener('focus', function(){ ensureSearch(null); }, {once:true});
-    inp.addEventListener('input', function(){
-      clearTimeout(t); var v=inp.value.trim();
-      t=setTimeout(function(){ if(!v) renderSearch(v); else ensureSearch(function(){ renderSearch(inp.value.trim()); }); }, 90);
-    });
-    inp.addEventListener('keydown', function(e){
-      if(e.key==='ArrowDown'){ e.preventDefault(); moveSel(1); }
-      else if(e.key==='ArrowUp'){ e.preventDefault(); moveSel(-1); }
-      else if(e.key==='Enter'){ e.preventDefault(); openSel(SSEL); }
-      else if(e.key==='Escape'){ e.preventDefault(); clearSearch(); inp.blur(); }
-    });
-    box.addEventListener('click', function(e){
-      var b=e.target.closest?e.target.closest('.nav-res'):null; if(!b) return;
-      openSel(parseInt(b.getAttribute('data-i'),10));
-    });
-  }
-
   function pickScope(scope){
     state.view='composite'; state.scope=scope; state.sortKey='score'; state.sortDir=-1; state.q=''; state.lang=''; document.getElementById('q').value='';
-    expanded.add('composite');
     buildNav(); renderHead(); render();
   }
   function pickProfile(id){
     var p=PROF[id]; if(!p) return;
     var ds=defProfileSort(id);
     state.view='profile'; state.profile=id; state.conns=p.conns[0]; state.sortKey=ds.k; state.sortDir=ds.d; state.q=''; document.getElementById('q').value='';
-    expanded.add('detailed'); expanded.add(familyOf(p));
     buildNav(); renderHead(); render();
   }
 
@@ -1453,7 +1389,9 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
         b.onclick=function(){ state.conns=c; setSegActive(seg,b); render(); };
         seg.appendChild(b);
       });
-      ctl.innerHTML=''; ctl.appendChild(seg);
+      var sw=document.createElement('div'); sw.className='seg-wrap';
+      sw.innerHTML='<span class="seg-l">Connections</span>'; sw.appendChild(seg);
+      ctl.innerHTML=''; ctl.appendChild(sw);
       thumb.style.transition='none'; moveThumb(seg);           // position without an initial slide
       requestAnimationFrame(function(){ thumb.style.transition=''; });
     }
@@ -1868,14 +1806,12 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       state.view='profile'; state.profile=p.p;
       var cc=+p.conns; state.conns=(PROF[p.p].conns.indexOf(cc)>=0)?cc:PROF[p.p].conns[0];
       var _ds=defProfileSort(state.profile); state.sortKey=_ds.k; state.sortDir=_ds.d;
-      expanded.add('detailed'); expanded.add(familyOf(PROF[p.p]));
     } else {
       state.view='composite';
       state.scope=(p.scope && SCOPES.some(function(s){return s.k===p.scope;}))?p.scope:'h1';
       state.useMem = p.mem==='1';
       state.rescale = p.rescale==='1';
       state.sortKey='score'; state.sortDir=-1;
-      expanded.add('composite');
     }
     if(p.sort){ var sp=p.sort.split(':'); if(sp[0]){ state.sortKey=sp[0]; state.sortDir=(+sp[1]===1)?1:-1; } }
     var q=document.getElementById('q'); if(q) q.value=state.q;
@@ -2032,13 +1968,12 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
         + '</span>';
       th+='<th class="num pcol'+(ref?' refcol':'')+'" data-k="'+pid+'" data-tip="'+esc(p.category+' · '+p.label+' - '+(p.blurb||'')+(ref?' Not part of the composite score.':''))+'">'+esc(p.label)+ar(pid)+nav+'</th>';
     });
-    th+='<th class="spacer"></th>';
     var body=rows.map(function(r){
       var c=lc(r.lang), rank=rankMap[r.fw], t=typeOf(r.fw), repo=repoOf(r.fw);
       var nm=esc(r.fw);
       var pct=r.score/maxScore*100;
       var fav=favs.has(r.fw);
-      var tr='<tr class="'+(fav?'fav':'')+(rank===1?' lead':'')+'" data-fw-row="'+esc(r.fw)+'">'
+      var tr='<tr class="'+(fav?'fav':'')+(rank===1?' lead':'')+'" data-fw-row="'+esc(r.fw)+'"'+lcVars(r.lang)+'>'
         + '<td class="sticky rankc'+(rank<=3?' r'+rank:'')+'">'+rank+'</td>'
         + '<td class="sticky fwcell"><span class="fl">'
         +   (compact
@@ -2073,7 +2008,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
         if(cell.c){ tr+='<td class="num pc'+(cell.best?' lead':'')+'"'+dat+'>'+inner+'</td>'; }
         else { tr+='<td class="num pc nc"'+dat+'>'+inner+'</td>'; }
       });
-      return tr+'<td class="spacer"></td></tr>';
+      return tr+'</tr>';
     }).join('');
     var rowsEl=document.getElementById('rows');
     document.body.classList.toggle('cardsmode', cardsOn());
@@ -2258,7 +2193,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     });
     var html=rows.map(function(r){
       var x={ lc:lc(r.lang), rank:rankMap[r.fw], t:typeOf(r.fw), repo:repoOf(r.fw), dark:dark, maxRps:maxRps };
-      return '<div class="row'+(favs.has(r.fw)?' fav':'')+(x.rank===1?' lead':'')+'" data-fw-row="'+esc(r.fw)+'">'+COLS.map(function(col){return profileCell(col.k, r, x);}).join('')+'</div>';
+      return '<div class="row'+(favs.has(r.fw)?' fav':'')+(x.rank===1?' lead':'')+'" data-fw-row="'+esc(r.fw)+'"'+lcVars(r.lang)+'>'+COLS.map(function(col){return profileCell(col.k, r, x);}).join('')+'</div>';
     }).join('');
     document.body.classList.toggle('cardsmode', cardsOn());
     if(cardsOn() && rows.length){ thEl.style.display='none'; html=profileCards(rows, rankMap, maxRps); }
@@ -2345,7 +2280,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // the full matrix back.
   function cardHead(fw, rank, lang, t){
     return '<div class="card-h"><span class="rk'+(rank<=3?' r'+rank:'')+'">'+rank+'</span><span class="nm">'+esc(fw)+'</span>'+tlsCheckBadge(fw)+starHtml(fw)+'</div>'
-      + '<div class="card-sub"><span class="tsq tsq-'+t+'"></span><span>'+esc([lang, typeAbbr(t)].filter(Boolean).join(' · '))+'</span>'+tunedPill(fw,'tnd')+'</div>';
+      + '<div class="card-sub"><span class="tsq tsq-'+t+'"></span>'+(lang?'<span class="lang">'+esc(lang)+'</span><span>·</span>':'')+'<span>'+esc(typeAbbr(t))+'</span>'+tunedPill(fw,'tnd')+'</div>';
   }
   function kv(l, v, cls){ return '<div><span>'+esc(l)+'</span><b'+(cls?' class="'+cls+'"':'')+'>'+v+'</b></div>'; }
   var CARDS_NOTE='<p class="cards-note">Key numbers per entry. <button type="button" data-mview="table">Open the full table</button></p>';
@@ -2368,7 +2303,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
           var c=pc[1]; k+=kv(PROF[pc[0]].label, (c.score!=null?c.score.toFixed(1):fmtK(c.rps))+(c.best?' ★':''));
         });
       }
-      return '<div class="card'+(favs.has(r.fw)?' fav':'')+(rank===1?' lead':'')+'" data-fw-row="'+esc(r.fw)+'">'
+      return '<div class="card'+(favs.has(r.fw)?' fav':'')+(rank===1?' lead':'')+'" data-fw-row="'+esc(r.fw)+'"'+lcVars(r.lang)+'>'
         + cardHead(r.fw, rank, r.lang, t)
         + '<div class="card-main"><b>'+r.score.toFixed(0)+'</b>'+cmpDelta(r)+'<span>'+(all?'overall':'composite')+'</span></div>'
         + '<div class="bar"><i style="width:'+Math.max(pct,2).toFixed(0)+'%"></i></div>'
@@ -2383,7 +2318,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       var k=kv('p99', esc(r.p99_latency||'-'))+kv('Avg', esc(r.avg_latency||'-'))
         + (latp ? kv('CPU / req', r.cpu_per_req_us!=null?esc((+r.cpu_per_req_us).toFixed(2))+' µs':'-') : kv('CPU', esc(r.cpu||'-')))
         + kv('Memory', esc(r.memory||'-'));
-      return '<div class="card'+(favs.has(r.fw)?' fav':'')+(rank===1?' lead':'')+'" data-fw-row="'+esc(r.fw)+'">'
+      return '<div class="card'+(favs.has(r.fw)?' fav':'')+(rank===1?' lead':'')+'" data-fw-row="'+esc(r.fw)+'"'+lcVars(r.lang)+'>'
         + cardHead(r.fw, rank, r.lang||'', t)
         + (latp ? '<div class="card-main"><b>'+(ls?ls.toFixed(1):'-')+'</b><span>score · '+fmt(r.rps||0)+' req/s</span>'+statusHtml(r)+'</div>'
                  + '<div class="bar"><i style="width:'+Math.max(ls,1).toFixed(0)+'%"></i></div>'
@@ -2501,7 +2436,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // A composite view has no 'rps' column: without this the default view sorted on
   // a key no header owns, so no arrow showed and the address grew a #sort=rps.
   if(state.view==='composite' && state.sortKey==='rps'){ state.sortKey='score'; state.sortDir=-1; }
-  initTips(); initSpecPanel(); initHeat(); initModal(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initNavSearch(); initDisplay(); initMview(); initKeys(); hw(); buildNav(); renderHead(); render();
+  initTips(); initSpecPanel(); initHeat(); initModal(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initViewbar(); initDisplay(); initMview(); initKeys(); hw(); buildNav(); renderHead(); render();
   document.body.classList.remove('booting','rl');
   (function(){ var b=document.getElementById('brandHome'); if(b) b.onclick=function(e){ e.preventDefault(); pickScope('h1'); }; })();
   window.addEventListener('hashchange', function(){ restoreFromHash(); buildNav(); renderHead(); render(); });

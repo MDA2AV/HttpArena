@@ -334,19 +334,19 @@
   // ── prose: heading anchors, code copy buttons, callouts ──
   $all('.doc-body h2[id], .doc-body h3[id], .doc-body h4[id]').forEach(function(h){
     if(h.closest('.lang-sec')) return;
-    var a=document.createElement('a'); a.className='h-anchor'; a.href='#'+h.id; a.textContent='#'; a.setAttribute('aria-label','Link to this section');
+    var a=document.createElement('a'); a.className='h-anchor'; a.href='#'+h.id; a.setAttribute('aria-label','Link to this section');
     a.addEventListener('click', function(e){ e.preventDefault(); history.replaceState(null,'','#'+h.id); h.scrollIntoView({behavior:'smooth', block:'start'}); HA.copy(location.href, 'Section link copied'); });
     h.appendChild(a);
   });
   $all('.doc-body pre').forEach(function(pre){
     var w=document.createElement('div'); w.className='code-wrap'; pre.parentNode.insertBefore(w, pre); w.appendChild(pre);
     var code=$('code', pre), lang=code && (code.className.match(/language-(\w+)/)||[])[1];
-    if(lang){ var l=document.createElement('span'); l.className='code-lang'; l.textContent=lang; w.appendChild(l); }
-    var b=document.createElement('button'); b.type='button'; b.className='copy-btn'; b.innerHTML=I.copy+'<span>Copy</span>'; b.setAttribute('aria-label','Copy code');
+    if(lang){ var l=document.createElement('span'); l.className='code-lang'; l.setAttribute('data-l', lang); w.appendChild(l); }
+    var b=document.createElement('button'); b.type='button'; b.className='copy-btn'; b.innerHTML=I.copy+'<span data-l="Copy"></span>'; b.setAttribute('aria-label','Copy code');
     b.onclick=function(){
       HA.copy((code||pre).textContent, 'Code copied');
-      b.classList.add('done'); b.innerHTML=I.check+'<span>Copied</span>';
-      setTimeout(function(){ b.classList.remove('done'); b.innerHTML=I.copy+'<span>Copy</span>'; }, 1600);
+      b.classList.add('done'); b.innerHTML=I.check+'<span data-l="Copied"></span>';
+      setTimeout(function(){ b.classList.remove('done'); b.innerHTML=I.copy+'<span data-l="Copy"></span>'; }, 1600);
     };
     w.appendChild(b);
   });
@@ -409,7 +409,7 @@
   // ── filter on the frameworks index ───────────────────────
   (function(){
     var inp=document.getElementById('fwFilter'), cnt=document.getElementById('fwCount'); if(!inp) return;
-    var secs=$all('.lang-sec'), empty=document.getElementById('fwEmpty');
+    var secs=$all('.lang-sec'), empty=null;
     function run(){
       var terms=inp.value.toLowerCase().split(',').map(function(x){ return x.trim(); }).filter(Boolean), shown=0;
       secs.forEach(function(sec){
@@ -421,7 +421,8 @@
         });
         sec.hidden=!any;
       });
-      if(cnt) cnt.textContent=shown+(shown===1?' entry':' entries');
+      if(cnt) cnt.textContent=terms.length ? shown+(shown===1?' entry':' entries') : '';
+      if(!shown && !empty){ empty=document.createElement('p'); empty.className='t-empty'; empty.textContent='No entry matches that filter.'; secs[secs.length-1].insertAdjacentElement('afterend', empty); }
       if(empty) empty.hidden=shown>0;
     }
     inp.addEventListener('input', run);

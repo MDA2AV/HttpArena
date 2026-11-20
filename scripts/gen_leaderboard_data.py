@@ -859,6 +859,16 @@ def board_chrome():
 _CHROME = board_chrome()
 
 
+def check_404_header():
+    """site/root/404.html is static - assemble_site.sh copies it as it is - so it
+    carries its own copy of the header. Fail the build when the board's header
+    has moved on without it, rather than ship a 404 with stale chrome."""
+    page = (ROOT / "site" / "root" / "404.html").read_text(encoding="utf-8")
+    if _CHROME not in page:
+        raise SystemExit("gen: the header in site/root/404.html no longer matches the board's - "
+                         "copy the <header class=\"top\"> of any generated page into it")
+
+
 def _page_top(section):
     """<body> and the site header, with `section` (board, frameworks, compare,
     docs) marked as the current one in the navigation."""
@@ -874,16 +884,12 @@ _THEME_INIT = ("<script>try{var t=localStorage.getItem('lb-theme');"
 # preloaded because the first paint is text.
 _ASSETS = ('<link rel="preload" href="/assets/fonts/geist.woff2" as="font" type="font/woff2" crossorigin>'
            '<link rel="stylesheet" href="/assets/app.css">')
-_SITE_FOOT = ('<footer class="site-foot"><span>HttpArena - open HTTP framework benchmarks</span>'
-              '<span class="sp"></span>'
-              '<a href="/">Leaderboard</a><a href="/frameworks/">Frameworks</a>'
-              '<a href="/compare/">Compare</a><a href="/docs/">Knowledge Base</a>'
-              '<a href="/llms.txt">llms.txt</a>'
-              '<a href="https://github.com/MDA2AV/HttpArena" rel="noopener">GitHub</a></footer>')
-# Everything a generated page ends with: the footer and the shared script
-# (theme toggle, command palette, shortcuts, sidebar search, "On this page",
-# copy buttons, sortable tables). search.js is fetched by it on first use.
-_PAGE_END = _SITE_FOOT + '<script src="/assets/app.js"></script>'
+# Everything a generated page ends with: the shared script (theme toggle,
+# command palette, shortcuts, sidebar search, "On this page", copy buttons,
+# sortable tables). search.js is fetched by it on first use. The pages carry
+# no footer and no visible breadcrumb: the restyle keeps every page's text as
+# it was, word for word, so only the header (shared chrome) is new.
+_PAGE_END = '<script src="/assets/app.js"></script>'
 _ICON_BACK = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" '
               'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
               '<path d="M19 12H5M11 6l-6 6 6 6"/></svg>')
@@ -892,19 +898,8 @@ _ICON_CHEV = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke
               '<path d="m6 9 6 6 6-6"/></svg>')
 
 
-def _crumbs_html(crumbs):
-    """The visible trail: the same list the BreadcrumbList node carries."""
-    if not crumbs or len(crumbs) < 2:
-        return ""
-    e = _html.escape
-    parts = ['<a href="%s">%s</a>' % (href, e(name)) for name, href in crumbs[:-1]]
-    parts.append('<span aria-current="page">%s</span>' % e(crumbs[-1][0]))
-    return ('<nav class="crumbs" aria-label="Breadcrumb">'
-            + '<span class="sep" aria-hidden="true">/</span>'.join(parts) + "</nav>")
-
-
 def _doc_page(did, title, body_html, tree, seo_title="", description="",
-              crumbs=None, og_url="", updated="", prev=None, nxt=None):
+              crumbs=None, og_url="", updated=""):
     url = SITE + _doc_url(did)
     # Authored metadata wins; the scraped first paragraph stays as the fallback
     # so a page that hasn't been given frontmatter yet still renders sensibly.
@@ -946,26 +941,14 @@ def _doc_page(did, title, body_html, tree, seo_title="", description="",
             + _jsonld({"@context": "https://schema.org", "@graph": graph})
             + _ASSETS
             + "</head>")
-    # The Knowledge Base as a docs product: the tree on the left, the article in
-    # the middle under its breadcrumb and date, "On this page" on the right
-    # (built by app.js from the headings), and the neighbours at the foot.
-    meta = ('<p class="doc-meta"><span>Updated <time datetime="%s">%s</time></span></p>'
-            % (updated, updated) if updated else "")
-    foot = ""
-    if prev or nxt:
-        foot = ('<nav class="doc-foot" aria-label="Pages">'
-                + ('<a class="prev" href="%s"><small>Previous</small><span>%s</span></a>'
-                   % (_doc_url(prev[0]), _html.escape(prev[1])) if prev else "")
-                + ('<a class="next" href="%s"><small>Next</small><span>%s</span></a>'
-                   % (_doc_url(nxt[0]), _html.escape(nxt[1])) if nxt else "")
-                + "</nav>")
+    # The Knowledge Base: the tree on the left, the article in the middle and
+    # "On this page" on the right, built by app.js from the headings, so the
+    # page's own text is exactly the article.
     body = ('<div class="docs-layout">'
             '<aside class="nav">' + _sidebar(tree, did) + '</aside>'
             '<main class="doc-main"><article class="doc-wrap">'
-            + _crumbs_html(crumbs)
-            + '<h1 class="doc-title">' + t + "</h1>" + meta
+            '<h1 class="doc-title">' + t + "</h1>"
             + _static_links(body_html)
-            + foot
             + '</article></main><aside class="toc" id="toc" aria-label="On this page"></aside></div>')
     return head + _page_top("docs") + body + _PAGE_END + "</body></html>"
 
@@ -977,26 +960,17 @@ def build_doc_pages(tree, content, trails=None, with_og=False):
     if DOCS_OUT.exists():
         shutil.rmtree(DOCS_OUT)
     DOCS_OUT.mkdir(parents=True, exist_ok=True)
+    # /docs/docs.css was the Knowledge Base stylesheet. No page links it any
+    # more - every page links /assets/app.css - but the URL stays published,
+    # so anything that still points at it keeps getting a working stylesheet.
+    (DOCS_OUT / "docs.css").write_text('@import url("/assets/app.css");\n', encoding="utf-8")
     trails = trails or {}
-    # reading order, for the previous / next links at the foot of each page
-    order = []
-
-    def walk(node):
-        if node["u"] in content:
-            order.append((node["u"], node["t"] or "Knowledge Base"))
-        for child in node.get("c") or []:
-            walk(child)
-    walk(tree)
-    place = {u: i for i, (u, _t) in enumerate(order)}
     for did, d in content.items():
-        i = place.get(did)
         page = _doc_page(did, d["t"] or "Knowledge Base", d["html"], tree,
                          seo_title=d.get("st", ""), description=d.get("d", ""),
                          crumbs=trails.get(did),
                          og_url=(_doc_url(did) + "og.png") if with_og else "",
-                         updated=_site_dates().get(_doc_source_path(did), ""),
-                         prev=order[i - 1] if i else None,
-                         nxt=order[i + 1] if i is not None and i + 1 < len(order) else None)
+                         updated=_site_dates().get(_doc_source_path(did), ""))
         dest = (DOCS_OUT / did / "index.html") if did else (DOCS_OUT / "index.html")
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(page, encoding="utf-8")
@@ -1844,15 +1818,18 @@ def _og_card(dest, kicker, title, rows, footer, blurb=""):
     from PIL import Image, ImageDraw
     img = Image.new("RGB", OG_SIZE, OG_BG)
     d = ImageDraw.Draw(img)
-    # a hairline frame, and the site's mark beside the wordmark: the H whose
-    # crossbar rises, drawn here as it is in the header and the favicon
+    # a hairline frame, and the site's mark beside the wordmark: the sword of
+    # favicon.svg, drawn from the same 32-unit geometry at 1.5x
     d.rounded_rectangle([24, 24, OG_SIZE[0] - 25, OG_SIZE[1] - 25], radius=18, outline=OG_LINE, width=2)
-    d.rounded_rectangle([72, 56, 120, 104], radius=12, fill=OG_TEXT)
-    d.rounded_rectangle([84, 68, 89.6, 92], radius=2.8, fill=OG_BG)
-    d.rounded_rectangle([102.4, 68, 108, 92], radius=2.8, fill=OG_BG)
-    d.line([(89.8, 84.6), (102.2, 75.4)], fill=(91, 91, 214), width=6)
+
+    def at(x, y):
+        return (61.5 + x * 1.5, 54.5 + y * 1.5)
+    d.polygon([at(16, 1), at(19, 21), at(16, 23), at(13, 21)], fill=OG_TEXT)       # blade
+    d.rounded_rectangle([at(7, 21), at(25, 24)], radius=2.2, fill=OG_TEXT)        # crossguard
+    d.rectangle([at(14, 24), at(18, 28)], fill=OG_TEXT)                            # grip
+    d.ellipse([at(13.5, 28.2), at(18.5, 31.8)], fill=OG_TEXT)                     # pommel
     mark = _og_font(34, bold=True)
-    d.text((136, 60), "HttpArena", font=mark, fill=OG_TEXT)
+    d.text((112, 60), "HttpArena", font=mark, fill=OG_TEXT)
 
     y = 158
     if kicker:
@@ -2507,7 +2484,7 @@ def _fw_results(fw, profiles, results):
     return out
 
 
-MEDAL_ICON = {m: '<i class="medal %s" aria-hidden="true"></i>' % m for m in ("gold", "silver", "bronze")}
+MEDAL_ICON = {"gold": "🥇", "silver": "🥈", "bronze": "🥉"}
 MEDAL_LABEL = {"gold": "Gold", "silver": "Silver", "bronze": "Bronze"}
 AXIS_LABEL = {"family": "Family composite", "language": "Within its language",
               "profile": "Test profile"}
@@ -2523,15 +2500,15 @@ def _medal_counts(items):
 def _fw_achievements(items):
     """The Achievements section of a framework page."""
     e = _html.escape
-    head = " · ".join("%s%d %s" % (MEDAL_ICON[m], n, MEDAL_LABEL[m])
+    head = " · ".join("%s %d %s" % (MEDAL_ICON[m], n, MEDAL_LABEL[m])
                       for m, n in _medal_counts(items))
     rows = "".join(
-        '<tr><td>%s%s</td><td>%s</td><td>%s</td><td><a href="%s">%d of %d</a></td></tr>'
+        '<tr><td>%s %s</td><td>%s</td><td>%s</td><td><a href="%s">%d of %d</a></td></tr>'
         % (MEDAL_ICON[a["medal"]], MEDAL_LABEL[a["medal"]], e(AXIS_LABEL[a["axis"]]),
            e(a["group"] + " · " + a["label"]), e(a["link"]), a["rank"], a["of"])
         for a in items)
     return ('<h2 id="achievements">Achievements</h2>'
-            "<p>" + head + ". Top three of a field, taken in this entry's own league: "
+            "<p>" + e(head) + ". Top three of a field, taken in this entry's own league: "
             "the family composite, the same composite among entries written in the same "
             "language, and each test profile it is scored on. Every field is the one the "
             "badges publish, so a medal and a badge always say the same thing. "
@@ -2615,90 +2592,8 @@ def _fw_compare(fw, lang, scopes, lang_url, has_compare=False):
                       + body + "</tbody></table>") + links)
 
 
-def _fw_kpis(ranks, runs, achievements, spec):
-    """The tiles at the top of an entry page: its place in every family it is
-    ranked in, then what else the page holds. Every figure is one a table
-    further down the page states too."""
-    e = _html.escape
-    tiles = []
-    for scope, rank, field, score, link in ranks:
-        tiles.append(
-            '<a class="kpi%s" href="%s"><span class="kpi-l">%s composite</span>'
-            '<span class="kpi-v">#%d<small>of %d</small></span>'
-            '<span class="kpi-s">score %s</span>'
-            '<span class="kpi-bar"><i style="width:%d%%"></i></span></a>'
-            % (" r%d" % rank if rank <= 3 else "", e(link), e(SCOPE_NAME[scope]), rank, field,
-               f"{score:,.0f}", max(2, round((field - rank + 1) * 100 / field))))
-    for suite, label in SPEC_SECTION:
-        if not spec or suite not in spec:
-            continue
-        s_ = spec[suite][1]
-        if "error" in s_ or not s_.get("total"):
-            continue
-        p_, t_ = int(s_["passed"]), int(s_["total"])
-        tiles.append(
-            '<a class="kpi" href="#spec"><span class="kpi-l">%s compliance</span>'
-            '<span class="kpi-v">%s%%</span><span class="kpi-s">%d of %d passed</span>'
-            '<span class="kpi-bar"><i style="width:%d%%"></i></span></a>'
-            % (e(label), "100" if p_ == t_ else "%.1f" % (100.0 * p_ / t_), p_, t_,
-               round(100.0 * p_ / t_)))
-    if achievements:
-        tiles.append(
-            '<a class="kpi" href="#achievements"><span class="kpi-l">Medals</span>'
-            '<span class="kpi-v">%d</span><span class="kpi-s">%s</span></a>'
-            % (len(achievements), " · ".join("%d %s" % (n, MEDAL_LABEL[m_].lower())
-                                             for m_, n in _medal_counts(achievements))))
-    if runs:
-        tiles.append(
-            '<a class="kpi" href="#results"><span class="kpi-l">Results</span>'
-            '<span class="kpi-v">%d</span><span class="kpi-s">runs · %d profiles</span></a>'
-            % (len(runs), len({p["id"] for p, _c, _r in runs})))
-    return '<div class="kpis">' + "".join(tiles) + "</div>" if tiles else ""
-
-
-def _run_metric(p, r, fw):
-    """(value, is a score) - what a run is measured on: requests per second,
-    or the profile's own score out of 100 where the rate is fixed."""
-    if p["id"] in _lat.FULL_RATE:
-        return lat_scores(p["id"]).get(fw, 0.0), True
-    return (r.get("rps") or 0), False
-
-
-def _fw_bars(fw, runs, lead, league):
-    """Every run as a bar against the best result of the entry's own league on
-    the same profile and connection count."""
-    e = _html.escape
-    out, cat, i = [], None, 0
-    while i < len(runs):
-        p = runs[i][0]
-        if p["category"] != cat:
-            cat = p["category"]
-            out.append('<div class="vs-cat">%s</div>' % e(cat))
-        bars = []
-        while i < len(runs) and runs[i][0]["id"] == p["id"]:
-            _p, c, r = runs[i]
-            v, paced = _run_metric(p, r, fw)
-            best = lead.get(f"{p['id']}-{c}") or 0
-            share = min(100.0, v / best * 100) if best else 0.0
-            bars.append(
-                '<div class="vs-bar%s"><span>%sc</span><span class="trk"><i style="width:%.1f%%">'
-                '</i></span><span class="val">%s</span><span class="pct">%.0f%%</span></div>'
-                % (" best" if best and v >= best else "", f"{c:,}", share,
-                   ("%.1f pts" % v) if paced else (f"{round(v):,}" if v else "-"), share))
-            i += 1
-        out.append('<div class="vs-row"><div class="vs-name">%s</div><div class="vs-bars">%s</div></div>'
-                   % (e(p["label"]), "".join(bars)))
-    return ('<h2 id="profile">Against the field leader</h2>'
-            '<p>Each bar is one run: this entry as a share of the best result among the %s on the '
-            "same profile at the same connection count. Requests per second, except on the "
-            "fixed-rate profiles, which are compared on their score out of 100. A full, "
-            "highlighted bar is a run this entry leads.</p>"
-            % e(_league_many(league))
-            + '<div class="vs">' + "".join(out) + "</div>")
-
-
 def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url="", achievements=(),
-             lang_scopes=None, updated="", has_compare=False, spec=None, best_of=None):
+             lang_scopes=None, updated="", has_compare=False, spec=None):
     e = _html.escape
     facts = [TYPE_LABEL.get(m.get("type", "emerging"), m.get("type", "")), lang]
     if m.get("engine") and m["engine"] != fw:
@@ -2732,7 +2627,6 @@ def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url="", achievements=(),
                      % (lang_url, e(lang)))
     links.append('<li><a href="/">Open the leaderboard</a></li>')
     out.append('<ul class="link-row">' + "".join(links) + "</ul>")
-    out.append(_fw_kpis(ranks, runs, achievements, spec))
 
     if achievements:
         out.append(_fw_achievements(achievements))
@@ -2760,42 +2654,29 @@ def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url="", achievements=(),
         out.append('<h2 id="results">Every result</h2>')
         out.append("<p>%s, %d runs. Requests per second is the best of three; latency, CPU and "
                    "memory come from that run.</p>" % (e(round_name), len(runs)))
-        lead = best_of or {}
-
-        def share(p, c, r):
-            v, _paced = _run_metric(p, r, fw)
-            best = lead.get(f"{p['id']}-{c}") or 0
-            return min(100.0, v / best * 100) if best else 0.0
-
+        # data-v holds each cell's sort key (app.js sorts tables of class
+        # "sortable"); the printed text is the same as before.
         def us(v):
             x = _lat.to_us(v)
             return "" if x is None else "%.3f" % x
         body = "".join(
             '<tr><td>%s</td><td>%s</td><td class="n" data-v="%d">%s</td>'
             '<td class="n" data-v="%d">%s</td>'
-            '<td class="n" data-v="%.2f"><span class="cellbar%s"><i style="width:%.0f%%"></i></span>%.0f%%</td>'
             '<td class="n" data-v="%s">%s</td><td class="n" data-v="%s">%s</td>'
             '<td class="n" data-v="%s">%s</td><td class="n" data-v="%s">%s</td></tr>'
             % (e(p["category"]), e(p["label"]), c, f"{c:,}",
                round(r.get("rps") or 0), f"{round(r.get('rps') or 0):,}" if r.get("rps") else "-",
-               share(p, c, r), " best" if share(p, c, r) >= 100 else "", share(p, c, r),
-               share(p, c, r),
                us(r.get("avg_latency")), e(r.get("avg_latency") or "-"),
                us(r.get("p99_latency")), e(r.get("p99_latency") or "-"),
                e(str(r.get("cpu") or "").rstrip("%")), e(r.get("cpu") or "-"),
                ("%.2f" % _mem(r.get("memory"))) if r.get("memory") else "",
                e(r.get("memory") or "-"))
             for p, c, r in runs)
-        out.append("<p>Click a column heading to sort.</p>")
         out.append(_scroll('<table class="sortable"><thead><tr><th>Category</th><th>Profile</th>'
                            '<th class="n">Conns</th><th class="n">Req/sec</th>'
-                           '<th class="n" data-tip="Share of the best result in this entry\'s league '
-                           'on the same profile and connection count.">vs leader</th>'
                            '<th class="n">Avg</th><th class="n">p99</th><th class="n">CPU</th>'
                            '<th class="n">Memory</th></tr>'
                            "</thead><tbody>" + body + "</tbody></table>"))
-        out.insert(len(out) - 4,
-                   _fw_bars(fw, runs, lead, _league(m.get("type", "emerging"))))
 
     if lang and lang_scopes:
         out.append(_fw_compare(fw, lang, lang_scopes, lang_url, has_compare))
@@ -2808,7 +2689,7 @@ def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url="", achievements=(),
 
 
 def _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url="", achievements=(),
-             lang_scopes=None, updated="", has_compare=False, spec=None, best_of=None):
+             lang_scopes=None, updated="", has_compare=False, spec=None):
     e = _html.escape
     url = SITE + _fw_url(fw)
     title = f"{fw} performance benchmark & ranking"
@@ -2857,18 +2738,10 @@ def _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url="", achievem
             + _ASSETS
             + "</head>")
     header = _page_top("frameworks")
-    kind = m.get("type", "emerging")
     body = ('<div class="docs-layout one-col"><main class="doc-main">'
-            '<article class="doc-wrap">'
-            + _crumbs_html([("Frameworks", "/frameworks/")]
-                           + ([(lang, lang_url)] if lang_url else []) + [(fw, _fw_url(fw))])
-            + '<div class="eh"><h1 class="doc-title">' + e(fw) + "</h1>"
-            + '<span class="badge b-%s">%s</span>' % (e(kind), e(TYPE_LABEL.get(kind, kind)))
-            + ('<span class="badge b-tuned">Tuned</span>'
-               if kind_has_mode(kind) and m.get("mode") == "tuned" else "")
-            + "</div>"
+            '<article class="doc-wrap"><h1 class="doc-title">' + e(fw) + "</h1>"
             + _fw_body(fw, m, lang, ranks, runs, round_name, lang_url, achievements,
-                       lang_scopes, updated, has_compare, spec, best_of)
+                       lang_scopes, updated, has_compare, spec)
             + "</article></main></div>")
     return head + header + body + _PAGE_END + "</body></html>"
 
@@ -3122,15 +2995,13 @@ def _lang_page(lang, scopes, all_entries, round_name, siblings=(), updated="",
                      "has" if len(rest) == 1 else "have",
                      "it is listed" if len(rest) == 1 else "they are listed"))
     body = ('<div class="docs-layout one-col"><main class="doc-main">'
-            '<article class="doc-wrap">'
-            + _crumbs_html([("Frameworks", "/frameworks/"), (lang, _lang_url(lang))])
-            + '<h1 class="doc-title">' + e(title) + "</h1>"
+            '<article class="doc-wrap"><h1 class="doc-title">' + e(title) + "</h1>"
             '<div class="doc-body">' + answer + intro + "".join(tables)
             + ("<h2 id=\"faq\">Questions</h2>" + _faq_html(faq) if faq else "")
             + "<h2>Every " + e(lang) + ' entry</h2><ul class="entry-list">' + every + "</ul>"
-            + ('<h2>Other languages</h2><div class="chips">' + "".join(
+            + ('<h2>Other languages</h2><p class="lang-links">' + " · ".join(
                 '<a href="%s">%s</a>' % (_lang_url(x), e(x)) for x in siblings if x != lang)
-               + "</div>" if siblings else "")
+               + "</p>" if siblings else "")
             + _updated_line(updated, e(round_name) + " · "
                             + ('<a href="%s">Compare two %s entries</a> · '
                                % (_compare_url(lang), e(lang)) if has_compare else "")
@@ -3152,7 +3023,7 @@ def _fw_index_page(entries, lang_pages=(), updated="", compare_langs=()):
     by_lang = {}
     for fw, lang, kind in entries:
         by_lang.setdefault(lang or "Other", []).append((fw, kind))
-    sections, jump = [], []
+    sections = []
     for lang in sorted(by_lang, key=lambda x: (x == "Other", x.lower())):
         items = "".join('<li data-n="%s" data-k="%s"><span class="tsq tsq-%s"></span>'
                         '<a href="%s">%s</a> <span class="fw-kind">%s</span></li>'
@@ -3171,11 +3042,9 @@ def _fw_index_page(entries, lang_pages=(), updated="", compare_langs=()):
                    + (' · <a href="%s">head to head</a>' % _compare_url(lang)
                       if lang in compare_langs else "")
                    + "</p>" if lang in lang_pages else "")
-        jump.append('<a href="#lang-%s">%s <span class="n">%d</span></a>'
-                    % (_lang_slug(lang), e(lang), n))
         sections.append('<section class="lang-sec" id="lang-%s" data-lang="%s"><h2>'
                         % (_lang_slug(lang), e(lang))
-                        + heading + ' <span class="n">%d</span></h2>' % n + compare
+                        + heading + "</h2>" + compare
                         + '<ul class="entry-list">' + items + "</ul></section>")
     graph = [
         {"@type": "CollectionPage", "@id": url + "#page", "name": title, "description": desc,
@@ -3210,11 +3079,8 @@ def _fw_index_page(entries, lang_pages=(), updated="", compare_langs=()):
             '<a href="/compare/">the comparisons</a> put any two of one language side by side.</p>'
             '<div class="t-filter"><input id="fwFilter" type="search" autocomplete="off" '
             'spellcheck="false" placeholder="Filter by entry, language or type (rust, nginx, engine)" '
-            'aria-label="Filter entries">'
-            '<span class="cnt" id="fwCount">%d entries</span></div>' % len(entries)
-            + '<nav class="chips" aria-label="Languages">' + "".join(jump) + "</nav>"
+            'aria-label="Filter entries"><span class="cnt" id="fwCount" aria-live="polite"></span></div>'
             + "".join(sections)
-            + '<p class="t-empty" id="fwEmpty" hidden>No entry matches that filter.</p>'
             + _updated_line(updated) + "</div></article></main></div>")
     return head + header + body + _PAGE_END + "</body></html>"
 
@@ -3342,18 +3208,19 @@ def _cmp_table(data, views, a, b):
         ma, mb = _cmp_metric(ra), _cmp_metric(rb)
         shown = (lambda v: "%.1f" % v) if paced else (lambda v: f"{v:,}")
         groups[paced].append(
-            '<tr><td>%s</td><td>%s</td><td class="n%s">%s</td><td class="dv">%s</td>'
-            '<td class="n%s">%s</td><td class="n pa">%s</td><td class="n">%s</td></tr>'
-            % (e(p["label"]), f"{c:,}", _cmp_side(ma, mb), shown(ma), _cmp_bar(ma, mb),
-               _cmp_side(mb, ma), shown(mb), e(ra[2] or "-"), e(rb[2] or "-")))
+            '<tr><td>%s</td><td>%s</td><td class="n%s">%s</td><td class="n%s">%s</td>'
+            '<td class="n dv%s">%s</td><td class="n pa">%s</td><td class="n">%s</td></tr>'
+            % (e(p["label"]), f"{c:,}", _cmp_side(ma, mb), shown(ma), _cmp_side(mb, ma),
+               shown(mb), _cmp_lead(ma, mb), _cmp_delta(ma, mb), e(ra[2] or "-"),
+               e(rb[2] or "-")))
     if not groups[0] and not groups[1]:
         return "<p>These two entries share no test profile.</p>"
     body = "".join('<tr class="cmp-sub"><th colspan="7">%s</th></tr>%s'
                    % (e(CMP_GROUPS[n]), "".join(rows))
                    for n, rows in enumerate(groups) if rows)
     return ('<table class="cmp-table"><thead><tr><th>Profile</th><th>Conns</th>'
-            '<th class="n">%s</th><th class="dv">Delta</th><th class="n">%s</th>'
-            '<th class="n">%s p99</th><th class="n">%s p99</th></tr></thead><tbody>'
+            '<th class="n">%s</th><th class="n">%s</th><th class="n dv">Delta</th>'
+            '<th class="n pa">%s p99</th><th class="n">%s p99</th></tr></thead><tbody>'
             % (e(a), e(b), e(a), e(b)) + body + "</tbody></table>")
 
 
@@ -3362,29 +3229,10 @@ def _cmp_side(mine, other):
     return " win" if mine > other else " los" if mine < other else ""
 
 
-def _cmp_bar(ma, mb):
-    """The delta as a bar from the middle: left when the first column leads,
-    right when the second does, as long as the gap between them is wide. The
-    figure in the middle is the printed delta, unchanged. _CMP_JS draws the
-    same thing for whichever pair the picker holds."""
-    top = max(ma, mb)
-    w = int(min(100.0, abs(ma - mb) / top * 100)) if top else 0
-    side = "wa" if ma > mb else "wb" if mb > ma else ""
-    return ('<div class="dbar %s"><span class="l"><i style="width:%d%%"></i></span>'
-            '<span class="d">%s</span><span class="r"><i style="width:%d%%"></i></span></div>'
-            % (side, w if side == "wa" else 0, _cmp_delta(ma, mb), w if side == "wb" else 0))
-
-
-def _cmp_tally(data, views, a, b):
-    """How many of the shared tests each side leads, as the strip under the
-    pickers shows it. Same counts as the sentence over them."""
-    wa, wb, both = _cmp_wins(data, views, a, b)
-    return ('<div class="cmp-score"><span class="a"><b>%d</b>ahead</span>'
-            '<span class="mid">of %d shared tests</span>'
-            '<span class="b"><b>%d</b>ahead</span></div>'
-            '<div class="cmp-split"><i class="wa" style="flex:%d"></i><i class="wt" style="flex:%d">'
-            '</i><i class="wb" style="flex:%d"></i></div>'
-            % (wa, both, wb, wa, both - wa - wb, wb))
+def _cmp_lead(ma, mb):
+    """The class of a Delta cell: which side the row's delta favours, so it can
+    be coloured. _CMP_JS marks the cells it draws the same way."""
+    return " wa" if ma > mb else " wb" if mb > ma else ""
 
 
 def _cmp_composites(scores, a, b):
@@ -3480,19 +3328,14 @@ _CMP_JS = """<script>
 (function(){
   var D=window.CMP, views=D.v, data=D.d, sel=D.e, S=D.s||{}, L=D.l||[], G=D.g||[];
   var a=document.getElementById('cmpA'), b=document.getElementById('cmpB'),
-      out=document.getElementById('cmpOut'), head=document.getElementById('cmpLead'),
-      tally=document.getElementById('cmpTally');
+      out=document.getElementById('cmpOut'), head=document.getElementById('cmpLead');
   if(!a||!b||!out) return;
   function esc(s){ return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
   function num(n){ return n.toLocaleString('en-US'); }
   function metric(r){ return r.length>5 ? r[5] : r[0]; }
   function delta(x,y){ var d=y?(x-y)/y*100:0; d=Math.floor(Math.abs(d)+0.5)*(d<0?-1:1); return (d>0?'+':'')+d+'%'; }
   function side(m,o){ return m>o?' win':m<o?' los':''; }
-  function bar(x,y){
-    var top=Math.max(x,y), w=top?Math.floor(Math.min(100,Math.abs(x-y)/top*100)):0, s=x>y?'wa':y>x?'wb':'';
-    return '<div class="dbar '+s+'"><span class="l"><i style="width:'+(s==='wa'?w:0)+'%"></i></span>'
-      +'<span class="d">'+delta(x,y)+'</span><span class="r"><i style="width:'+(s==='wb'?w:0)+'%"></i></span></div>';
-  }
+  function favours(x,y){ return x>y?' wa':y>x?' wb':''; }
   function composites(x,y){
     var sx=S[x], sy=S[y];
     if(!sx||!sy) return '';
@@ -3508,16 +3351,16 @@ _CMP_JS = """<script>
       var paced=rx.length>5&&ry.length>5, mx=metric(rx), my=metric(ry);
       both++; if(mx>my)wx++; else if(my>mx)wy++;
       rows[paced?1:0]+='<tr><td>'+esc(v[1])+'</td><td>'+num(v[2])+'</td><td class="n'+side(mx,my)+'">'
-           +(paced?mx.toFixed(1):num(mx))+'</td><td class="dv">'+bar(mx,my)+'</td><td class="n'+side(my,mx)+'">'
-           +(paced?my.toFixed(1):num(my))+'</td>'
+           +(paced?mx.toFixed(1):num(mx))+'</td><td class="n'+side(my,mx)+'">'+(paced?my.toFixed(1):num(my))+'</td>'
+           +'<td class="n dv'+favours(mx,my)+'">'+delta(mx,my)+'</td>'
            +'<td class="n pa">'+esc(rx[2]||'-')+'</td><td class="n">'+esc(ry[2]||'-')+'</td></tr>';
     }
     var body='';
     for(var g=0;g<2;g++) if(rows[g]) body+='<tr class="cmp-sub"><th colspan="7">'+esc(G[g]||'')+'</th></tr>'+rows[g];
     out.innerHTML = body
       ? '<table class="cmp-table"><thead><tr><th>Profile</th><th>Conns</th><th class="n">'
-        +esc(x)+'</th><th class="dv">Delta</th><th class="n">'+esc(y)+'</th>'
-        +'<th class="n">'+esc(x)+' p99</th><th class="n">'+esc(y)+' p99</th></tr></thead><tbody>'
+        +esc(x)+'</th><th class="n">'+esc(y)+'</th><th class="n dv">Delta</th>'
+        +'<th class="n pa">'+esc(x)+' p99</th><th class="n">'+esc(y)+' p99</th></tr></thead><tbody>'
         +body+'</tbody></table>'
       : '<p>These two entries share no test profile.</p>';
     if(head){
@@ -3528,10 +3371,6 @@ _CMP_JS = """<script>
             +(wo?', and behind on '+wo+'.':'.')+composites(x,y);
       head.innerHTML=t;
     }
-    if(tally) tally.innerHTML='<div class="cmp-score"><span class="a"><b>'+wx+'</b>ahead</span>'
-      +'<span class="mid">of '+both+' shared tests</span><span class="b"><b>'+wy+'</b>ahead</span></div>'
-      +'<div class="cmp-split"><i class="wa" style="flex:'+wx+'"></i><i class="wt" style="flex:'+(both-wx-wy)
-      +'"></i><i class="wb" style="flex:'+wy+'"></i></div>';
     if(location.hash.slice(1)!==x+'-vs-'+y) history.replaceState(null,'','#'+x+'-vs-'+y);
   }
   function swap(){ var t=a.value; a.value=b.value; b.value=t; draw(); }
@@ -3708,8 +3547,12 @@ def _compare_page(lang, ranked, members, profiles, results, round_name, updated,
               'aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/>'
               '<path d="m10 13-3 3 3 3"/></svg></button>'
               '<div class="cmp-side b"><label for="cmpB">with</label>'
-              '<select id="cmpB">' + opts(b) + "</select></div></div>"
-              '<div id="cmpTally">' + _cmp_tally(data, views, a, b) + "</div></div>")
+              '<select id="cmpB">' + opts(b) + "</select></div>"
+              '<button class="cmp-swap" id="cmpCopy" type="button" aria-label="Copy a link to this '
+              'comparison" data-tip="Copy a link to this comparison (y)"><svg viewBox="0 0 24 24" '
+              'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" '
+              'stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/>'
+              '<path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></button></div></div>')
     how = ("Requests per second is the best of three runs and the delta is the first column "
            "against the second; every row is the same profile at the same connection count, on "
            "the same machine. The fixed-rate profiles offer every entry the same request rate, "
@@ -3719,19 +3562,15 @@ def _compare_page(lang, ranked, members, profiles, results, round_name, updated,
              if lang else
              "<p>Pick any two of the %d entries, in any language - the picker is grouped by "
              "language, and the two sides do not have to match. %s</p>" % (len(entries), how))
-    quick = "".join('<a href="#%s-vs-%s">%s vs %s</a>' % (e(x), e(y), e(x), e(y))
-                    for x, y in pairs[:6])
+    quick = " · ".join('<a href="#%s-vs-%s">%s vs %s</a>' % (e(x), e(y), e(x), e(y))
+                       for x, y in pairs[:6])
     body = ('<div class="docs-layout one-col"><main class="doc-main">'
-            '<article class="doc-wrap">'
-            + _crumbs_html([("Comparisons", "/compare/"),
-                            (lang or "Every language", _compare_url(lang))])
-            + '<h1 class="doc-title">' + e(title) + "</h1>"
+            '<article class="doc-wrap"><h1 class="doc-title">' + e(title) + "</h1>"
             '<div class="doc-body">'
             '<p class="lead-answer" id="cmpLead">' + _cmp_verdict(data, views, scores, a, b)
             + "</p>" + intro + picker
             + '<div id="cmpOut">' + _cmp_table(data, views, a, b) + "</div>"
-            + '<p><button class="btn" id="cmpCopy" type="button">Copy link to this comparison</button></p>'
-            + ('<h2>Common comparisons</h2><div class="chips">' + quick + "</div>" if quick else "")
+            + ('<h2>Common comparisons</h2><p class="quick">' + quick + "</p>" if quick else "")
             + "<h2>Questions</h2>" + _faq_html(qa)
             + ("<h2>Every " + e(lang) + ' entry</h2><ul class="entry-list">'
                + "".join('<li><a href="%s">%s</a></li>' % (_fw_url(fw), e(fw))
@@ -3775,8 +3614,8 @@ def _compare_index_page(langs, updated, og_url=""):
             "second, p99 latency and the delta on every test profile, measured on the same "
             "machine.")
     every = next((n for l, n in langs if l is None), 0)
-    items = "".join('<a href="%s"><span>Compare %s web frameworks</span> '
-                    '<span class="fw-kind">%d entries</span></a>'
+    items = "".join('<li><a href="%s">Compare %s web frameworks</a> '
+                    '<span class="fw-kind">%d entries</span></li>'
                     % (_compare_url(l), e(l), n) for l, n in langs if l is not None)
     graph = [
         {"@type": "CollectionPage", "@id": url + "#page", "name": title, "description": desc,
@@ -3810,17 +3649,13 @@ def _compare_index_page(langs, updated, og_url=""):
             '<div class="doc-body"><p>' + e(desc) + " Every entry runs the same profiles on the "
             "same machine, so two entries in different languages are measured the same way and "
             "the numbers line up.</p>"
-            + ('<a class="cmp-hero" href="%s"><svg viewBox="0 0 24 24" fill="none" '
-               'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" '
-               'aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/>'
-               '<path d="m10 13-3 3 3 3"/></svg><span><b>Compare any two entries, in any language</b>'
-               "<span>All %d of them, in one picker grouped by language. Start here if the "
-               "language is not what you are choosing.</span></span></a>"
-               % (_compare_url(None), every) if every else "")
+            + ('<p class="cmp-hero"><a href="%s"><b>Compare any two entries, in any language</b></a> - all %d of '
+               "them, in one picker grouped by language. Start here if the language is not what "
+               "you are choosing.</p>" % (_compare_url(None), every) if every else "")
             + "<h2>One language at a time</h2>"
             "<p>Narrower, for when the language is already settled: the same table over just "
             "the entries written in it.</p>"
-            '<div class="cmp-grid">' + items + "</div>"
+            '<ul class="cmp-grid">' + items + "</ul>"
             + _updated_line(updated, '<a href="/">Composite ranking</a> · '
                                      '<a href="/frameworks/">Every entry, one page each</a> · '
                                      '<a href="/docs/">How the benchmark works</a>')
@@ -3970,20 +3805,6 @@ def build_fw_pages(profiles, results, meta, fw_lang, badge_index, achievements,
     # comparison of its language, and only where there is one to link to
     compare_langs = _compare_langs(profiles, results, members_by_lang)
 
-    # The best result of each league on every view, for the bars an entry page
-    # draws: requests per second, or the profile's score where the rate is fixed.
-    leaders = {}
-    for p in profiles:
-        for c in p["conns"]:
-            key = f"{p['id']}-{c}"
-            for r in results.get(key, []):
-                if r["fw"] not in kinds:
-                    continue
-                v, _paced = _run_metric(p, r, r["fw"])
-                best = leaders.setdefault(_league(kinds[r["fw"]]), {})
-                if v > best.get(key, 0):
-                    best[key] = v
-
     entries, cards = [], 0
     for fw in named:
         m = meta[fw]
@@ -3998,8 +3819,7 @@ def build_fw_pages(profiles, results, meta, fw_lang, badge_index, achievements,
         (dest / "index.html").write_text(
             _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url,
                      achievements.get(fw, ()), lang_scopes.get(lang), updated,
-                     lang in compare_langs, (spec_full or {}).get(fw),
-                     leaders.get(_league(kind), {})),
+                     lang in compare_langs, (spec_full or {}).get(fw)),
             encoding="utf-8")
         if with_og:
             _og_card(dest / "og.png", "Benchmark results", fw,
@@ -4320,6 +4140,7 @@ def build_profiles(index, docs_content=None):
 
 def main():
     global RESULTS
+    check_404_header()
     RESULTS = load_results()
     frameworks = load("frameworks.json") or {}
     langcolors = load("langcolors.json") or {}

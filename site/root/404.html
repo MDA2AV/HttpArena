@@ -1,12 +1,9 @@
 <!doctype html>
-<html lang="en" data-theme="">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Page not found – HttpArena</title>
+<title>HttpArena</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
-<link rel="icon" href="/favicon.ico" sizes="any">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <script>try{var t=localStorage.getItem('lb-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
 <script>
 /* The Hugo site is retired — the standalone board at / is the whole site now.
@@ -46,11 +43,12 @@
 <link rel="stylesheet" href="/assets/app.css">
 </head>
 <body>
-  <!-- The header is a copy of the board's (site/leaderboard/index.html): this
-       file is static, so nothing lifts it at build time. Keep the two in step. -->
+  <!-- The site header, as the generated pages carry it: this file is static
+       (assemble_site.sh copies it), so gen_leaderboard_data.py checks that it
+       still matches the board's header and fails the build when it does not. -->
   <header class="top">
     <div class="brand">
-      <a class="brand-name" href="/" aria-label="HttpArena home"><svg viewBox="0 0 24 24" aria-hidden="true"><rect class="bm-bg" width="24" height="24" rx="6"/><rect class="bm-fg" x="6" y="6" width="2.8" height="12" rx="1.4"/><rect class="bm-fg" x="15.2" y="6" width="2.8" height="12" rx="1.4"/><path class="bm-ac" d="M8.9 14.3 15.1 9.7" fill="none" stroke-width="2.8" stroke-linecap="round"/></svg><span>HttpArena</span></a>
+      <a class="brand-name" href="/" aria-label="HttpArena home"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 1 19 21 16 23 13 21Z"/><path d="M7 22.5Q7 21 9 21H23Q25 21 25 22.5 25 24 23 24H9Q7 24 7 22.5Z"/><rect x="14" y="24" width="4" height="4" rx=".5"/><ellipse cx="16" cy="30" rx="2.5" ry="1.8"/></svg><span>HttpArena</span></a>
     </div>
     <nav class="top-nav" aria-label="Site">
       <a href="/" data-nav="board">Leaderboard</a>
@@ -72,32 +70,10 @@
     </div>
   </header>
   <main class="nf">
-    <span class="nf-code">404</span>
-    <h1>That page doesn’t exist.</h1>
-    <p>Nothing is published at <code id="nfPath"></code>. It may have moved, or the link may be mistyped.</p>
-    <div class="nf-act">
-      <a class="btn primary" href="/">Back to the leaderboard</a>
-      <button class="btn" type="button" id="nfSearch">Search the site <kbd>/</kbd></button>
-    </div>
-    <div class="nf-grid">
-      <a href="/"><b>Leaderboard</b><span>Composite rankings for every protocol family.</span></a>
-      <a href="/frameworks/"><b>Frameworks</b><span>A results page for every entry, by language.</span></a>
-      <a href="/compare/"><b>Compare</b><span>Any two entries, head to head.</span></a>
-      <a href="/docs/"><b>Knowledge Base</b><span>How the benchmark is run and scored.</span></a>
-    </div>
+    <h1>404</h1>
+    <p>That page doesn’t exist.</p>
+    <p><a href="/">← Back to the leaderboard</a></p>
   </main>
 <script src="/assets/app.js"></script>
-<script>
-(function(){
-  var p=document.getElementById('nfPath'); if(p) p.textContent=location.pathname;
-  var b=document.getElementById('nfSearch');
-  if(b) b.onclick=function(){
-    // offer the last path segment as the query: a mistyped entry or page name usually still finds it
-    var seg=location.pathname.replace(/\/+$/,'').split('/').pop()||'';
-    try{ seg=decodeURIComponent(seg); }catch(e){}
-    HA.palette(seg.replace(/[-_]+/g,' ').replace(/\.html?$/,''));
-  };
-})();
-</script>
 </body>
 </html>
