@@ -547,7 +547,43 @@ ha_itoa:
 	inc	rdi
 	neg	rax
 @@:
-	jmp	fmt_u64
+	; the dataset's numbers are small: up to four digits from the pair table,
+	; no call (rax, rcx, rdx clobbered)
+	cmp	rax,10
+	jb	.d1
+	cmp	rax,100
+	jb	.d2
+	cmp	rax,10000
+	jae	fmt_u64
+	; 100..9999: rax / 100 by a multiply (exact below 2^16: 5243 / 2^19)
+	imul	ecx,eax,5243
+	shr	ecx,19				; the hundreds
+	imul	edx,ecx,100
+	sub	eax,edx				; the rest, 0..99
+	movzx	edx,word [fmt_d2+rax*2]
+	cmp	ecx,10
+	jb	.d3
+	movzx	eax,word [fmt_d2+rcx*2]
+	mov	[rdi],ax
+	mov	[rdi+2],dx
+	add	rdi,4
+	ret
+.d3:
+	add	cl,'0'
+	mov	[rdi],cl
+	mov	[rdi+1],dx
+	add	rdi,3
+	ret
+.d2:
+	movzx	eax,word [fmt_d2+rax*2]
+	mov	[rdi],ax
+	add	rdi,2
+	ret
+.d1:
+	add	al,'0'
+	mov	[rdi],al
+	inc	rdi
+	ret
 
 ; the query (after '?'): r10 = its start, r11d = its length, or 0 none
 macro ha_query
@@ -687,7 +723,7 @@ ha_json:
 	jmp	.q
 .counted:
 	mov	rdi,rbx
-	memit_x '{"items":['
+	memit_hot '{"items":['
 	xor	r14d,r14d
 .item:
 	cmp	r14d,r12d
@@ -699,29 +735,29 @@ ha_json:
 @@:
 	imul	rax,r14,HI_SIZE
 	lea	r8,[g_ha_items+rax]
-	memit_x '{"id":'
+	memit_hot '{"id":'
 	mov	rax,[r8+HI_ID]
 	call	ha_itoa
-	memit_x ',"name":"'
+	memit_hot ',"name":"'
 	mov	rsi,[r8+HI_NAME]
 	mov	ecx,[r8+HI_NLEN]
-	rep	movsb
-	memit_x '","category":"'
+	call	copy_small
+	memit_hot '","category":"'
 	mov	rsi,[r8+HI_CAT]
 	mov	ecx,[r8+HI_CLEN]
-	rep	movsb
-	memit_x '","price":'
+	call	copy_small
+	memit_hot '","price":'
 	mov	rax,[r8+HI_PRICE]
 	call	ha_itoa
-	memit_x ',"quantity":'
+	memit_hot ',"quantity":'
 	mov	rax,[r8+HI_QTY]
 	call	ha_itoa
 	cmp	dword [r8+HI_ACTIVE],0
 	je	@f
-	memit_x ',"active":true,"tags":['
+	memit_hot ',"active":true,"tags":['
 	jmp	.tags
 @@:
-	memit_x ',"active":false,"tags":['
+	memit_hot ',"active":false,"tags":['
 .tags:
 	xor	r9d,r9d
 .tag:
@@ -738,19 +774,19 @@ ha_json:
 	shl	eax,4
 	mov	rsi,[r8+HI_TAG+rax]
 	mov	rcx,[r8+HI_TAG+rax+8]
-	rep	movsb
+	call	copy_small
 	mov	byte [rdi],'"'
 	inc	rdi
 	inc	r9d
 	jmp	.tag
 .tags_done:
-	memit_x '],"rating":{"score":'
+	memit_hot '],"rating":{"score":'
 	mov	rax,[r8+HI_SCORE]
 	call	ha_itoa
-	memit_x ',"count":'
+	memit_hot ',"count":'
 	mov	rax,[r8+HI_COUNT]
 	call	ha_itoa
-	memit_x '},"total":'
+	memit_hot '},"total":'
 	mov	rax,[r8+HI_PRICE]
 	imul	rax,[r8+HI_QTY]
 	imul	rax,r13
@@ -760,7 +796,7 @@ ha_json:
 	inc	r14d
 	jmp	.item
 .items_done:
-	memit_x '],"count":'
+	memit_hot '],"count":'
 	mov	eax,r12d
 	call	ha_itoa
 	mov	byte [rdi],'}'
