@@ -1,8 +1,10 @@
 // HttpArena entry for hidi: HTTP/2 over TLS on :8443 (baseline-h2, static-h2)
 // and HTTP/2 cleartext with prior knowledge on :8082 (baseline-h2c).
+#include <hidi/asio/io.hpp>
 #include <hidi/asio/ssl_context.hpp>
 #include <hidi/h2server.hpp>
 
+#include <boost/asio/io_context.hpp>
 #include <glaze/json.hpp>
 
 #include <sched.h>
@@ -10,6 +12,8 @@
 #include <charconv>
 #include <chrono>
 #include <cstdint>
+#include <cstring>
+#include <deque>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -22,8 +26,8 @@
 #include <unordered_map>
 #include <vector>
 
-// /json types are outside the anonymous namespace: glaze cannot reflect types
-// with internal linkage
+// dataset types are outside the anonymous namespace: glaze cannot reflect
+// types with internal linkage
 struct rating_t {
   int64_t score, count;
 };
@@ -36,22 +40,6 @@ struct item {
   bool active;
   std::vector<std::string> tags;
   rating_t rating;
-};
-
-// item of the /json response: the dataset item plus the per-request total
-struct json_item {
-  int64_t id;
-  std::string_view name, category;
-  int64_t price, quantity;
-  bool active;
-  std::span<const std::string> tags;
-  rating_t rating;
-  int64_t total;
-};
-
-struct json_body {
-  std::span<const json_item> items;
-  size_t count;
 };
 
 namespace {
@@ -121,13 +109,30 @@ hidi::streaming_body_t whole(file_data data) {
   co_yield hidi::chunk(*data, /*stable=*/true, /*end_stream=*/true);
 }
 
+// item of the /json response: all fields but `total` do not depend on the
+// request, so they are serialized once
+struct json_item {
+  // {"id":1,...,"rating":{...},"total":
+  std::string prefix;
+  int64_t price_x_quantity;
+};
+
 // /data/dataset.json, parsed once
-const std::vector<item> &dataset() {
-  static const std::vector<item> items = [] {
-    std::vector<item> r;
+const std::vector<json_item> &json_dataset() {
+  static const std::vector<json_item> items = [] {
+    std::vector<item> src;
     std::string buf;
-    if (auto ec = glz::read_file_json(r, "/data/dataset.json", buf))
+    if (auto ec = glz::read_file_json(src, "/data/dataset.json", buf))
       throw std::runtime_error(glz::format_error(ec, buf));
+    std::vector<json_item> r;
+    for (const item &i : src) {
+      std::string json;
+      if (glz::write_json(i, json))
+        throw std::runtime_error("cannot serialize a dataset item");
+      json.pop_back(); // '}'
+      json += ",\"total\":";
+      r.push_back({std::move(json), i.price * i.quantity});
+    }
     return r;
   }();
   return items;
@@ -152,26 +157,59 @@ int64_t query_int(std::string_view query, std::string_view name) {
 // GET /json/{count}?m=M: the first `count` items with
 // total = price * quantity * m, as {"items": [...], "count": count}
 hidi::http_response json_items(size_t count, int64_t m) {
-  const std::vector<item> &src = dataset();
-  count = std::min(count, src.size());
-  std::vector<json_item> items;
-  items.reserve(count);
-  for (const item &i : std::span(src).first(count))
-    items.push_back({i.id, i.name, i.category, i.price, i.quantity, i.active,
-                     i.tags, i.rating, i.price * i.quantity * m});
+  const std::vector<json_item> &items = json_dataset();
+  count = std::min(count, items.size());
+  std::span<const json_item> selected = std::span(items).first(count);
 
   hidi::http_response rsp;
   rsp.status = 200;
   rsp.headers.push_back({"content-type", "application/json"});
-  std::string json;
-  if (glz::write_json(json_body{items, count}, json))
-    rsp.status = 500;
-  rsp.body.assign(json.begin(), json.end());
+  // an int64 takes at most 20 chars, the rest is punctuation
+  size_t max_size = 64;
+  for (const json_item &i : selected)
+    max_size += i.prefix.size() + 22;
+  rsp.body.resize(max_size, hidi::uninitialized_byte);
+  char *const begin = (char *)rsp.body.data();
+  char *p = begin;
+  auto append = [&p](std::string_view s) {
+    std::memcpy(p, s.data(), s.size());
+    p += s.size();
+  };
+  append("{\"items\":[");
+  for (const json_item &i : selected) {
+    if (&i != selected.data())
+      *p++ = ',';
+    append(i.prefix);
+    p = std::to_chars(p, p + 20, i.price_x_quantity * m).ptr;
+    *p++ = '}';
+  }
+  append("],\"count\":");
+  p = std::to_chars(p, p + 20, count).ptr;
+  *p++ = '}';
+  rsp.body.resize(p - begin);
   return rsp;
 }
 
+// Event loops shared by the TLS and h2c servers: server i of both runs on loop
+// i, one thread per loop. A loop runs only on its thread, so asio does not wake
+// other threads for its handlers
+struct arena_loops {
+  std::deque<boost::asio::io_context> ctxs;
+  size_t next = 0;
+
+  explicit arena_loops(size_t count) {
+    for (size_t i = 0; i < count; ++i)
+      ctxs.emplace_back(/*concurrency_hint=*/1);
+  }
+  // h2server_mt constructs its servers one by one, server 0 runs on the
+  // calling thread
+  boost::asio::io_context &take() { return ctxs[next++ % ctxs.size()]; }
+};
+
 struct arena_server final : hidi::h2server {
-  using hidi::h2server::h2server;
+  arena_server(hidi::server_ssl_context_ptr ssl, arena_loops &loops)
+      : hidi::h2server(std::move(ssl), {},
+                       hidi::make_asio_io_context(loops.take())) {}
 
   static_files statics;
 
@@ -275,23 +313,21 @@ hidi::server_endpoint any_address(unsigned short port) {
 
 int main() try {
   const size_t threads = available_cpus();
-  (void)dataset();
+  (void)json_dataset();
 
-  // Only one profile runs at a time, so each server gets all available CPUs
+  arena_loops loops(threads);
   hidi::h2server_mt h2(threads, std::in_place_type<arena_server>,
                        hidi::make_ssl_context_for_server("/certs/server.crt",
-                                                         "/certs/server.key"));
-  hidi::h2server_mt h2c(threads, std::in_place_type<arena_server>, nullptr);
-
-  std::thread tls_thread([&] {
-    h2.listen(any_address(8443));
-    h2.run();
-  });
+                                                         "/certs/server.key"),
+                       loops);
+  hidi::h2server_mt h2c(threads, std::in_place_type<arena_server>, nullptr,
+                        loops);
+  h2.listen(any_address(8443));
   h2c.listen(any_address(8082));
   std::cout << "hidi: h2 on :8443, h2c on :8082, threads: " << threads
             << std::endl;
-  h2c.run();
-  tls_thread.join();
+  // the loops are shared, so running them for h2 serves h2c too
+  h2.run();
 } catch (std::exception &e) {
   std::cerr << "hidi: " << e.what() << std::endl;
   return 1;
