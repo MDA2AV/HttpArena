@@ -999,7 +999,7 @@ html.maint .sortctl{display:none !important}
 
 /* the patch panel: the column header */
 .unit.patch{position:sticky; top:calc(var(--top-h) + 3px); z-index:8; box-shadow:0 8px 14px -8px rgba(0,0,0,.5)}
-.unit.patch>.face{height:68px; background:var(--patch); cursor:default; border-bottom:2px solid var(--edge-lo)}
+.unit.patch>.face{height:auto; min-height:52px; align-items:stretch; background:var(--patch); cursor:default; border-bottom:2px solid var(--edge-lo)}
 .patch .svc{font-family:var(--label); font-size:.7rem}
 .port{position:relative; cursor:pointer; user-select:none}
 .port .pl{font:600 .63rem/1.15 var(--label); letter-spacing:0; text-transform:uppercase; color:var(--text-2); text-align:right; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; -webkit-hyphens:auto; hyphens:auto; overflow-wrap:anywhere}
@@ -1017,9 +1017,35 @@ html.maint .sortctl{display:none !important}
    detailed view (on Overall, the family's own board) and Guide its
    implementation guide. Icon and word while the column has room for both,
    the icon alone in a narrow bay (the tooltip and aria-label name it). */
-.patch .bays .port{display:flex; flex-direction:column; justify-content:space-between; align-items:stretch; padding:5px 2px 4px; container-type:inline-size}
-.patch .bays .port .pl{text-align:left}
+.patch .bays .port{container-type:inline-size}
+/* the narrowest bays (an H/1.1 rack at 1400-1500px): a step smaller, so a name
+   like FORTUNES fits whole instead of breaking inside the word */
+@container (max-width:58px){ .patch .port .pl{font-size:.575rem} }
+@container (max-width:50px){ .patch .port .pl{font-size:.55rem} }
+/* an italic name's last letter leans past its box: room for it */
+.patch .bay.refcol .pl{padding-right:2px}
 .port .pnav{display:flex; gap:2px}
+/* The header's layout: every column name sits on one shared line, right-aligned
+   over its figures like the values in the units below, and the column's buttons
+   (View and Guide, or ?) on a row right under it. A column without buttons keeps
+   that row empty, so no name floats at a height of its own, and the strip is as
+   tall as its content - one line of names, or two where a name wraps. */
+.patch .bays{padding-top:0; padding-bottom:0}
+.patch .port, .patch .plate.port{display:flex; flex-direction:column; justify-content:flex-end; align-items:stretch; gap:4px; margin-top:0; margin-bottom:0; padding:7px 4px 6px 1px}
+.patch .port.lcdh{padding:7px 7px 6px}
+.patch .port .pl{flex:none; text-align:right}
+.patch .plate.port{padding-left:.55rem}
+.patch .plate.port .pl{text-align:left}
+.patch .port:not(:has(.pico)){padding-bottom:calc(6px + 22px + 4px)}
+.patch .port>.pico{align-self:flex-end; flex:none}
+.patch .svc{align-items:flex-end; padding-bottom:calc(6px + 22px + 4px)}
+.patch .leds.ph{justify-content:flex-end; padding-bottom:8px}
+/* a strip without a single button (a profile's own view): no button row to
+   keep, so the names sit centred and the strip is only as tall as they are */
+.unit.patch:not(:has(.pico))>.face{min-height:40px}
+.unit.patch:not(:has(.pico)) .port{justify-content:center; padding-bottom:6px}
+.unit.patch:not(:has(.pico)) .svc{align-items:center; padding-bottom:0}
+.unit.patch:not(:has(.pico)) .leds.ph{justify-content:center; padding-bottom:0}
 .pico{display:inline-flex; align-items:center; justify-content:center; gap:.28rem; min-width:22px; height:22px; padding:0 .3rem; border:1px solid var(--line); border-radius:2px; background:var(--panel); color:var(--text); font:600 .66rem/1 var(--label); letter-spacing:.06em; text-transform:uppercase; text-decoration:none; cursor:pointer; flex:none}
 .pnav .pico{flex:1 1 0; min-width:0; padding:0 .2rem}
 .pico svg{width:12px; height:12px; flex:none; fill:none; stroke:currentColor; stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round}
@@ -1132,8 +1158,19 @@ table.runs{border-collapse:collapse; width:100%; font:500 .76rem/1.3 var(--mono)
   .rack.many:not(.aisle) .unit:not(.blank) .face>.lcd, .rack.many:not(.aisle) .unit:not(.blank) .face>.mod, .rack.many:not(.aisle) .unit:not(.blank) .face>.plate, .rack.many:not(.aisle) .svc.r1, .rack.many:not(.aisle) .svc.r2, .rack.many:not(.aisle) .svc.r3{height:32px}
   .rack.many:not(.aisle) .plate{flex:1 1 200px}
   .rack.many:not(.aisle) .unit:not(.blank) .face>.bays{flex:1 1 100%; order:9; height:40px; padding:0 6px 6px 40px}
-  .rack.many:not(.aisle) .patch .face>.bays{height:30px !important; padding-bottom:2px}
-  .rack.many:not(.aisle) .patch .face>*{height:34px !important}
+  .rack.many:not(.aisle) .patch .face>.bays{height:auto !important; padding-bottom:0}
+  .rack.many:not(.aisle) .patch .face>*{height:auto !important}
+  /* the strip's first row (rank, name, LEDs, composite, Spec, Resil.) is one
+     line here: a "?" sits beside its name, and nothing keeps a button row */
+  .rack.many:not(.aisle) .patch .face>.port{flex-direction:row; align-items:center; justify-content:flex-end; gap:6px; padding:6px 4px}
+  .rack.many:not(.aisle) .patch .face>.plate.port{justify-content:flex-start; padding-left:.55rem}
+  .rack.many:not(.aisle) .patch .face>.port>.pico{align-self:center}
+  /* Spec and Resil. are too narrow for a name and a ? side by side: the ? stays
+     under the name, and the row centres on them */
+  .rack.many:not(.aisle) .patch .face>.port.mod{flex-direction:column; justify-content:center; align-items:stretch; gap:4px}
+  .rack.many:not(.aisle) .patch .face>.port.mod>.pico{align-self:flex-end}
+  .rack.many:not(.aisle) .patch .face>.svc{align-items:center; padding-bottom:0}
+  .rack.many:not(.aisle) .patch .leds.ph{justify-content:center; padding-bottom:0}
   .rack.many:not(.aisle) .bv{font-size:.78rem}
   .rack.many:not(.aisle) .bm{font-size:.62rem}
   .rack.many:not(.aisle) .port .pl{font-size:.64rem; letter-spacing:.04em}
@@ -1144,8 +1181,14 @@ table.runs{border-collapse:collapse; width:100%; font:500 .76rem/1.3 var(--mono)
   .rack.v-prof:not(.aisle) .unit:not(.blank) .face>.lcd, .rack.v-prof:not(.aisle) .unit:not(.blank) .face>.plate, .rack.v-prof:not(.aisle) .svc.r1, .rack.v-prof:not(.aisle) .svc.r2, .rack.v-prof:not(.aisle) .svc.r3{height:32px}
   .rack.v-prof:not(.aisle) .plate{flex:1 1 200px}
   .rack.v-prof:not(.aisle) .unit:not(.blank) .face>.bays{flex:1 1 100%; order:9; height:36px; padding:0 6px 6px 40px}
-  .rack.v-prof:not(.aisle) .patch .face>.bays{height:26px !important}
-  .rack.v-prof:not(.aisle) .patch .face>*{height:34px !important}
+  .rack.v-prof:not(.aisle) .patch .face>.bays{height:auto !important}
+  .rack.v-prof:not(.aisle) .patch .face>*{height:auto !important}
+  .rack.v-prof:not(.aisle) .patch .face>.port{flex-direction:row; align-items:center; justify-content:flex-end; gap:6px; padding:6px 4px}
+  .rack.v-prof:not(.aisle) .patch .face>.plate.port{justify-content:flex-start; padding-left:.55rem}
+  .rack.v-prof:not(.aisle) .patch .face>.port.mod{flex-direction:column; justify-content:center; align-items:stretch; gap:4px}
+  .rack.v-prof:not(.aisle) .patch .face>.port.mod>.pico{align-self:flex-end}
+  .rack.v-prof:not(.aisle) .patch .face>.svc{align-items:center; padding-bottom:0}
+  .rack.v-prof:not(.aisle) .patch .leds.ph{justify-content:center; padding-bottom:0}
 }
 
 /* ── phones and narrow windows ── */
