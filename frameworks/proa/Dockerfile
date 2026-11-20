@@ -1,5 +1,6 @@
 FROM rust:1.95-bookworm AS build
 WORKDIR /work
+ENV RUSTFLAGS="-C target-cpu=native"
 COPY Cargo.toml Cargo.lock ./
 COPY src/ src/
 RUN cargo build --release --locked
