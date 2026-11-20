@@ -757,7 +757,10 @@ body{background:var(--floor); background-attachment:fixed; font-family:var(--san
 .brand-name{display:flex; align-items:center; gap:.5rem; font:700 1.18rem/1 var(--label); letter-spacing:.01em; color:var(--text)}
 .brand-name b{color:var(--accent); font-weight:700}
 .brand-ico{width:26px; height:26px; color:var(--text); fill:currentColor; flex:none}
+/* the mark: a rack - its frame, three units and their status lights */
+.brand-ico .bi-fr{fill:none; stroke:currentColor; stroke-width:1.6; opacity:.85}
 .brand-ico .bi-led{fill:var(--led-g)}
+.brand-ico .bi-led.a{fill:var(--led-a)}
 .top-nav{display:flex; align-items:stretch; gap:.15rem; flex:none}
 .tn, .top-nav .fw-btn{display:flex; align-items:center; gap:.4rem; padding:.42rem .7rem; border:1px solid transparent; border-radius:4px; background:none; color:var(--text-2); font:600 .9rem/1 var(--label); letter-spacing:.03em; text-transform:uppercase; white-space:nowrap; box-shadow:none; position:relative}
 .tn svg, .top-nav .fw-btn svg{width:15px; height:15px; flex:none; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round}
