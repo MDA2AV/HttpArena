@@ -803,15 +803,9 @@ def _sidebar(tree, curid):
                            % (" active" if u == curid else "", _doc_url(u), title))
         return "".join(out)
 
+    # The page search is in the header, as on every other page; the sidebar
+    # is the contents.
     return (
-        '<div class="nav-search"><div class="ns-box">'
-        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
-        'stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>'
-        '<input id="navq" type="search" placeholder="Search pages" autocomplete="off" '
-        'spellcheck="false" aria-label="Search pages" role="combobox" aria-expanded="false" '
-        'aria-controls="navResults"></div></div>'
-        '<div class="nav-results" id="navResults" role="listbox" aria-label="Search results" '
-        'style="display:none"></div>'
         '<div id="navTree">'
         '<a class="nav-item" href="/">\u2190 Leaderboard</a>'
         '<div class="nav-sec"><div class="nav-grp lvl0 open">'
@@ -849,7 +843,7 @@ def board_chrome():
 
     # the board's brand link drives its in-page router; on a generated page it goes home
     brand = part("brand").replace('href="#" id="brandHome"', 'href="/"')
-    return brand, part("links"), "", part("nav")
+    return brand, part("links"), "", part("nav"), part("search")
 
 
 # Resolved once at import: the board's chrome, shared by every generated page.
@@ -860,56 +854,11 @@ _THEME_INIT = ("<script>try{var t=localStorage.getItem('lb-theme');"
 # search.js is the whole Knowledge Base as text - 290KB - and it was loaded on
 # every doc page for a search box most readers never open. It is fetched on the
 # first use of the box instead.
-_NAV_JS = ("<script>(function(){"
-           # accordion: same behaviour as the board's toggleGrp
-           "document.querySelectorAll('.nav-grp-h .caret').forEach(function(c){"
+# The contents tree of a Knowledge Base page folds open and shut like the
+# board's; the page search in the header is run by sr.js on every page.
+_NAV_JS = ("<script>document.querySelectorAll('.nav-grp-h .caret').forEach(function(c){"
            "c.onclick=function(e){e.preventDefault();e.stopPropagation();"
-           "c.closest('.nav-grp').classList.toggle('open');};});"
-           # page search over the index the generator emits
-           "var inp=document.getElementById('navq'),box=document.getElementById('navResults'),"
-           "tree=document.getElementById('navTree');if(!inp)return;"
-           "var req=null,cb=null;"
-           "function need(f){if(window.LB_SEARCH){f();return;}cb=f;if(req)return;"
-           "req=document.createElement('script');req.src='/search.js';"
-           "req.onload=function(){var g=cb;cb=null;if(g)g();};"
-           # Run the pending callback on failure too, so the box answers "no
-           # page matches" instead of staying blank forever, and clear req so
-           # the next keystroke can retry the fetch.
-           "req.onerror=function(){req=null;var g=cb;cb=null;if(g)g();};"
-           "document.head.appendChild(req);}"
-           "inp.addEventListener('focus',function(){need(function(){});},{once:true});"
-           "function esc(s){return String(s).replace(/[&<>\"]/g,function(c){"
-           "return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});}"
-           "function snip(x,t){var i=x.toLowerCase().indexOf(t);if(i<0)return esc(x.slice(0,110));"
-           "var a=Math.max(0,i-45),b=Math.min(x.length,i+t.length+75);"
-           "return (a>0?'\u2026':'')+esc(x.slice(a,i))+'<mark>'+esc(x.slice(i,i+t.length))+'</mark>'"
-           "+esc(x.slice(i+t.length,b))+(b<x.length?'\u2026':'');}"
-           "function run(){var q=inp.value.trim().toLowerCase();"
-           "if(!q){box.style.display='none';tree.style.display='';inp.setAttribute('aria-expanded','false');return;}"
-           "var terms=q.split(/\\s+/).filter(Boolean),hits=[];"
-           # Guarded the way the board's buildSearchIndex() guards it: a script
-           # that loads but defines nothing (proxy error page, blocked fetch)
-           # would otherwise throw on every keystroke for the rest of the visit.
-           "(window.LB_SEARCH||[]).forEach(function(e){var t=(e.t||'').toLowerCase(),"
-           "b=((e.d||'')+' '+(e.x||'')).toLowerCase(),sc=0;"
-           "for(var i=0;i<terms.length;i++){var ti=t.indexOf(terms[i]),bi=b.indexOf(terms[i]);"
-           "if(ti<0&&bi<0)return;sc+=ti===0?60:ti>0?35:0;if(bi>=0)sc+=5;}"
-           "if(t===q)sc+=50;hits.push({e:e,sc:sc});});"
-           "hits.sort(function(a,b){return b.sc-a.sc||a.e.t.length-b.e.t.length;});"
-           "hits=hits.slice(0,25);"
-           "tree.style.display='none';box.style.display='';inp.setAttribute('aria-expanded','true');"
-           "if(!hits.length){box.innerHTML='<div class=\"nav-empty\">No page matches <b>'+esc(inp.value)+'</b>.</div>';return;}"
-           "var h='<div class=\"nav-res-h\"><span>Pages</span><span>'+hits.length+'</span></div>';"
-           "hits.forEach(function(hit){var e=hit.e;"
-           "h+='<a class=\"nav-res\" href=\"/docs/'+(e.u?e.u+'/':'')+'\">'"
-           "+'<span class=\"nav-res-t\">'+esc(e.t)+'</span>'"
-           "+'<span class=\"nav-res-c\">'+esc(e.c||'')+'</span>'"
-           "+'<span class=\"nav-res-s\">'+snip((e.d||'')+' '+(e.x||''),terms[0])+'</span></a>';});"
-           "box.innerHTML=h;}"
-           "var t;inp.addEventListener('input',function(){clearTimeout(t);"
-           "t=setTimeout(function(){if(!inp.value.trim())run();else need(run);},90);});"
-           "inp.addEventListener('keydown',function(e){if(e.key==='Escape'){inp.value='';run();inp.blur();}});"
-           "})();</script>")
+           "c.closest('.nav-grp').classList.toggle('open');};});</script>")
 
 # The theme toggle, the tooltips of the header, and the hardware's motion (LEDs
 # and fans that only run while on screen) for every generated page.
@@ -919,192 +868,36 @@ _THEME_TOGGLE = '<script src="/assets/sr/sr.js"></script>'
 _CSS_LINK = '<link rel="stylesheet" href="/assets/sr/sr.css">'
 
 # ── hardware, as markup ──────────────────────────────────────────────────────
-# The generated pages are built out of the same parts as the board's rack: a
-# unit's front panel, a rack around a list of them, and for an entry page the
-# server on the bench with its lid off. Markup only: every figure in them is
-# one the page already states in its tables, read from the same variables.
+# The generated pages keep the live site's text word for word, so the hardware
+# on them is furniture without words: the status LEDs on the compare picker's
+# units, and the language colour of each cabinet on the frameworks index.
 
 _LANG_COLORS = {}
 
 _LEDS = ('<span class="leds" aria-hidden="true"><i class="led pwr"></i>'
          '<i class="led act"></i><i class="led sts ok"></i></span>')
-_RACK_TAIL = ('<div class="rack-tail"><div class="unit blank"><div class="ear l"></div>'
-              '<div class="face"></div><div class="ear r"></div></div>'
-              '<div class="rack-foot"><i></i><i></i></div></div>')
-
-
-def _vend(lang):
-    if not lang:
-        return ""
-    c = (_LANG_COLORS.get(lang) or {}).get("accent", "#94a3b8")
-    return '<span class="vend" style="--vc:%s">%s</span>' % (_html.escape(c), _html.escape(lang))
-
-
-def _fmt_k(n):
-    """A request rate the way the board's bays print it."""
-    n = n or 0
-    if n >= 1e6:
-        return "%.2fM" % (n / 1e6)
-    if n >= 1e3:
-        return "%.0fk" % (n / 1e3)
-    return "%d" % round(n) if n > 0 else "-"
-
-
-def _hw_unit(name, href="", lang="", lcd="", svc="", medal=0, tuned=False, note=""):
-    """One 1U front panel: service label, name plate, LEDs, display, a note."""
-    e = _html.escape
-    tag = "a" if href else "div"
-    return ('<%s class="unit u-st%s%s"%s><div class="ear l"></div><div class="face">'
-            '<span class="svc%s">%s</span><span class="plate">%s<span class="nm">%s</span>%s</span>'
-            '%s%s%s</div><div class="ear r"></div></%s>'
-            % (tag, " tuned" if tuned else "", " r%d" % medal if medal else "",
-               ' href="%s"' % e(href) if href else "",
-               " r%d" % medal if medal else "", e(str(svc)), _vend(lang), e(name),
-               '<span class="tun">tuned</span>' if tuned else "",
-               _LEDS,
-               '<span class="lcd"><b>%s</b></span>' % e(str(lcd)) if lcd != "" else "",
-               '<span class="unote">%s</span>' % note if note else "", tag))
-
-
-def _hw_rack(label, units, count="", cls=""):
-    return ('<div class="rack r-st%s" data-live><div class="rack-cap"><span class="rc-id">'
-            '<i class="kled"></i>%s</span>%s</div>%s%s</div>'
-            % (" " + cls if cls else "", _html.escape(label),
-               '<span class="rc-n">%s</span>' % _html.escape(count) if count else "",
-               "".join(units), _RACK_TAIL))
-
-
-def _hw_label(text):
-    """A blank 1U carrying a label: the divider between two leagues in a rack."""
-    return ('<div class="unit u-div"><div class="ear l"></div><div class="face"><span>%s</span>'
-            '</div><div class="ear r"></div></div>' % _html.escape(text))
-
-
-def _crumbs_html(crumbs):
-    if not crumbs:
-        return ""
-    e = _html.escape
-    parts = ['<a href="%s">%s</a>' % (e(href), e(name)) for name, href in crumbs[:-1]]
-    parts.append('<span aria-current="page">%s</span>' % e(crumbs[-1][0]))
-    return ('<nav class="doc-crumbs" aria-label="Breadcrumb">' + '<i>/</i>'.join(parts) + "</nav>")
-
-
-def _doc_strip(left, right=""):
-    """The document-control strip over a page: where it is filed, and its revision."""
-    return ('<div class="doc-ctl"><div class="doc-ctl-l">' + left + '</div>'
-            + ('<div class="doc-ctl-r">' + right + '</div>' if right else "") + "</div>")
-
-
-def _fw_bench(fw, m, lang, ranks, runs, achievements=()):
-    """The entry on the bench with its lid off: its composite ranks on the
-    processors, its medals in the memory slots, its best run of each profile in
-    the drive cage, its facts on the power supply's plate, its links on the rear
-    ports. Every figure is one the tables below state."""
-    e = _html.escape
-    kind = m.get("type", "emerging")
-    lead = next((r for r in ranks if r[0] == DEFAULT_SCOPE), ranks[0] if ranks else None)
-    tuned = kind_has_mode(kind) and m.get("mode") == "tuned"
-
-    facts = [("Type", TYPE_LABEL.get(kind, kind))]
-    if lang:
-        facts.append(("Language", lang))
-    if m.get("engine") and m["engine"] != fw:
-        facts.append(("Engine", m["engine"]))
-    if kind_has_mode(kind):
-        facts.append(("Configuration", "tuned" if m.get("mode") == "tuned" else "standard"))
-    if kind in CMP_TYPES and isinstance(m.get("cmp"), dict):
-        facts.append(("Completeness", "%d/4" % (4 - len([a for a in CMP_AXES
-                                                         if m["cmp"].get(a) is False]))))
-    facts.append(("Runs", str(len(runs))))
-    psu = "".join("<div><dt>%s</dt><dd>%s</dd></div>" % (e(k), e(v)) for k, v in facts)
-
-    ports = []
-    if m.get("repo"):
-        ports.append((m["repo"], "Repository", True))
-    if m.get("website"):
-        ports.append((m["website"], "Website", True))
-    ports.append(("https://github.com/MDA2AV/HttpArena/tree/main/frameworks/%s"
-                  % quote(m.get("dir") or fw), "Implementation", True))
-    ports.append((_compare_url(None) + "#" + quote(fw), "Head to head", False))
-    ports.append(("/", "Leaderboard", False))
-    rear = "".join('<a class="rj" href="%s"%s><i></i><span>%s</span></a>'
-                   % (e(h), ' rel="noopener"' if ext else "", e(t)) for h, t, ext in ports)
-
-    cpus = "".join(
-        '<a class="cpu" href="%s"><span class="cpu-f">%s</span><b>#%d</b>'
-        '<span class="cpu-o">of %d</span><span class="cpu-s">%.0f</span></a>'
-        % (e(link), e(SCOPE_NAME[scope]), rank, field, score)
-        for scope, rank, field, score, link in ranks)
-    if not cpus:
-        cpus = '<div class="cpu none"><span class="cpu-f">No published rank</span><b>-</b></div>'
-
-    dimms = ""
-    for medal, n in _medal_counts(achievements):
-        dimms += ('<div class="dimm-bank md-%s"><span class="dimm-l">%s %s &times;%d</span>'
-                  '<span class="dimm-s">%s</span></div>'
-                  % (medal, MEDAL_ICON[medal], MEDAL_LABEL[medal], n, "<i></i>" * min(n, 16)))
-    if not dimms:
-        dimms = ('<div class="dimm-bank none"><span class="dimm-l">No medals yet</span>'
-                 '<span class="dimm-s"><i></i><i></i><i></i><i></i></span></div>')
-
-    # the drive cage: per profile, the run with the most requests per second
-    best, order = {}, []
-    for p, c, r in runs:
-        pid = p["id"]
-        if pid not in best:
-            order.append(pid)
-            best[pid] = (p, c, r)
-        elif (r.get("rps") or 0) > (best[pid][2].get("rps") or 0):
-            best[pid] = (p, c, r)
-    cage = "".join(
-        '<div class="hdd"><span class="hl">%s</span><b>%s</b><span class="hs">req/s &middot; %sc</span></div>'
-        % (e((FAMILY_LABEL[FAMILY_OF_CAT[best[pid][0]["category"]]] + " "
-              if best[pid][0]["category"] in FAMILY_OF_CAT else "") + best[pid][0]["label"]),
-           _fmt_k(best[pid][2].get("rps")), f"{best[pid][1]:,}")
-        for pid in order)
-
-    bezel = _hw_unit(fw, lang=lang, tuned=tuned,
-                     lcd=("%.0f" % lead[3]) if lead else "",
-                     svc=lead[1] if lead else "",
-                     medal=lead[1] if lead and lead[1] <= 3 else 0,
-                     note=("%s &middot; %d of %d" % (e(SCOPE_NAME[lead[0]]), lead[1], lead[2]))
-                     if lead else "")
-    fans = '<i class="fan"><i></i></i>' * 6
-    return ('<section class="bench" aria-label="%s on the bench">'
-            '<div class="bench-h"><span>Bench 01 &middot; lid off</span>'
-            '<span>top view, front panel at the bottom</span></div>'
-            '<div class="chassis" data-live>'
-            '<div class="ch-row ch-rear">'
-            '<div class="ch-part psu"><span class="silk">PSU &middot; asset plate</span><dl>%s</dl></div>'
-            '<div class="ch-part rear"><span class="silk">Rear I/O &middot; links</span>'
-            '<div class="rjs">%s</div></div></div>'
-            '<div class="ch-row ch-board">'
-            '<div class="ch-part"><span class="silk">Processors &middot; composite rank per family</span>'
-            '<div class="cpus">%s</div></div>'
-            '<div class="ch-part"><span class="silk">Memory slots &middot; medals</span>'
-            '<div class="dimms">%s</div></div></div>'
-            '<div class="ch-row ch-fans" aria-hidden="true">%s</div>'
-            '%s'
-            '%s</div></section>'
-            % (e(fw), psu, rear, cpus, dimms, fans,
-               ('<div class="ch-row ch-cage"><div class="ch-part"><span class="silk">Drive cage &middot; '
-                'best run of each profile</span><div class="hdds">%s</div></div></div>' % cage)
-               if cage else "",
-               bezel))
-
-
-
-
 def _header(sec, extra=""):
     """The site header of a generated page: the board's own chrome, with the
-    section this page belongs to marked in the nav."""
+    section this page belongs to marked in the nav, and the board's page search
+    (sr.js runs it over the Knowledge Base on these pages)."""
     nav = _CHROME[3].replace('data-sec="%s"' % sec, 'data-sec="%s" aria-current="page"' % sec)
     return ('<body class="pg pg-' + sec + '"><header class="top">'
             '<div class="brand">' + _CHROME[0] + '</div>'
             '<nav class="top-nav" aria-label="Site">' + nav + '</nav>'
+            + _CHROME[4]
             + extra
             + '<div class="top-links">' + _CHROME[1] + '</div>'
             '</header>')
+
+
+def check_404_header():
+    """site/root/404.html is static - assemble_site.sh copies it as it is - so it
+    carries its own copy of the header. Fail the build when the board's chrome
+    has moved on without it, rather than ship a 404 with a stale header."""
+    page = (ROOT / "site" / "root" / "404.html").read_text(encoding="utf-8")
+    if _header("404") not in page:
+        raise SystemExit("gen: the header in site/root/404.html no longer matches the board's chrome - "
+                         "write it again from _header(\"404\")")
 
 
 def _doc_page(did, title, body_html, tree, seo_title="", description="",
@@ -1155,14 +948,15 @@ def _doc_page(did, title, body_html, tree, seo_title="", description="",
     # filters, round selector, hardware chips) are leaderboard state, not site
     # chrome, so they aren't carried over; everything else is identical.
     header = _header("docs")
-    rev = ('Rev <time datetime="%s">%s</time>' % (updated, updated)) if updated else ""
+    # The page's own text is the article, exactly as before the restyle: the
+    # phone toggle for the contents draws its label in CSS (aria-label for
+    # screen readers), and there is no breadcrumb or revision strip.
     body = ('<div class="docs-layout">'
-            '<button type="button" class="toc-btn" id="tocBtn" aria-expanded="false">'
-            'Runbook contents</button>'
+            '<button type="button" class="toc-btn" id="tocBtn" aria-expanded="false" '
+            'aria-label="Runbook contents"></button>'
             '<aside class="nav">' + _sidebar(tree, did) + '</aside>'
             '<main class="doc-main"><article class="doc-wrap sheet-page">'
-            + _doc_strip(_crumbs_html(crumbs) or '<nav class="doc-crumbs"><span>Knowledge Base</span></nav>', rev)
-            + '<h1 class="doc-title">' + t + "</h1>"
+            '<h1 class="doc-title">' + t + "</h1>"
             + _static_links(body_html)
             + "</article></main></div>")
     return head + header + body + _NAV_JS + _THEME_TOGGLE + "</body></html>"
@@ -2932,13 +2726,10 @@ def _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url="", achievem
             + _CSS_LINK
             + "</head>")
     header = _header("frameworks")
-    trail = [("Frameworks", "/frameworks/")] + ([(lang, lang_url)] if lang_url else []) + [(fw, "")]
-    body = ('<div class="docs-layout one-col"><main class="doc-main wide">'
+    body = ('<div class="docs-layout one-col"><main class="doc-main">'
             '<article class="doc-wrap">'
-            + _doc_strip(_crumbs_html(trail), e(round_name))
-            + '<h1 class="doc-title">' + e(fw) + "</h1>"
-            + _fw_bench(fw, m, lang, ranks, runs, achievements)
-            + '<div class="sheet-page">'
+            '<h1 class="doc-title">' + e(fw) + "</h1>"
+            '<div class="sheet-page">'
             + _fw_body(fw, m, lang, ranks, runs, round_name, lang_url, achievements,
                        lang_scopes, updated, has_compare, spec)
             + "</div></article></main></div>")
@@ -3189,26 +2980,8 @@ def _lang_page(lang, scopes, all_entries, round_name, siblings=(), updated="",
                   % (", ".join(e(x) for x in rest),
                      "has" if len(rest) == 1 else "have",
                      "it is listed" if len(rest) == 1 else "they are listed"))
-    # The cabinet: the entries of the family this page leads with, league by
-    # league, each unit showing what its table row shows.
-    cab = []
-    for league, lrows in leagues:
-        if len(leagues) > 1:
-            cab.append(_hw_label(_league_head(league)))
-        for fw, kind, tuned, score, rank, of, link, lrank, lof in lrows:
-            # No position is printed on the unit, for the reason the tables
-            # give: the only ranks shown are the published ones, in the note.
-            cab.append(_hw_unit(fw, href=_fw_url(fw), lang=lang, lcd="%.0f" % score,
-                                tuned=tuned,
-                                note="%d of %d in its league" % (rank, of)))
-    cabinet = (_hw_rack("%s cabinet · %s composite" % (lang, SCOPE_NAME[lead_scope]), cab,
-                        "%d racked · best first, league by league" % (len(cab) - (len(leagues) if len(leagues) > 1 else 0)))
-               if cab else "")
-    body = ('<div class="docs-layout one-col"><main class="doc-main wide">'
-            '<article class="doc-wrap">'
-            + _doc_strip(_crumbs_html([("Frameworks", "/frameworks/"), (lang, "")]), e(round_name))
-            + '<h1 class="doc-title">' + e(title) + "</h1>"
-            + '<div class="cab-split"><div class="cab-col">' + cabinet + '</div>'
+    body = ('<div class="docs-layout one-col"><main class="doc-main">'
+            '<article class="doc-wrap"><h1 class="doc-title">' + e(title) + "</h1>"
             '<div class="doc-body sheet-page">' + answer + intro + "".join(tables)
             + ("<h2 id=\"faq\">Questions</h2>" + _faq_html(faq) if faq else "")
             + "<h2>Every " + e(lang) + " entry</h2><ul>" + every + "</ul>"
@@ -3220,7 +2993,7 @@ def _lang_page(lang, scopes, all_entries, round_name, siblings=(), updated="",
                                % (_compare_url(lang), e(lang)) if has_compare else "")
                             + '<a href="/frameworks/">All languages</a> · '
                               '<a href="/">Open the leaderboard</a>')
-            + "</div></div></article></main></div>")
+            + "</div></article></main></div>")
     return head + header + body + _THEME_TOGGLE + "</body></html>"
 
 
@@ -3253,9 +3026,9 @@ def _fw_index_page(entries, lang_pages=(), updated="", compare_langs=()):
                    + (' · <a href="%s">head to head</a>' % _compare_url(lang)
                       if lang in compare_langs else "")
                    + "</p>" if lang in lang_pages else "")
-        sections.append('<section class="cab" style="--vc:%s"><h2>%s<span class="cab-n">%d</span></h2>'
+        sections.append('<section class="cab" style="--vc:%s"><h2 data-n="%d">%s</h2>'
                         % (_html.escape((_LANG_COLORS.get(lang) or {}).get("accent", "#94a3b8")),
-                           heading, n)
+                           n, heading)
                         + compare + "<ul>" + items + "</ul></section>")
     graph = [
         {"@type": "CollectionPage", "@id": url + "#page", "name": title, "description": desc,
@@ -3284,10 +3057,7 @@ def _fw_index_page(entries, lang_pages=(), updated="", compare_langs=()):
             + "</head>")
     header = _header("frameworks")
     body = ('<div class="docs-layout one-col"><main class="doc-main wide">'
-            '<article class="doc-wrap">'
-            + _doc_strip(_crumbs_html([("Frameworks", "")]),
-                         "Data hall floor plan &middot; %d cabinets" % len(by_lang))
-            + '<h1 class="doc-title">' + e(title) + "</h1>"
+            '<article class="doc-wrap"><h1 class="doc-title">' + e(title) + "</h1>"
             '<div class="doc-body floor-page"><p class="floor-lead">' + e(desc) + " Ranks and every per-profile number live on "
             'the page of each entry; the <a href="/">leaderboard</a> compares them, and '
             '<a href="/compare/">the comparisons</a> put any two of one language side by side.</p>'
@@ -3584,36 +3354,9 @@ _CMP_JS = """<script>
       a.value=h; draw();
     }
   }
-  // The bench: a meter per shared test, and on each unit's display the number
-  // of tests it is ahead on. Same rows and the same rule as the table above.
-  var meters=document.getElementById('cmpMeters');
-  function bench(){
-    if(!meters) return;
-    var x=a.value, y=b.value, h='', wx=0, wy=0, both=0;
-    for(var i=0;i<views.length;i++){
-      var v=views[i], rx=(data[x]||{})[v[0]], ry=(data[y]||{})[v[0]];
-      if(!rx||!ry) continue;
-      var paced=rx.length>5&&ry.length>5, mx=metric(rx), my=metric(ry), top=Math.max(mx,my)||1;
-      both++; if(mx>my)wx++; else if(my>mx)wy++;
-      h+='<div class="mt'+(mx>my?' wa':my>mx?' wb':'')+'">'
-        +'<span class="mt-v a">'+(paced?mx.toFixed(1):num(mx))+'</span>'
-        +'<span class="mt-bar a"><i style="transform:scaleX('+(mx/top).toFixed(3)+')"></i></span>'
-        +'<span class="mt-l"><b>'+esc(v[1])+'</b><small>'+num(v[2])+'c \u00b7 '+(paced?'score':'req/s')+' \u00b7 '+delta(mx,my)+'</small></span>'
-        +'<span class="mt-bar b"><i style="transform:scaleX('+(my/top).toFixed(3)+')"></i></span>'
-        +'<span class="mt-v b">'+(paced?my.toFixed(1):num(my))+'</span></div>';
-    }
-    meters.innerHTML=h;
-    function side(id, w, n){
-      var d=document.getElementById(id+'Win'), t=document.getElementById(id+'Note');
-      if(d) d.textContent=both?w:'-';
-      if(t) t.textContent=both?('ahead on '+w+' of '+both+(S[n]?' \u00b7 '+D.c+' composite '+S[n][0]:'')):'no shared test';
-    }
-    side('cmpA', wx, x); side('cmpB', wy, y);
-  }
-  a.onchange=b.onchange=function(){ draw(); bench(); };
-  window.addEventListener('hashchange',function(){ fromHash(); bench(); });
+  a.onchange=b.onchange=draw;
+  window.addEventListener('hashchange',fromHash);
   if(location.hash) fromHash();
-  bench();
 })();
 </script>"""
 
@@ -3755,19 +3498,18 @@ def _compare_page(lang, ranked, members, profiles, results, round_name, updated,
             + _CSS_LINK
             + "</head>")
     header = _header("compare")
-    def station(side, sel_id, cur):
+    # The picker on the bench: two units, each holding the label and the select
+    # of its side - the live page's "Compare <a> with <b>" and nothing more. The
+    # "vs" between them is drawn by CSS.
+    def station(side, sel_id, label, cur):
         return ('<div class="unit u-st st-%s"><div class="ear l"></div><div class="face">'
-                '<span class="svc">%s</span><span class="plate"><label class="vend" for="%s">%s</label>'
+                '<span class="plate"><label class="vend" for="%s">%s</label>'
                 '<select id="%s">%s</select></span>%s'
-                '<span class="lcd" data-tip="Tests this entry is ahead on, of the tests the two share.">'
-                '<b id="%sWin">-</b></span><span class="unote" id="%sNote"></span>'
                 '</div><div class="ear r"></div></div>'
-                % (side.lower(), side, sel_id, "Compare" if side == "A" else "with", sel_id,
-                   opts(cur), _LEDS, sel_id, sel_id))
-    picker = ('<div class="cmp-pick vs-bench" data-live><div class="bench-h"><span>Bench 02 &middot; '
-              'two units, same machine, same profiles</span><span>pick either side</span></div>'
-              + station("A", "cmpA", a) + '<div class="vs-mid" aria-hidden="true">vs</div>'
-              + station("B", "cmpB", b) + '<div id="cmpMeters" class="meters"></div></div>')
+                % (side, sel_id, label, sel_id, opts(cur), _LEDS))
+    picker = ('<div class="cmp-pick vs-bench" data-live>'
+              + station("a", "cmpA", "Compare", a) + '<div class="vs-mid" aria-hidden="true"></div>'
+              + station("b", "cmpB", "with", b) + '</div>')
     how = ("Requests per second is the best of three runs and the delta is the first column "
            "against the second; every row is the same profile at the same connection count, on "
            "the same machine. The fixed-rate profiles offer every entry the same request rate, "
@@ -3778,10 +3520,7 @@ def _compare_page(lang, ranked, members, profiles, results, round_name, updated,
              "<p>Pick any two of the %d entries, in any language - the picker is grouped by "
              "language, and the two sides do not have to match. %s</p>" % (len(entries), how))
     body = ('<div class="docs-layout one-col"><main class="doc-main wide">'
-            '<article class="doc-wrap">'
-            + _doc_strip(_crumbs_html([("Comparisons", "/compare/"), (lang or "Every language", "")]),
-                         e(round_name))
-            + '<h1 class="doc-title">' + e(title) + "</h1>"
+            '<article class="doc-wrap"><h1 class="doc-title">' + e(title) + "</h1>"
             '<div class="doc-body sheet-page">'
             '<p class="lead-answer" id="cmpLead">' + _cmp_verdict(data, views, scores, a, b)
             + "</p>" + intro + picker
@@ -3861,9 +3600,7 @@ def _compare_index_page(langs, updated, og_url=""):
             + "</head>")
     header = _header("compare")
     body = ('<div class="docs-layout one-col"><main class="doc-main">'
-            '<article class="doc-wrap sheet-page">'
-            + _doc_strip(_crumbs_html([("Comparisons", "")]), "Bench 02")
-            + '<h1 class="doc-title">' + e(title) + "</h1>"
+            '<article class="doc-wrap sheet-page"><h1 class="doc-title">' + e(title) + "</h1>"
             '<div class="doc-body cmp-index"><p>' + e(desc) + " Every entry runs the same profiles on the "
             "same machine, so two entries in different languages are measured the same way and "
             "the numbers line up.</p>"
@@ -4358,6 +4095,7 @@ def build_profiles(index, docs_content=None):
 
 def main():
     global RESULTS
+    check_404_header()
     RESULTS = load_results()
     frameworks = load("frameworks.json") or {}
     langcolors = load("langcolors.json") or {}

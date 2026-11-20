@@ -14,7 +14,7 @@
 <body class="board">
   <header class="top">
     <div class="brand"><!--chrome:brand-->
-      <a class="brand-name" href="#" id="brandHome" aria-label="HttpArena home"><svg class="brand-ico" viewBox="0 0 28 28" aria-hidden="true"><rect x="2.5" y="1.5" width="23" height="25" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="5.5" y="5" width="17" height="4.6" rx="1" fill="currentColor" opacity=".9"/><rect x="5.5" y="11.7" width="17" height="4.6" rx="1" fill="currentColor" opacity=".55"/><rect x="5.5" y="18.4" width="17" height="4.6" rx="1" fill="currentColor" opacity=".3"/><circle class="bi-led" cx="19.6" cy="7.3" r="1.25"/><circle class="bi-led" cx="19.6" cy="14" r="1.25"/></svg><span><b>Http</b>Arena</span></a>
+      <a class="brand-name" href="#" id="brandHome" aria-label="HttpArena home"><svg class="brand-ico" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 1 19 21 16 23 13 21Z"/><path d="M7 22.5Q7 21 9 21H23Q25 21 25 22.5 25 24 23 24H9Q7 24 7 22.5Z"/><rect x="14" y="24" width="4" height="4" rx=".5"/><ellipse cx="16" cy="30" rx="2.5" ry="1.8"/></svg><span><b>Http</b>Arena</span></a>
     <!--/chrome:brand--></div>
     <nav class="top-nav" aria-label="Site"><!--chrome:nav-->
       <a class="tn" data-sec="board" href="/" data-tip="The leaderboard: every entry racked by its composite score."><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M4 9h16M4 15h16"/></svg><span>Racks</span></a>
@@ -22,14 +22,14 @@
       <a class="tn" data-sec="compare" href="/compare/" data-tip="Put any two entries side by side on the bench."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg><span>Compare</span></a>
       <a class="tn" data-sec="docs" href="/docs/" data-tip="The Knowledge Base: how the benchmark is run, scored and extended."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Knowledge Base</span></a>
     <!--/chrome:nav--></nav>
-    <div class="nav-search" id="nav">
+    <!--chrome:search--><div class="nav-search" id="nav">
       <div class="ns-box">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
         <input id="navq" type="search" placeholder="Search pages" autocomplete="off" spellcheck="false"
                aria-label="Search pages" role="combobox" aria-expanded="false" aria-controls="navResults">
       </div>
       <div class="nav-results" id="navResults" role="listbox" aria-label="Search results" style="display:none"></div>
-    </div>
+    </div><!--/chrome:search-->
     <div class="round" id="round"></div>
     <div class="top-links"><!--chrome:links-->
       <a class="icon-btn" href="https://timeline.http-arena.com" target="_blank" rel="noopener" title="Timeline" aria-label="Timeline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></a>
@@ -62,6 +62,7 @@
       <div class="kvm" id="navTree" aria-label="Views"></div>
 
       <div class="tools">
+        <div class="tools-row">
         <div class="type-filter" id="typeFilter" role="group" aria-label="Entry types">
           <button data-type="flagship" data-tip="Proven in production - real applications are built and operated on it at scale, and it is actively maintained. A runtime’s own HTTP server counts; a router and middleware are not required.">Flagship</button>
           <button data-type="emerging" data-tip="A genuine, working server that is not yet production-proven - young, niche, or without real deployments to point to.">Emerging</button>
@@ -73,6 +74,8 @@
           <button id="tunedToggle" type="button" class="on" data-tip="Show tuned entries - non-default configuration / optimizations (they wear a hazard-striped bezel).">Tuned</button>
         </div>
         <div id="headctl"></div>
+        </div>
+        <div class="tools-row tools-find">
         <div class="search">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
           <input id="q" type="search" placeholder="Search name, language, engine - comma to combine, ! to exclude (e.g. rust, !go)" autocomplete="off" aria-label="Filter entries">
@@ -88,21 +91,13 @@
                   data-tip="Maintenance view: the same ranking as a plain table with every column, sortable, with the collapsible name column and the column scroller."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9.5h18M3 15h18M9 4v16M15 4v16"/></svg><span>Maintenance view</span></button>
           <span class="count" id="count"></span>
         </div>
+        </div>
         <div class="heatkey" id="heatKey" style="display:none"></div>
       </div>
 
       <details class="legend" id="legend">
         <summary>How to read a unit</summary>
-        <div class="legend-b" id="legendB">
-          <div><b>Service label</b>The rank in this view. The first three wear gold, silver and bronze.</div>
-          <div><b>Locator LED</b>The round button after the rank: press it to favourite an entry, and it lights blue in every view.</div>
-          <div><b>Name plate</b>The entry, a vendor badge for its language and its type. A tuned entry wears a hazard-striped bezel.</div>
-          <div><b>PWR · ACT · STS</b>PWR: ranked here. ACT blinks faster the closer the entry is to the leader. STS: green, or amber when completeness cost it points (on a profile: when it answered with errors).</div>
-          <div><b>Display</b>The composite score, or the figure the profile ranks on. The small amber number is what completeness took off.</div>
-          <div><b>Bays</b>One per test profile: its result, the memory under it, and a light bar for its share of that profile&rsquo;s leader. A dashed bay ran but does not count.</div>
-          <div><b>Patch panel</b>The strip above the first unit names every column. Press a port to sort by it.</div>
-          <div><b>Pull handle</b>Press a unit to slide it out on its rails: every number, the run logs, Spec, Resilience, medals and the link to its results page.</div>
-        </div>
+        <div class="legend-b" id="legendB"></div>
       </details>
 
       <div class="hall" id="hall">
@@ -653,6 +648,37 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     return '<span class="statwrap">'+ind+'<span class="stattip"><span><b>2xx</b>'+s2.toLocaleString()+'</span><span><b>3xx</b>'+s3.toLocaleString()+'</span><span><b>4xx</b>'+s4.toLocaleString()+'</span><span><b>5xx</b>'+s5.toLocaleString()+'</span></span></span>';
   }
   function lc(lang){ return D.langColors[lang] || {accent:'#94a3b8', text:'#64748b', textDark:'#94a3b8', rgb:'148,163,184'}; }
+  // The two buttons every test column carries, in the maintenance table's
+  // header and on the rack's patch panel: the detailed view, and the guide.
+  var PICO_VIEW='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="1"/><path d="M3.5 9.5h17M3.5 14.5h17M9 9.5v10"/></svg><span class="pt">View</span>';
+  var PICO_GUIDE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h9.5L19 9v10.5H5z"/><path d="M14 4.5V9h5M8.5 13h7M8.5 16.5h5"/></svg><span class="pt">Guide</span>';
+  // The language in its colour, nudged only as far as it takes to read at
+  // 4.6:1 on the row (a few colours in langcolors.json are too pale for small
+  // text - Nim's yellow is 2.3:1 on white); the others are exactly the data's.
+  var LCX={};
+  function langInk(lang, dark){
+    var k=(dark?'d:':'l:')+(lang||''); if(LCX[k]) return LCX[k];
+    var c=lc(lang);
+    // against the darkest row background of the light theme (the page, #e8ebee)
+    // and the lightest of the dark one (a hovered row, #1a1e23)
+    return (LCX[k]=dark ? legible(c.textDark,'#1a1e23','#ffffff') : legible(c.text,'#e8ebee','#000000'));
+  }
+  function relLum(hex){
+    var n=parseInt(hex.slice(1),16);
+    return [n>>16&255, n>>8&255, n&255].map(function(v){ v/=255; return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4); })
+      .reduce(function(s,v,i){ return s+v*[0.2126,0.7152,0.0722][i]; }, 0);
+  }
+  function contrast(a,b){ var x=relLum(a), y=relLum(b); return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05); }
+  function mixHex(a,b,t){
+    var x=parseInt(a.slice(1),16), y=parseInt(b.slice(1),16), o=0;
+    for(var s=16;s>=0;s-=8){ var u=x>>s&255, w=y>>s&255; o=o*256+Math.round(u+(w-u)*t); }
+    return '#'+(o+0x1000000).toString(16).slice(1);
+  }
+  function legible(hex, bg, toward){
+    if(!/^#[0-9a-f]{6}$/i.test(hex||'')) return hex;
+    for(var t=0, c=hex; t<=1; t+=0.04, c=mixHex(hex,toward,t)) if(contrast(c,bg)>=4.6) return c;
+    return toward;
+  }
   function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   var DARK = function(){ var t=document.documentElement.getAttribute('data-theme'); return t==='dark' || (t!=='light' && matchMedia('(prefers-color-scheme: dark)').matches); };
 
@@ -1535,10 +1561,10 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       + '<span class="pnav">'
       + '<a class="pico pscope" data-scope="'+esc(k)+'" role="button" tabindex="0"'
       +   ' data-tip="'+esc('Open the '+lab+' composite - every '+name+' profile, entry by entry.')+'"'
-      +   ' aria-label="'+esc('Open the '+lab+' composite')+'">▤</a>'
+      +   ' aria-label="'+esc('Open the '+lab+' composite')+'">'+PICO_VIEW+'</a>'
       + '<a class="pico" href="/docs/test-profiles/'+esc(k)+'/"'
       +   ' data-tip="'+esc('What the '+name+' profiles run, and the rules an entry has to follow.')+'"'
-      +   ' aria-label="'+esc(name+' test profiles')+'">?</a>'
+      +   ' aria-label="'+esc(name+' test profiles')+'">'+PICO_GUIDE+'</a>'
       + '</span></th>';
   }
   // The family composite, and under the same small type a profile cell uses
@@ -1620,14 +1646,13 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       var nav='<span class="pnav">'
         + '<a class="pico pgo" data-pid="'+esc(pid)+'" role="button" tabindex="0"'
         +   ' data-tip="'+esc('Open the '+p.label+' detail view — every entry\u2019s result on this profile, with the columns that profile reports.')+'"'
-        +   ' aria-label="Open the '+esc(p.label)+' detail view">▤</a>'
+        +   ' aria-label="Open the '+esc(p.label)+' detail view">'+PICO_VIEW+'</a>'
         + (p.doc?('<a class="pico" href="/docs/'+esc(p.doc)+'/"'
         +   ' data-tip="'+esc('Implementation guide for '+p.label+' — what the profile runs, and the rules an entry has to follow.')+'"'
-        +   ' aria-label="'+esc(p.label)+' implementation guide">?</a>'):'')
+        +   ' aria-label="'+esc(p.label)+' implementation guide">'+PICO_GUIDE+'</a>'):'')
         + '</span>';
       th+='<th class="num pcol'+(ref?' refcol':'')+'" data-k="'+pid+'" data-tip="'+esc(p.category+' · '+p.label+' - '+(p.blurb||'')+(ref?' Not part of the composite score.':''))+'">'+esc(p.label)+ar(pid)+nav+'</th>';
     });
-    th+='<th class="spacer"></th>';
     var body=rows.map(function(r){
       var c=lc(r.lang), rank=rankMap[r.fw], t=typeOf(r.fw), repo=repoOf(r.fw);
       var nm=esc(r.fw);
@@ -1643,7 +1668,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
               ? '<span class="tsq tsq-'+t+(modeOf(r.fw)==='tuned'?' tuned':'')+'" data-tip="'
                 + esc(typeTip(t)+(modeOf(r.fw)==='tuned'?'  ·  '+TUNED_TIP:''))+'"></span>'
                 + '<span class="nm">'+nm+'</span>'
-              : starHtml(r.fw)+'<span class="tndslot">'+tunedPill(r.fw,'tnd')+'</span><span class="tsq tsq-'+t+'" data-tip="'+esc(typeTip(t))+'"></span><span class="lang" style="color:'+(dark?c.textDark:c.text)+'">'+esc(r.lang)+'</span><span class="nm">'+nm+'</span>'+tlsCheckBadge(r.fw))
+              : starHtml(r.fw)+'<span class="tndslot">'+tunedPill(r.fw,'tnd')+'</span><span class="tsq tsq-'+t+'" data-tip="'+esc(typeTip(t))+'"></span><span class="lang" style="color:'+langInk(r.lang,dark)+'">'+esc(r.lang)+'</span><span class="nm">'+nm+'</span>'+tlsCheckBadge(r.fw))
         +   '</span></td>'
         + '<td class="sticky scorec" title="'+esc(all?overallTip(r):cmpTip(r))+'"><span class="sc"><b>'+r.score.toFixed(0)+cmpDelta(r)+'</b><span class="bar"><i style="width:'+Math.max(pct,2).toFixed(0)+'%;background:rgba('+c.rgb+','+(dark?0.55:0.42)+')"></i></span></span></td>';
       if(specSuite()) tr+=specCell(r.fw);
@@ -1668,7 +1693,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
         if(cell.c){ tr+='<td class="num pc'+(cell.best?' lead':'')+'"'+dat+'>'+inner+'</td>'; }
         else { tr+='<td class="num pc nc"'+dat+'>'+inner+'</td>'; }
       });
-      return tr+'<td class="spacer"></td></tr>';
+      return tr+'</tr>';
     }).join('');
     var colspan=pids.length+4+(specSuite()?1:0)+(resilCol()?1:0);
     document.getElementById('rows').innerHTML='<div class="cscroll-row endonly" id="cscrollRowTop"><button class="cscroll-end" id="cscrollEndTop" type="button"></button></div><div class="cwrap" id="cwrap"><table class="cm'+(state.compactFw?' compact':'')+(state.heat?' heat':'')+'"><thead><tr>'+th+'</tr></thead><tbody>'+(body||'<tr><td colspan="'+colspan+'" class="empty">No frameworks match this filter.</td></tr>')+'</tbody></table></div><div class="cscroll-row" id="cscrollRow"><div class="cscroll" id="cscrollTop"><div></div></div><button class="cscroll-end" id="cscrollEnd" type="button"></button></div>';
@@ -1798,7 +1823,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   }
   function profileCell(k, r, x){
     if(k==='rank') return '<div class="c rank'+(x.rank<=3?' r'+x.rank:'')+'">'+x.rank+'</div>';
-    if(k==='fw'){ var nm=esc(r.fw); return '<div class="c fw">'+starHtml(r.fw)+'<span class="tndslot">'+tunedPill(r.fw,'tnd')+'</span><span class="tsq tsq-'+x.t+'" data-tip="'+esc(typeTip(x.t))+'"></span><span class="lang" style="color:'+(x.dark?x.lc.textDark:x.lc.text)+'">'+esc(r.lang||'')+'</span><span class="nm">'+nm+'</span>'+tlsCheckBadge(r.fw)+'</div>'; }
+    if(k==='fw'){ var nm=esc(r.fw); return '<div class="c fw">'+starHtml(r.fw)+'<span class="tndslot">'+tunedPill(r.fw,'tnd')+'</span><span class="tsq tsq-'+x.t+'" data-tip="'+esc(typeTip(x.t))+'"></span><span class="lang" style="color:'+langInk(r.lang,x.dark)+'">'+esc(r.lang||'')+'</span><span class="nm">'+nm+'</span>'+tlsCheckBadge(r.fw)+'</div>'; }
     if(k==='rps'){ var pct=x.maxRps>0?Math.max((r.rps||0)/x.maxRps*100,(r.rps>0?1.5:0)):0; return '<div class="c meter"><span class="mtop"><span class="v'+(r.rps>0?'':' zero')+'">'+fmt(r.rps||0)+'</span>'+statusHtml(r)+'</span><span class="bar"><i style="width:'+pct.toFixed(1)+'%;background:rgba('+x.lc.rgb+','+(x.dark?0.55:0.42)+')"></i></span></div>'; }
     if(k==='bw') return '<div class="c num sub">'+esc(r.bandwidth||'-')+'</div>';
     if(k==='bwreq'){ var b=bw(r.bandwidth), q=r.rps||0; return '<div class="c num sub">'+(b>0&&q>0?fmtBytes(b/q):'-')+'</div>'; }
@@ -2023,13 +2048,13 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       if(all){
         var lab=scopeLabel(pid), name=FAM_NAME[pid]||lab;
         return portHtml(pid, lab, name+' composite - the score this entry has on the '+lab+' board, and the place it holds there.', 'bay',
-          '<span class="pnav"><a class="pico pscope" data-scope="'+esc(pid)+'" role="button" tabindex="0" data-tip="'+esc('Open the '+lab+' composite - every '+name+' profile, entry by entry.')+'" aria-label="'+esc('Open the '+lab+' composite')+'">▤</a>'
-          + '<a class="pico" href="/docs/test-profiles/'+esc(pid)+'/" data-tip="'+esc('What the '+name+' profiles run, and the rules an entry has to follow.')+'" aria-label="'+esc(name+' test profiles')+'">?</a></span>');
+          '<span class="pnav"><a class="pico pscope" data-scope="'+esc(pid)+'" role="button" tabindex="0" data-tip="'+esc('Open the '+lab+' composite - every '+name+' profile, entry by entry.')+'" aria-label="'+esc('Open the '+lab+' composite')+'">'+PICO_VIEW+'</a>'
+          + '<a class="pico" href="/docs/test-profiles/'+esc(pid)+'/" data-tip="'+esc('What the '+name+' profiles run, and the rules an entry has to follow.')+'" aria-label="'+esc(name+' test profiles')+'">'+PICO_GUIDE+'</a></span>');
       }
       var p=PROF[pid], ref=!scoredForType(pid, leagueType());
       return portHtml(pid, p.label, p.category+' · '+p.label+' - '+(p.blurb||'')+(ref?' Not part of the composite score.':''), 'bay'+(ref?' refcol':''),
-        '<span class="pnav"><a class="pico pgo" data-pid="'+esc(pid)+'" role="button" tabindex="0" data-tip="'+esc('Open the '+p.label+' detail view — every entry’s result on this profile, with the columns that profile reports.')+'" aria-label="Open the '+esc(p.label)+' detail view">▤</a>'
-        + (p.doc?'<a class="pico" href="/docs/'+esc(p.doc)+'/" data-tip="'+esc('Implementation guide for '+p.label+' — what the profile runs, and the rules an entry has to follow.')+'" aria-label="'+esc(p.label)+' implementation guide">?</a>':'')+'</span>');
+        '<span class="pnav"><a class="pico pgo" data-pid="'+esc(pid)+'" role="button" tabindex="0" data-tip="'+esc('Open the '+p.label+' detail view — every entry’s result on this profile, with the columns that profile reports.')+'" aria-label="Open the '+esc(p.label)+' detail view">'+PICO_VIEW+'</a>'
+        + (p.doc?'<a class="pico" href="/docs/'+esc(p.doc)+'/" data-tip="'+esc('Implementation guide for '+p.label+' — what the profile runs, and the rules an entry has to follow.')+'" aria-label="'+esc(p.label)+' implementation guide">'+PICO_GUIDE+'</a>':'')+'</span>');
     }).join('')+'</span><span class="pullslot"></span></div><div class="ear r"></div>';
     return h;
   }
@@ -2337,7 +2362,22 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   try{ var _fc=localStorage.getItem('lb-fwcompact'); if(_fc!==null) state.compactFw=_fc==='1'; }catch(e){}
   document.getElementById('tunedToggle').addEventListener('click', function(){ state.showTuned=!state.showTuned; saveTuned(); render(); });
   restoreFromHash();
-  initTips(); initSpecPanel(); initHeat(); initModal(); initRack(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initNavSearch(); hw(); buildNav(); renderHead(); render();
+  // "How to read a unit" is written when a reader opens it: the key explains
+  // the rack, and the page's own text - what a crawler reads - stays the
+  // ranking and the copy under it, as before the restyle.
+  function initLegend(){
+    var d=document.getElementById('legend'), b=document.getElementById('legendB'); if(!d||!b) return;
+    d.addEventListener('toggle', function(){ if(d.open && !b.firstChild) b.innerHTML=''
+    +'<div><b>Service label</b>The rank in this view. The first three wear gold, silver and bronze.</div>'
+    +'<div><b>Locator LED</b>The round button after the rank: press it to favourite an entry, and it lights blue in every view.</div>'
+    +'<div><b>Name plate</b>The entry, a vendor badge for its language and its type. A tuned entry wears a hazard-striped bezel.</div>'
+    +'<div><b>PWR · ACT · STS</b>PWR: ranked here. ACT blinks faster the closer the entry is to the leader. STS: green, or amber when completeness cost it points (on a profile: when it answered with errors).</div>'
+    +'<div><b>Display</b>The composite score, or the figure the profile ranks on. The small amber number is what completeness took off.</div>'
+    +'<div><b>Bays</b>One per test profile: its result, the memory under it, and a light bar for its share of that profile&rsquo;s leader. A dashed bay ran but does not count.</div>'
+    +'<div><b>Patch panel</b>The strip above the first unit names every column. Press a port to sort by it.</div>'
+    +'<div><b>Pull handle</b>Press a unit to slide it out on its rails: every number, the run logs, Spec, Resilience, medals and the link to its results page.</div>'; });
+  }
+  initLegend(); initTips(); initSpecPanel(); initHeat(); initModal(); initRack(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initNavSearch(); hw(); buildNav(); renderHead(); render();
   (function(){ var b=document.getElementById('brandHome'); if(b) b.onclick=function(e){ e.preventDefault(); pickScope('h1'); }; })();
   window.addEventListener('hashchange', function(){ restoreFromHash(); buildNav(); renderHead(); render(); });
   var _rz; window.addEventListener('resize', function(){ clearTimeout(_rz); _rz=setTimeout(function(){ if(state.view==='profile') render(); else if(state.view==='composite') syncTopScroll(); }, 150); });
