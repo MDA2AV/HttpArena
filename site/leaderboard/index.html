@@ -2067,8 +2067,11 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   var LED_HELP='Three status LEDs. PWR: the entry is ranked in this view. ACT: blinks faster the closer the entry is to the leader. STS: green or amber, completeness on a composite and response status on a profile.';
   function patchComposite(M){
     var all=M.all;
-    var h='<div class="ear l"></div><div class="face"><span class="svc ph">#</span><span class="uidslot"></span>'
-      + portHtml('fw','Framework',TIP.fw,'plate')
+    // The rank and name columns carry no heading: the service labels and name
+    // plates below say what they are. Their places are kept, empty, so every
+    // column after them lines up with the units.
+    var h='<div class="ear l"></div><div class="face"><span class="svc ph" aria-hidden="true"></span><span class="uidslot"></span>'
+      + '<span class="plate ph" aria-hidden="true"></span>'
       + '<span class="leds ph" data-tip="'+esc(LED_HELP)+'"><b>PWR</b><b>ACT</b><b>STS</b></span>'
       + portHtml('score', all?'Overall':'Composite', all?TIP.scoreAll:cmpInScope()?TIP.score:TIP.scoreWs, 'lcdh',
           '<a class="pico hq" href="/docs/scoring/composite-score/'+(all?'#overall-composite':'')+'" data-tip="'
@@ -2092,8 +2095,8 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     return h;
   }
   function patchProfile(COLS){
-    return '<div class="ear l"></div><div class="face"><span class="svc ph">#</span><span class="uidslot"></span>'
-      + portHtml('fw','Framework',TIP.fw,'plate')
+    return '<div class="ear l"></div><div class="face"><span class="svc ph" aria-hidden="true"></span><span class="uidslot"></span>'
+      + '<span class="plate ph" aria-hidden="true"></span>'
       + '<span class="leds ph" data-tip="'+esc(LED_HELP)+'"><b>PWR</b><b>ACT</b><b>STS</b></span>'
       + portHtml(COLS[0].k, COLS[0].label, COLS[0].tip, 'lcdh')
       + '<span class="bays mods">'+COLS.slice(1).map(function(c){ return portHtml(c.k, c.label, c.tip, 'bay'); }).join('')+'</span>'

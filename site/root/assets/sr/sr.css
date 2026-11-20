@@ -1023,7 +1023,7 @@ html.maint .sortctl{display:none !important}
 @container (max-width:58px){ .patch .port .pl{font-size:.575rem} }
 @container (max-width:50px){ .patch .port .pl{font-size:.55rem} }
 /* an italic name's last letter leans past its box: room for it */
-.patch .bay.refcol .pl{padding-right:2px}
+.patch .bay.refcol .pl{padding-right:6px}
 .port .pnav{display:flex; gap:2px}
 /* The header's layout: every column name sits on one shared line, right-aligned
    over its figures like the values in the units below, and the column's buttons
@@ -1031,11 +1031,18 @@ html.maint .sortctl{display:none !important}
    that row empty, so no name floats at a height of its own, and the strip is as
    tall as its content - one line of names, or two where a name wraps. */
 .patch .bays{padding-top:0; padding-bottom:0}
-.patch .port, .patch .plate.port{display:flex; flex-direction:column; justify-content:flex-end; align-items:stretch; gap:4px; margin-top:0; margin-bottom:0; padding:7px 4px 6px 1px}
+/* Horizontal sizes match the parts below exactly - the Spec and Resil. ports
+   are a module's 5px a side, the composite port the display's 7px - so the
+   bays start where the units' bays start. A bay port has no side padding at
+   all: its View and Guide span the bay below edge to edge, and its name keeps
+   the inset of the figures under it (the bay's 3px and its 1px border). */
+.patch .port{display:flex; flex-direction:column; justify-content:flex-end; align-items:stretch; gap:4px; margin-top:0; margin-bottom:0; padding:7px 0 6px}
 .patch .port.lcdh{padding:7px 7px 6px}
+.patch .port.mod{padding:7px 5px 6px}
 .patch .port .pl{flex:none; text-align:right}
-.patch .plate.port{padding-left:.55rem}
-.patch .plate.port .pl{text-align:left}
+.patch .bays>.port .pl{padding-right:4px}
+.patch .port.lcdh>.pico{margin-right:-7px}
+.patch .port.mod>.pico{margin-right:-5px}
 .patch .port:not(:has(.pico)){padding-bottom:calc(6px + 22px + 4px)}
 .patch .port>.pico{align-self:flex-end; flex:none}
 .patch .svc{align-items:flex-end; padding-bottom:calc(6px + 22px + 4px)}
@@ -1162,8 +1169,7 @@ table.runs{border-collapse:collapse; width:100%; font:500 .76rem/1.3 var(--mono)
   .rack.many:not(.aisle) .patch .face>*{height:auto !important}
   /* the strip's first row (rank, name, LEDs, composite, Spec, Resil.) is one
      line here: a "?" sits beside its name, and nothing keeps a button row */
-  .rack.many:not(.aisle) .patch .face>.port{flex-direction:row; align-items:center; justify-content:flex-end; gap:6px; padding:6px 4px}
-  .rack.many:not(.aisle) .patch .face>.plate.port{justify-content:flex-start; padding-left:.55rem}
+  .rack.many:not(.aisle) .patch .face>.port{flex-direction:row; align-items:center; justify-content:flex-end; gap:6px; padding-top:6px; padding-bottom:6px}
   .rack.many:not(.aisle) .patch .face>.port>.pico{align-self:center}
   /* Spec and Resil. are too narrow for a name and a ? side by side: the ? stays
      under the name, and the row centres on them */
@@ -1183,8 +1189,7 @@ table.runs{border-collapse:collapse; width:100%; font:500 .76rem/1.3 var(--mono)
   .rack.v-prof:not(.aisle) .unit:not(.blank) .face>.bays{flex:1 1 100%; order:9; height:36px; padding:0 6px 6px 40px}
   .rack.v-prof:not(.aisle) .patch .face>.bays{height:auto !important}
   .rack.v-prof:not(.aisle) .patch .face>*{height:auto !important}
-  .rack.v-prof:not(.aisle) .patch .face>.port{flex-direction:row; align-items:center; justify-content:flex-end; gap:6px; padding:6px 4px}
-  .rack.v-prof:not(.aisle) .patch .face>.plate.port{justify-content:flex-start; padding-left:.55rem}
+  .rack.v-prof:not(.aisle) .patch .face>.port{flex-direction:row; align-items:center; justify-content:flex-end; gap:6px; padding-top:6px; padding-bottom:6px}
   .rack.v-prof:not(.aisle) .patch .face>.port.mod{flex-direction:column; justify-content:center; align-items:stretch; gap:4px}
   .rack.v-prof:not(.aisle) .patch .face>.port.mod>.pico{align-self:flex-end}
   .rack.v-prof:not(.aisle) .patch .face>.svc{align-items:center; padding-bottom:0}
