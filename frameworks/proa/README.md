@@ -1,5 +1,5 @@
-# Proa + Axum
+# Proa
 
-Axum runs the HTTP server and handles routing and request extraction. Proa compiles the Fortunes HTML component. tokio-postgres queries PostgreSQL on every Fortunes request. The handler borrows message text from the returned rows, appends the runtime row, sorts by message byte order, and renders into one owned HTTP body. Proa escapes the message text as it writes the HTML.
+Proa compiles the Fortunes HTML component and serves HTTP/1.1 (with TLS 1.3 on `:8081` via `rustls`/`aws-lc-rs`) over thread-per-core Axum/Hyper workers with `mimalloc` v2, `SO_REUSEPORT`, `TCP_NODELAY`, `sonic-rs`, thread-local `libdeflater` gzip compression, and per-worker `deadpool-postgres` pools.
 
-The other opted-in profiles measure the Axum server and its Tokio runtime. Use the Fortunes profile to compare full database-to-HTML responses.
+On `/fortunes`, each request queries PostgreSQL, borrows row strings, appends the runtime row, sorts in byte order, and renders escaped HTML directly into one owned response buffer. The remaining HTTP/1.1 profiles exercise the same Axum/Hyper server stack (`sonic-rs` + `libdeflater` gzip on `/json/{count}`, zero-copy `/echo` over TLS, `/async-db`, `/baseline11`, `/pipeline`, and `/delay/{ms}`).
