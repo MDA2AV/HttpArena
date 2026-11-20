@@ -23,6 +23,7 @@ okena_handler 'json', ha_json
 okena_handler 'echo', ha_echo
 okena_handler 'delay', ha_delay
 okena_handler 'spec', ha_spec
+okena_handler 'grpc_sum', ha_grpc_sum
 okena_init ha_init
 
 HA_MAX		:= 256				; items kept
@@ -982,3 +983,141 @@ ha_spec:
 	xor	ecx,ecx
 	pop	rbx
 	ret
+
+; `handler grpc_sum`: benchmark.BenchmarkService/GetSum, unary gRPC. The body
+; is one gRPC message (a flag byte 0, a 4-byte big-endian length, then
+; SumRequest: field 1 a, field 2 b, int32 varints); the answer is SumReply
+; {result = a + b} as one message, application/grpc, with grpc-status 0 as
+; a trailer. A body that is not that: grpc-status 13 (INTERNAL), no message.
+ha_grpc_sum:
+	push	rbx
+	push	r12
+	push	r13
+	mov	rbx,rdi				; out
+	cmp	ecx,5
+	jb	.bad
+	cmp	byte [rdx],0			; (not compressed)
+	jne	.bad
+	mov	eax,[rdx+1]
+	bswap	eax
+	lea	r8d,[rax+5]
+	cmp	r8d,ecx
+	ja	.bad
+	lea	rsi,[rdx+5]			; the message
+	lea	r9,[rsi+rax]			; its end
+	xor	r12d,r12d			; a
+	xor	r13d,r13d			; b
+.field:
+	cmp	rsi,r9
+	jae	.sum
+	call	.varint				; the tag
+	jc	.bad
+	mov	r10,rax
+	and	r10d,7				; its wire type
+	shr	rax,3				; its number
+	cmp	r10d,0
+	jne	.skip
+	push	rax
+	call	.varint
+	pop	r10
+	jc	.bad
+	cmp	r10d,1
+	jne	@f
+	mov	r12d,eax
+	jmp	.field
+@@:
+	cmp	r10d,2
+	jne	.field
+	mov	r13d,eax
+	jmp	.field
+.skip:
+	cmp	r10d,2				; length-delimited: its bytes skipped
+	jne	.bad				; (fixed64/32 are not in SumRequest)
+	call	.varint
+	jc	.bad
+	add	rsi,rax
+	jc	.bad
+	cmp	rsi,r9
+	ja	.bad
+	jmp	.field
+.sum:
+	add	r12d,r13d			; int32: wraps as protobuf's does
+	; SumReply: field 1 (tag 0x08) as a varint, an int32 sign-extended to
+	; 64 bits; 0 is the default and not written
+	lea	rdi,[rbx+5+1]
+	movsxd	rax,r12d
+	test	rax,rax
+	jz	.empty
+	mov	byte [rbx+5],0x08
+@@:
+	mov	ecx,eax
+	and	ecx,0x7F
+	shr	rax,7
+	jz	@f
+	or	ecx,0x80
+	mov	[rdi],cl
+	inc	rdi
+	jmp	@b
+@@:
+	mov	[rdi],cl
+	inc	rdi
+	jmp	.framed
+.empty:
+	lea	rdi,[rbx+5]
+.framed:
+	mov	rax,rdi
+	sub	rax,rbx
+	lea	edx,[rax]			; the whole frame
+	sub	eax,5				; the message's length
+	bswap	eax
+	mov	byte [rbx],0
+	mov	[rbx+1],eax
+	lea	rax,[ha_grpc_ok]
+	mov	[g_mod_tr],rax
+	mov	dword [g_mod_trlen],ha_grpc_ok.len
+	jmp	.out
+.bad:
+	lea	rax,[ha_grpc_bad]
+	mov	[g_mod_tr],rax
+	mov	dword [g_mod_trlen],ha_grpc_bad.len
+	xor	edx,edx
+.out:
+	mov	eax,200
+	lea	rsi,[ha_grpc_type]
+	xor	ecx,ecx
+	pop	r13
+	pop	r12
+	pop	rbx
+	ret
+; rsi = a varint, r9 = the end: rax = its value, rsi past it. CF: cut short
+; or longer than ten bytes
+.varint:
+	xor	eax,eax
+	xor	ecx,ecx
+@@:
+	cmp	rsi,r9
+	jae	.vbad
+	cmp	ecx,63
+	ja	.vbad
+	movzx	edx,byte [rsi]
+	inc	rsi
+	mov	r10d,edx
+	and	r10d,0x7F
+	shl	r10,cl
+	or	rax,r10
+	add	ecx,7
+	test	dl,0x80
+	jnz	@b
+	clc
+	ret
+.vbad:
+	stc
+	ret
+
+rodata
+	ha_grpc_type	db 'application/grpc',0
+	ha_grpc_ok	db 'grpc-status: 0',13,10
+	ha_grpc_ok.len = $ - ha_grpc_ok
+	ha_grpc_bad	db 'grpc-status: 13',13,10,'grpc-message: malformed request',13,10
+	ha_grpc_bad.len = $ - ha_grpc_bad
+end rodata
