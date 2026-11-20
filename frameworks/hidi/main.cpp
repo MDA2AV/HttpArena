@@ -3,6 +3,8 @@
 #include <hidi/asio/ssl_context.hpp>
 #include <hidi/h2server.hpp>
 
+#include <glaze/json.hpp>
+
 #include <sched.h>
 
 #include <charconv>
@@ -13,10 +15,44 @@
 #include <iostream>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <thread>
 #include <unordered_map>
+#include <vector>
+
+// /json types are outside the anonymous namespace: glaze cannot reflect types
+// with internal linkage
+struct rating_t {
+  int64_t score, count;
+};
+
+// item of /data/dataset.json
+struct item {
+  int64_t id;
+  std::string name, category;
+  int64_t price, quantity;
+  bool active;
+  std::vector<std::string> tags;
+  rating_t rating;
+};
+
+// item of the /json response: the dataset item plus the per-request total
+struct json_item {
+  int64_t id;
+  std::string_view name, category;
+  int64_t price, quantity;
+  bool active;
+  std::span<const std::string> tags;
+  rating_t rating;
+  int64_t total;
+};
+
+struct json_body {
+  std::span<const json_item> items;
+  size_t count;
+};
 
 namespace {
 
@@ -85,6 +121,55 @@ hidi::streaming_body_t whole(file_data data) {
   co_yield hidi::chunk(*data, /*stable=*/true, /*end_stream=*/true);
 }
 
+// /data/dataset.json, parsed once
+const std::vector<item> &dataset() {
+  static const std::vector<item> items = [] {
+    std::vector<item> r;
+    std::string buf;
+    if (auto ec = glz::read_file_json(r, "/data/dataset.json", buf))
+      throw std::runtime_error(glz::format_error(ec, buf));
+    return r;
+  }();
+  return items;
+}
+
+// value of query parameter `name`, 0 if missing or not a number
+int64_t query_int(std::string_view query, std::string_view name) {
+  while (!query.empty()) {
+    size_t amp = query.find('&');
+    std::string_view kv = query.substr(0, amp);
+    query = amp == query.npos ? std::string_view{} : query.substr(amp + 1);
+    if (kv.size() > name.size() && kv.starts_with(name) &&
+        kv[name.size()] == '=') {
+      int64_t v = 0;
+      std::from_chars(kv.data() + name.size() + 1, kv.data() + kv.size(), v);
+      return v;
+    }
+  }
+  return 0;
+}
+
+// GET /json/{count}?m=M: the first `count` items with
+// total = price * quantity * m, as {"items": [...], "count": count}
+hidi::http_response json_items(size_t count, int64_t m) {
+  const std::vector<item> &src = dataset();
+  count = std::min(count, src.size());
+  std::vector<json_item> items;
+  items.reserve(count);
+  for (const item &i : std::span(src).first(count))
+    items.push_back({i.id, i.name, i.category, i.price, i.quantity, i.active,
+                     i.tags, i.rating, i.price * i.quantity * m});
+
+  hidi::http_response rsp;
+  rsp.status = 200;
+  rsp.headers.push_back({"content-type", "application/json"});
+  std::string json;
+  if (glz::write_json(json_body{items, count}, json))
+    rsp.status = 500;
+  rsp.body.assign(json.begin(), json.end());
+  return rsp;
+}
+
 struct arena_server final : hidi::h2server {
   using hidi::h2server::h2server;
 
@@ -136,6 +221,11 @@ struct arena_server final : hidi::h2server {
     }
     if (path.starts_with("/static/") && r.method == hidi::http_method_e::GET)
       co_return serve_static(path.substr(8), r, ctx);
+    if (path.starts_with("/json/") && r.method == hidi::http_method_e::GET) {
+      size_t count = 0;
+      std::from_chars(path.data() + 6, path.data() + path.size(), count);
+      co_return json_items(count, query_int(query, "m"));
+    }
     if (path != "/baseline2" || r.method != hidi::http_method_e::GET) {
       rsp.status = 404;
       co_return rsp;
@@ -185,17 +275,13 @@ hidi::server_endpoint any_address(unsigned short port) {
 
 int main() try {
   const size_t threads = available_cpus();
-  // many small frames per connection (responses to multiplexed requests): one
-  // write per batch
-  const hidi::tcp_connection_options tcp{.buffer_writes = true};
+  (void)dataset();
 
   // Only one profile runs at a time, so each server gets all available CPUs
   hidi::h2server_mt h2(threads, std::in_place_type<arena_server>,
                        hidi::make_ssl_context_for_server("/certs/server.crt",
-                                                         "/certs/server.key"),
-                       hidi::h2server_options{.tcp = tcp});
-  hidi::h2server_mt h2c(threads, std::in_place_type<arena_server>, nullptr,
-                        hidi::h2server_options{.tcp = tcp});
+                                                         "/certs/server.key"));
+  hidi::h2server_mt h2c(threads, std::in_place_type<arena_server>, nullptr);
 
   std::thread tls_thread([&] {
     h2.listen(any_address(8443));

@@ -4,7 +4,7 @@ C++20 HTTP/2 client and server library built on coroutines ([kelcoro](https://gi
 
 ## Stack
 
-- **Language:** C++20
+- **Language:** C++23
 - **Engine:** hidi
 - **Build:** `ubuntu:24.04`, clang 20, `-O3 -march=native`; hidi's CMake fetches its dependencies with CPM
 
@@ -13,7 +13,7 @@ C++20 HTTP/2 client and server library built on coroutines ([kelcoro](https://gi
 | Port | Protocols | Profiles |
 |------|-----------|----------|
 | 8443 | h2 (TLS, ALPN) | baseline-h2, static-h2 |
-| 8082 | h2c (prior knowledge) | baseline-h2c |
+| 8082 | h2c (prior knowledge) | baseline-h2c, json-h2c |
 
 hidi implements HTTP/2 only, so there is no HTTP/1.1 listener on 8080. Each listener gets one thread per CPU in the process affinity mask; only one profile runs at a time.
 
