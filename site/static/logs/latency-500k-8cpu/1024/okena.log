@@ -1,6 +1,6 @@
-okena: listener on line 59 not opened: /certs-tls/server.crt is not there (missing=skip)
-okena: listening on :8080 (http, 6 routes)
-okena: listening on :8081 (http, 4 routes)
+okena: listener on line 65 not opened: /certs-tls/server.crt is not there (missing=skip)
+okena: listening on 0.0.0.0:8080 (http, 7 routes)
+okena: listening on 0.0.0.0:8081 (http, 4 routes)
 okena: listening on :8082 (http, 4 routes)
-okena: listening on :8443 (http, 5 routes)
+okena: listening on :8443 (http, 6 routes)
 okena: started with 8 workers
