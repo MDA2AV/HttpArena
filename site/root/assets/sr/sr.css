@@ -1571,3 +1571,39 @@ html.aisle .sortctl{display:inline-flex}
 .rack.v-comp:not(.many):not(.aisle) .bm{font-size:.62rem}
 .rack.v-comp:not(.many):not(.aisle) .port .pl{font-size:.66rem; letter-spacing:.05em}
 @media (max-width:350px){ .rack.has-resil{--c5:0px} .mod.resil{display:none} }
+
+/* ── Strength: the entry's readings on its tray and card ──
+   The radar is drawn on the same LCD as the units' displays, and the readings
+   are LED meters: lit segments up to the value. */
+.str{display:grid; grid-template-columns:minmax(180px,230px) minmax(0,1fr); gap:.55rem 1.2rem; align-items:center; margin:0 0 .8rem; padding:.7rem .9rem .75rem; background:var(--paper); border:1px solid var(--paper-edge); border-radius:3px; box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.str-h{grid-column:1/-1; display:flex; justify-content:space-between; align-items:baseline; font:600 .74rem/1 var(--label); letter-spacing:.14em; text-transform:uppercase; color:var(--text)}
+.str-k{font:500 .68rem/1 var(--mono); letter-spacing:0; color:var(--muted)}
+.str-radar{padding:4px; background:var(--lcd-bg); border-radius:3px; box-shadow:inset 0 1px 3px rgba(0,0,0,.55), 0 1px 0 var(--edge-hi)}
+.str-radar svg{display:block; width:100%; height:auto; overflow:visible}
+.str-radar .ring{fill:none; stroke:var(--lcd-fg); stroke-opacity:.2; stroke-width:1}
+.str-radar .spoke{stroke:var(--lcd-fg); stroke-opacity:.2; stroke-width:1}
+.str-radar .poly{fill:var(--lcd-fg); fill-opacity:.24; stroke:var(--lcd-fg); stroke-width:1.8; stroke-linejoin:round; filter:drop-shadow(0 0 4px var(--lcd-glow))}
+.str-radar .dot{fill:var(--lcd-fg)}
+.str-radar text{font:600 14px var(--label); letter-spacing:.06em; text-transform:uppercase; fill:var(--lcd-fg)}
+.str-radar text.na{fill-opacity:.5}
+.str-bars{display:flex; flex-direction:column; gap:.5rem; min-width:0}
+.str-row{display:grid; grid-template-columns:7.4rem minmax(0,1fr) 3.4rem; align-items:center; gap:.6rem; cursor:help}
+.str-l{font:600 .74rem/1 var(--label); letter-spacing:.08em; text-transform:uppercase; color:var(--text-2); white-space:nowrap}
+.str-m{position:relative; height:11px; background:repeating-linear-gradient(90deg, var(--led-off) 0 7px, transparent 7px 9px)}
+.str-m::after{content:""; position:absolute; left:0; top:0; bottom:0; width:calc(var(--v) * 1%); background:repeating-linear-gradient(90deg, var(--led-g) 0 7px, transparent 7px 9px); filter:drop-shadow(0 0 3px color-mix(in srgb, var(--led-g) 55%, transparent))}
+.str-v{font:600 .9rem/1 var(--mono); color:var(--text); text-align:right; font-variant-numeric:tabular-nums}
+.str-row.na .str-v{font:500 .7rem/1 var(--mono); color:var(--muted)}
+.str-sub{margin-top:-.15rem; padding-left:8rem; font:500 .72rem/1.3 var(--mono); color:var(--text-2)}
+.str-note{grid-column:1/-1; margin:.1rem 0 0; font-size:.74rem; line-height:1.45; color:var(--muted)}
+html:not([data-theme="dark"]) .str-m::after{filter:none}
+@media (prefers-color-scheme: dark){ html:not([data-theme="light"]) .str-m::after{filter:drop-shadow(0 0 3px color-mix(in srgb, var(--led-g) 55%, transparent))} }
+/* in the maintenance view's card, which is narrower */
+.modal-card .str{grid-template-columns:200px minmax(0,1fr); gap:.5rem .9rem; padding:.6rem .7rem .65rem; margin:.2rem 0 1rem}
+.modal-card .str-row{grid-template-columns:6.4rem minmax(0,1fr) 2.9rem; gap:.45rem}
+.modal-card .str-sub{padding-left:6.9rem}
+.modal-card{max-width:620px}
+@media (max-width:640px){
+  .str, .modal-card .str{grid-template-columns:1fr}
+  .str-radar{max-width:240px; justify-self:center; width:100%}
+  .str-sub, .modal-card .str-sub{padding-left:0}
+}

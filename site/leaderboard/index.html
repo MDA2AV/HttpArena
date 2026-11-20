@@ -609,6 +609,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       + '<div class="modal-meta">'+esc([lang, m.engine, typeAbbr(t), modeOf(fw)==='tuned'?'tuned':'',
           cmpDecl(fw)&&CMP_TYPES.indexOf(t)>=0 ? 'completeness '+(4-cmpMissing(fw).length)+'/4' : ''].filter(Boolean).join(' · '))+'</div>';
     if(m.desc) h+='<p class="modal-desc">'+esc(m.desc)+'</p>';
+    h+=strengthHtml(fw);
     var mdl=medalsOf(fw);
     if(mdl.length){
       h+='<div class="modal-sub">Achievements</div><div class="modal-mdl">';
@@ -2126,6 +2127,110 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     return '<div class="kv"><span class="k">Resilience</span><span class="v">'+esc(bits.join(' · '))
       + ' <a href="/docs/test-profiles/resilience/">How it is attacked →</a></span></div>';
   }
+  // ── Strength: the reading aid on an entry's tray and card ──
+  // Five readings, 0-100, drawn as a radar and a row of LED meters:
+  //   throughput, latency, memory - percentiles. In every test (profile x
+  //     connection count) the entry has a result in, the share of the other
+  //     entries in that test it beats, ties counted half, averaged over its
+  //     tests: requests per second (the fixed-rate profiles left out - every
+  //     entry is offered the same rate there), p99 (lower is better), peak
+  //     memory (lower is better). The whole field, whatever the league.
+  //   coverage - the profiles it has a result in, over the profiles of the round.
+  //   spec / resilience - the published scores: protocol tests passed and
+  //     attacks survived, over all the suites it runs; their mean when it runs
+  //     both.
+  // Worked out once from D, nothing new is published: the ranking is still the
+  // composite, and the card says so.
+  var STRENGTH=null;
+  function strengthAll(){
+    if(STRENGTH) return STRENGTH;
+    var acc={}, entered={}, total=0;
+    function pct(key, list, higher){
+      var n=list.length; if(n<2) return;
+      list.forEach(function(a){
+        var beat=0, ties=-1;
+        for(var i=0;i<n;i++){ var o=list[i][1]; if(o===a[1]) ties++; else if(higher ? o<a[1] : o>a[1]) beat++; }
+        var e=acc[a[0]]||(acc[a[0]]={}); (e[key]=e[key]||[]).push((beat+0.5*ties)/(n-1));
+      });
+    }
+    D.profiles.forEach(function(p){
+      var any=false, paced=isLatProfile(p.id);
+      p.conns.forEach(function(c){
+        var thr=[], lt=[], mm=[];
+        (D.results[p.id+'-'+c]||[]).forEach(function(r){
+          if(!(r.rps>0)) return;
+          any=true; (entered[r.fw]=entered[r.fw]||{})[p.id]=1;
+          if(!paced) thr.push([r.fw, r.rps]);
+          var l=lat(r.p99_latency); if(isFinite(l) && l>0) lt.push([r.fw, l]);
+          var mb=mem(r.memory); if(mb>0) mm.push([r.fw, mb]);
+        });
+        pct('thr', thr, true); pct('lat', lt, false); pct('mem', mm, false);
+      });
+      if(any) total++;
+    });
+    STRENGTH={};
+    Object.keys(entered).forEach(function(fw){
+      var a=acc[fw]||{}, n=Object.keys(entered[fw]).length;
+      function avg(k){ var l=a[k]; return l&&l.length ? Math.round(100*l.reduce(function(s,v){ return s+v; },0)/l.length) : null; }
+      var sp=specPct(fw), rz=resilPct(fw), both=[sp,rz].filter(function(v){ return v!=null; });
+      STRENGTH[fw]={thr:avg('thr'), lat:avg('lat'), mem:avg('mem'), cov:total?Math.round(100*n/total):null, n:n, total:total,
+        spec:sp, resil:rz, sr:both.length ? Math.round(both.reduce(function(s,v){ return s+v; },0)/both.length) : null};
+    });
+    return STRENGTH;
+  }
+  // Protocol tests passed over all the suites an entry runs (a suite that could
+  // not be measured is left out), and attacks survived over its surfaces.
+  function specPct(fw){
+    var sp=(D.meta[fw]||{}).spec, p=0, t=0; if(!sp) return null;
+    Object.keys(sp).forEach(function(k){ var s=sp[k]; if(s && s.e==null && s.t>0){ p+=s.p; t+=s.t; } });
+    return t ? Math.round(1000*p/t)/10 : null;
+  }
+  function resilPct(fw){
+    var rz=resilOf(fw), v=0, n=0; if(!rz) return null;
+    Object.keys(rz).forEach(function(k){ var x=rz[k]; if(x && x[1]>0){ v+=x[0]; n+=x[1]; } });
+    return n ? Math.round(1000*v/n)/10 : null;
+  }
+  var STR_AXES=[
+    {k:'thr', l:'Throughput', tip:'Requests per second: in every test it ran, the share of the other entries it beats, averaged. The fixed-rate profiles are left out - every entry is offered the same rate there.'},
+    {k:'lat', l:'Latency', tip:'p99 latency, lower is better: in every test it ran, the share of the other entries it beats, averaged.'},
+    {k:'mem', l:'Memory', tip:'Peak memory, lower is better: in every test it ran, the share of the other entries it beats, averaged.'},
+    {k:'cov', l:'Coverage', tip:'The test profiles it has a result in, over the profiles of the round.'},
+    {k:'sr', l:'Spec / Resil.', tip:'Protocol compliance (tests passed) and resilience (attacks survived), as published; their mean when it runs both. Both are opt-in suites.'}
+  ];
+  function strengthHtml(fw){
+    var S=strengthAll()[fw]; if(!S) return '';
+    var R=78, pts=[], spokes='', rings='', labels='';
+    STR_AXES.forEach(function(ax, i){
+      var a=-Math.PI/2+i*2*Math.PI/STR_AXES.length, cx=Math.cos(a), cy=Math.sin(a), v=S[ax.k];
+      var r=R*Math.max(0, Math.min(100, v||0))/100;
+      pts.push((cx*r).toFixed(1)+','+(cy*r).toFixed(1));
+      spokes+='<line class="spoke" x1="0" y1="0" x2="'+(cx*R).toFixed(1)+'" y2="'+(cy*R).toFixed(1)+'"/>';
+      var lx=cx*(R+12), ly=cy*(R+12)+(cy>0.5?12:cy<-0.5?-4:5), anchor=Math.abs(cx)<0.2?'middle':cx>0?'start':'end';
+      labels+='<text x="'+lx.toFixed(1)+'" y="'+ly.toFixed(1)+'" text-anchor="'+anchor+'"'+(v==null?' class="na"':'')+'>'+esc(ax.l)+'</text>';
+    });
+    [25,50,75,100].forEach(function(q){
+      var ring=STR_AXES.map(function(ax,i){ var a=-Math.PI/2+i*2*Math.PI/STR_AXES.length; return (Math.cos(a)*R*q/100).toFixed(1)+','+(Math.sin(a)*R*q/100).toFixed(1); }).join(' ');
+      rings+='<polygon class="ring" points="'+ring+'"/>';
+    });
+    var said=STR_AXES.map(function(ax){ return ax.l+' '+(S[ax.k]==null?'not measured':S[ax.k]); }).join(', ');
+    var svg='<svg viewBox="-182 -112 364 226" role="img" aria-label="'+esc('Strength: '+said)+'">'+rings+spokes
+      + '<polygon class="poly" points="'+pts.join(' ')+'"/>'
+      + pts.map(function(pt){ var c=pt.split(','); return '<circle class="dot" cx="'+c[0]+'" cy="'+c[1]+'" r="2.4"/>'; }).join('')
+      + labels+'</svg>';
+    var bars=STR_AXES.map(function(ax){
+      var v=S[ax.k], tip=ax.tip;
+      if(ax.k==='cov') tip+=' '+S.n+' of '+S.total+'.';
+      if(ax.k==='sr') tip+=' Spec: '+(S.spec==null?'not run':S.spec+'%')+'. Resilience: '+(S.resil==null?'not run':S.resil+'%')+'.';
+      return '<div class="str-row'+(v==null?' na':'')+'" data-tip="'+esc(tip)+'"><span class="str-l">'+esc(ax.l)+'</span>'
+        + '<span class="str-m" style="--v:'+(v==null?0:v)+'"></span>'
+        + '<b class="str-v">'+(v==null?'not run':v)+'</b></div>';
+    }).join('');
+    var sub=(S.spec!=null||S.resil!=null)
+      ? '<div class="str-sub">Spec '+(S.spec==null?'not run':S.spec+'%')+' &middot; Resilience '+(S.resil==null?'not run':S.resil+'%')+'</div>' : '';
+    return '<div class="str"><div class="str-h"><span>Strength</span><span class="str-k">0 - 100</span></div>'
+      + '<div class="str-radar">'+svg+'</div><div class="str-bars">'+bars+sub+'</div>'
+      + '<p class="str-note">A reading aid drawn from the published results, not a score: throughput, latency and memory are percentiles against every entry in the same test. The ranking is the composite.</p></div>';
+  }
   function trayHtml(fw, row){
     var m=D.meta[fw]||{}, lang=langOf(fw)||m.language||'', t=m.type||'emerging', dir=m.dir||fw, comp=state.view==='composite';
     var impl='https://github.com/MDA2AV/HttpArena/tree/main/frameworks/'+encodeURIComponent(dir);
@@ -2154,7 +2259,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       });
       h+='</div>';
     }
-    h+='</div><div class="sheet">';
+    h+='</div><div class="sheet">'+strengthHtml(fw);
     if(comp && row && row.r){
       var r=row.r, M=row.M;
       h+='<div class="kv big"><span class="k">'+(M.all?'Overall':esc(scopeLabel(state.scope))+' composite')+'</span><span class="v"><b>'+r.score.toFixed(0)+'</b>'
