@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "blackbull",
-      "language": "Python",
-      "rps": 28261,
-      "avg_latency": "35.80ms",
-      "p99_latency": "198.20ms",
-      "cpu": "1723.8%",
-      "memory": "2.3GiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "121.35MB/s",
-      "input_bw": "1.89MB/s",
-      "reconnects": 10987,
-      "status_2xx": 282613,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "blackbull",
       "language": "Python",

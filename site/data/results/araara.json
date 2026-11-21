@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "araara",
-      "language": "OCaml",
-      "rps": 91336,
-      "avg_latency": "10.79ms",
-      "p99_latency": "82.40ms",
-      "cpu": "5931.8%",
-      "memory": "457MiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "349.86MB/s",
-      "input_bw": "6.10MB/s",
-      "reconnects": 36286,
-      "status_2xx": 913369,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "araara",
       "language": "OCaml",

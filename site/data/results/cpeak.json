@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "cpeak",
-      "language": "Rust",
-      "rps": 325157,
-      "avg_latency": "2.57ms",
-      "p99_latency": "21.00ms",
-      "cpu": "3731.5%",
-      "memory": "263MiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "1.22GB/s",
-      "input_bw": "21.71MB/s",
-      "reconnects": 129901,
-      "status_2xx": 3251576,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "cpeak",
       "language": "Rust",

@@ -1,26 +1,6 @@
 {
   "framework": "fastpysgi-wsgi",
   "results": {
-    "async-db-1024": {
-      "framework": "fastpysgi-wsgi",
-      "language": "Python",
-      "rps": 70380,
-      "avg_latency": "14.08ms",
-      "p99_latency": "82.70ms",
-      "cpu": "4360.0%",
-      "memory": "886MiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "271.66MB/s",
-      "input_bw": "4.70MB/s",
-      "reconnects": 27875,
-      "status_2xx": 703800,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "fastpysgi-wsgi",
       "language": "Python",

@@ -17,6 +17,8 @@ Postgres does real work here, so the box is split three ways instead of two. Eve
 | Load generator (32 threads) | 32 | `16-31,80-95` |
 | Postgres | 64 | `32-63,96-127` |
 
+The results measured before this split, with Postgres sharing the other two's CPUs, were cleared on 21 November 2026. The board fills up again as entries are re-run.
+
 {{< cards >}}
   {{< card link="../h1/async-database" title="Async Database (Postgres)" subtitle="Async Postgres range query over 100K rows, connection pooling, and JSON serialization." icon="database" >}}
   {{< card link="../h1/fortunes" title="Fortunes (Templates) *" subtitle="DB query + HTML template rendering with auto-escape. Reference-only - measures template-engine throughput, not part of the composite score." icon="document-text" >}}

@@ -1,25 +1,6 @@
 {
   "framework": "uvicorn",
   "results": {
-    "async-db-1024": {
-      "framework": "uvicorn",
-      "language": "Python",
-      "rps": 64851,
-      "avg_latency": "14.95ms",
-      "p99_latency": "364.40ms",
-      "cpu": "2669.3%",
-      "memory": "3.4GiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "244.59MB/s",
-      "reconnects": 25540,
-      "status_2xx": 648517,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "uvicorn",
       "language": "Python",

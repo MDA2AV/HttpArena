@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "sisk",
-      "language": "C#",
-      "rps": 6452,
-      "avg_latency": "82.78ms",
-      "p99_latency": "2.57s",
-      "cpu": "388.5%",
-      "memory": "227MiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "24.84MB/s",
-      "input_bw": "441.05KB/s",
-      "reconnects": 2428,
-      "status_2xx": 64526,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "sisk",
       "language": "C#",

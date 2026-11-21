@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "servicestack",
-      "language": "C#",
-      "rps": 18793,
-      "avg_latency": "54.46ms",
-      "p99_latency": "130.00ms",
-      "cpu": "721.5%",
-      "memory": "379MiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "73.75MB/s",
-      "input_bw": "1.25MB/s",
-      "reconnects": 7158,
-      "status_2xx": 187932,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "servicestack",
       "language": "C#",

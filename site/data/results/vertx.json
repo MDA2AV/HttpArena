@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "vertx",
-      "language": "Java",
-      "rps": 205504,
-      "avg_latency": "4.50ms",
-      "p99_latency": "55.20ms",
-      "cpu": "4780.9%",
-      "memory": "19.2GiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "776.82MB/s",
-      "input_bw": "13.72MB/s",
-      "reconnects": 82111,
-      "status_2xx": 2055047,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "vertx",
       "language": "Java",

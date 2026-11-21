@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "genhttp",
-      "language": "C#",
-      "rps": 200237,
-      "avg_latency": "4.57ms",
-      "p99_latency": "11.20ms",
-      "cpu": "2882.0%",
-      "memory": "421MiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "773.58MB/s",
-      "input_bw": "13.37MB/s",
-      "reconnects": 79997,
-      "status_2xx": 2002371,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "genhttp",
       "language": "C#",

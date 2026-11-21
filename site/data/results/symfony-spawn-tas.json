@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "symfony-spawn-tas",
-      "language": "PHP",
-      "rps": 3222,
-      "avg_latency": "298.00ms",
-      "p99_latency": "1.51s",
-      "cpu": "166.6%",
-      "memory": "465MiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "5.45MB/s",
-      "input_bw": "220.25KB/s",
-      "reconnects": 869,
-      "status_2xx": 32225,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 596
-    },
     "baseline-4096": {
       "framework": "symfony-spawn-tas",
       "language": "PHP",
