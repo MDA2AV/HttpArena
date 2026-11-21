@@ -77,6 +77,44 @@ declare -A PROFILES=(
     # poll loops, timers, background GC, wakeups. A busy box amortises those
     # away; this one does not.
     [latency-10k]="1|0|0-31,64-95|1024|latency-10k"
+    # Connections-5M: five million keep-alive connections held at once, with
+    # the baseline GET paced at 1.25M req/s across them (GCANNON_RATE_CONNECTIONS_5M)
+    # - one request per connection every four seconds. At that rate the work
+    # per request is a fraction of what a fast server carries on this cpuset,
+    # so what separates entries is what holding the rest of the fleet costs:
+    # memory per connection, the CPU a request carries while the others wait,
+    # and the tail once a heap, a timer wheel or a poll set is that large.
+    # Measured on gcannon's window after the whole fleet is connected.
+    #
+    # One source address can open about 64.5K connections to one destination
+    # (the async comment above), so gcannon spreads the fleet over the
+    # loopback addresses 127.0.0.1 .. 127.0.0.160 (--addr-span), 31,250 on
+    # each - the density the million-connection runs proved. An entry must
+    # listen on 0.0.0.0 or [::] to subscribe; validate.sh checks it, and
+    # scripts/conn_hold.py probes it before the run. Needs gcannon >= 0.8.2.
+    # Opt-in and reference-only while the first field is measured.
+    #
+    # Not zrk: even 3.0.2 keeps ~41 KiB per connection, ~200 GiB for five
+    # million. gcannon holds one in ~3.3 KiB.
+    [connections-5m]="1|0|0-31,64-95|5000000|connections-5m"
+    # connections-5m over TLS 1.3 on the h1 TLS port (8081), at a million
+    # connections and 250K req/s - still one request per connection every four
+    # seconds - over 127.0.0.1-.32: every connection handshakes once, then
+    # carries its requests encrypted. gcannon hands each session to kernel TLS
+    # after the handshake, so its side costs what a plaintext connection does
+    # plus the kernel's record state; what the server keeps per TLS session is
+    # the point. A million for now: five million over TLS was still connecting
+    # 7.7 min into its first run. Needs gcannon >= 0.8.4, which paces the
+    # handshakes to the server (MDA2AV/gcannon#33).
+    [connections-1m-tls]="1|0|0-31,64-95|1000000|connections-1m-tls"
+    # CON-1M: a million connections at 250K req/s with zrk 3.0.2 as the generator
+    # (run next to gcannon, it found gcannon 0.8.0's --rate bursts, MDA2AV/gcannon#30).
+    # Scored, like CON-1M-TLS (latency_score.HELD); CON-5M is reference-only and
+    # runs only for the entries on scripts/connections-5m-allowlist.json.
+    # zrk takes one URL, so tools/zrk.sh runs one process per loopback address
+    # (scripts/zrk_fanout.py) and merges their histograms. It stays at a
+    # million: zrk's ~41 KiB per connection rules out five.
+    [connections-1m]="1|0|0-31,64-95|1000000|connections-1m"
     [json-comp]="1|0|0-31,64-95|4096,16384|json-compressed"
     [json-tls]="1|0|0-31,64-95|4096|json-tls"
     # 8Gbit: 100 KB up and the same 100 KB back, over TLS. The only profile
@@ -131,7 +169,22 @@ PROFILE_ORDER=(
     # TIME_WAIT for the kernel's fixed ~60s, so anything scheduled after it
     # starts against a nearly full port table.
     async
+    # After even that, for the same reason a hundred times over: millions of
+    # sockets closing at once, and millions of conntrack entries ageing out.
+    connections-5m
+    connections-1m-tls
+    connections-1m
 )
+
+# The held-connection profiles. Everything the harness does around their load
+# (host limits, the server's fd and memory caps, the window CPU, the held
+# count) is the same for all three; only the generator and the scale differ.
+held_conn_profile() {
+    case "$1" in
+        connections-5m|connections-1m-tls|connections-1m) return 0 ;;
+    esac
+    return 1
+}
 
 # ── Parsing + validation ────────────────────────────────────────────────────
 
@@ -163,7 +216,7 @@ endpoint_tool() {
         # wrk (lua script rotation)
         static-tls|json-tls)                 echo "wrk" ;;
         # zrk — the only paced generator; holds a fixed offered rate
-        latency-1m|latency-10k|8gbit)  echo "zrk" ;;
+        latency-1m|latency-10k|8gbit|connections-1m)  echo "zrk" ;;
         # h2load for all HTTP/2 variants (TLS via ALPN + h2c prior-knowledge)
         h2|static-h2|h2c|json-h2c|gateway-64|grpc|grpc-tls|production-stack)  echo "h2load" ;;
         # h2load built with ngtcp2 for HTTP/3

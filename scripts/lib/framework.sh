@@ -52,8 +52,20 @@ framework_validate_tests() {
        known profiles: $(printf '%s\n' "${!PROFILES[@]}" | sort | tr '\n' ' ')"
 }
 
+# connections-5m runs only for the entries on scripts/connections-5m-allowlist.json.
+# Holding five million connections a server may grow to 128 GiB, so the field is
+# chosen rather than open: subscribing in meta.json is not enough on its own.
+CONN5M_ALLOWLIST="${CONN5M_ALLOWLIST:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/connections-5m-allowlist.json}"
+conn5m_allowed() {
+    python3 -c 'import json, sys
+sys.exit(0 if sys.argv[2] in (json.load(open(sys.argv[1])).get("frameworks") or []) else 1)' \
+        "$CONN5M_ALLOWLIST" "$FRAMEWORK" 2>/dev/null
+}
+
 framework_subscribes_to() {
     local profile="$1"
+    # Not on the allowlist: not subscribed, whatever meta.json says.
+    if [ "$profile" = "connections-5m" ] && ! conn5m_allowed; then return 1; fi
     [ -z "$FRAMEWORK_TESTS" ] && return 0
     echo ",$FRAMEWORK_TESTS," | grep -qF ",$profile,"
 }
@@ -82,11 +94,24 @@ framework_start() {
     docker stop -t 5 "$CONTAINER_NAME" 2>/dev/null || true
     docker rm   -f  "$CONTAINER_NAME" 2>/dev/null || true
 
+    # The held-connection profiles hold millions of sockets, more than
+    # HARD_NOFILE may allow; their own limit is capped at fs.nr_open, the
+    # ceiling the kernel enforces (common.sh held_conn_limits).
+    local nofile="$HARD_NOFILE" mem_limit="${FRAMEWORK_MEM_LIMIT:-}"
+    if held_conn_profile "$endpoint"; then
+        local nr_open held_nofile held_mem
+        nr_open=$(cat /proc/sys/fs/nr_open 2>/dev/null || echo "$HARD_NOFILE")
+        read -r held_nofile held_mem <<< "$(held_conn_limits "$endpoint")"
+        nofile="$held_nofile"
+        [ "$nofile" -gt "$nr_open" ] 2>/dev/null && nofile="$nr_open"
+        [ -n "$mem_limit" ] || mem_limit="$held_mem"
+    fi
+
     local args=(
         -d --name "$CONTAINER_NAME" --network host
         --security-opt seccomp=unconfined
         --ulimit memlock=-1:-1
-        --ulimit nofile="$HARD_NOFILE:$HARD_NOFILE"
+        --ulimit nofile="$nofile:$nofile"
         -v "$DATA_DIR/dataset.json:/data/dataset.json:ro"
         -v "$DATA_DIR/static:/data/static:ro"
         -v "$CERTS_DIR:/certs:ro"
@@ -97,9 +122,10 @@ framework_start() {
     # Empty is the default and leaves every other caller (benchmark, validate,
     # spec) exactly as before. --memory-swap equal to --memory disables swap, so
     # an over-limit server is OOM-killed deterministically instead of silently
-    # swapping and merely getting slow.
-    if [ -n "${FRAMEWORK_MEM_LIMIT:-}" ]; then
-        args+=(--memory="$FRAMEWORK_MEM_LIMIT" --memory-swap="$FRAMEWORK_MEM_LIMIT")
+    # swapping and merely getting slow. The held-connection profiles set one
+    # of their own (held_conn_limits) when the caller did not.
+    if [ -n "$mem_limit" ]; then
+        args+=(--memory="$mem_limit" --memory-swap="$mem_limit")
     fi
 
     # Profiles that exercise the database get DATABASE_URL + per-profile conn cap.

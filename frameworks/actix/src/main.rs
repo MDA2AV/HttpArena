@@ -401,6 +401,13 @@ async fn main() -> io::Result<()> {
             .service(Files::new("/static", "/data/static").try_compressed())
     })
     .workers(workers)
+    // Connections per worker. actix-server stops accepting at 25,600 per
+    // worker by default, 1.64M across 64 workers, short of connections-5m's
+    // five million (78,125 per worker). It is a counter, not an allocation,
+    // and the resilience suite's slow attacks hold 32,768 connections - under
+    // even the default cap of its 2-CPU box - so only the held-connection
+    // profiles ever reach it.
+    .max_connections(100_000)
     .tcp_nodelay(true)
     .bind("0.0.0.0:8080")?;
 
