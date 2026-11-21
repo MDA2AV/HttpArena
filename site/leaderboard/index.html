@@ -98,7 +98,7 @@
               <button class="vkey aisle-btn" id="aisleBtn" type="button" aria-pressed="false"
                       data-tip="Aisle view: step back and see the whole field at once, a row of cabinets with one slim unit per entry. Press a unit to walk up to it."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="3" width="5" height="18" rx="1"/><rect x="9.5" y="3" width="5" height="18" rx="1"/><rect x="16.5" y="3" width="5" height="18" rx="1"/></svg><span>Aisle</span></button>
               <button class="vkey maint-btn" id="maintBtn" type="button" aria-pressed="false"
-                      data-tip="Maintenance view: the same ranking as a plain table with every column, sortable, with the collapsible name column and the column scroller."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9.5h18M3 15h18M9 4v16M15 4v16"/></svg><span>Maintenance</span></button>
+                      data-tip="Old View: the same ranking as a plain table with every column, sortable, with the collapsible name column and the column scroller."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9.5h18M3 15h18M9 4v16M15 4v16"/></svg><span>Old View</span></button>
             </div>
           </div>
           <button class="fw-btn a3d-btn" id="a3dBtn" type="button"
@@ -2710,7 +2710,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       if(e.key==='Escape' && state.open && !state.maint && document.getElementById('spanel').style.display!=='block'){ var fw=state.open; state.open=''; render();
         var el=RACK.els[fw], b=el&&el.querySelector('.pull'); if(b) b.focus(); }
     });
-    // Rack, Aisle, Maintenance: pressing the key that is down does nothing
+    // Rack, Aisle, Old View: pressing the key that is down does nothing
     function setView(maint, aisle){
       if(maint ? state.maint : (!state.maint && !!state.aisle===aisle)) return;
       state.maint=maint; if(!maint) state.aisle=aisle;
