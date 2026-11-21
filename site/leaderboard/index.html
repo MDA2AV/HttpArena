@@ -101,6 +101,8 @@
                       data-tip="Maintenance view: the same ranking as a plain table with every column, sortable, with the collapsible name column and the column scroller."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9.5h18M3 15h18M9 4v16M15 4v16"/></svg><span>Maintenance</span></button>
             </div>
           </div>
+          <button class="fw-btn a3d-btn" id="a3dBtn" type="button"
+                  data-tip="The aisle in 3D: the whole screen, every cabinet and unit as they stand. Drag to look around, click a unit to pull it out."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2.8 8.5 4.6v9.2L12 21.2l-8.5-4.6V7.4z"/><path d="m3.5 7.4 8.5 4.7 8.5-4.7M12 12.1v9.1"/></svg><span>3D aisle</span></button>
           <button class="fw-btn heat-btn" id="heatBtn" type="button" aria-pressed="false"
                   data-tip="Thermal camera: colour every panel and bay by its score as a share of that column’s leader, instead of printing the number. For reading the shape of the rack at a glance; the figures stay in the hover popup."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/><path d="M12 9v8"/></svg><span>Thermal camera</span></button>
           <a class="fw-btn cmp-btn" href="/compare/all/" data-tip="Put any two entries side by side - every profile they both run, requests per second, p99 and the delta. Any two, in any language."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg><span>Head to Head Comparison</span></a>
@@ -1485,6 +1487,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     if(state.q) p.push('q='+encodeURIComponent(state.q));
     if(state.maint) p.push('table=1');
     if(state.aisle && !state.maint) p.push('aisle=1');
+    if(A3D && state.aisle && !state.maint) p.push('3d=1');
     if(state.open && !state.maint) p.push('open='+encodeURIComponent(state.open));
     var nh=p.length?('#'+p.join('&')):'';
     if(location.hash!==nh){ try{ history.replaceState(null,'', nh||(location.pathname+location.search)); }catch(e){} }
@@ -1502,6 +1505,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     if(p.hasOwnProperty('table')) state.maint = p.table==='1';
     state.open = p.open || '';
     state.aisle = p.aisle==='1';
+    state.a3d = state.aisle && p['3d']==='1';
     if(p.p && PROF[p.p]){
       state.view='profile'; state.profile=p.p;
       var cc=+p.conns; state.conns=(PROF[p.p].conns.indexOf(cc)>=0)?cc:PROF[p.p].conns[0];
@@ -2369,6 +2373,78 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       }
     }
   }
+  // ── the aisle in 3D ──────────────────────────────────────
+  // A whole-screen server room (assets/sr/aisle3d.js on three.js, both loaded
+  // on first use): the racks as they stand, a unit pulled out on a click. Fed
+  // from the rack as rendered - the same order, lights, locator LEDs and
+  // trays; the board's own popup for a light.
+  var A3D=null;
+  function a3dData(){
+    var R=RACK.view; if(!R) return null;
+    var comp=R.comp, M=R.M;
+    var tests=comp ? M.pids.map(function(pid){ return {id:pid, label:M.all?scopeLabel(pid):(PROF[pid]?PROF[pid].label:pid)}; }) : [];
+    var lk=comp ? '' : (defProfileSort(state.profile).k==='l1mscore'?'l1mscore':'rps');
+    var units=R.order.map(function(fw){
+      var row=R.by[fw]||{}, r=row.r||{}, m=D.meta[fw]||{}, lang=langOf(fw)||m.language||'';
+      var u={fw:fw, rank:comp?M.rankMap[fw]:row.rank, lang:lang, langColor:lc(lang).accent, type:typeOf(fw), tuned:modeOf(fw)==='tuned', fav:favs.has(fw)};
+      if(comp){
+        u.score=r.score!=null?r.score.toFixed(0):''; u.share=M.maxScore>0?(r.score||0)/M.maxScore:0;
+        u.leds=M.pids.map(function(pid){ var c=r.cells&&r.cells[pid]; return c ? {p:Math.max(0,Math.min(100,c.bar))/100, best:!!c.best} : null; });
+      } else { u.score=profText(lk, r); u.share=R.share[fw]||0; u.leds=[]; }
+      return u;
+    });
+    return {tests:tests, units:units, title:'Rack '+R.label,
+            subtitle:units.length+(units.length===1?' unit':' units')+' racked · '+(state.sortDir<0?'best first':'reversed')};
+  }
+  function a3dTip(fw, i){
+    var R=RACK.view; if(!R || !R.comp) return null;
+    var pid=R.M.pids[i], row=R.by[fw], c=row&&row.r&&row.r.cells&&row.r.cells[pid];
+    var lab=R.M.all?scopeLabel(pid):(PROF[pid]?PROF[pid].label:pid);
+    if(!c) return '<div class="a3dtip"><div class="dh">'+esc(fw)+'</div><div class="dsub">No '+esc(lab)+' results.</div></div>';
+    if(R.M.all) return '<div class="a3dtip"><div class="dh">'+esc(fw)+'</div><div class="dsub">'+esc(lab+' composite '+c.v.toFixed(0)+' - #'+c.rank+' of '+c.of+' on the '+lab+' board.')+'</div></div>';
+    return '<div class="a3dtip">'+dtipHtml(pid, fw, !c.c)+'</div>';
+  }
+  function open3d(){
+    if(A3D || !state.aisle || state.maint) return;
+    var data=a3dData(); if(!data) return;
+    if(state.open){ state.open=''; render(); }
+    var host=document.createElement('div'); host.className='sr3d-host';
+    host.setAttribute('role','dialog'); host.setAttribute('aria-label','The aisle in 3D');
+    host.innerHTML='<div class="sr3d-wait">Racking up the aisle…</div>';
+    document.body.appendChild(host);
+    var root=document.documentElement; A3D={host:host, ov:root.style.overflow, inert:[]}; root.style.overflow='hidden';
+    // the board behind is out of reach while the room is open
+    Array.prototype.forEach.call(document.body.children, function(el){ if(el!==host && !el.inert && el.tagName!=='SCRIPT'){ el.inert=true; A3D.inert.push(el); } });
+    scheduleHash();
+    import('/assets/sr/aisle3d.js').then(function(mod){
+      if(!A3D || A3D.host!==host) return null;
+      host.innerHTML='';
+      return mod.open({host:host, theme:DARK()?'dark':'light', title:data.title, subtitle:data.subtitle,
+        tests:data.tests, units:data.units, perRack:42,
+        detailHtml:function(fw){ var R=RACK.view; return trayMini(fw, R&&R.by[fw]); },
+        ledTipHtml:a3dTip,
+        onFav:function(fw){ toggleFav(fw); return favs.has(fw); },
+        onClose:function(){ if(A3D) A3D.h=null; close3d(); }});   // it has closed itself
+    }).then(function(h){ if(A3D && A3D.host===host && h) A3D.h=h; }).catch(function(e){
+      host.innerHTML='<div class="sr3d-wait">The 3D aisle could not start ('+esc(e&&e.message||String(e))+'). <button type="button" class="tray-x" data-x>Back to the aisle</button></div>';
+      var x=host.querySelector('[data-x]'); if(x) x.onclick=function(){ close3d(); };
+    });
+  }
+  function close3d(){
+    if(!A3D) return;
+    var a=A3D; A3D=null; state.a3d=false;
+    if(a.h && a.h.close){ try{ a.h.close(); }catch(e){} }
+    a.inert.forEach(function(el){ el.inert=false; });
+    if(a.host.parentNode) a.host.parentNode.removeChild(a.host);
+    document.documentElement.style.overflow=a.ov||'';
+    scheduleHash();
+    var b=document.getElementById('a3dBtn'); if(b) b.focus();
+  }
+  function init3d(){
+    var b=document.getElementById('a3dBtn'); if(b) b.onclick=function(){ open3d(); };
+    document.addEventListener('keydown', function(e){ if(e.key==='Escape' && A3D && !A3D.h){ close3d(); } });
+    if(state.a3d) setTimeout(open3d, 0);
+  }
   // The aisle as cabinets: a grid filled column by column, as many cabinets as
   // fit (each wide enough for a name, a score and a light per test), the units
   // shared out evenly. A grid rather than CSS columns, so a unit sliding out
@@ -2514,6 +2590,8 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
           + esc(M.all?scopeLabel(pid):(PROF[pid]?PROF[pid].label:pid))+'</span>'; }).join('')+'</span>';
     paintRack(rack, cap, patch, units, function(fw){ return by[fw]; });
     aisleGrid();
+    var shares={}; if(!comp) units.forEach(function(u){ var r=by[u.fw]&&by[u.fw].r; if(r) shares[u.fw]=(r.rps||0)/(M.maxRps||1); });
+    RACK.view={comp:comp, M:M, by:by, order:units.map(function(u){ return u.fw; }), label:label, share:shares};
     renderSortCtl(sortOpts);
   }
   function initRack(){
@@ -2630,7 +2708,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     +'<div><b>Patch panel</b>The strip above the first unit names every column. Press a port to sort by it.</div>'
     +'<div><b>Pull handle</b>Press a unit to slide it out on its rails: every number, the run logs, Spec, Resilience, medals and the link to its results page.</div>'; });
   }
-  initLegend(); initTips(); initSpecPanel(); initHeat(); initModal(); initRack(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initNavSearch(); hw(); buildNav(); renderHead(); render();
+  initLegend(); initTips(); init3d(); initSpecPanel(); initHeat(); initModal(); initRack(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initNavSearch(); hw(); buildNav(); renderHead(); render();
   (function(){ var b=document.getElementById('brandHome'); if(b) b.onclick=function(e){ e.preventDefault(); pickScope('h1'); }; })();
   window.addEventListener('hashchange', function(){ restoreFromHash(); buildNav(); renderHead(); render(); });
   var _rz; window.addEventListener('resize', function(){ clearTimeout(_rz); _rz=setTimeout(function(){ if(state.view==='profile') render(); else if(state.view==='composite'){ syncTopScroll(); if(FLOAT.measure){ FLOAT.measure(); floatCheck(); } } }, 150); });

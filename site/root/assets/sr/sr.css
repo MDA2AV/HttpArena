@@ -1808,3 +1808,22 @@ html:not([data-theme="dark"]) .str-m::after{filter:none}
 .mini-links a{display:inline-flex; align-items:center; gap:.35rem; padding:.42rem .65rem; border:1px solid var(--line); background:var(--panel-2); color:var(--accent); font:600 .8125rem/1 var(--sans); text-decoration:none}
 .mini-links a:hover{border-color:var(--accent)}
 .mini-links a.go{background:var(--accent); border-color:var(--accent); color:var(--bg)}
+
+/* ── the aisle in 3D: its button (in the aisle), its host, its popup ── */
+.tools .a3d-btn{display:none}
+html.aisle .tools .a3d-btn{display:inline-flex}
+.sr3d-host{position:fixed; inset:0; z-index:1000; background:var(--bg); color:var(--text)}
+.sr3d-wait{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:.8rem; flex-wrap:wrap; padding:2rem; font:600 .9375rem/1.4 var(--sans); color:var(--text-2); text-align:center}
+.sr3d-host .tray.mini{position:static; margin:0; padding:0; border:0; background:none; box-shadow:none; animation:none}
+.sr3d-host .tray.mini .rail, .sr3d-host .tray.mini .tray-x{display:none}   /* the room has its own: Slide back in */
+.sr3d-host .tray.mini .tray-in{padding:0}
+.a3dtip{font-size:.75rem; line-height:1.4; color:var(--text); max-width:340px}
+.a3dtip .dh{font-weight:700; font-size:.8125rem}
+.a3dtip .dsub{color:var(--muted); font-size:.75rem; margin-bottom:.35rem}
+.a3dtip .dc{color:var(--text-2); font-weight:650; font-size:.75rem; margin:.45rem 0 .16rem; padding-top:.34rem; border-top:1px solid var(--line-soft)}
+.a3dtip .dc .dtag{float:right; font-weight:500; color:var(--muted)}
+.a3dtip table{border-collapse:collapse; width:100%}
+.a3dtip td{padding:.05rem 0; vertical-align:baseline}
+.a3dtip td.k{color:var(--muted); padding-right:.8rem; white-space:nowrap}
+.a3dtip td.v{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+.a3dtip .dfoot{margin-top:.4rem; padding-top:.32rem; border-top:1px solid var(--line-soft); color:var(--muted); font-size:.75rem}
