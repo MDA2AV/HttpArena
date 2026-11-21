@@ -1,0 +1,239 @@
+{
+  "framework": "fulmine.js",
+  "dir": "fulmine",
+  "suites": {
+    "h1": {
+      "tool": "http11probe",
+      "version": "d50d818",
+      "passed": 155,
+      "total": 159,
+      "warnings": 19,
+      "failed": [
+        {
+          "id": "COMP-HOST-WITH-PATH",
+          "test": "Host header with path component must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a73.2",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-OPTIONS-STAR",
+          "test": "OPTIONS * is the only valid asterisk-form request",
+          "expected": "2xx or 405; close/timeout = warn",
+          "got": "400, connection closed",
+          "rfc": "RFC 9112 \u00a73.2.4",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-HTTP10-DEFAULT-CLOSE",
+          "test": "HTTP/1.0 without keep-alive \u2014 server should close connection after response",
+          "expected": "2xx + close",
+          "got": "400, connection closed",
+          "rfc": "RFC 9112 \u00a79.3",
+          "level": "Should"
+        },
+        {
+          "id": "COMP-CHUNKED-TRAILER-VALID",
+          "test": "Valid chunked body with trailer field should be accepted",
+          "expected": "2xx + echo",
+          "got": "400, connection closed",
+          "rfc": "RFC 9112 \u00a77.1.2",
+          "level": "Must"
+        }
+      ]
+    },
+    "h2": {
+      "tool": "h2spec",
+      "version": "2.6.0",
+      "passed": 136,
+      "total": 145,
+      "failed": [
+        {
+          "id": "http2/5.1/8",
+          "test": "closed: Sends a DATA frame after sending RST_STREAM frame",
+          "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x00, stream_id:1)"
+        },
+        {
+          "id": "http2/5.1/9",
+          "test": "closed: Sends a HEADERS frame after sending RST_STREAM frame",
+          "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x00, stream_id:1)"
+        },
+        {
+          "id": "http2/5.1/11",
+          "test": "closed: Sends a DATA frame",
+          "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/5.1/12",
+          "test": "closed: Sends a HEADERS frame",
+          "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/5.1.1/2",
+          "test": "Sends stream identifier that is numerically smaller than previous",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:0, flags:0x01, stream_id:5)"
+        },
+        {
+          "id": "http2/5.3.1/2",
+          "test": "Sends PRIORITY frame that depend on itself",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/6.3/1",
+          "test": "Sends a PRIORITY frame with 0x0 stream identifier",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/6.7/2",
+          "test": "Sends a PING frame with ACK",
+          "expected": "PING Frame (length:8, flags:0x01, stream_id:0, opaque_data:h2spec\\x00\\x00)",
+          "got": "Connection closed"
+        },
+        {
+          "id": "http2/6.9.1/3",
+          "test": "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1 on a stream",
+          "expected": "RST_STREAM Frame (Error Code: FLOW_CONTROL_ERROR)",
+          "got": "Connection closed"
+        }
+      ],
+      "listeners": {
+        "tls": {
+          "passed": 136,
+          "total": 145,
+          "failed": [
+            {
+              "id": "http2/5.1/8",
+              "test": "closed: Sends a DATA frame after sending RST_STREAM frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x00, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1/9",
+              "test": "closed: Sends a HEADERS frame after sending RST_STREAM frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x00, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1/11",
+              "test": "closed: Sends a DATA frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/5.1/12",
+              "test": "closed: Sends a HEADERS frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/5.1.1/2",
+              "test": "Sends stream identifier that is numerically smaller than previous",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:0, flags:0x01, stream_id:5)"
+            },
+            {
+              "id": "http2/5.3.1/2",
+              "test": "Sends PRIORITY frame that depend on itself",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.3/1",
+              "test": "Sends a PRIORITY frame with 0x0 stream identifier",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.7/2",
+              "test": "Sends a PING frame with ACK",
+              "expected": "PING Frame (length:8, flags:0x01, stream_id:0, opaque_data:h2spec\\x00\\x00)",
+              "got": "Connection closed"
+            },
+            {
+              "id": "http2/6.9.1/3",
+              "test": "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1 on a stream",
+              "expected": "RST_STREAM Frame (Error Code: FLOW_CONTROL_ERROR)",
+              "got": "Connection closed"
+            }
+          ]
+        },
+        "h2c": {
+          "passed": 136,
+          "total": 145,
+          "failed": [
+            {
+              "id": "http2/5.1/8",
+              "test": "closed: Sends a DATA frame after sending RST_STREAM frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/5.1/9",
+              "test": "closed: Sends a HEADERS frame after sending RST_STREAM frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/5.1/11",
+              "test": "closed: Sends a DATA frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/5.1/12",
+              "test": "closed: Sends a HEADERS frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/5.1.1/2",
+              "test": "Sends stream identifier that is numerically smaller than previous",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:0, flags:0x01, stream_id:5)"
+            },
+            {
+              "id": "http2/5.3.1/2",
+              "test": "Sends PRIORITY frame that depend on itself",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.3/1",
+              "test": "Sends a PRIORITY frame with 0x0 stream identifier",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.7/2",
+              "test": "Sends a PING frame with ACK",
+              "expected": "PING Frame (length:8, flags:0x01, stream_id:0, opaque_data:h2spec\\x00\\x00)",
+              "got": "Connection closed"
+            },
+            {
+              "id": "http2/6.9.1/3",
+              "test": "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1 on a stream",
+              "expected": "RST_STREAM Frame (Error Code: FLOW_CONTROL_ERROR)",
+              "got": "Connection closed"
+            }
+          ]
+        }
+      }
+    },
+    "ws": {
+      "tool": "autobahn-testsuite",
+      "version": "25.10.1",
+      "passed": 244,
+      "total": 244,
+      "non_strict": 11,
+      "failed": []
+    }
+  }
+}
