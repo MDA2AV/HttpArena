@@ -62,34 +62,48 @@
       <div class="kvm" id="navTree" aria-label="Views"></div>
 
       <div class="tools">
-        <div class="tools-row">
-        <div class="type-filter" id="typeFilter" role="group" aria-label="Entry types">
+        <!-- what is shown: the leagues as banks of keys (a key that is on is
+             raised and lit), then the filter box with its count -->
+        <div class="tools-row tools-filter">
+        <div class="type-filter" id="typeFilter" role="group" aria-label="Entry types" data-cap="Show">
+          <span class="kbank">
           <button data-type="flagship" data-tip="Proven in production - real applications are built and operated on it at scale, and it is actively maintained. A runtime’s own HTTP server counts; a router and middleware are not required.">Flagship</button>
           <button data-type="emerging" data-tip="A genuine, working server that is not yet production-proven - young, niche, or without real deployments to point to.">Emerging</button>
           <button data-type="experimental" data-tip="Very new, unproven work. Ranked with frameworks but hidden until you select it.">Experimental</button>
-          <span class="tf-div" aria-hidden="true"></span>
+          </span>
+          <span class="kbank">
           <button data-type="engine" data-tip="An HTTP implementation applications are not written against - raw sockets, low-level I/O, or a WSGI/ASGI-style host. Ranked separately.">Engine</button>
           <button data-type="infrastructure" data-tip="Reverse proxies and static-file servers (e.g. nginx, h2o) run without an application framework layer. Ranked separately.">Infra</button>
-          <span class="tf-div" aria-hidden="true"></span>
+          </span>
+          <span class="kbank">
           <button id="tunedToggle" type="button" class="on" data-tip="Show tuned entries - non-default configuration / optimizations (they wear a hazard-striped bezel).">Tuned</button>
+          </span>
         </div>
-        <div id="headctl"></div>
-        </div>
-        <div class="tools-row tools-find">
         <div class="search">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-          <input id="q" type="search" placeholder="Search name, language, engine - comma to combine, ! to exclude (e.g. rust, !go)" autocomplete="off" aria-label="Filter entries">
+          <input id="q" type="search" placeholder="Filter by name, language or engine (e.g. rust, !go)" autocomplete="off" aria-label="Filter entries">
+          <span class="count" id="count"></span>
         </div>
+        </div>
+        <!-- how: the view's own options, the view itself, the thermal camera
+             and the comparison -->
+        <div class="tools-row tools-view">
+        <div id="headctl"></div>
         <div class="tool-btns">
           <span class="sortctl" id="sortCtl"></span>
-          <a class="fw-btn cmp-btn" href="/compare/all/" data-tip="Put any two entries side by side - every profile they both run, requests per second, p99 and the delta. Any two, in any language."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg><span>Head to Head Comparison</span></a>
+          <div class="tgroup" data-cap="View">
+            <div class="kbank viewseg" id="viewSeg" role="group" aria-label="View">
+              <button class="vkey" id="rackBtn" type="button" aria-pressed="true"
+                      data-tip="Rack view: every entry a server unit - its figures on the front panel, its lights blinking at its throughput. Pull a unit out for the details."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3" width="17" height="5" rx="1"/><rect x="3.5" y="9.5" width="17" height="5" rx="1"/><rect x="3.5" y="16" width="17" height="5" rx="1"/></svg><span>Rack</span></button>
+              <button class="vkey aisle-btn" id="aisleBtn" type="button" aria-pressed="false"
+                      data-tip="Aisle view: step back and see the whole field at once, a row of cabinets with one slim unit per entry. Press a unit to walk up to it."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="3" width="5" height="18" rx="1"/><rect x="9.5" y="3" width="5" height="18" rx="1"/><rect x="16.5" y="3" width="5" height="18" rx="1"/></svg><span>Aisle</span></button>
+              <button class="vkey maint-btn" id="maintBtn" type="button" aria-pressed="false"
+                      data-tip="Maintenance view: the same ranking as a plain table with every column, sortable, with the collapsible name column and the column scroller."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9.5h18M3 15h18M9 4v16M15 4v16"/></svg><span>Maintenance</span></button>
+            </div>
+          </div>
           <button class="fw-btn heat-btn" id="heatBtn" type="button" aria-pressed="false"
                   data-tip="Thermal camera: colour every panel and bay by its score as a share of that column’s leader, instead of printing the number. For reading the shape of the rack at a glance; the figures stay in the hover popup."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/><path d="M12 9v8"/></svg><span>Thermal camera</span></button>
-          <button class="fw-btn aisle-btn" id="aisleBtn" type="button" aria-pressed="false"
-                  data-tip="Aisle view: step back and see the whole field at once, a row of cabinets with one slim unit per entry. Press a unit to walk up to it."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="3" width="5" height="18" rx="1"/><rect x="9.5" y="3" width="5" height="18" rx="1"/><rect x="16.5" y="3" width="5" height="18" rx="1"/></svg><span>Aisle view</span></button>
-          <button class="fw-btn maint-btn" id="maintBtn" type="button" aria-pressed="false"
-                  data-tip="Maintenance view: the same ranking as a plain table with every column, sortable, with the collapsible name column and the column scroller."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9.5h18M3 15h18M9 4v16M15 4v16"/></svg><span>Maintenance view</span></button>
-          <span class="count" id="count"></span>
+          <a class="fw-btn cmp-btn" href="/compare/all/" data-tip="Put any two entries side by side - every profile they both run, requests per second, p99 and the delta. Any two, in any language."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg><span>Head to Head Comparison</span></a>
         </div>
         </div>
         <div class="heatkey" id="heatKey" style="display:none"></div>
@@ -201,7 +215,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // useless as an addressable filter - q=C matches 73 of 78 entries, q=V matches
   // 33. The language rank badges link here, so the field they claim has to be
   // the field the page shows.
-  var state = { view:'composite', profile:null, conns:null, sortKey:'score', sortDir:-1, types:['flagship','emerging'], q:'', lang:'', useMem:false, scope:'h1', showTuned:true, rescale:false, compactFw:false, heat:false, maint:false, aisle:false, open:'' };
+  var state = { view:'composite', profile:null, conns:null, sortKey:'score', sortDir:-1, types:['flagship','emerging'], q:'', lang:'', useMem:false, scope:'h1', showTuned:true, rescale:true, compactFw:false, heat:false, maint:false, aisle:false, open:'' };
   // The maintenance view (the plain table) is remembered per reader; the rack is the default.
   try{ state.maint=localStorage.getItem('sr-maint')==='1'; }catch(e){}
 
@@ -551,8 +565,9 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     var btn=document.getElementById('heatBtn'), key=document.getElementById('heatKey');
     var on = state.view==='composite';
     if(btn){ btn.style.display = on ? '' : 'none'; btn.setAttribute('aria-pressed', state.heat?'true':'false'); }
-    var mb=document.getElementById('maintBtn'); if(mb) mb.setAttribute('aria-pressed', state.maint?'true':'false');
-    var ab=document.getElementById('aisleBtn'); if(ab){ ab.setAttribute('aria-pressed', state.aisle?'true':'false'); ab.style.display=state.maint?'none':''; }
+    // the view keys: rack, aisle or maintenance - one of them is always down
+    var vk={rackBtn:!state.maint && !state.aisle, aisleBtn:!!state.aisle && !state.maint, maintBtn:!!state.maint};
+    Object.keys(vk).forEach(function(id){ var b=document.getElementById(id); if(b) b.setAttribute('aria-pressed', vk[id]?'true':'false'); });
     document.documentElement.classList.toggle('aisle', !!state.aisle && !state.maint);
     if(key) key.style.display = (on && state.heat) ? '' : 'none';
   }
@@ -784,6 +799,8 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     document.addEventListener('click', function(e){ if(!el.contains(e.target)) close(); });
   }
   // Examples popover under the search input - appears on focus.
+  // the count inside the filter box; on a phone only the number shows
+  function setCount(n){ var c=document.getElementById('count'); if(c) c.innerHTML=n+'<span class="cw">'+(n===1?' framework':' frameworks')+'</span>'; }
   function initSearchHelp(){
     var wrap=document.querySelector('.search'), inp=document.getElementById('q'); if(!wrap||!inp) return;
     var EX=[
@@ -1052,15 +1069,16 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       var b=esc(p.blurb||'');
       if(p.doc) b+=(b?' ':'')+'<a href="/docs/'+p.doc+'/">Implementation guidelines →</a>';
       blurb.innerHTML=b;
-      var seg=document.createElement('div'); seg.className='seg';
+      var cap=document.createElement('span'); cap.className='tcap'; cap.textContent='Connections';
+      var seg=document.createElement('div'); seg.className='seg'; seg.setAttribute('role','group'); seg.setAttribute('aria-label','Connections');
       var thumb=document.createElement('div'); thumb.className='seg-thumb'; seg.appendChild(thumb);
       p.conns.forEach(function(c){
-        var b=document.createElement('button'); b.textContent=c.toLocaleString('en-US')+'c';
+        var b=document.createElement('button'); b.textContent=c.toLocaleString('en-US');
         if(c===state.conns) b.className='on';
         b.onclick=function(){ state.conns=c; setSegActive(seg,b); render(); };
         seg.appendChild(b);
       });
-      ctl.innerHTML=''; ctl.appendChild(seg);
+      ctl.innerHTML=''; ctl.appendChild(cap); ctl.appendChild(seg);
       thumb.style.transition='none'; moveThumb(seg);           // position without an initial slide
       requestAnimationFrame(function(){ thumb.style.transition=''; });
     }
@@ -1449,13 +1467,18 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       if(location.hash!==dh){ try{ history.replaceState(null,'', dh); }catch(e){} }
       return;
     }
-    var p=[];
+    var p=[], ts=state.types.slice().sort().join(',');
     if(state.view==='profile'){ p.push('p='+state.profile); p.push('conns='+state.conns); }
-    else { if(state.scope!=='h1') p.push('scope='+state.scope); if(state.useMem) p.push('mem=1'); if(state.rescale) p.push('rescale=1'); if(state.heat) p.push('heat=1'); }
+    else { if(state.scope!=='h1') p.push('scope='+state.scope); if(state.useMem) p.push('mem=1');
+      // Rescale is on by default, so it is written when off - and also whenever
+      // the address spells out its leagues: a link with type= and no rescale= is
+      // a ranking link (a rank badge), which opens with it off (restoreFromHash).
+      if(!state.rescale) p.push('rescale=0'); else if(ts!=='emerging,flagship') p.push('rescale=1');
+      if(state.heat) p.push('heat=1'); }
     var _dps=defProfileSort(state.profile);
     var defSort = state.view==='profile' ? (state.sortKey===_dps.k&&state.sortDir===_dps.d) : (state.sortKey==='score'&&state.sortDir===-1);
     if(!defSort) p.push('sort='+state.sortKey+':'+state.sortDir);
-    var ts=state.types.slice().sort().join(','); if(ts!=='emerging,flagship') p.push('type='+ts);
+    if(ts!=='emerging,flagship') p.push('type='+ts);
     if(!state.showTuned) p.push('tuned=0');
     if(state.compactFw) p.push('fw=compact');
     if(state.lang) p.push('lang='+encodeURIComponent(state.lang));
@@ -1488,7 +1511,13 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       state.view='composite';
       state.scope=(p.scope && SCOPES.some(function(s){return s.k===p.scope;}))?p.scope:'h1';
       state.useMem = p.mem==='1';
-      state.rescale = p.rescale==='1';
+      // On by default. A rank badge's link spells out its leagues (type=) and the
+      // tuned filter, never rescale=, and its rank was taken with rescale off:
+      // re-basing on the shown entries reorders a filtered field (#702), and with
+      // it on 68 badge ranks would disagree with the board they link to. So a
+      // link with type= and no rescale= opens with it off; the board's own
+      // addresses write rescale= whenever they write type= (writeHash).
+      state.rescale = p.hasOwnProperty('rescale') ? p.rescale!=='0' : !p.hasOwnProperty('type');
       state.heat = p.heat==='1';
       state.sortKey='score'; state.sortDir=-1;
       expanded.add('composite');
@@ -1647,7 +1676,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     renderTypes(rows.map(function(r){return r.fw;}));
     var dark=DARK();
     var sk=state.sortKey, dir=state.sortDir;
-    document.getElementById('count').textContent=rows.length+(rows.length===1?' framework':' frameworks');
+    setCount(rows.length);
     var ar=function(k){ return sk===k?(dir<0?' ▼':' ▲'):''; };
     var th='<th class="sticky rankh">#</th>'
       + '<th class="sticky fwh" data-k="fw" data-tip="'+esc(TIP.fw)+'">Framework'
@@ -1893,7 +1922,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   function renderProfile(){
     var M=profileModel(), all=M.all, rows=M.rows, rankMap=M.rankMap, maxRps=M.maxRps;
     renderTypes();
-    document.getElementById('count').textContent=rows.length+(rows.length===1?' framework':' frameworks');
+    setCount(rows.length);
     // On a phone the columns' floors (54px rank, 200px name, 150px rate) add up
     // to more than the screen. There the table keeps the rank, the name and the
     // profile's first two figures, the rank narrows and no figure asks for more
@@ -2401,7 +2430,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     var M=comp?compositeModel():profileModel(), units=[], patch, by={}, sortOpts=[['fw','Framework']];
     renderTypes();
     var n=M.rows.length;
-    document.getElementById('count').textContent=n+(n===1?' framework':' frameworks');
+    setCount(n);
     var label, COLS=null;
     if(comp){
       M.rows.forEach(function(r){ units.push(unitComposite(r, M)); by[r.fw]={r:r, M:M}; });
@@ -2464,10 +2493,16 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       if(e.key==='Escape' && state.open && !state.maint && document.getElementById('spanel').style.display!=='block'){ var fw=state.open; state.open=''; render();
         var el=RACK.els[fw], b=el&&el.querySelector('.pull'); if(b) b.focus(); }
     });
-    var ab=document.getElementById('aisleBtn');
-    if(ab) ab.onclick=function(){ state.aisle=!state.aisle; render(); };
-    var mb=document.getElementById('maintBtn');
-    if(mb) mb.onclick=function(){ state.maint=!state.maint; try{ localStorage.setItem('sr-maint', state.maint?'1':'0'); }catch(e){} render(); };
+    // Rack, Aisle, Maintenance: pressing the key that is down does nothing
+    function setView(maint, aisle){
+      if(maint ? state.maint : (!state.maint && !!state.aisle===aisle)) return;
+      state.maint=maint; if(!maint) state.aisle=aisle;
+      try{ localStorage.setItem('sr-maint', maint?'1':'0'); }catch(e){}
+      render();
+    }
+    var rb=document.getElementById('rackBtn'); if(rb) rb.onclick=function(){ setView(false, false); };
+    var ab=document.getElementById('aisleBtn'); if(ab) ab.onclick=function(){ setView(false, true); };
+    var mb=document.getElementById('maintBtn'); if(mb) mb.onclick=function(){ setView(true); };
   }
 
   // ── hardware chips ──────────────────────────────────────
