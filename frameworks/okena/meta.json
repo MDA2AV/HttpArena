@@ -12,7 +12,6 @@
     "limited-conn",
     "latency-10k",
     "latency-1m",
-    "latency-500k-8cpu",
     "async",
     "json-comp",
     "json-tls",
