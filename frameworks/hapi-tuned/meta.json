@@ -1,0 +1,30 @@
+{
+  "display_name": "hapi-tuned",
+  "language": "JS",
+  "type": "flagship",
+  "mode": "tuned",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "engine": "node:http",
+  "description": "The hapi entry with three things changed. Each worker binds its own listener with reusePort, created in the entry and handed to hapi, instead of taking connections from the cluster primary. Brotli runs as one synchronous call at quality 1 inside the encoder hapi's compression calls, instead of a zlib stream at quality 3. Cookie parsing, range support and connection tracking for graceful stop are switched off. Routes, query and payload parsing and JSON serialization are the hapi entry's.",
+  "repo": "https://github.com/hapijs/hapi",
+  "website": "https://hapi.dev",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
+    "pipelined",
+    "limited-conn",
+    "json-tls",
+    "json-comp",
+    "8gbit"
+  ],
+  "maintainers": []
+}
