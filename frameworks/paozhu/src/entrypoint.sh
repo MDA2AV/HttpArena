@@ -72,6 +72,40 @@ H1_PID=$!
 /server /app/conf/main/server.conf &
 MAIN_PID=$!
 
+# ── Lazy-cache warmup ────────────────────────────────────────────────────
+# arena.cpp 懒加载静态文件：首次 miss 时把存在的源文件/.gz/.br 变体全部
+# 读入全局 hash 表缓存。预热一次后 h2load 进来全部 hit，零 fopen/fread。
+# Accept-Encoding 与 h2load 一致（br;q=1, gzip;q=0.8），让预热 curl 本身
+# 也走 br 命中路径。
+wait_ready() {
+    local url="$1" i
+    for i in $(seq 1 120); do
+        if curl -sf --max-time 2 -o /dev/null "$url" 2>/dev/null; then
+            return 0
+        fi
+        sleep 0.25
+    done
+    return 1
+}
+warm_static() {
+    local base="$1" f n
+    for f in /data/static/*; do
+        case "$f" in *.br|*.gz) continue ;; esac
+        [ -f "$f" ] || continue
+        n="${f##*/}"
+        curl -sf --max-time 5 \
+             -H 'Accept-Encoding: br;q=1, gzip;q=0.8' \
+             "$base/static/$n" -o /dev/null 2>/dev/null || true
+    done
+}
+if [ -d /data/static ]; then
+    # Readiness probe hits /pipeline so it does not touch the static cache;
+    # warm_static below is what loads the file variants.
+    wait_ready http://localhost:8080/pipeline || true
+    warm_static http://localhost:8080
+    warm_static http://localhost:8082
+fi
+
 shutdown() {
     trap - TERM INT
     kill -TERM "$MAIN_PID" "$H1_PID" 2>/dev/null || true
