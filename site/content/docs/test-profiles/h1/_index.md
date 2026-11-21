@@ -17,9 +17,9 @@ Every HTTP/1.1 profile measures one thing at a time, so a number can be attribut
   {{< card link="latency-10k" title="Latency-10K" subtitle="Latency-1M's setup at a near-idle 10K req/s; the metric is the CPU and latency of a server with almost nothing to do." icon="chip" >}}
   {{< card link="latency-1m" title="Latency-1M" subtitle="One million req/s offered at a fixed rate; the metric is the CPU each framework spends to serve it, read exactly from its cgroup." icon="chip" >}}
   {{< card link="latency-500k-8cpu" title="Latency-500K/8 *" subtitle="500K req/s pinned with the server on four cores plus their SMT siblings - near saturation, so the queue a server builds shows in its mean latency. Reference-only while the first entries are measured." icon="chip" >}}
-  {{< card link="async-database" title="Async Database (Postgres)" subtitle="Async Postgres range query over 100K rows, connection pooling, and JSON serialization. Framework-only benchmark." icon="database" >}}
+  {{< card link="async-database" title="Async Database (Postgres)" subtitle="Async Postgres range query over 100K rows, connection pooling, and JSON serialization. Ranked on the Database board, with its own CPU split." icon="database" >}}
   {{< card link="static-tls" title="Static Files over TLS" subtitle="20 static files served over HTTP/1.1 + TLS on port 8081. Reference-only for frameworks and engines, scored for infrastructure." icon="lock-closed" >}}
   {{< card link="pipelined" title="Pipelined (16x) *" subtitle="16 requests sent back-to-back per connection, testing raw I/O and pipeline batching. Reference-only - not part of the composite score." icon="fast-forward" >}}
-  {{< card link="fortunes" title="Fortunes (Templates) *" subtitle="DB query + HTML template rendering with auto-escape. Reference-only - measures template-engine throughput, not part of the composite score." icon="document-text" >}}
+  {{< card link="fortunes" title="Fortunes (Templates) *" subtitle="DB query + HTML template rendering with auto-escape. Shown on the Database board for reference - not part of any composite score." icon="document-text" >}}
   {{< card link="tls" title="TLS Hardening (opt-in)" subtitle="Not a benchmark: certificate rotation, SNI, resumption and a vulnerability scan on a dedicated TLS listener. Passing earns the gold TLS badge." icon="shield-check" >}}
 {{< /cards >}}

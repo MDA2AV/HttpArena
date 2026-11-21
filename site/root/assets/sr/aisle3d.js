@@ -1976,7 +1976,9 @@ function boardHead(x, N, W, title, sub, right) {
 function overallTexture(P, list, world, SECS, k = 1) {
   const N = P.noc, W = 2048, H = 1152, c = canvas(W * k, H * k), x = c.getContext('2d'); x.scale(k, k);
   list = (Array.isArray(list) ? list : []).filter(e => e && e.fw != null).slice(0, 10);
-  boardHead(x, N, W, 'Overall', 'The top ten across ' + plural(SECS.length, 'section') + ': ' + SECS.map(S => S.label).join(', '), world.round ? String(world.round) : '');
+  // the sections the overall adds up, as the board says (the corridor may hold more: Database ranks on its own)
+  const of = Array.isArray(world.overallOf) && world.overallOf.length ? world.overallOf : SECS.map(S => S.label);
+  boardHead(x, N, W, 'Overall', 'The top ten across ' + plural(of.length, 'section') + ': ' + of.join(', '), world.round ? String(world.round) : '');
   if (!list.length) {
     x.fillStyle = N.muted; x.font = '500 40px ' + FONT_SANS; x.fillText('No overall ranking for this view. Walk on for each section\'s own.', 64, 320);
     return c;

@@ -206,15 +206,15 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   var COMPOSITE = '__composite__';
   // 'all' is the overall composite (computeOverall): the families below it
   // added up, one column each. Listed first so it heads the Composite menu.
-  var SCOPE_TITLE={all:'Overall web server benchmarks',h1:'HTTP/1.1 web server benchmarks',h2:'HTTP/2 web server benchmarks',h3:'HTTP/3 web server benchmarks',gw:'Gateway and production stack benchmarks',grpc:'gRPC server benchmarks',ws:'WebSocket server benchmarks'};
-  var SCOPES = [{k:'all',label:'Overall'},{k:'h1',label:'H/1.1'},{k:'h2',label:'H/2'},{k:'h3',label:'H/3'},{k:'gw',label:'Gateway'},{k:'grpc',label:'gRPC'},{k:'ws',label:'WebSocket'}];
+  var SCOPE_TITLE={all:'Overall web server benchmarks',h1:'HTTP/1.1 web server benchmarks',h2:'HTTP/2 web server benchmarks',h3:'HTTP/3 web server benchmarks',gw:'Gateway and production stack benchmarks',grpc:'gRPC server benchmarks',ws:'WebSocket server benchmarks',db:'Database-backed web server benchmarks'};
+  var SCOPES = [{k:'all',label:'Overall'},{k:'h1',label:'H/1.1'},{k:'h2',label:'H/2'},{k:'h3',label:'H/3'},{k:'gw',label:'Gateway'},{k:'grpc',label:'gRPC'},{k:'ws',label:'WebSocket'},{k:'db',label:'Database'}];
   function scopeLabel(k){ for(var i=0;i<SCOPES.length;i++) if(SCOPES[i].k===k) return SCOPES[i].label; return k; }
-  function familyOf(p){ return {'Gateway':'gw','HTTP/2':'h2','HTTP/3':'h3','gRPC':'grpc','WebSocket':'ws'}[p.category]||'h1'; }
+  function familyOf(p){ return {'Gateway':'gw','HTTP/2':'h2','HTTP/3':'h3','gRPC':'grpc','WebSocket':'ws','Database':'db'}[p.category]||'h1'; }
   // cats must list every CATALOG category that belongs to the family. This is
   // the nav's only source of profiles, so a category missing here disappears
   // from Detailed Views entirely while still ranking on the composite --
   // which is how async and latency-1m went missing when they were added.
-  var FAMILIES=[{k:'h1',label:'HTTP/1.1',cats:['Connection','Concurrency','Efficiency','Workload','Database']},{k:'h2',label:'HTTP/2',cats:['HTTP/2']},{k:'h3',label:'HTTP/3',cats:['HTTP/3']},{k:'gw',label:'Gateway',cats:['Gateway']},{k:'grpc',label:'gRPC',cats:['gRPC']},{k:'ws',label:'WebSocket',cats:['WebSocket']}];
+  var FAMILIES=[{k:'h1',label:'HTTP/1.1',cats:['Connection','Concurrency','Efficiency','Workload']},{k:'h2',label:'HTTP/2',cats:['HTTP/2']},{k:'h3',label:'HTTP/3',cats:['HTTP/3']},{k:'gw',label:'Gateway',cats:['Gateway']},{k:'grpc',label:'gRPC',cats:['gRPC']},{k:'ws',label:'WebSocket',cats:['WebSocket']},{k:'db',label:'Database',cats:['Database']}];
   var expanded=new Set(['composite']);
   // state.lang is an exact language filter, distinct from the q search box: q
   // matches substrings across name/language/engine, which is fine for typing but
@@ -756,7 +756,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // Open, it lays the whole list over the page, each family's profiles under it,
   // and closes again on a pick.
   var railOpen=false, railFocus=null, railFrom=null;
-  var RAIL_ABBR={all:'ALL',h1:'H/1.1',h2:'H/2',h3:'H/3',gw:'GW',grpc:'gRPC',ws:'WS'};
+  var RAIL_ABBR={all:'ALL',h1:'H/1.1',h2:'H/2',h3:'H/3',gw:'GW',grpc:'gRPC',ws:'WS',db:'DB'};
   // The address a pick leads to, as writeHash would write it after the pick: the
   // view, plus what carries over (types, Tuned, compact names, the room's view),
   // so a key opened in a new tab lands on the same board.
@@ -1168,7 +1168,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     var cat=document.getElementById('pcat'), title=document.getElementById('ptitle'),
         blurb=document.getElementById('pblurb'), ctl=document.getElementById('headctl');
     if(state.view==='composite'){
-      var sLabel={h1:'all HTTP/1.1 profiles',h2:'all HTTP/2 profiles',h3:'all HTTP/3 profiles',gw:'the gateway & production-stack profiles',grpc:'all gRPC profiles',ws:'all WebSocket profiles'}[state.scope];
+      var sLabel={h1:'all HTTP/1.1 profiles',h2:'all HTTP/2 profiles',h3:'all HTTP/3 profiles',gw:'the gateway & production-stack profiles',grpc:'all gRPC profiles',ws:'all WebSocket profiles',db:'the database profiles'}[state.scope];
       // The heading is the page's <h1>. "HTTP/1.1" alone said nothing about
       // what is on the page, so every view names its subject.
       var sName=SCOPE_TITLE[state.scope];
@@ -2559,7 +2559,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   }
   // The corridor: a section per family composite, each ranked on its own as the
   // board would rank it (the same leagues and filters), best first.
-  var A3D_FAMS=['h1','h2','h3','gw','grpc','ws'];
+  var A3D_FAMS=['h1','h2','h3','gw','grpc','ws','db'];
   function a3dSection(scope){
     var res=computeComposite(scope); if(!res || !res.rows || !res.rows.length) return null;
     var rows=res.rows.slice().sort(function(a,b){ return b.score-a.score; });
@@ -2587,7 +2587,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     return {tests:main.tests, units:units, title:'Rack '+R.label,
             subtitle:units.length+(units.length===1?' unit':' units')+' racked · '+(state.sortDir<0?'best first':'reversed'),
             sections:secs, sec:SEC, start:SEC[start]?start:(secs[0]&&secs[0].id), overall:overall,
-            world:{view:R.label,
+            world:{view:R.label, overallOf:OVERALL_FAMS.map(scopeLabel),
                    metric:comp?(R.M.all?'Overall score':'Composite score'):(lk==='l1mscore'?'Latency score':'Requests per second'),
                    round:act?(act.name||act.id)+(act.date?' · '+act.date:''):(rr.name||'Current round')+(rr.ongoing?' · ongoing':''),
                    machine:{cpu:shortCpu(c.cpu||''), cores:+c.cores||null, threads:+c.threads||null, ram:c.ram||'', os:c.os||'', kernel:c.kernel||''}}};
