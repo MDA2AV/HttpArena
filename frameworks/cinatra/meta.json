@@ -15,7 +15,7 @@
   "enabled": true,
   "tests": [
     "baseline", "pipelined", "limited-conn", "async",
-    "latency-1m", "latency-10k", "latency-500k-8cpu",
+    "latency-1m", "latency-10k",
     "json-comp", "json-tls", "static-tls", "8gbit",
     "echo-ws", "echo-ws-pipeline", "echo-ws-limited"
   ],

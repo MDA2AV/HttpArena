@@ -4,6 +4,8 @@ seo_title: "Latency-500K/8 Benchmark: Validation Checks"
 description: "How correctness is established for the Latency-500K/8 fixed-rate CPU profile."
 ---
 
+> **Retired.** This profile was removed on 21 November 2026: it no longer runs, and its results were cleared. The page stays for reference.
+
 This profile has no validation section of its own, and that is not an omission.
 
 It drives `GET /baseline11?a=1&b=2`, the baseline endpoint unchanged, so an entry subscribed to `latency-500k-8cpu` is run through the full [baseline validation suite](../baseline/validation): the arithmetic, the `Content-Type`, the randomized-input anti-cheat, the TCP fragmentation checks, and the exhaustive per-byte fragmentation sweep. There is no second endpoint to check.
