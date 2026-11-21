@@ -852,6 +852,8 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       on = a.height>0 && b.height>0 && Math.abs(a.top-b.top)<1.5 && box.scrollHeight<=box.clientHeight+1;
     }
     if(rail.classList.contains('joined')!==on) rail.classList.toggle('joined', on);
+    // the plate's shading runs the placard's full height, so tab and placard shade alike
+    if(on) rail.style.setProperty('--ph', b.height.toFixed(1)+'px');
   }
   // open, or close; from = what opened it, where focus goes back on Escape / Close
   function railSet(open, focus, from){

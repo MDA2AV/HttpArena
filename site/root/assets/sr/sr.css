@@ -1918,7 +1918,7 @@ html.aisle .tools .a3d-btn{display:inline-flex}
 /* joined: on to the placard and over its 1px border, which it covers; no right
    edge, its shadow cut on that side, and the placard's corner screw there gone -
    that corner is now mid-plate */
-.vrail.joined .rail-tab{width:calc(100% + 8px + 1px + 1.25rem + 1px); border-right:0; clip-path:inset(-40px 0 -40px -40px)}
+.vrail.joined .rail-tab{width:calc(100% + 8px + 1px + 1.25rem + 1px); border-right:0; clip-path:inset(-40px 0 -40px -40px); background-size:100% var(--ph, 100%); background-repeat:no-repeat}
 .vrail.joined ~ .main .placard>.screw:nth-child(1){visibility:hidden}
 /* the toggle: a key at the foot when collapsed, Close on top when open */
 .rail-tog{display:flex; align-items:center; justify-content:center; gap:.45rem; width:100%; height:28px; margin-top:.95rem; padding:0 .45rem; border:1px solid var(--line); background:var(--panel); color:var(--text-2); cursor:pointer}
