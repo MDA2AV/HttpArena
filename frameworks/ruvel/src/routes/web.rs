@@ -28,10 +28,6 @@ pub fn routes(router: &mut Router) {
         )
     });
 
-    router.get("baseline11", async move |req| {
-        HttpArenaController.baseline(req).await
-    });
-
     // Benchmarks: Pipelined
     router.get("pipeline", async move |req| {
         HttpArenaController.pipelined(req).await

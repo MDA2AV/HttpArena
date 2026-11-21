@@ -8,6 +8,8 @@ RUN  RUSTFLAGS="-C target-cpu=native" cargo build --release
 FROM debian:trixie-slim
 COPY --from=build /app/target/release/server /server
 ENV PORT=8080
+ENV RV_REQUEST_BUFFER_SIZE=66560
+ENV RV_REQUEST_BUFFER_SIZE=66560
 EXPOSE 8080
 CMD ["/server"]
 
