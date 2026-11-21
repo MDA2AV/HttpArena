@@ -1879,39 +1879,62 @@ html.aisle .tools .a3d-btn{display:inline-flex}
 .a3dtip .dfoot{margin-top:.4rem; padding-top:.32rem; border-top:1px solid var(--line-soft); color:var(--muted); font-size:.75rem}
 
 /* ── the views rail (experiment): composites and detailed views on the left ──
-   Collapsed by default to a column of KVM keys - every composite and every
-   family, the one on screen lit, and the profile on screen named under its
-   family. Open, the full list lies over the page (the table keeps its width)
+   Collapsed (the default) it is a strip of small keys under short names (ALL,
+   H/1.1 ... WS). The view on screen leaves its place for the top: a bigger tab
+   cut from the placard's plate (face, edge, top light, shadow), level with the
+   placard, and - while the two sit level (.joined, railJoin) - run on across the
+   gutter and over the placard's left border, so the view and its title read as
+   one piece. Open, the full list lies over the page (the table keeps its width)
    and closes again on a pick. Below 1024px the rack needs the width: the KVM
    rows stay there, and phones keep the select. */
 .vrail{display:none}
 @media (min-width:1024px){
-  .layout{display:grid; grid-template-columns:144px minmax(0,1fr); align-items:start}
+  .layout{display:grid; grid-template-columns:80px minmax(0,1fr); align-items:start}
   .kvm{display:none}
   .vrail{display:block; position:sticky; top:calc(var(--top-h) + 3px); height:calc(100vh - var(--top-h) - 3px); z-index:30}
-  .rail-in{height:100%; overflow-y:auto; padding:.75rem .55rem 1.4rem; background:var(--patch); border-right:1px solid var(--edge-lo); box-shadow:inset -1px 0 0 var(--edge-hi); scrollbar-width:thin}
-  .vrail.open .rail-in{position:absolute; left:0; top:0; width:300px; z-index:60; box-shadow:16px 0 40px -14px rgba(0,0,0,.75)}
+  /* the top padding is .main's (1.3rem): the tab starts level with the placard */
+  .rail-in{height:100%; padding:1.3rem 8px 1rem; background:var(--patch); border-right:1px solid var(--edge-lo); box-shadow:inset -1px 0 0 var(--edge-hi)}
+  .vrail.open .rail-in{position:absolute; left:0; top:0; width:300px; padding:.75rem .55rem 1.4rem; overflow-y:auto; scrollbar-width:thin; z-index:60; box-shadow:16px 0 40px -14px rgba(0,0,0,.75)}
+}
+@media (min-width:1024px) and (max-height:600px){
+  .vrail:not(.open) .rail-in{overflow-y:auto; overflow-x:hidden; scrollbar-width:none}
+  .vrail .rail-tab{width:100%}
 }
 .vrail *{box-sizing:border-box}
-.rail-tog{display:flex; align-items:center; gap:.45rem; width:100%; height:34px; padding:0 .6rem; border:1px solid var(--line); background:var(--panel); color:var(--text); font:600 .76rem/1 var(--label); letter-spacing:.08em; text-transform:uppercase; cursor:pointer}
-.rail-tog:hover{border-color:var(--accent); color:var(--accent)}
-.rail-tog svg{width:14px; height:14px; flex:none; transition:transform .16s ease}
-.vrail.open .rail-tog svg{transform:rotate(180deg)}
-.rail-sec{margin-top:1.1rem}
-.rail-h{margin:0 .15rem .45rem; font:600 .68rem/1.2 var(--label); letter-spacing:.12em; text-transform:uppercase; color:var(--text-2)}
-.rail-key{display:flex; align-items:center; gap:.5rem; width:100%; min-height:32px; padding:.35rem .45rem; margin:0 0 3px; border:1px solid var(--edge-lo); background:var(--face); box-shadow:0 1px 0 var(--edge-hi) inset; color:var(--text-2); font:600 .74rem/1.1 var(--label); letter-spacing:.04em; text-transform:uppercase; text-align:left; text-decoration:none; cursor:pointer; white-space:nowrap}
+.rail-sec{margin-top:.95rem}
+.rail-h{margin:0 0 .4rem; font:600 .75rem/1.2 var(--sans); color:var(--text-2)}
+.rail-key{display:flex; align-items:center; gap:.4rem; width:100%; min-height:26px; padding:.2rem .45rem; margin:0 0 3px; border:1px solid var(--edge-lo); background:var(--face); box-shadow:0 1px 0 var(--edge-hi) inset; color:var(--text-2); font:600 .8rem/1 var(--label); letter-spacing:.03em; text-align:left; text-decoration:none; cursor:pointer; white-space:nowrap}
+.rail-key .kled{width:5px; height:5px}
 .rail-key span{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis}
-.rail-key svg{width:12px; height:12px; flex:none; opacity:.7}
 .rail-key:hover{color:var(--text); background:var(--face-h)}
+.vrail :is(.rail-key, .rail-tab, .rail-tog, .rail-item):focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+/* the view on screen: the tab, bigger than the keys - out over the gutter, 4px
+   short of the page (the rail's padding 8px + edge 1px + .main's 1.25rem) */
+.rail-tab{position:relative; z-index:2; display:flex; flex-direction:column; justify-content:center; gap:6px; width:calc(100% + 8px + 1px + 1.25rem - 4px); min-height:56px; margin:0; padding:.5rem .5rem .55rem; background:var(--face); border:1px solid var(--edge-lo); box-shadow:0 1px 0 var(--edge-hi) inset, var(--shadow); color:var(--text); text-align:left; cursor:pointer}
+.rail-tab .rt-k{display:flex; align-items:center; gap:6px; font:700 1.05rem/1 var(--label); letter-spacing:.02em; white-space:nowrap}
+.rail-tab .rt-k .kled{background:var(--led-g); box-shadow:0 0 7px var(--led-g)}
+.rail-tab .rt-c{font:600 .75rem/1.2 var(--sans); color:var(--text-2); overflow-wrap:break-word}
+.rail-tab:hover .rt-c{color:var(--text)}
+/* joined: on to the placard and over its 1px border, which it covers; no right
+   edge, its shadow cut on that side, and the placard's corner screw there gone -
+   that corner is now mid-plate */
+.vrail.joined .rail-tab{width:calc(100% + 8px + 1px + 1.25rem + 1px); border-right:0; clip-path:inset(-40px 0 -40px -40px)}
+.vrail.joined ~ .main .placard>.screw:nth-child(1){visibility:hidden}
+/* the toggle: a key at the foot when collapsed, Close on top when open */
+.rail-tog{display:flex; align-items:center; justify-content:center; gap:.45rem; width:100%; height:28px; margin-top:.95rem; padding:0 .45rem; border:1px solid var(--line); background:var(--panel); color:var(--text-2); cursor:pointer}
+.rail-tog:hover{border-color:var(--accent); color:var(--accent)}
+.rail-tog svg{width:15px; height:15px; flex:none}
+.vrail.open .rail-tog{justify-content:flex-start; height:34px; margin:0; padding:0 .6rem; color:var(--text); font:600 .8rem/1 var(--label); letter-spacing:.06em; text-transform:uppercase}
+/* open: the whole list, by name */
+.vrail.open .rail-sec{margin-top:1.1rem}
+.vrail.open .rail-key{min-height:32px; padding:.35rem .5rem; gap:.5rem; letter-spacing:.04em; text-transform:uppercase}
+.vrail.open .rail-key .kled{width:7px; height:7px}
 .rail-key.on{color:var(--text); background:var(--face-h); box-shadow:inset 3px 0 0 var(--led-g), 0 1px 0 var(--edge-hi) inset}
 .rail-key.on .kled{background:var(--led-g); box-shadow:0 0 7px var(--led-g)}
-.rail-cur{margin:-2px 0 5px; padding:.34rem .45rem .36rem .7rem; border-left:3px solid var(--led-g); background:var(--accent-weak); color:var(--text); font:600 .76rem/1.25 var(--sans); overflow-wrap:anywhere}
 .rail-fam{margin-bottom:2px}
 .vrail.open .rail-key.fam{cursor:default; background:none; border-color:transparent; box-shadow:none; color:var(--text); padding-left:.2rem}
-.vrail.open .rail-key.fam.on{box-shadow:none}
 .rail-list{margin:.1rem 0 .7rem}
-.rail-cat{margin:.55rem .35rem .25rem; font:600 .64rem/1.2 var(--label); letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+.rail-cat{margin:.6rem .35rem .25rem; font:600 .75rem/1.2 var(--sans); color:var(--muted)}
 .rail-item{display:block; padding:.36rem .55rem .36rem .9rem; border-left:3px solid transparent; color:var(--text-2); font:500 .86rem/1.3 var(--sans); text-decoration:none}
 .rail-item:hover{background:var(--panel-2); color:var(--text)}
-.rail-item:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
 .rail-item.on{border-left-color:var(--led-g); background:var(--accent-weak); color:var(--text); font-weight:650}

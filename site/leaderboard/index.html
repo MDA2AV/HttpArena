@@ -749,11 +749,14 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   }
   // ── the views rail ───────────────────────────────────────
   // On a desk the composites and the detailed views sit in a rail on the left
-  // instead of the KVM rows. Collapsed (the default) it is a column of keys,
-  // every composite and every family, the one on screen lit - and under its
-  // family, the profile on screen by name. Open, it lays the whole list over
-  // the page, each family's profiles under it, and closes again on a pick.
-  var railOpen=false, railFocus=null;
+  // instead of the KVM rows. Collapsed (the default) it is a strip of small keys
+  // under short names (ALL, H/1.1 ... WS). The view on screen leaves its place for
+  // the top: a bigger tab cut from the placard's plate and, while the two sit
+  // level, joined to it (railJoin), so the view and its title read as one piece.
+  // Open, it lays the whole list over the page, each family's profiles under it,
+  // and closes again on a pick.
+  var railOpen=false, railFocus=null, railFrom=null;
+  var RAIL_ABBR={all:'ALL',h1:'H/1.1',h2:'H/2',h3:'H/3',gw:'GW',grpc:'gRPC',ws:'WS'};
   // The address a pick leads to, as writeHash would write it after the pick: the
   // view, plus what carries over (types, Tuned, compact names, the room's view),
   // so a key opened in a new tab lands on the same board.
@@ -768,40 +771,63 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     if(state.aisle && !state.maint) p.push('aisle=1');
     return esc(p.length ? '#'+p.join('&') : location.pathname+location.search);
   }
-  var RAIL_CHEV='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+  var RAIL_MORE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 7 5 5-5 5M13 7l5 5-5 5"/></svg>';
+  var RAIL_BACK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>';
   function buildRail(byCat){
     var rail=document.getElementById('rail'); if(!rail) return;
     var cur=state.view==='profile' ? PROF[state.profile] : null;
-    var h='<div class="rail-in"><button class="rail-tog" type="button" id="railTog" aria-expanded="'+railOpen+'"'
-      + ' aria-label="'+(railOpen?'Close the list of views':'Open every view, with the test profiles of each family')+'">'+RAIL_CHEV+'<span>'+(railOpen?'Close':'Views')+'</span></button>'
-      + '<div class="rail-sec"><div class="rail-h">Composite</div>';
-    SCOPES.forEach(function(sc){
-      var on=state.view==='composite' && state.scope===sc.k;
-      h+='<a class="rail-key'+(on?' on':'')+'" href="'+railHref(false, sc.k)+'" data-scope="'+sc.k+'"'+(on?' aria-current="page"':'')+'><i class="kled"></i><span>'+esc(sc.label)+'</span></a>';
-    });
-    h+='</div><div class="rail-sec"><div class="rail-h">Detailed views</div>';
+    var fams=[];
     FAMILIES.forEach(function(fam){
       var profs=[]; fam.cats.forEach(function(cat){ (byCat[cat]||[]).forEach(function(p){ profs.push(p); }); });
-      if(!profs.length) return;
-      var mine=!!cur && profs.some(function(p){ return p.id===cur.id; });
-      h+='<div class="rail-fam'+(mine?' on':'')+'" data-fam="'+fam.k+'">'
-        + '<button class="rail-key fam'+(mine?' on':'')+'" type="button" data-fam="'+fam.k+'"'+(railOpen?' tabindex="-1"':'')+'><i class="kled"></i><span>'+esc(fam.label)+'</span>'+(railOpen?'':RAIL_CHEV)+'</button>';
-      if(railOpen){
-        h+='<div class="rail-list">';
+      if(profs.length) fams.push({fam:fam, profs:profs, mine:!!cur && profs.some(function(p){ return p.id===cur.id; })});
+    });
+    var h='<div class="rail-in">';
+    if(railOpen){
+      h+='<button class="rail-tog" type="button" id="railTog" aria-expanded="true" aria-label="Close the list of views">'+RAIL_BACK+'<span>Close</span></button>'
+        + '<div class="rail-sec"><div class="rail-h">Composite</div>';
+      SCOPES.forEach(function(sc){
+        var on=!cur && state.scope===sc.k;
+        h+='<a class="rail-key'+(on?' on':'')+'" href="'+railHref(false, sc.k)+'" data-scope="'+sc.k+'"'+(on?' aria-current="page"':'')+'><i class="kled"></i><span>'+esc(sc.label)+'</span></a>';
+      });
+      h+='</div><div class="rail-sec"><div class="rail-h">Detailed views</div>';
+      fams.forEach(function(f){
+        h+='<div class="rail-fam'+(f.mine?' on':'')+'" data-fam="'+f.fam.k+'"><div class="rail-key fam'+(f.mine?' on':'')+'"><i class="kled"></i><span>'+esc(f.fam.label)+'</span></div><div class="rail-list">';
         var lastCat=null;
-        profs.forEach(function(p){
-          if(fam.cats.length>1 && p.category!==lastCat){ lastCat=p.category; h+='<div class="rail-cat">'+esc(p.category)+'</div>'; }
+        f.profs.forEach(function(p){
+          if(f.fam.cats.length>1 && p.category!==lastCat){ lastCat=p.category; h+='<div class="rail-cat">'+esc(p.category)+'</div>'; }
           var on=!!cur && cur.id===p.id;
           h+='<a class="rail-item'+(on?' on':'')+'" href="'+railHref(true, p.id)+'" data-pid="'+esc(p.id)+'"'+(on?' aria-current="page"':'')+(p.blurb?' data-tip="'+esc(p.blurb)+'"':'')+'>'+esc(p.label)+'</a>';
         });
-        h+='</div>';
-      } else if(mine){
-        h+='<div class="rail-cur" title="'+esc(cur.label)+'">'+esc(cur.label)+'</div>';
-      }
+        h+='</div></div>';
+      });
       h+='</div>';
-    });
-    rail.innerHTML=h+'</div></div>';
+    } else {
+      // the view on screen on top, out of its list; a profile shows under its family
+      var sel=null; fams.forEach(function(f){ if(f.mine) sel=f.fam; });
+      var sk=cur ? (sel ? sel.k : '') : state.scope;
+      var sname=cur ? (sel ? sel.label+' ' : '')+cur.label
+                    : (SCOPES.filter(function(s){ return s.k===state.scope; })[0]||{label:''}).label+' composite';
+      h+='<button class="rail-tab" type="button" id="railTab" aria-expanded="false" aria-label="'+esc('On screen: '+sname+'. Open every view')+'" data-tip="'+esc(sname)+'">'
+        + '<span class="rt-k"><i class="kled"></i><span>'+esc(RAIL_ABBR[sk]||sk)+'</span></span><span class="rt-c">'+esc(cur ? cur.label : 'Composite')+'</span></button>'
+        + '<div class="rail-sec"><div class="rail-h">Composite</div>';
+      SCOPES.forEach(function(sc){
+        if(!cur && sc.k===state.scope) return;
+        var nm=sc.label+' composite';
+        h+='<a class="rail-key" href="'+railHref(false, sc.k)+'" data-scope="'+sc.k+'" aria-label="'+esc(nm)+'" data-tip="'+esc(nm)+'"><i class="kled"></i><span>'+esc(RAIL_ABBR[sc.k]||sc.label)+'</span></a>';
+      });
+      h+='</div><div class="rail-sec"><div class="rail-h">Detailed</div>';
+      fams.forEach(function(f){
+        if(f.mine) return;
+        var nm=f.fam.label+' test profiles';
+        h+='<button class="rail-key fam" type="button" data-fam="'+f.fam.k+'" aria-label="'+esc(nm)+'" data-tip="'+esc(nm)+'"><i class="kled"></i><span>'+esc(RAIL_ABBR[f.fam.k]||f.fam.label)+'</span></button>';
+      });
+      h+='</div><button class="rail-tog" type="button" id="railTog" aria-expanded="false" aria-label="Open every view, by name" data-tip="Every view, by name">'+RAIL_MORE+'</button>';
+    }
+    // the rebuild takes the hovered key away before it can say mouseout: drop its tip
+    var tp=document.getElementById('tip'); if(tp) tp.style.display='none';
+    rail.innerHTML=h+'</div>';
     rail.classList.toggle('open', railOpen);
+    railJoin();
     if(railOpen && railFocus){
       // focus the view on screen, or the first profile of the family asked for
       var fam=railFocus==='cur' ? null : rail.querySelector('.rail-fam[data-fam="'+railFocus+'"]');
@@ -816,21 +842,40 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       railFocus=null;
     }
   }
-  function railSet(open, focus){ railOpen=open; railFocus=focus||null; buildNav(); if(!open){ var t=document.getElementById('railTog'); if(t && focus==='tog') t.focus(); } }
+  // The tab and the placard are one piece while they sit level - at the top of the
+  // page; once the page scrolls on under the sticky rail, the tab stands alone.
+  function railJoin(){
+    var rail=document.getElementById('rail'); if(!rail) return;
+    var tab=document.getElementById('railTab'), pl=document.querySelector('.phead.placard'), on=false;
+    if(tab && pl && !railOpen){
+      var a=tab.getBoundingClientRect(), b=pl.getBoundingClientRect(), box=tab.parentNode;
+      on = a.height>0 && b.height>0 && Math.abs(a.top-b.top)<1.5 && box.scrollHeight<=box.clientHeight+1;
+    }
+    if(rail.classList.contains('joined')!==on) rail.classList.toggle('joined', on);
+  }
+  // open, or close; from = what opened it, where focus goes back on Escape / Close
+  function railSet(open, focus, from){
+    if(open && from) railFrom=from;
+    railOpen=open; railFocus=open ? (focus||null) : null; buildNav();
+    if(!open && focus==='back'){ var t=(railFrom && document.querySelector(railFrom)) || document.getElementById('railTab'); if(t) t.focus(); }
+  }
   function initRail(){
     var rail=document.getElementById('rail'); if(!rail) return;
     rail.addEventListener('click', function(e){
-      var t=e.target.closest('#railTog, .rail-key, .rail-item'); if(!t) return;
+      var t=e.target.closest('#railTog, #railTab, .rail-key, .rail-item'); if(!t) return;
       var plain=!(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey||e.button);
-      if(t.id==='railTog'){ railSet(!railOpen, railOpen?'tog':'cur'); return; }
+      if(t.id==='railTog'){ if(railOpen) railSet(false, 'back'); else railSet(true, 'cur', '#railTog'); return; }
+      if(t.id==='railTab'){ railSet(true, 'cur', '#railTab'); return; }
       if(t.dataset.scope){ if(!plain) return; e.preventDefault(); railOpen=false; pickScope(t.dataset.scope); return; }
       if(t.dataset.pid){ if(!plain) return; e.preventDefault(); railOpen=false; pickProfile(t.dataset.pid); return; }
-      if(t.dataset.fam){ railSet(true, t.dataset.fam); }
+      if(t.dataset.fam){ railSet(true, t.dataset.fam, '.rail-key.fam[data-fam="'+t.dataset.fam+'"]'); }
     });
     // A click outside closes it. The path, not the target: a click inside rebuilds
     // the rail, so by the time it reaches the document its target is detached.
     document.addEventListener('click', function(e){ if(railOpen && e.composedPath().indexOf(rail)<0) railSet(false); });
-    document.addEventListener('keydown', function(e){ if(e.key==='Escape' && railOpen){ railSet(false, 'tog'); } });
+    document.addEventListener('keydown', function(e){ if(e.key==='Escape' && railOpen){ railSet(false, 'back'); } });
+    window.addEventListener('scroll', railJoin, {passive:true});
+    window.addEventListener('resize', railJoin);
   }
   document.addEventListener('click', function(e){
     if(kvmOpen && !(e.target.closest && e.target.closest('.kvm-fam'))){ kvmOpen=null; buildNav(); }
