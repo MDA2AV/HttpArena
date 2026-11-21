@@ -462,7 +462,7 @@
               "id": "http2/5.1.1/2",
               "test": "Sends stream identifier that is numerically smaller than previous",
               "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
-              "got": "DATA Frame (length:7, flags:0x01, stream_id:5)"
+              "got": "RST_STREAM Frame (length:4, flags:0x00, stream_id:3)"
             },
             {
               "id": "http2/5.3.1/1",
