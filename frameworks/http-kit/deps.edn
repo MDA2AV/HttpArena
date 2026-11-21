@@ -1,7 +1,7 @@
 {:paths ["src"]
- :deps {org.clojure/clojure {:mvn/version "1.12.5"}
+ :deps {org.clojure/clojure {:mvn/version "1.12.6"}
         org.clojure/data.json {:mvn/version "2.5.2"}
         amalloy/ring-gzip-middleware {:mvn/version "0.1.4"}
-        ring/ring-core {:mvn/version "1.15.5"}
+        ring/ring-core {:mvn/version "1.15.6"}
         http-kit/http-kit {:mvn/version "2.9.0-beta4"}}
  :aliases {:test {:extra-paths ["test"]}}}
