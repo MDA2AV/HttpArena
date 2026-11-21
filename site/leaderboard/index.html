@@ -1485,7 +1485,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     if(state.q) p.push('q='+encodeURIComponent(state.q));
     if(state.maint) p.push('table=1');
     if(state.aisle && !state.maint) p.push('aisle=1');
-    if(state.open && !state.maint && !state.aisle) p.push('open='+encodeURIComponent(state.open));
+    if(state.open && !state.maint) p.push('open='+encodeURIComponent(state.open));
     var nh=p.length?('#'+p.join('&')):'';
     if(location.hash!==nh){ try{ history.replaceState(null,'', nh||(location.pathname+location.search)); }catch(e){} }
   }
@@ -2029,21 +2029,27 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   }
   // One bay per profile: the figure the table cell prints, the memory under it,
   // and a light bar for its share of the column leader.
-  function bayHtml(r, pid, all){
-    var cell=r.cells[pid];
+  // A figure and its unit, the unit a quieter suffix: "429.87MB/s" -> 429.87 +
+  // MB/s. The text is unchanged (anything reading it reads the same).
+  function numUnit(s){
+    s=String(s); var m=s.match(/^([-+]?\d[\d.,]*)(\s?)([A-Za-z\u00b5%][A-Za-z\u00b5%\/]*)$/);
+    return m ? esc(m[1])+'<span class="u">'+esc(m[2]+m[3])+'</span>' : esc(s);
+  }
+  function bayHtml(r, pid, all, gs){
+    var cell=r.cells[pid], G=gs?' gs':'';
     if(all){
       var lab=scopeLabel(pid);
-      if(!cell) return '<span class="bay empty" data-tip="'+esc(r.fw+' has no '+lab+' results.')+'"><span class="bv">·</span></span>';
+      if(!cell) return '<span class="bay empty'+G+'" data-tip="'+esc(r.fw+' has no '+lab+' results.')+'"><span class="bv">·</span></span>';
       var cut=Math.round(cell.v)-Math.round(cell.raw), p0=Math.max(0,Math.min(100,cell.bar))/100;
-      return '<span class="bay fam'+(cell.best?' lead':'')+'" style="--p:'+p0.toFixed(3)+(state.heat?';--hc:'+heatColor(p0):'')+'" data-tip="'
+      return '<span class="bay fam'+G+(cell.best?' lead':'')+'" style="--p:'+p0.toFixed(3)+(state.heat?';--hc:'+heatColor(p0):'')+'" data-tip="'
         + esc(lab+' composite '+cell.v.toFixed(0)+(cut?' ('+cut+' for completeness)':'')+' - #'+cell.rank+' of '+cell.of+' on the '+lab+' board.')+'">'
         + '<span class="bv">'+cell.v.toFixed(0)+'</span><span class="bm">#'+cell.rank+'</span><i class="bl"></i></span>';
     }
-    if(!cell) return '<span class="bay empty"><span class="bv">·</span></span>';
+    if(!cell) return '<span class="bay empty'+G+'" data-pid="'+esc(pid)+'"><span class="bv">·</span></span>';
     var head=(cell.score!=null)?cell.score.toFixed(1):fmtK(cell.rps), p=Math.max(0,Math.min(100,cell.bar))/100;
-    return '<span class="bay pc'+(cell.best?' lead':'')+(cell.c?'':' nc')+'" data-pid="'+esc(pid)+'" data-fw="'+esc(r.fw)+'"'+(cell.c?'':' data-nc="1"')
+    return '<span class="bay pc'+G+(cell.best?' lead':'')+(cell.c?'':' nc')+'" data-pid="'+esc(pid)+'" data-fw="'+esc(r.fw)+'"'+(cell.c?'':' data-nc="1"')
       + ' style="--p:'+p.toFixed(3)+(state.heat?';--hc:'+heatColor(p):'')+'">'
-      + '<span class="bv">'+head+'</span><span class="bm">'+fmtMem(cell.mem).replace(' ','')+'</span><i class="bl"></i></span>';
+      + '<span class="bv">'+numUnit(head)+'</span><span class="bm">'+numUnit(fmtMem(cell.mem).replace(' ',''))+'</span><i class="bl"></i></span>';
   }
   function unitComposite(r, M){
     var fw=r.fw, rank=M.rankMap[fw], share=r.score/M.maxScore;
@@ -2056,7 +2062,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       + lcdHtml(r.score.toFixed(0), cmpDelta(r), share, M.all?overallTip(r):cmpTip(r));
     if(specSuite()) h+=specMod(fw);
     if(resilCol()) h+=resilMod(fw);
-    h+='<span class="bays">'+M.pids.map(function(pid){ return bayHtml(r, pid, M.all); }).join('')+'</span>'
+    h+='<span class="bays">'+M.pids.map(function(pid, i){ return bayHtml(r, pid, M.all, M.gs&&M.gs[i]); }).join('')+'</span>'
       + pullHtml(fw)+'</div><div class="ear r"></div>';
     return {fw:fw, cls:'t-'+typeOf(fw)+(modeOf(fw)==='tuned'?' tuned':'')+(rank<=3?' r'+rank:''),
             style:state.heat?'--hc:'+heatColor(share):'', html:h};
@@ -2092,7 +2098,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
           var g=GAUGE[c.k], p=0;
           if(g){ var x=val(r,c.k), m=mx[c.k]||0; p=(m>0&&isFinite(x))?clamp01(x/m):0; }
           return '<span class="bay modv'+(g?' g':'')+'" data-col="'+esc(c.label)+'"'+(g?' style="--p:'+p.toFixed(3)+'"':'')+'>'
-            + '<span class="bv">'+esc(profText(c.k, r))+'</span>'+(c.k==='rps'?statusHtml(r):'')+(g?'<i class="bl"></i>':'')+'</span>';
+            + '<span class="bv">'+numUnit(profText(c.k, r))+'</span>'+(c.k==='rps'?statusHtml(r):'')+(g?'<i class="bl"></i>':'')+'</span>';
         }).join('')+'</span>'
       + pullHtml(fw)+'</div><div class="ear r"></div>';
     return {fw:fw, cls:'t-'+typeOf(fw)+(modeOf(fw)==='tuned'?' tuned':'')+(rank<=3?' r'+rank:''), style:'', html:h};
@@ -2355,10 +2361,49 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     if(state.open){
       var el=RACK.els[fw];
       if(el && el.scrollIntoView){
-        var r=el.getBoundingClientRect();
-        if(r.bottom>window.innerHeight-8 || r.top<120) el.scrollIntoView({block:r.height>window.innerHeight-140?'start':'nearest', behavior:REDUCED?'auto':'smooth'});
+        var r=el.getBoundingClientRect(), tr=state.aisle && el.querySelector('.tray');
+        if(tr){   // in the aisle the tray hangs over the units below: bring all of it into sight
+          var b=tr.offsetHeight+r.bottom+16;
+          if(b>window.innerHeight) window.scrollBy({top:b-window.innerHeight, behavior:REDUCED?'auto':'smooth'});
+        } else if(r.bottom>window.innerHeight-8 || r.top<120) el.scrollIntoView({block:r.height>window.innerHeight-140?'start':'nearest', behavior:REDUCED?'auto':'smooth'});
       }
     }
+  }
+  // The aisle as cabinets: a grid filled column by column, as many cabinets as
+  // fit (each wide enough for a name, a score and a light per test), the units
+  // shared out evenly. A grid rather than CSS columns, so a unit sliding out
+  // hangs over its neighbours instead of pushing units into the next cabinet.
+  function aisleGrid(){
+    var rack=document.getElementById('rack'); if(!rack) return;
+    if(!rack.classList.contains('aisle')){ rack.style.removeProperty('--acols'); rack.style.removeProperty('--arows'); return; }
+    var n=Object.keys(RACK.els).length||1, nt=+rack.style.getPropertyValue('--n')||0, gap=18;
+    var min=(rack.classList.contains('v-comp') && window.innerWidth>900) ? 380+nt*12 : 400;
+    var C=Math.max(1, Math.min(Math.floor((rack.clientWidth+gap)/(min+gap)), Math.ceil(n/6)));
+    rack.style.setProperty('--acols', C); rack.style.setProperty('--arows', Math.ceil(n/C));
+  }
+  window.addEventListener('resize', function(){ aisleGrid(); });
+  // The aisle's tray: the unit lifts out of its cabinet and a compact card
+  // slides out under it, over the units below - the figures, the strength,
+  // the way on. The full tray is the rack's.
+  function trayMini(fw, row){
+    var m=D.meta[fw]||{}, lang=langOf(fw)||m.language||'', t=m.type||'emerging', comp=state.view==='composite';
+    var h='<div class="tray mini"><i class="rail l" aria-hidden="true"></i><i class="rail r" aria-hidden="true"></i><div class="tray-in">'
+      + '<div class="mini-h"><span class="badge b-'+t+'" data-tip="'+esc(typeTip(t))+'">'+typeAbbr(t)+'</span>'+tunedPill(fw)
+      + '<span class="mini-meta">'+esc([lang, m.engine&&m.engine!==fw?'engine '+m.engine:''].filter(Boolean).join(' · '))+'</span>'
+      + '<button type="button" class="tray-x" data-close aria-label="Slide '+esc(fw)+' back in">Close <kbd>Esc</kbd></button></div>';
+    if(comp && row && row.r){
+      var r=row.r, M=row.M;
+      h+='<div class="mini-k"><b>'+r.score.toFixed(0)+'</b><span>'+(M.all?'Overall':esc(scopeLabel(state.scope))+' composite')
+        + ' · #'+M.rankMap[fw]+' of '+M.rows.length+'</span></div>';
+    } else if(!comp && row && row.r){
+      var p=PROF[state.profile], lk=defProfileSort(state.profile).k;
+      h+='<div class="mini-k"><b>'+numUnit(profText(lk==='l1mscore'?'l1mscore':'rps', row.r))+'</b><span>'+esc(p.label)
+        + (row.rank?' · #'+row.rank+' at '+(+state.conns).toLocaleString()+' connections':'')+'</span></div>';
+    }
+    h+=strengthHtml(fw)
+      + '<div class="mini-links"><a class="go" href="/frameworks/'+encodeURIComponent(slugOf(fw))+'/">Results page <span>→</span></a>'
+      + '<a href="/compare/all/#'+encodeURIComponent(fw)+'">Put it on the bench <span>→</span></a></div>';
+    return h+'</div></div>';
   }
   // Re-rack: keep every unit's node, put them in the new order, and let each
   // one travel from where it was (transform only; nothing is animated when the
@@ -2379,11 +2424,11 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     units.forEach(function(u, idx){
       var el=old[u.fw];
       if(!el){ el=document.createElement('div'); el.setAttribute('data-fw-row', u.fw); el._new=true; if(rackIO) rackIO.observe(el); }
-      var open=state.open===u.fw && !state.aisle;
+      var open=state.open===u.fw;
       var cls='unit '+u.cls+(favs.has(u.fw)?' fav':'')+(open?' out':'')+(el.classList.contains('live')?' live':'');
       if(el.className!==cls) el.className=cls;
       if(el._s!==u.style){ el.style.cssText=u.style; el._s=u.style; }
-      var html=u.html+(open?trayHtml(u.fw, rowsOf(u.fw)):'');
+      var html=u.html+(open?(state.aisle?trayMini(u.fw, rowsOf(u.fw)):trayHtml(u.fw, rowsOf(u.fw))):'');
       if(el._h!==html){ el.innerHTML=html; el._h=html; }
       var up=el.firstChild && el.firstChild.firstChild; if(up) up.textContent=pad2(idx+1);
       els[u.fw]=el; order.push(el);
@@ -2428,6 +2473,8 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     specPanelClose();
     var rack=document.getElementById('rack'), comp=state.view==='composite';
     var M=comp?compositeModel():profileModel(), units=[], patch, by={}, sortOpts=[['fw','Framework']];
+    // where a new category of tests starts: a gap in the aisle's row of lights
+    if(comp) M.gs=M.all ? null : M.pids.map(function(pid, i){ var a=PROF[pid], b=i?PROF[M.pids[i-1]]:null; return !!(a && b && a.category!==b.category); });
     renderTypes();
     var n=M.rows.length;
     setCount(n);
@@ -2460,7 +2507,13 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       + '<span class="rc-n">'+n+(n===1?' unit':' units')+' racked · '
       + (state.sortDir<0?'best first':'reversed')+'</span>'
       + (comp&&state.heat?'<span class="rc-th">Thermal camera · share of column leader</span>':'');
+    // The aisle's key to its lights: every test, in the order of each unit's
+    // row of lights; hovering one lights up its column (aisleHl).
+    if(comp) cap+='<span class="rc-tests"><span class="rc-tl">Lights, left to right</span>'
+      + M.pids.map(function(pid, i){ return '<span class="rct'+(M.gs&&M.gs[i]?' gs':'')+'" data-i="'+i+'"><i></i>'
+          + esc(M.all?scopeLabel(pid):(PROF[pid]?PROF[pid].label:pid))+'</span>'; }).join('')+'</span>';
     paintRack(rack, cap, patch, units, function(fw){ return by[fw]; });
+    aisleGrid();
     renderSortCtl(sortOpts);
   }
   function initRack(){
@@ -2478,8 +2531,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       if(c('.tray')) return;                       // reading the tray must not close it
       var u=c('[data-fw-row]');
       if(u && c('.face')){
-        if(state.aisle){ state.aisle=false; state.open=''; }   // walk up to it: back to the rack, with this unit out
-        toggleTray(u.getAttribute('data-fw-row'));
+        toggleTray(u.getAttribute('data-fw-row'));   // in the aisle it slides out where it stands
       }
     });
     rack.addEventListener('keydown', function(e){
@@ -2489,6 +2541,30 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       else if(t.matches && t.matches('.pico.pgo, .rp[data-pid]')){ e.preventDefault(); e.stopPropagation(); pickProfile(t.dataset.pid); }
       else if(t.matches && t.matches('.pico.pscope, .rs[data-scope]')){ e.preventDefault(); e.stopPropagation(); pickScope(t.dataset.scope); }
     });
+    // In the aisle a unit slides out over its neighbours: a click anywhere else
+    // slides it back in (a click on a unit is the rack's own, above).
+    document.addEventListener('click', function(e){
+      if(!state.aisle || !state.open || state.maint) return;
+      // the path, not the target: the click that opened it rebuilt the unit
+      if(e.composedPath().some(function(n){ return n.matches && n.matches('#rack .unit[data-fw-row]'); })) return;
+      state.open=''; render();
+    });
+    // The aisle's lights and their key: hover a test in the key and its light
+    // lights up in every unit (the rest dim); hover a light and its test does.
+    function aisleHl(i, dim){
+      rack.classList.toggle('hl-on', i!=null && !!dim);
+      Array.prototype.forEach.call(rack.querySelectorAll('.hl'), function(x){ x.classList.remove('hl'); });
+      if(i==null) return;
+      Array.prototype.forEach.call(rack.querySelectorAll('.unit .bays>.bay:nth-child('+(i+1)+'), .rct[data-i="'+i+'"]'), function(x){ x.classList.add('hl'); });
+    }
+    rack.addEventListener('mouseover', function(e){
+      if(!state.aisle || !e.target.closest) return;
+      var t=e.target.closest('.rct[data-i], .unit .bays>.bay');
+      if(!t){ if(rack.querySelector('.hl')) aisleHl(null); return; }
+      var key=t.classList.contains('rct'), i=key ? +t.getAttribute('data-i') : Array.prototype.indexOf.call(t.parentNode.children, t);
+      aisleHl(i, key);
+    });
+    rack.addEventListener('mouseleave', function(){ aisleHl(null); });
     document.addEventListener('keydown', function(e){
       if(e.key==='Escape' && state.open && !state.maint && document.getElementById('spanel').style.display!=='block'){ var fw=state.open; state.open=''; render();
         var el=RACK.els[fw], b=el&&el.querySelector('.pull'); if(b) b.focus(); }

@@ -944,7 +944,6 @@ html.maint .sortctl{display:none !important}
 .uid i{width:11px; height:11px; border-radius:50%; background:var(--led-off); box-shadow:inset 0 0 0 1px rgba(0,0,0,.4), 0 0 0 2px var(--plate-line); display:block}
 .uid:hover i{box-shadow:inset 0 0 0 1px rgba(0,0,0,.4), 0 0 0 2px var(--led-b)}
 .uid.on i{background:var(--led-b); box-shadow:0 0 10px 2px var(--led-b), 0 0 0 2px var(--plate-line)}
-.unit.fav>.face{box-shadow:inset 3px 0 0 var(--led-b)}
 .unit.fav .nm{color:var(--accent)}
 .uid.star, .uid.star.on, .uid.star:hover{color:inherit !important; font-size:0}
 /* the name plate */
@@ -960,7 +959,6 @@ html.maint .sortctl{display:none !important}
 /* a tuned entry wears a hazard-striped bezel */
 .unit.tuned>.face::before{content:""; position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--hazard)}
 .unit.tuned>.face::after{content:""; position:absolute; right:0; top:0; bottom:0; width:5px; background:var(--hazard)}
-.unit.tuned.fav>.face::before{display:none}
 /* status LEDs */
 .leds{flex:0 0 40px; display:flex; align-items:center; justify-content:center; gap:5px}
 .led{width:7px; height:7px; border-radius:50%; background:var(--led-off); box-shadow:inset 0 0 0 1px rgba(0,0,0,.35); display:block}
@@ -1592,14 +1590,14 @@ a.cpu:hover{outline:2px solid var(--led-g); outline-offset:2px}
 /* ── aisle view: step back, the whole field as a row of cabinets ── */
 .unit{scroll-margin-top:calc(var(--top-h) + 60px)}
 html.aisle .sortctl{display:inline-flex}
-.rack.aisle{columns:250px; column-gap:18px; background:none; box-shadow:none; min-height:0}
+.rack.aisle{display:grid; grid-auto-flow:column; grid-template-columns:repeat(var(--acols,3), minmax(0,1fr)); grid-template-rows:auto repeat(var(--arows,40), auto); column-gap:18px; align-content:start; background:none; box-shadow:none; min-height:0}
 .rack.aisle::after{display:none}
-.rack.aisle .rack-cap{column-span:all; margin:0 0 14px; border-radius:4px; border:1px solid var(--edge-lo)}
+.rack.aisle .rack-cap{grid-column:1/-1; grid-row:1; margin:0 0 14px; border:1px solid var(--edge-lo)}
 .rack.aisle .unit.patch, .rack.aisle .rack-tail{display:none}
 .rack.aisle .unit{break-inside:avoid; grid-template-columns:14px minmax(0,1fr) 14px; box-shadow:0 0 0 1px var(--rack-in)}
 .rack.aisle .ear, .rack.aisle .ear.r{background:var(--post)}
 .rack.aisle .ear::after{left:50%; width:5px; height:5px; margin:-2.5px 0 0 -2.5px}
-.rack.aisle .upos, .rack.aisle .uid, .rack.aisle .mod, .rack.aisle .bays, .rack.aisle .pull, .rack.aisle .vend, .rack.aisle .ty, .rack.aisle .tun, .rack.aisle .tlssec, .rack.aisle .lcd .cmp, .rack.aisle .lcd .statwrap{display:none}
+.rack.aisle .upos, .rack.aisle .mod, .rack.aisle .pull, .rack.aisle .ty, .rack.aisle .tun, .rack.aisle .tlssec, .rack.aisle .lcd .cmp, .rack.aisle .lcd .statwrap{display:none}
 .rack.aisle .face{display:flex; flex-wrap:nowrap; height:27px; min-height:0; padding:0}
 .rack.aisle .svc{flex:0 0 30px; height:auto; font-size:.68rem}
 .rack.aisle .svc.r1,.rack.aisle .svc.r2,.rack.aisle .svc.r3{flex-basis:22px; margin:4px 4px}
@@ -1731,3 +1729,82 @@ html:not([data-theme="dark"]) .str-m::after{filter:none}
   #grid .row .c, #grid .thead .th{padding-left:.35rem; padding-right:.35rem}
   #grid .row .fw .tndslot, #grid .row .fw .lang{display:none}
 }
+
+/* ── the locator LED: on, the whole unit lights blue, end to end (rack and aisle) ── */
+.unit.fav>.face{background-image:linear-gradient(90deg, color-mix(in srgb, var(--led-b) 22%, transparent), color-mix(in srgb, var(--led-b) 9%, transparent) 40%, color-mix(in srgb, var(--led-b) 9%, transparent) 60%, color-mix(in srgb, var(--led-b) 22%, transparent)), var(--face)}
+.unit.fav:not(.out)>.face{box-shadow:inset 0 0 0 1px var(--led-b), inset 0 0 20px -7px var(--led-b), 0 0 14px -5px var(--led-b)}
+
+/* ── result cells: the figure in the text face with tabular numerals, its unit
+   a smaller, quieter suffix (numUnit); a softer recessed cell; the share bar
+   lit along a faint track ── */
+.rack:not(.aisle) .unit:not(.patch) .bay{padding:3px 6px 7px; border-color:color-mix(in srgb, var(--bay-line) 70%, transparent); box-shadow:inset 0 1px 3px rgba(0,0,0,.28)}
+.rack:not(.aisle):not(.thermal) .unit:not(.patch) .bay:not(.empty):not(.nc){background:linear-gradient(color-mix(in srgb, var(--bar) 24%, transparent), color-mix(in srgb, var(--bar) 24%, transparent)) no-repeat 3px calc(100% - 3px) / calc(100% - 6px) 2px, var(--bay)}
+.rack:not(.aisle) .bv{font-family:var(--sans); font-weight:650; letter-spacing:-.005em; font-variant-numeric:tabular-nums}
+.rack:not(.aisle) .bm{font-family:var(--sans); font-weight:500; font-variant-numeric:tabular-nums; color:var(--text-2)}
+.bv .u, .bm .u{margin-left:.06em; font-size:.8em; font-weight:500; letter-spacing:0; color:var(--text-2)}
+.bay.lead .bv .u{color:inherit; opacity:.75}
+.rack:not(.aisle) .bl{left:3px; right:3px; bottom:3px; height:2px}
+.rack:not(.aisle) .unit:not(.patch) .bay.lead .bl{box-shadow:0 0 6px color-mix(in srgb, var(--led-g) 70%, transparent)}
+.rack:not(.aisle) .unit:not(.patch) .bay.nc{border-color:color-mix(in srgb, var(--bay-line) 85%, transparent); box-shadow:none}
+.rack:not(.aisle) .unit:not(.patch) .bay.empty{box-shadow:none}
+
+/* ── aisle view, second pass: each unit a little larger, with its language and
+   its locator LED; on a desk a light per test, as bright as its score (a gap
+   where a new category starts), keyed in the rack's caption; a unit pulled out
+   lifts from its cabinet and a compact tray slides out under it, over its
+   neighbours ── */
+.rack.aisle .unit:not(.blank)>.face{height:32px}
+.rack.aisle .svc{flex-basis:32px; font-size:.75rem}
+.rack.aisle .uid{display:flex; flex:0 0 20px}
+.rack.aisle .uid i{width:9px; height:9px}
+.rack.aisle .plate{gap:.4rem}
+.rack.aisle .vend{display:inline-block; max-width:70px; padding:.2rem .35rem .2rem .4rem; font:600 .75rem/1 var(--sans); letter-spacing:0; text-transform:none}
+.rack.aisle .nm{font-size:.9rem}
+.rack.aisle .bays{display:none}
+@media (min-width:901px){
+  .rack.aisle.v-comp .leds{display:none}
+  .rack.aisle.v-comp .bays{display:flex; align-items:center; flex:none; gap:3px; margin:0 9px 0 5px; padding:0; height:auto}
+  .rack.aisle.v-comp .bays>.bay{flex:none; width:8px; height:11px; padding:0; margin:0; border:0; border-radius:1px; background:color-mix(in srgb, var(--led-g) calc(var(--p, 0) * 100%), var(--led-off)); box-shadow:0 0 calc(1px + var(--p, 0) * 7px) color-mix(in srgb, var(--led-g) calc(var(--p, 0) * 80%), transparent); cursor:help; transition:opacity .12s, transform .12s}
+  .rack.aisle.v-comp .bays>.bay>*{display:none}
+  .rack.aisle.v-comp .bays>.bay.gs{margin-left:6px}
+  .rack.aisle.v-comp .bays>.bay.empty{background:var(--led-off); box-shadow:inset 0 0 0 1px rgba(0,0,0,.45); opacity:.55}
+  .rack.aisle.v-comp .bays>.bay.nc{opacity:.6}
+  .rack.aisle.v-comp .bays>.bay.lead{background:color-mix(in srgb, var(--led-g) 45%, #fff); box-shadow:0 0 0 1px var(--led-g), 0 0 9px var(--led-g)}
+  .rack.aisle.thermal .bays>.bay:not(.empty){background:var(--hc); box-shadow:0 0 6px color-mix(in srgb, var(--hc) 70%, transparent)}
+  .rack.aisle.v-comp .bays>.bay:hover, .rack.aisle .bays>.bay.hl{transform:scale(1.35); opacity:1}
+  .rack.aisle.hl-on .bays>.bay:not(.hl){opacity:.16}
+  .rack.aisle.v-comp .rc-tests{display:flex}
+}
+/* the key, in the caption */
+.rc-tests{display:none; flex-basis:100%; flex-wrap:wrap; align-items:center; gap:.35rem; padding:.15rem 0 .25rem; font:500 .8125rem/1.2 var(--sans); letter-spacing:0; text-transform:none; color:var(--text-2)}
+.rc-tl{margin-right:.35rem; color:var(--muted)}
+.rct{display:inline-flex; align-items:center; gap:.4rem; padding:.22rem .5rem; border:1px solid var(--line); background:var(--bay); color:var(--text-2); white-space:nowrap; cursor:default; transition:border-color .12s, color .12s, background .12s}
+.rct i{width:7px; height:10px; border-radius:1px; background:var(--led-g); box-shadow:0 0 6px color-mix(in srgb, var(--led-g) 70%, transparent)}
+.rct.gs{margin-left:.6rem}
+.rct.hl{color:var(--text); border-color:var(--led-g); background:color-mix(in srgb, var(--led-g) 14%, var(--bay))}
+/* pulled out: the unit lifts from its cabinet, its tray slides out under it */
+.rack.aisle .unit.out{z-index:40}
+.rack.aisle .unit.out>.face{transform:translateY(-2px) scale(1.04); box-shadow:0 0 0 1px var(--accent), 0 18px 30px -12px rgba(0,0,0,.75); animation:aisleLift .5s cubic-bezier(.2,.9,.3,1.2) both}
+@keyframes aisleLift{0%{transform:none; box-shadow:0 0 0 0 transparent} 60%{transform:translateY(-3px) scale(1.055)} 100%{transform:translateY(-2px) scale(1.04)}}
+.rack.aisle .tray.mini{position:absolute; left:10px; right:10px; top:calc(100% - 1px); margin:0; padding:0 9px; z-index:1; transform-origin:50% 0; box-shadow:0 26px 44px -16px rgba(0,0,0,.8), inset 0 6px 10px -6px rgba(0,0,0,.45); animation:miniOut .48s cubic-bezier(.2,.8,.2,1) .08s both}
+@keyframes miniOut{0%{clip-path:inset(0 0 100% 0); transform:translateY(-12px)} 100%{clip-path:inset(0 -60px -80px -60px); transform:none}}
+.tray.mini .tray-in{display:block; padding:.65rem .55rem .75rem}
+.mini-h{display:flex; align-items:center; gap:.45rem; flex-wrap:wrap}
+.mini-meta{font:500 .8125rem/1.2 var(--sans); color:var(--text-2)}
+.tray.mini .tray-x{margin-left:auto; font:600 .75rem/1 var(--sans); letter-spacing:0; text-transform:none; padding:.32rem .5rem}
+.mini-k{display:flex; align-items:baseline; gap:.55rem; flex-wrap:wrap; margin:.6rem 0 .65rem}
+.mini-k b{font:700 1.35rem/1 var(--sans); font-variant-numeric:tabular-nums; color:var(--text)}
+.mini-k b .u{font-size:.7em; margin-left:.1em; color:var(--text-2)}
+.mini-k span{font:500 .8125rem/1.3 var(--sans); color:var(--text-2)}
+.tray.mini .str{grid-template-columns:1fr; margin:0 0 .65rem; padding:.55rem .65rem .6rem}
+.tray.mini .str-radar, .tray.mini .str-note{display:none}
+.tray.mini .str-h{font:600 .8125rem/1 var(--sans); letter-spacing:0; text-transform:none}
+.tray.mini .str-k{font:500 .75rem/1 var(--sans)}
+.tray.mini .str-row{grid-template-columns:6.4rem minmax(0,1fr) 2.6rem; gap:.5rem}
+.tray.mini .str-l{font:600 .75rem/1 var(--sans); letter-spacing:0; text-transform:none}
+.tray.mini .str-v{font:600 .8125rem/1 var(--sans)}
+.tray.mini .str-sub{padding-left:0; font:500 .75rem/1.3 var(--sans)}
+.mini-links{display:flex; flex-wrap:wrap; gap:.45rem}
+.mini-links a{display:inline-flex; align-items:center; gap:.35rem; padding:.42rem .65rem; border:1px solid var(--line); background:var(--panel-2); color:var(--accent); font:600 .8125rem/1 var(--sans); text-decoration:none}
+.mini-links a:hover{border-color:var(--accent)}
+.mini-links a.go{background:var(--accent); border-color:var(--accent); color:var(--bg)}
