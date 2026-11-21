@@ -1,0 +1,22 @@
+{
+  "display_name": "doba",
+  "language": "C++",
+  "engine": "doba",
+  "type": "emerging",
+  "mode": "standard",
+  "description": "A high-performance, transport- and protocol-agnostic C++20 server framework.",
+  "repo": "https://github.com/martianlabs/doba",
+  "enabled": true,
+  "tests": ["baseline", "pipelined", "limited-conn", "async",
+            "json-comp", "json-tls",
+            "latency-1m", "latency-10k", "latency-500k-8cpu",
+            "8gbit",
+            "static-tls"],
+  "completeness": {
+    "routing": true,
+    "middleware": false,
+    "request": true,
+    "response": true
+  },
+  "maintainers": ["martianlabs"]
+}
