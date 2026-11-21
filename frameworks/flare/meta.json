@@ -18,7 +18,6 @@
     "static-tls",
     "latency-1m",
     "latency-10k",
-    "latency-500k-8cpu",
     "baseline-h2",
     "static-h2",
     "baseline-h2c",

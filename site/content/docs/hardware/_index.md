@@ -119,8 +119,6 @@ Some profiles deviate from that split:
 
 This split is empirically tuned.
 
-**Latency-500K/8** gives the server only four cores and their SMT siblings (`0-3,64-67`, one CCX), to measure it near saturation.
-
 ## Kernel tuning applied per run
 
 `scripts/lib/system.sh` runs before each benchmark:

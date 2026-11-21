@@ -51,7 +51,6 @@ Create a `meta.json` file in your framework directory:
 | `async` | HTTP/1.1 | `/delay/{ms}` |
 | `latency-1m` | HTTP/1.1 | `/baseline11` (fixed 1M req/s) |
 | `latency-10k` | HTTP/1.1 | `/baseline11` (fixed 10K req/s) |
-| `latency-500k-8cpu` | HTTP/1.1 | `/baseline11` (fixed 500K req/s on four cores plus SMT) |
 | `json-comp` | HTTP/1.1 | `/json/{count}?m=N` (must honor `Accept-Encoding: gzip, br`) |
 | `json-tls` | HTTP/1.1 + TLS | `/json/{count}?m=N` (port 8081, ALPN `http/1.1`) |
 | `8gbit` | HTTP/1.1 + TLS | `POST /echo` on port 8081 (10 KB echoed verbatim) |

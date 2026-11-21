@@ -8,7 +8,7 @@
   "maintainers": ["Ramblurr"],
   "enabled": true,
   "tests": [
-    "baseline", "async", "latency-1m", "latency-10k", "latency-500k-8cpu",
+    "baseline", "async", "latency-1m", "latency-10k",
     "pipelined", "limited-conn", "json-tls", "json-comp", "8gbit",
     "echo-ws", "echo-ws-pipeline", "echo-ws-limited"
   ]

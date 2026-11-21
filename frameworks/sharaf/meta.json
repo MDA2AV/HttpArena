@@ -24,8 +24,7 @@
     "async-db",
     "fortunes",
     "latency-1m",
-    "latency-10k",
-    "latency-500k-8cpu"
+    "latency-10k"
   ],
   "maintainers": ["sake92"]
 }

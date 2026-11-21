@@ -26,8 +26,7 @@
     "echo-ws-pipeline",
     "echo-ws-limited",
     "latency-1m",
-    "latency-10k",
-    "latency-500k-8cpu"
+    "latency-10k"
   ],
   "maintainers": [
     "farbenbuilds",
