@@ -2469,7 +2469,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     var data=a3dData(); if(!data) return;
     if(state.open){ state.open=''; render(); }
     var host=document.createElement('div'); host.className='sr3d-host';
-    host.setAttribute('role','dialog'); host.setAttribute('aria-label','The aisle in 3D');
+    host.setAttribute('role','dialog'); host.setAttribute('aria-label','The data center in 3D');
     host.innerHTML='<div class="sr3d-wait">Racking up the aisle…</div>';
     document.body.appendChild(host);
     var root=document.documentElement; A3D={host:host, ov:root.style.overflow, inert:[]}; root.style.overflow='hidden';
@@ -2479,10 +2479,11 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     import('/assets/sr/aisle3d.js').then(function(mod){
       if(!A3D || A3D.host!==host) return null;
       host.innerHTML='';
-      return mod.open({host:host, theme:DARK()?'dark':'light', title:data.title, subtitle:data.subtitle,
+      return mod.open({host:host, theme:DARK()?'dark':'light', title:data.sections.length?'HttpArena data center':data.title, subtitle:data.subtitle,
         tests:data.tests, units:data.units, perRack:42, world:data.world,
         sections:data.sections, start:data.start, overall:data.overall,
         sourceUrl:function(fw){ return '/frameworks/'+encodeURIComponent(slugOf(fw))+'/source.json'; },
+        repoUrl:function(fw){ return 'https://github.com/MDA2AV/HttpArena/tree/main/frameworks/'+encodeURIComponent((D.meta[fw]||{}).dir||fw); },
         detailHtml:function(fw, sid){ var V=sid&&data.sec[sid]; if(V) return trayMini(fw, V.by[fw], sid); var R=RACK.view; return trayMini(fw, R&&R.by[fw]); },
         ledTipHtml:function(fw, i, sid){ return a3dTip(fw, i, sid&&data.sec[sid]); },
         onFav:function(fw){ toggleFav(fw); return favs.has(fw); },
