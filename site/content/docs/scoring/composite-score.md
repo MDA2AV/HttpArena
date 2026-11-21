@@ -78,7 +78,6 @@ The tables below show whether a profile counts for framework entries. Engines an
 | Async Delay | Yes | `GET /delay/10` over 32,000 held connections - what the framework does while a request waits |
 | Latency-10K | Yes | Fixed 10K req/s; scored on CPU cost and latency (0-100 score, see above) |
 | Latency-1M | Yes | Fixed 1M req/s; scored on CPU cost and latency (0-100 score, see above) |
-| Latency-500K/8 | No (*) | Fixed 500K req/s on four cores plus SMT. Reference-only while the first entries are measured |
 | JSON Compressed | Yes | JSON with `Accept-Encoding: gzip, br` and multiplier `?m=N` |
 | JSON TLS | Yes | JSON workload over HTTP/1.1 + TLS on port 8081 |
 | 8Gbit | Yes | 10 KB echoed over TLS at a fixed 50K req/s; scored on CPU cost and latency (0-100 score, see above) |
@@ -132,7 +131,7 @@ The tables below show whether a profile counts for framework entries. Engines an
 
 Async DB and Fortunes rank on their own board and count toward no other composite. The database and its driver dominate them far more than the framework does: a framework's `async-db` number mostly reports which Postgres driver its language has, which rules them out of a ranking of HTTP paths and is what this board ranks instead.
 
-Pipelined, Latency-500K/8 and Static TLS are the reference-only profiles for framework entries - shown on the board as faded columns for comparison, but not counted in the composite score.
+Pipelined and Static TLS are the reference-only profiles for framework entries - shown on the board as faded columns for comparison, but not counted in the composite score.
 
 ## Memory efficiency bonus
 

@@ -4,7 +4,7 @@ seo_title: "Baseline Throughput Benchmark: Validation Checks"
 description: "The correctness checks validate.sh runs against the HTTP/1.1 baseline throughput benchmark before a framework's results are accepted."
 ---
 
-The following checks are executed by `validate.sh` for every framework subscribed to `baseline` or `limited-conn`. The fixed-rate profiles `latency-1m`, `latency-10k` and `latency-500k-8cpu` drive the same endpoint, so they run these checks too.
+The following checks are executed by `validate.sh` for every framework subscribed to `baseline` or `limited-conn`. The fixed-rate profiles `latency-1m` and `latency-10k` drive the same endpoint, so they run these checks too.
 
 ## GET with query parameters
 

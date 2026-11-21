@@ -75,7 +75,7 @@ For the default (native) mode, install each tool the host binary. If anything is
   sudo apt install wrk
   ```
 
-- **zrk** - the fixed-rate profiles (`latency-1m`, `latency-10k`, `latency-500k-8cpu`, `8gbit`). No distro package; if no `zrk` binary is on the `PATH`, `benchmark.sh` builds and uses the `zrk:local` image from `docker/zrk.Dockerfile` automatically.
+- **zrk** - the fixed-rate profiles (`latency-1m`, `latency-10k`, `8gbit`). No distro package; if no `zrk` binary is on the `PATH`, `benchmark.sh` builds and uses the `zrk:local` image from `docker/zrk.Dockerfile` automatically.
 
 
 ## Permission notes

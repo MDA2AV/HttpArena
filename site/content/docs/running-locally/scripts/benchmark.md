@@ -110,7 +110,7 @@ LOADGEN_DOCKER=true ./scripts/benchmark.sh aspnet-minimal
 | `H2LOAD_H3_IMAGE` | `h2load-h3:local` | Docker image with `quictls` + `nghttp3` + `ngtcp2` + `nghttp2 --enable-http3` built from source. |
 | `WRK` | `wrk` | Native binary - static-tls, json-tls. |
 | `WRK_IMAGE` | `wrk:local` | Docker image. |
-| `ZRK` | `zrk` | Native binary - latency-1m, latency-10k, latency-500k-8cpu, 8gbit. |
+| `ZRK` | `zrk` | Native binary - latency-1m, latency-10k, 8gbit. |
 | `ZRK_IMAGE` | `zrk:local` | Docker image, built automatically when no native `zrk` is on the `PATH`. |
 
 ### Postgres sidecar
@@ -136,7 +136,6 @@ pipeline | req_per_conn | cpu_limit | connections | endpoint
 | `async` | 1 | ∞ | `0-31,64-95` | 32000 | gcannon | `GET /delay/10`, 10s runs |
 | `latency-1m` | 1 | ∞ | `0-31,64-95` | 1024 | zrk | `/baseline11` paced at 1M req/s, 20s runs |
 | `latency-10k` | 1 | ∞ | `0-31,64-95` | 1024 | zrk | `/baseline11` paced at 10K req/s, 20s runs |
-| `latency-500k-8cpu` | 1 | ∞ | `0-3,64-67` | 1024 | zrk | `/baseline11` paced at 500K req/s, 20s runs |
 | `json-comp` | 1 | ∞ | `0-31,64-95` | 4096, 16384 | gcannon | `/json/{count}` + `Accept-Encoding: gzip, br` |
 | `json-tls` | 1 | ∞ | `0-31,64-95` | 4096 | wrk | `/json/{count}` over TLS on `H1TLS_PORT` |
 | `8gbit` | 1 | ∞ | `0-31,64-95` | 512 | zrk | `POST /echo` on TLS `:8081` - 10 KB echoed, paced at 50k req/s |
