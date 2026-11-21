@@ -2379,22 +2379,54 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // from the rack as rendered - the same order, lights, locator LEDs and
   // trays; the board's own popup for a light.
   var A3D=null;
+  // One run as the room reads it: requests/s, p99 in ms, CPU % of one core,
+  // memory in MiB, bandwidth in MB/s, 4xx+5xx responses.
+  function a3dRun(r){
+    if(!r) return null;
+    var p99=lat(r.p99_latency);
+    return {rps:r.rps||0, p99ms:isFinite(p99)?+(p99/1000).toFixed(3):null, cpu:cpu(r.cpu), memMiB:Math.round(mem(r.memory)),
+            bwMBs:+(bw(r.bandwidth)/1e6).toFixed(1), errors:(+(r.status_4xx||0))+(+(r.status_5xx||0))};
+  }
   function a3dData(){
     var R=RACK.view; if(!R) return null;
-    var comp=R.comp, M=R.M;
-    var tests=comp ? M.pids.map(function(pid){ return {id:pid, label:M.all?scopeLabel(pid):(PROF[pid]?PROF[pid].label:pid)}; }) : [];
+    var comp=R.comp, M=R.M, fam=comp&&M.all;
+    // each test's run, at the connection count it is scored at, by framework
+    var runs={};
+    var tests=comp ? M.pids.map(function(pid){
+      if(fam) return {id:pid, label:scopeLabel(pid)};
+      var p=PROF[pid]||{}, c=(p.scoredConns&&p.scoredConns[0])||(p.conns&&p.conns[0]);
+      var by={}; ((D.results&&D.results[pid+'-'+c])||[]).forEach(function(r){ by[r.fw]=r; }); runs[pid]=by;
+      return {id:pid, label:p.label||pid, category:p.category||'', conns:c||null};
+    }) : [];
     var lk=comp ? '' : (defProfileSort(state.profile).k==='l1mscore'?'l1mscore':'rps');
+    var SA=strengthAll();
     var units=R.order.map(function(fw){
-      var row=R.by[fw]||{}, r=row.r||{}, m=D.meta[fw]||{}, lang=langOf(fw)||m.language||'';
-      var u={fw:fw, rank:comp?M.rankMap[fw]:row.rank, lang:lang, langColor:lc(lang).accent, type:typeOf(fw), tuned:modeOf(fw)==='tuned', fav:favs.has(fw)};
+      var row=R.by[fw]||{}, r=row.r||{}, m=D.meta[fw]||{}, lang=langOf(fw)||m.language||'', S=SA[fw];
+      var u={fw:fw, rank:comp?M.rankMap[fw]:row.rank, lang:lang, langColor:lc(lang).accent, type:typeOf(fw), tuned:modeOf(fw)==='tuned', fav:favs.has(fw),
+             engine:(m.engine&&m.engine!==fw)?m.engine:'',
+             strength:S?{thr:S.thr==null?null:S.thr, lat:S.lat==null?null:S.lat, mem:S.mem==null?null:S.mem, cov:S.cov==null?null:S.cov, sr:S.sr==null?null:S.sr}:null,
+             spec:S&&S.spec!=null?S.spec:null, resil:S&&S.resil!=null?S.resil:null,
+             completeness:(cmpDecl(fw)&&CMP_TYPES.indexOf(typeOf(fw))>=0)?{routing:!!m.cmp.routing, middleware:!!m.cmp.middleware, request:!!m.cmp.request, response:!!m.cmp.response}:null,
+             run:null};
       if(comp){
         u.score=r.score!=null?r.score.toFixed(0):''; u.share=M.maxScore>0?(r.score||0)/M.maxScore:0;
-        u.leds=M.pids.map(function(pid){ var c=r.cells&&r.cells[pid]; return c ? {p:Math.max(0,Math.min(100,c.bar))/100, best:!!c.best} : null; });
-      } else { u.score=profText(lk, r); u.share=R.share[fw]||0; u.leds=[]; }
+        u.leds=M.pids.map(function(pid){
+          var c=r.cells&&r.cells[pid]; if(!c) return null;
+          var l={p:Math.max(0,Math.min(100,c.bar))/100, best:!!c.best};
+          if(!fam){ var x=a3dRun(runs[pid]&&runs[pid][fw]); if(x) for(var k in x) l[k]=x[k]; }
+          return l;
+        });
+      } else { u.score=profText(lk, r); u.share=R.share[fw]||0; u.leds=[]; u.run=a3dRun(r); }
       return u;
     });
+    var rr=D.rounds||{}, act=null; (rr.archived||[]).forEach(function(x){ if(String(x.id)===ROUND_ID) act=x; });
+    var c=D.current||{};
     return {tests:tests, units:units, title:'Rack '+R.label,
-            subtitle:units.length+(units.length===1?' unit':' units')+' racked · '+(state.sortDir<0?'best first':'reversed')};
+            subtitle:units.length+(units.length===1?' unit':' units')+' racked · '+(state.sortDir<0?'best first':'reversed'),
+            world:{view:R.label,
+                   metric:comp?(fam?'Overall score':'Composite score'):(lk==='l1mscore'?'Latency score':'Requests per second'),
+                   round:act?(act.name||act.id)+(act.date?' · '+act.date:''):(rr.name||'Current round')+(rr.ongoing?' · ongoing':''),
+                   machine:{cpu:shortCpu(c.cpu||''), cores:+c.cores||null, threads:+c.threads||null, ram:c.ram||'', os:c.os||'', kernel:c.kernel||''}}};
   }
   function a3dTip(fw, i){
     var R=RACK.view; if(!R || !R.comp) return null;
@@ -2420,7 +2452,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       if(!A3D || A3D.host!==host) return null;
       host.innerHTML='';
       return mod.open({host:host, theme:DARK()?'dark':'light', title:data.title, subtitle:data.subtitle,
-        tests:data.tests, units:data.units, perRack:42,
+        tests:data.tests, units:data.units, perRack:42, world:data.world,
         detailHtml:function(fw){ var R=RACK.view; return trayMini(fw, R&&R.by[fw]); },
         ledTipHtml:a3dTip,
         onFav:function(fw){ toggleFav(fw); return favs.has(fw); },
