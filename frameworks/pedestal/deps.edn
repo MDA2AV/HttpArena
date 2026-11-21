@@ -1,7 +1,7 @@
 {:paths ["src"]
- :deps {org.clojure/clojure {:mvn/version "1.12.5"}
+ :deps {org.clojure/clojure {:mvn/version "1.12.6"}
         org.clojure/data.json {:mvn/version "2.5.2"}
-        io.pedestal/pedestal.jetty {:mvn/version "0.8.2-beta-10"}
+        io.pedestal/pedestal.jetty {:mvn/version "0.8.3"}
         org.eclipse.jetty/jetty-alpn-java-server {:mvn/version "12.0.36"}
-        org.slf4j/slf4j-simple {:mvn/version "2.0.18"}}
+        org.slf4j/slf4j-simple {:mvn/version "2.0.20"}}
  :aliases {:test {:extra-paths ["test"]}}}
