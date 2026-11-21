@@ -8,728 +8,119 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <title>HTTP Web Server Benchmarks – HttpArena</title>
 <meta name="description" content="Independent webserver benchmarks across every major framework and protocol (H1, H2, H3, gRPC, WebSocket) in multiple categories.">
-<style>
-  :root{
-    --bg:#f8f9fa; --panel:#ffffff; --panel-2:#f1f3f4;
-    --line:#dadce0; --line-soft:#e8eaed;
-    --text:#202124; --text-2:#5f6368; --muted:#80868b;
-    --accent:#1a73e8; --accent-weak:#e8f0fe;
-    --gold:#b8901f; --silver:#7e8794; --bronze:#a96b3c;
-    --bar-track:#e8eaed; --fav-bg:#fbf3da; --fav-bg-h:#f5e8bf; --zebra:#f3f4f6;
-    --shadow:0 1px 2px 0 rgba(60,64,67,.1), 0 2px 6px 2px rgba(60,64,67,.06);
-    --header-bg:rgba(255,255,255,.82);
-    --mono:"SF Mono",ui-monospace,"JetBrains Mono","Roboto Mono",Menlo,Consolas,monospace;
-    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
-  }
-  html[data-theme="dark"]{
-    --bg:#202124; --panel:#2a2b2e; --panel-2:#35363a;
-    --line:#3c4043; --line-soft:#303134;
-    --text:#e8eaed; --text-2:#9aa0a6; --muted:#80868b;
-    --accent:#8ab4f8; --accent-weak:#283446;
-    --gold:#d6ab43; --silver:#aab2bf; --bronze:#cf8a55;
-    --bar-track:#3c4043; --fav-bg:#322b17; --fav-bg-h:#3c3420; --zebra:#26282b;
-    --shadow:0 1px 2px 0 rgba(0,0,0,.3), 0 2px 6px 2px rgba(0,0,0,.25);
-    --header-bg:rgba(32,33,36,.8);
-  }
-  @media (prefers-color-scheme: dark){
-    html:not([data-theme="light"]){
-      --bg:#202124; --panel:#2a2b2e; --panel-2:#35363a;
-      --line:#3c4043; --line-soft:#303134;
-      --text:#e8eaed; --text-2:#9aa0a6; --muted:#80868b;
-      --accent:#8ab4f8; --accent-weak:#283446;
-      --gold:#d6ab43; --silver:#aab2bf; --bronze:#cf8a55;
-      --bar-track:#3c4043; --fav-bg:#322b17; --fav-bg-h:#3c3420; --zebra:#26282b;
-      --shadow:0 1px 2px 0 rgba(0,0,0,.3), 0 2px 6px 2px rgba(0,0,0,.25);
-      --header-bg:rgba(32,33,36,.8);
-    }
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;padding:0}
-  body{background:var(--bg); color:var(--text); font-family:var(--sans); font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility}
-  a{color:inherit;text-decoration:none}
-
-  .top{position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:1.1rem; flex-wrap:wrap; row-gap:.5rem; padding:.72rem 1.5rem; background:var(--header-bg); backdrop-filter:blur(14px) saturate(1.6); -webkit-backdrop-filter:blur(14px) saturate(1.6); border-bottom:1px solid var(--line); box-shadow:0 6px 20px -12px rgba(20,22,40,.25)}
-  .brand{white-space:nowrap; width:calc(264px - .85rem); display:flex; align-items:center; gap:.55rem}  /* spans the sidebar width (type filter aligns with the content column); holds the home link + Timeline/RFC */
-  .brand-name{font-weight:750; font-size:1.06rem; letter-spacing:-.02em; color:var(--text); text-decoration:none; cursor:pointer; flex:none}
-  .brand-name:hover{opacity:.82}
-  .brand-name b{color:var(--accent)}
-  .round{position:relative; flex:none}
-  .round-btn{display:flex; align-items:center; gap:.5rem; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:.28rem .55rem; cursor:pointer; font:inherit; color:var(--text); transition:border-color .12s ease}
-  .round-btn:hover{border-color:var(--accent)}
-  .round-cur{display:flex; flex-direction:column; align-items:flex-start; gap:0; line-height:1.1}
-  .round-cur .round-name{font-size:.82rem; font-weight:650}
-  .round-sub{font-size:.6rem; color:var(--accent); font-weight:600}
-  .round-chev{width:13px; height:13px; color:var(--muted); transition:transform .2s ease; flex:none}
-  .round.open .round-chev{transform:rotate(180deg)}
-  .round-pop{position:absolute; top:calc(100% + 6px); left:0; min-width:210px; background:var(--panel); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); padding:.35rem; z-index:50; animation:popIn .16s cubic-bezier(.2,.6,.2,1)}
-  .round-opt{display:flex; align-items:center; justify-content:space-between; gap:.6rem; padding:.45rem .55rem; border-radius:7px; cursor:pointer; font-size:.82rem; color:var(--text-2)}
-  .round-opt:hover{background:var(--panel-2)}
-  .round-opt.active{color:var(--accent); font-weight:600}
-  .round-badge{font-size:.56rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--accent); background:var(--accent-weak); border-radius:999px; padding:.12rem .42rem}
-  .round-empty{padding:.45rem .55rem .35rem; font-size:.72rem; color:var(--muted)}
-  .hw{margin-left:auto; display:flex; flex-direction:column; align-items:flex-end; gap:.05rem; line-height:1.25; flex:none; min-width:0}
-  .chip{font-size:.66rem; color:var(--muted); white-space:nowrap}
-  .chip b{color:var(--text-2); font-weight:650}
-  .top-links{display:flex; align-items:center; gap:.25rem}
-  /* Sits beside the round selector and matches its geometry, but filled with
-     the accent rather than the panel: it is the one header control that leaves
-     the board, and as a quiet outline nobody found it. */
-  .fw-btn{display:flex; align-items:center; gap:.42rem; flex:none; padding:.34rem .7rem; border-radius:10px; border:1px solid var(--accent); background:var(--accent-weak); color:var(--accent); font-size:.82rem; font-weight:700; white-space:nowrap; text-decoration:none; transition:background .12s ease, color .12s ease, box-shadow .12s ease}
-  .fw-btn svg{width:15px; height:15px; flex:none}
-  .fw-btn:hover, .fw-btn:focus-visible{background:var(--accent); color:var(--bg); box-shadow:var(--shadow)}
-  .icon-btn{display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--text-2); cursor:pointer; font-size:.9rem}
-  .icon-btn:hover{color:var(--text); border-color:var(--accent)}
-  .icon-btn svg{width:17px; height:17px}
-  .type-filter{display:flex; gap:.25rem; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:3px; flex:none}
-  .type-filter button{border:0; background:transparent; color:var(--muted); cursor:pointer; font:inherit; font-size:.8rem; font-weight:650; padding:.36rem .72rem; border-radius:7px; white-space:nowrap; transition:all .12s ease}
-  .type-filter button:hover{color:var(--text)}
-  .type-filter button.on{box-shadow:var(--shadow)}
-  .type-filter button[data-type="flagship"].on{background:rgba(46,158,106,.15); color:#1b7a4e}
-  .type-filter button[data-type="emerging"].on{background:rgba(59,115,196,.16); color:#2b5694}
-  .type-filter button[data-type="experimental"].on{background:rgba(217,142,43,.16); color:#8a5a12}
-  .type-filter button[data-type="engine"].on{background:rgba(203,95,81,.15); color:#b0463a}
-  .type-filter button[data-type="infrastructure"].on{background:rgba(47,147,168,.18); color:#277482}
-  html[data-theme="dark"] .type-filter button[data-type="flagship"].on{background:rgba(46,158,106,.24); color:#5cc596}
-  html[data-theme="dark"] .type-filter button[data-type="emerging"].on{background:rgba(59,115,196,.30); color:#9bbdec}
-  html[data-theme="dark"] .type-filter button[data-type="experimental"].on{background:rgba(217,142,43,.28); color:#e8b066}
-  html[data-theme="dark"] .type-filter button[data-type="engine"].on{background:rgba(203,95,81,.24); color:#e89384}
-  html[data-theme="dark"] .type-filter button[data-type="infrastructure"].on{background:rgba(47,147,168,.24); color:#6cc3d2}
-
-  .layout{display:grid; grid-template-columns:264px 1fr; align-items:start}
-  .nav{position:sticky; top:57px; align-self:start; height:calc(100vh - 57px); overflow-y:auto; border-right:1px solid var(--line); padding:.9rem .7rem 3rem; background:transparent; scrollbar-width:thin; scrollbar-color:var(--line) transparent}
-  .nav::-webkit-scrollbar{width:9px}
-  .nav::-webkit-scrollbar-thumb{background:var(--line); border-radius:6px; border:2px solid var(--bg)}
-  .nav::-webkit-scrollbar-thumb:hover{background:var(--muted)}
-  .nav::-webkit-scrollbar-track{background:transparent}
-  .nav-mobile{display:none}
-
-  /* page search — pinned to the top of the menu so it stays put while the tree scrolls */
-  .nav-search{position:sticky; top:0; z-index:2; background:var(--bg); padding:.1rem 0 .55rem}
-  .ns-box{position:relative}
-  .ns-box svg{position:absolute; left:.6rem; top:50%; transform:translateY(-50%); color:var(--muted); pointer-events:none}
-  .nav-search input{font:inherit; font-size:.82rem; width:100%; padding:.45rem .6rem .45rem 1.85rem; background:var(--panel); color:var(--text); border:1px solid var(--line); transition:border-color .15s ease, box-shadow .15s ease}
-  .nav-search input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-weak)}
-  .nav-search input::-webkit-search-cancel-button{cursor:pointer}
-  .nav-results{margin-bottom:.7rem}
-  .nav-res-h{display:flex; justify-content:space-between; gap:.5rem; margin:.15rem .55rem .4rem; font-size:.66rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
-  .nav-res{display:block; width:100%; text-align:left; font:inherit; background:none; border:0; border-left:2px solid transparent; padding:.42rem .55rem; cursor:pointer; color:var(--text-2); text-decoration:none}
-  .nav-res:hover, .nav-res.sel{background:var(--panel-2); color:var(--text); border-left-color:var(--text-2)}
-  .nav-res:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
-  .nav-res-t{display:block; font-size:.83rem; font-weight:600; color:var(--text)}
-  .nav-res-c{display:block; font-size:.66rem; color:var(--muted); margin-top:.08rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-  .nav-res-s{display:block; font-size:.7rem; color:var(--text-2); margin-top:.2rem; line-height:1.4}
-  .nav-res-s mark{background:var(--accent-weak); color:var(--text); font-weight:600}
-  .nav-empty{padding:.5rem .6rem; font-size:.78rem; color:var(--muted); line-height:1.5}
-
-  .nav-sec{margin-bottom:.4rem}
-  .nav-sec + .nav-sec{margin-top:1rem}
-  .nav-sec-h{display:flex; align-items:center; gap:.35rem; margin:.1rem .55rem .45rem; font-size:.66rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
-
-  .nav-scope, .nav-item, .nav-grp-h, .nav-subgrp-h{transition:background .12s ease, color .12s ease, box-shadow .12s ease, transform .12s ease}
-  .nav-scope{padding:.38rem .6rem .38rem 1.1rem; border-radius:7px; cursor:pointer; color:var(--text-2); font-size:.84rem; font-weight:500}
-  .nav-scope:hover{background:var(--panel-2); color:var(--text); transform:translateX(2px)}
-  .nav-scope.active{background:var(--panel-2); color:var(--text); font-weight:600; box-shadow:inset 2px 0 0 var(--text-2)}
-
-  .nav-item{display:flex; align-items:center; justify-content:space-between; gap:.5rem; padding:.4rem .6rem; border-radius:7px; cursor:pointer; color:var(--text-2); font-size:.85rem; font-weight:500}
-  .nav-item:hover{background:var(--panel-2); color:var(--text); transform:translateX(2px)}
-  .nav-item.active{background:var(--panel-2); color:var(--text); font-weight:600; box-shadow:inset 2px 0 0 var(--text-2)}
-  .nav-item .n{font-size:.68rem; color:var(--muted); font-variant-numeric:tabular-nums}
-  .nav-item:hover .n{color:var(--text-2)}
-  .nav-item.active .n{color:var(--text-2)}
-
-  .nav-grp-h{display:flex; align-items:center; justify-content:space-between; gap:.4rem; padding:.44rem .55rem; border-radius:7px; cursor:pointer; color:var(--text); font-weight:650; font-size:.86rem; user-select:none}
-  .nav-grp-h:hover{background:var(--panel-2)}
-  .nav-grp-h.active{background:var(--panel-2); box-shadow:inset 2px 0 0 var(--text-2)}
-  .nav-grp-t{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-  .nav-ico{display:inline-flex; align-items:center; justify-content:center; flex:none; color:var(--muted); transition:color .12s ease}
-  .nav-ico svg{width:15px; height:15px}
-  .nav-grp-h:hover .nav-ico, .nav-grp.open>.nav-grp-h .nav-ico{color:var(--text)}
-  .nav-grp.lvl0>.nav-grp-h{font-size:.9rem; padding:.5rem .55rem}
-  .lvl0-link{font-size:.9rem; padding:.5rem .55rem; font-weight:650}
-  .nav-subgrp-h{display:flex; align-items:center; gap:.4rem; padding:.34rem .55rem; border-radius:7px; cursor:pointer; color:var(--text-2); font-weight:600; font-size:.78rem; user-select:none}
-  .nav-subgrp-h:hover{background:var(--panel-2); color:var(--text)}
-  .caret{display:inline-flex; align-items:center; justify-content:center; width:.85rem; font-size:.62rem; color:var(--muted); transition:transform .22s cubic-bezier(.4,0,.2,1); flex:none}
-  .nav-grp.open>.nav-grp-h .caret, .nav-subgrp.open>.nav-subgrp-h .caret{transform:rotate(90deg)}
-  /* smooth accordion: animate the row track 0fr -> 1fr, fade the contents */
-  .nav-grp-body{margin-left:.8rem; border-left:1px solid var(--line); padding-left:.5rem; display:grid; grid-template-rows:0fr; transition:grid-template-rows .24s cubic-bezier(.4,0,.2,1)}
-  .nav-grp.open>.nav-grp-body{grid-template-rows:1fr}
-  .nav-grp-inner{overflow:hidden; min-height:0; opacity:0; transition:opacity .18s ease .04s}
-  .nav-grp.open>.nav-grp-body>.nav-grp-inner{opacity:1}
-  .nav-grp-link{flex:1; min-width:0; color:inherit; font:inherit; text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-  .nav-grp-link:hover{text-decoration:underline}
-  a.nav-item{text-decoration:none}
-  .nav-grp-link.active{color:var(--text); font-weight:600}
-  /* ── Knowledge Base prose ── */
-  .doc-wrap{max-width:880px; animation:docIn .26s cubic-bezier(.2,.6,.2,1)}
-  @keyframes docIn{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none}}
-  @media (prefers-reduced-motion:reduce){ *,*::before,*::after{animation-duration:.001ms !important; transition-duration:.001ms !important} }
-  .doc-title{font-size:1.7rem; font-weight:750; margin:.1rem 0 1.2rem; color:var(--text); line-height:1.2; letter-spacing:-.01em}
-  .doc-body{font-size:.92rem; line-height:1.7; color:var(--text-2)}
-  .doc-body > :first-child{margin-top:0}
-  .doc-body h2{font-size:1.25rem; font-weight:700; color:var(--text); margin:2rem 0 .8rem; padding-bottom:.35rem; border-bottom:1px solid var(--line); letter-spacing:-.01em}
-  .doc-body h3{font-size:1.06rem; font-weight:650; color:var(--text); margin:1.6rem 0 .55rem}
-  .doc-body h4{font-size:.95rem; font-weight:650; color:var(--text); margin:1.3rem 0 .5rem}
-  .doc-body p{margin:.7rem 0}
-  .doc-body a{color:var(--accent); text-decoration:none}
-  .doc-body a:hover{text-decoration:underline}
-  .doc-body ul,.doc-body ol{margin:.7rem 0; padding-left:1.45rem}
-  .doc-body li{margin:.3rem 0}
-  .doc-body li>ul,.doc-body li>ol{margin:.25rem 0}
-  .doc-body code{font-family:var(--mono); font-size:.84em; background:var(--panel-2); border:1px solid var(--line-soft); border-radius:5px; padding:.08em .36em; color:var(--text)}
-  .doc-body pre{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:.9rem 1.1rem; overflow-x:auto; margin:1rem 0; line-height:1.55}
-  .doc-body pre code{background:none; border:0; padding:0; font-size:.82rem; color:var(--text-2); white-space:pre}
-  .doc-body blockquote{margin:1rem 0; padding:.2rem .9rem; border-left:3px solid var(--accent-weak); color:var(--muted)}
-  .doc-body hr{border:0; border-top:1px solid var(--line); margin:1.6rem 0}
-  .doc-body table{border-collapse:separate; border-spacing:0; width:100%; margin:1.1rem 0; font-size:.85rem; border:1px solid var(--line); border-radius:10px; overflow:hidden}
-  .doc-body th{text-align:left; font-weight:650; color:var(--text); background:var(--panel-2); padding:.55rem .75rem; border-bottom:1px solid var(--line)}
-  .doc-body td{padding:.5rem .75rem; border-bottom:1px solid var(--line-soft); vertical-align:top}
-  .doc-body tr:last-child td{border-bottom:0}
-  .doc-cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:.7rem; margin:1.2rem 0}
-  .doc-card{display:flex; flex-direction:column; gap:.3rem; padding:.85rem 1rem; border:1px solid var(--line); border-radius:10px; background:var(--panel); text-decoration:none; transition:border-color .12s, box-shadow .12s, transform .12s}
-  .doc-card:hover{border-color:var(--accent); box-shadow:var(--shadow); transform:translateY(-1px)}
-  .doc-card .dc-t{font-weight:650; color:var(--text); font-size:.9rem}
-  .doc-card .dc-s{color:var(--muted); font-size:.8rem; line-height:1.5}
-  .type-rules{margin:1.2rem 0; border:1px solid var(--line); border-radius:10px; overflow:hidden}
-  .type-rules-tabs{display:flex; background:var(--panel-2); border-bottom:1px solid var(--line)}
-  .type-rules-tab{flex:1; display:flex; align-items:center; justify-content:center; gap:.4rem; padding:.6rem 1rem; font-size:.84rem; font-weight:600; cursor:pointer; border:0; background:transparent; color:var(--muted); font-family:inherit; transition:background .15s ease, color .15s ease}
-  .type-rules-tab:hover{color:var(--text)}
-  .type-rules-tab.active{color:var(--text); background:var(--panel)}
-  .tr-sq{width:9px; height:9px; border-radius:3px; display:inline-block}
-  .type-rules-panel{display:none; padding:.9rem 1.1rem; font-size:.88rem; line-height:1.7; color:var(--text-2)}
-  .type-rules-panel.active{display:block}
-  .doc-tabset{margin:1.1rem 0; border:1px solid var(--line); border-radius:10px; overflow:hidden}
-  .doc-tabs{display:flex; gap:.25rem; background:var(--panel-2); border-bottom:1px solid var(--line); padding:.3rem .3rem 0}
-  .doc-tab{padding:.45rem .9rem; font-size:.83rem; font-weight:600; cursor:pointer; border:0; background:transparent; color:var(--muted); border-radius:7px 7px 0 0; font-family:inherit; transition:background .15s ease, color .15s ease}
-  .doc-tab:hover{color:var(--text)}
-  .doc-tab.active{color:var(--text); background:var(--panel)}
-  .doc-tabpanel{display:none; padding:.4rem 1.1rem 1rem}
-  .doc-tabpanel.active{display:block}
-  .doc-tabpanel>:first-child{margin-top:0}
-
-  .main{padding:1.6rem 1.75rem 4rem; min-width:0; max-width:1180px}
-  .main.cmfull{max-width:none}
-  .phead{display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; flex-wrap:wrap}
-  .phead h1{margin:0; font-size:1.7rem; font-weight:750; letter-spacing:-.02em}
-  .phead .cat{font-size:.74rem; font-weight:650; color:var(--text-2); letter-spacing:.04em; text-transform:uppercase}
-  .phead p{margin:.3rem 0 0; color:var(--text-2); font-size:.9rem; max-width:54ch}
-  .phead p a{color:var(--accent)}
-
-  .seg{position:relative; display:inline-flex; background:var(--panel-2); border:1px solid var(--line); border-radius:9px; padding:3px}
-  .seg-thumb{position:absolute; top:3px; bottom:3px; left:0; border-radius:6px; background:var(--panel); box-shadow:var(--shadow); transition:transform .26s cubic-bezier(.4,0,.2,1), width .26s cubic-bezier(.4,0,.2,1); z-index:0; pointer-events:none}
-  .seg button{position:relative; z-index:1; border:0; background:transparent; color:var(--text-2); cursor:pointer; font:inherit; font-size:.8rem; font-weight:600; padding:.34rem .75rem; border-radius:6px; font-variant-numeric:tabular-nums; transition:color .18s ease}
-  .seg button:hover{color:var(--text)}
-  .seg button.on{color:var(--accent)}
-
-  /* the composite view stacks its toggles; align-items:stretch makes every row
-     the width of the widest label so the switches line up under each other */
-  #headctl{display:flex; flex-direction:column; align-items:stretch; gap:.5rem}
-  .toggle{display:inline-flex; align-items:center; gap:.55rem; font-size:.82rem; font-weight:600; color:var(--text-2); cursor:pointer; user-select:none; white-space:nowrap}
-  .toggle .sw{width:34px; height:20px; border-radius:999px; background:var(--line); position:relative; transition:background .15s; flex:none}
-  .toggle .sw i{position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:#fff; transition:transform .15s; box-shadow:0 1px 2px rgba(0,0,0,.25)}
-  .toggle.on{color:var(--accent)} .toggle.on .sw{background:var(--accent)} .toggle.on .sw i{transform:translateX(14px)}
-  .tf-div{width:1px; align-self:stretch; background:var(--muted); opacity:.5; margin:.1rem .5rem}
-  .type-filter button#tunedToggle.on{background:rgba(200,154,60,.18); color:#8f6c1f}
-  html[data-theme="dark"] .type-filter button#tunedToggle.on{background:rgba(200,154,60,.26); color:#d9bd6b}
-
-  .tools{display:flex; align-items:center; gap:.75rem; margin:1.25rem 0 .6rem; flex-wrap:wrap}
-  .search{position:relative; flex:1 1 280px; max-width:640px}
-  .search input{font:inherit; font-size:.85rem; padding:.5rem .7rem .5rem 2rem; width:100%; background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:9px; transition:border-color .15s ease, box-shadow .15s ease}
-  .search input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-weak)}
-  .search svg{position:absolute; left:.7rem; top:50%; transform:translateY(-50%); color:var(--muted); pointer-events:none}
-  .search-pop{position:absolute; top:calc(100% + 6px); left:0; min-width:300px; max-width:min(400px,90vw); width:max-content; background:var(--panel); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); padding:.35rem; z-index:50; animation:popIn .16s cubic-bezier(.2,.6,.2,1)}
-  @keyframes popIn{from{opacity:0; transform:translateY(-5px)} to{opacity:1; transform:none}}
-  .search-pop-h{font-size:.66rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:700; padding:.4rem .55rem .3rem}
-  .search-ex{display:flex; align-items:center; gap:.55rem; padding:.4rem .55rem; border-radius:7px; cursor:pointer}
-  .search-ex:hover{background:var(--panel-2)}
-  .search-ex code{font-family:var(--mono); font-size:.78rem; color:var(--accent); background:var(--panel-2); border:1px solid var(--line-soft); border-radius:5px; padding:.08em .4em; white-space:nowrap; flex:none}
-  .search-ex .ex-d{font-size:.78rem; color:var(--muted)}
-  .tfilter{display:flex; gap:.3rem; flex-wrap:wrap}
-  .tfilter button{font:inherit; font-size:.76rem; font-weight:600; cursor:pointer; padding:.32rem .6rem; border-radius:999px; border:1px solid var(--line); background:var(--panel); color:var(--text-2)}
-  .tfilter button:hover{color:var(--text)}
-  .tfilter button.on{background:var(--text); color:var(--bg); border-color:var(--text)}
-  .count{margin-left:auto; color:var(--muted); font-size:.8rem; font-variant-numeric:tabular-nums}
-  /* Sits in the tools bar rather than the header: the board is where someone
-     decides they want two of these entries side by side, and /compare/ was
-     three clicks and a guess away from here. Same .fw-btn shape as the header's
-     Frameworks link, one notch smaller so the search box stays the loudest
-     thing in the row. */
-  .cmp-btn{font-size:.78rem; padding:.4rem .66rem}
-  /* Under 700px the row is search + count + this, and the full label is wider
-     than the search box it wraps under. The icon carries it there. */
-  @media (max-width:700px){ .cmp-btn span{display:none} .cmp-btn{padding:.4rem .5rem} }
-
-  /* Build-time ranking, written into #rows by gen_leaderboard_data.py and thrown
-     away by renderComposite() as soon as data.js has been parsed. It is what a
-     reader without JavaScript gets, and what paints first for everyone else. */
-  .sb{width:100%; border-collapse:collapse; font-size:.86rem}
-  .sb th,.sb td{padding:.44rem .55rem; border-bottom:1px solid var(--line-soft); text-align:left}
-  .sb th{color:var(--muted); font-size:.72rem; font-weight:650; letter-spacing:.02em; text-transform:uppercase}
-  .sb td.n,.sb th.n{text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums}
-  .sb td.r1{color:var(--gold); font-weight:700} .sb td.r2{color:var(--silver); font-weight:700} .sb td.r3{color:var(--bronze); font-weight:700}
-  .sb .sb-lang{color:var(--text-2)}
-  /* A Spec score from a run the server crashed in, red as on the board. */
-  .sb td.crash{color:#c0392b}
-  html[data-theme="dark"] .sb td.crash{color:#f0857a}
-  @media (prefers-color-scheme: dark){ html:not([data-theme="light"]) .sb td.crash{color:#f0857a} }
-  .sb-note{color:var(--muted); font-size:.78rem; margin:.9rem 0 0}
-  .sb-note a{color:var(--accent)}
-  .board-seo{margin:2.6rem 0 1rem; max-width:70ch; color:var(--text-2); font-size:.88rem}
-  .board-seo:empty{display:none}
-  .board-seo h2{font-size:1.05rem; font-weight:700; color:var(--text); margin:1.6rem 0 .4rem; letter-spacing:-.01em}
-  .board-seo h3{font-size:.9rem; font-weight:650; color:var(--text); margin:1rem 0 .2rem}
-  .board-seo p{margin:.4rem 0}
-  .board-seo a{color:var(--accent)}
-  .board-seo ul{margin:.4rem 0; padding-left:1.1rem}
-
-  .grid{--cols:54px minmax(250px,2fr) minmax(150px,1fr) 112px 92px 92px 96px 86px}
-  .thead,.row{display:grid; grid-template-columns:var(--cols); align-items:center}
-  .thead{position:sticky; top:57px; z-index:10; background:var(--bg); padding:.1rem 0 .55rem; border-bottom:1px solid var(--line); font-size:.72rem; font-weight:650; color:var(--muted); letter-spacing:.02em; text-transform:uppercase}
-  .thead .th{padding:.2rem .55rem; cursor:pointer; user-select:none; white-space:nowrap}
-  .thead .th.num{text-align:right}
-  .thead .th:hover{color:var(--text)}
-  .thead .th .ar{opacity:0; margin-left:.2rem; font-size:.65rem}
-  .thead .th.sorted{color:var(--accent)} .thead .th.sorted .ar{opacity:1}
-
-  .row{border-bottom:1px solid var(--line-soft); transition:background .12s}
-  .row:nth-child(even){background:var(--zebra)}
-  .row:hover{background:var(--panel-2)}
-  .row .c{padding:.62rem .55rem; min-width:0}
-  .row .num{text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:.83rem; color:var(--text)}
-  .row .sub{color:var(--text-2)}
-  .rank{font-family:var(--mono); font-size:.85rem; color:var(--muted); text-align:center; font-variant-numeric:tabular-nums}
-  .rank.r1{color:var(--gold); font-weight:700} .rank.r2{color:var(--silver); font-weight:700} .rank.r3{color:var(--bronze); font-weight:700}
-
-  .fw{display:flex; align-items:center; gap:.55rem; min-width:0}
-  .dot{width:8px; height:8px; border-radius:3px; flex:none}
-  .fw .nm{font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0}
-  .fw .nm a:hover{color:var(--accent)}
-  .fw .lang{font-size:.74rem; white-space:nowrap; flex:none}
-  .badge{font-size:.6rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:.1rem .34rem; border-radius:5px; white-space:nowrap; flex:none}
-  /* type as a small colored square (no label) in tables; fixed lang slot keeps names aligned. .badge stays for the modal */
-  .tsq{width:10px; height:10px; border-radius:3px; flex:none; display:inline-block}
-  /* One rule per line: these five used to share a line, and removing the
-     infrastructure tier (#1017) took the whole line with it, leaving every
-     square transparent. */
-  .tsq-flagship{background:#2e9e6a}
-  .tsq-emerging{background:#3b73c4}
-  .tsq-experimental{background:#d98e2b}
-  .tsq-engine{background:#cb5f51}
-  .tsq-infrastructure{background:#2f93a8}
-  /* 'tuned' mode, said in words. This was a 4px yellow bar beside the type
-     square: it marked the row as different without saying what was different,
-     and the difference is the whole point - a tuned number is one you get by
-     reading the entry's source and doing the work yourself, not one you get by
-     installing the framework (#1103). Same .badge shape as the type pill in the
-     modal, so the two read as one family. */
-  /* Row scale. .badge is sized for the modal header; beside a 10px type square
-     the word only has to be legible, and the colour is what catches the eye
-     first anyway. Shares .b-tuned with the modal so both stay one colour. */
-  .tnd{font-size:.53rem; font-weight:700; letter-spacing:.02em; text-transform:uppercase;
-    padding:.04rem .22rem; border-radius:4px; line-height:1.6; white-space:nowrap;
-    flex:none; cursor:default}
-  /* The pill sits in a fixed slot rather than in the flex flow. Putting a marker
-     beside the type square to make a clean left-hand cue, and then letting it
-     shove the square, the language code and the name sideways on the 36% of rows
-     that have one, undoes the reason for putting it there. Right-aligned so it
-     sits snug against the square; empty on standard rows. */
-  .tndslot{width:2.75rem; flex:none; display:flex; justify-content:flex-end; align-items:center}
-  .b-tuned{background:rgba(200,154,60,.16); color:#8a6414}
-  html[data-theme="dark"] .b-tuned{background:rgba(200,154,60,.2); color:#e0b45e}
-  .fw .lang, .cm .fwcell .lang{width:3rem; flex:none; overflow:hidden; text-overflow:ellipsis}
-  .b-flagship{background:rgba(46,158,106,.13); color:#1b7a4e} html[data-theme="dark"] .b-flagship{color:#5cc596}
-  .b-emerging{background:rgba(59,115,196,.14); color:#2b5694} html[data-theme="dark"] .b-emerging{color:#9bbdec}
-  .b-experimental{background:rgba(217,142,43,.14); color:#8a5a12} html[data-theme="dark"] .b-experimental{color:#e8b066}
-  .b-engine{background:rgba(203,95,81,.13); color:#b0463a} html[data-theme="dark"] .b-engine{color:#e89384}
-  .b-infrastructure{background:rgba(47,147,168,.14); color:#277482} html[data-theme="dark"] .b-infrastructure{color:#6cc3d2}
-
-  .meter{position:relative; display:flex; flex-direction:column; align-items:flex-end; gap:.28rem; padding:.5rem .55rem !important}
-  .meter .v{font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:600; font-size:.85rem}
-  .meter .bar{height:4px; width:100%; background:var(--bar-track); border-radius:3px; overflow:hidden}
-  .meter .bar i{display:block; height:100%; border-radius:3px}
-  .zero{color:var(--muted)}
-  .meter .mtop{display:flex; align-items:baseline; gap:.4rem}
-  .statwrap{position:relative; display:inline-flex; align-items:center}
-  .statwrap .err{color:#ef4444; font-weight:700; font-size:.72rem; font-family:var(--mono); cursor:default}
-  .statwrap .ok{color:#16a34a; font-size:.74rem; cursor:default}
-  html[data-theme="dark"] .statwrap .err{color:#f87171}
-  html[data-theme="dark"] .statwrap .ok{color:#4ade80}
-  .stattip{position:absolute; bottom:calc(100% + 7px); right:0; z-index:25; display:none; flex-direction:column; gap:2px; background:var(--panel); border:1px solid var(--line); border-radius:8px; box-shadow:var(--shadow); padding:.45rem .6rem; white-space:nowrap; font-size:.72rem; font-family:var(--mono); color:var(--text-2)}
-  .stattip span{display:flex; justify-content:space-between; gap:.7rem}
-  .stattip b{color:var(--text); font-weight:600}
-  .statwrap:hover .stattip{display:flex}
-  /* The whole result row behind one composite cell. Separate from #tip, which
-     is plain text by design (textContent + pre-line); this one is a table. */
-  #dtip{position:fixed; z-index:101; display:none; background:var(--panel); color:var(--text);
-    border:1px solid var(--line); border-radius:8px; box-shadow:var(--shadow);
-    padding:.55rem .7rem; font-size:.72rem; line-height:1.4; pointer-events:none;
-    max-width:340px}
-  #dtip .dh, #spanel .dh{font-weight:700; font-size:.76rem}
-  #dtip .dsub, #spanel .dsub{color:var(--muted); font-size:.68rem; margin-bottom:.35rem}
-  #dtip .dc, #spanel .dc{color:var(--text-2); font-weight:650; font-size:.67rem; text-transform:uppercase;
-    letter-spacing:.03em; margin:.45rem 0 .16rem; padding-top:.34rem; border-top:1px solid var(--line-soft)}
-  #dtip .dc .dtag, #spanel .dc .dtag{float:right; text-transform:none; letter-spacing:0; font-weight:500; color:var(--muted)}
-  #dtip table, #spanel table{border-collapse:collapse; width:100%}
-  #dtip td, #spanel td{padding:.05rem 0; vertical-align:baseline}
-  #dtip td.k, #spanel td.k{color:var(--muted); padding-right:.8rem; white-space:nowrap}
-  #dtip td.v, #spanel td.v{text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap}
-  #dtip .dfoot, #spanel .dfoot{margin-top:.4rem; padding-top:.32rem; border-top:1px solid var(--line-soft);
-    color:var(--muted); font-size:.67rem}
-  /* The Spec cell's panel: #dtip's card, but it can be pinned with a click, so
-     it takes the pointer and holds links. */
-  #spanel{position:fixed; z-index:102; display:none; background:var(--panel); color:var(--text);
-    border:1px solid var(--line); border-radius:8px; box-shadow:var(--shadow);
-    padding:.55rem .7rem; font-size:.72rem; line-height:1.4; max-width:360px}
-  #spanel.pinned{border-color:var(--accent)}
-  #spanel .dh{padding-right:1.4rem}
-  #spanel .sx{display:none; position:absolute; top:.25rem; right:.35rem; width:1.4rem; height:1.4rem;
-    border:0; background:none; color:var(--muted); font-size:1rem; line-height:1; cursor:pointer}
-  #spanel.pinned .sx{display:block}
-  #spanel .sx:hover{color:var(--text)}
-  #spanel .sscore{margin:.1rem 0 .3rem}
-  #spanel .sbig{font-family:var(--mono); font-size:1.15rem; font-weight:700; margin-right:.4rem; color:var(--text)}
-  #spanel p, #spanel .snote{margin:.3rem 0; color:var(--text-2)}
-  #spanel .swarn{color:#c0392b}
-  #spanel code{font-family:var(--mono); font-size:.66rem}
-  #spanel ul, #spanel ol{margin:.15rem 0 .2rem; padding-left:1.1rem}
-  #spanel li{margin:.08rem 0; overflow-wrap:anywhere}
-  #spanel .sgo{display:block; margin-top:.5rem; padding:.32rem .5rem; border:1px solid var(--line);
-    border-radius:6px; color:var(--accent); text-decoration:none; font-weight:600}
-  #spanel .sgo:hover{background:var(--accent); color:var(--bg)}
-  #tip{position:fixed; z-index:100; display:none; white-space:pre-line; max-width:280px; background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:8px; box-shadow:var(--shadow); padding:.5rem .65rem; font-size:.74rem; line-height:1.45; font-weight:500; pointer-events:none}
-
-  /* row-click info modal */
-  .row, .cm tbody tr{cursor:pointer}
-  .modal-ov{position:fixed; inset:0; z-index:200; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.45); padding:1rem; backdrop-filter:blur(2px)}
-  .modal-ov.open{display:flex}
-  .modal-card{background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:14px; box-shadow:0 24px 64px rgba(0,0,0,.32); max-width:460px; width:100%; padding:1.4rem 1.5rem; position:relative}
-  .modal-x{position:absolute; top:.6rem; right:.8rem; border:0; background:transparent; color:var(--muted); font-size:1.5rem; line-height:1; cursor:pointer}
-  .modal-x:hover{color:var(--text)}
-  .modal-h{display:flex; align-items:center; gap:.55rem; margin:0 1.6rem .4rem 0}
-  .modal-h h3{margin:0; font-size:1.2rem; font-weight:750; letter-spacing:-.01em}
-  .modal-meta{color:var(--text-2); font-size:.8rem; margin-bottom:.8rem}
-  .modal-desc{color:var(--text-2); font-size:.86rem; line-height:1.55; margin:0 0 1.1rem}
-  .modal-sub{font-size:.68rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:0 0 .45rem}
-  .modal-mdl{display:flex; flex-direction:column; gap:.15rem; margin:0 0 1.1rem; max-height:196px; overflow:auto}
-  .modal-mdl a{display:flex; align-items:center; gap:.55rem; padding:.3rem .35rem; border-radius:7px}
-  .modal-mdl a:hover{background:var(--panel-2)}
-  .modal-mdl .mi{flex:none; font-size:.9rem}
-  .modal-mdl .mw{flex:1; min-width:0; font-size:.8rem; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-  .modal-mdl .mw em{display:block; font-style:normal; font-size:.68rem; font-weight:500; color:var(--muted)}
-  .modal-mdl .mr{flex:none; font-family:var(--mono); font-size:.7rem; color:var(--text-2)}
-  .modal-links{display:flex; flex-direction:column; gap:.5rem}
-  .modal-links a{display:flex; align-items:center; justify-content:space-between; gap:.5rem; color:var(--accent); font-weight:600; font-size:.86rem; padding:.55rem .75rem; border:1px solid var(--line); border-radius:9px; transition:background .12s, border-color .12s}
-  .modal-links a:hover{background:var(--accent-weak); border-color:var(--accent)}
-  .empty{padding:3rem 1rem; text-align:center; color:var(--muted)}
-
-
-  /* ── Composite matrix ────────────────────────────────────── */
-  /* table scrolls natively in both axes (bar drag, wheel, trackpad and finger all work); its own horizontal bar is hidden so only the synced bar shows */
-  .cwrap{display:block; width:100%; overflow-x:auto; overflow-y:auto; max-height:calc(100vh - 210px); border:1px solid var(--line); border-radius:10px; margin-top:.15rem; -webkit-overflow-scrolling:touch; scrollbar-width:thin; scrollbar-color:var(--line) transparent}
-  .cwrap::-webkit-scrollbar{width:10px; height:0}
-  .cwrap::-webkit-scrollbar-thumb{background:var(--line); border-radius:6px}
-  .cwrap::-webkit-scrollbar-thumb:hover{background:var(--muted)}
-  .cwrap::-webkit-scrollbar-track{background:transparent}
-  /* touch devices: let the table run full height so the PAGE gives the single vertical scroll (no nested scroll); horizontal finger-scroll stays */
-  @media (hover: none) and (pointer: coarse){ .cwrap{max-height:none} }
-  /* synced horizontal scrollbar + jump-to-end button above the table */
-  .cscroll-row{display:flex; align-items:stretch; gap:.4rem; margin-top:.5rem}
-  .cscroll-row.endonly{justify-content:flex-end; margin-top:.1rem; margin-bottom:.35rem}
-  .cscroll{flex:1; min-width:0; overflow-x:auto; overflow-y:hidden; background:var(--panel-2); border:1px solid var(--line); scrollbar-width:auto; scrollbar-color:var(--text-2) var(--panel-2)}
-  .cscroll-end{flex:none; display:inline-flex; align-items:center; justify-content:center; width:28px; background:var(--panel); border:1px solid var(--line); color:var(--text-2); cursor:pointer; padding:0}
-  .cscroll-end:hover{color:var(--accent); border-color:var(--accent)}
-  .cscroll-end svg{width:14px; height:14px}
-  .cscroll::-webkit-scrollbar{height:14px}
-  .cscroll::-webkit-scrollbar-track{background:var(--panel-2)}
-  .cscroll::-webkit-scrollbar-thumb{background:var(--text-2); border:2px solid var(--panel-2)}
-  .cscroll::-webkit-scrollbar-thumb:hover{background:var(--text)}
-  .cscroll>div{height:1px}
-  table.cm{border-collapse:separate; border-spacing:0; width:100%; min-width:max-content; font-size:.78rem; line-height:1.2}
-  .cm th,.cm td{padding:.24rem .45rem; border-bottom:1px solid var(--line-soft); border-right:1px solid var(--line-soft); white-space:nowrap; background:var(--bg)}
-  .cm th:last-child,.cm td:last-child{border-right:0}
-  .cm tbody tr:last-child td{border-bottom:0}
-  .cm thead th{position:sticky; top:0; z-index:3; background:var(--bg); border-bottom:1px solid var(--line); font-size:.70rem; text-transform:uppercase; letter-spacing:.02em; color:var(--muted); font-weight:650; text-align:left; cursor:pointer}
-  .cm thead th:hover{color:var(--text)}
-  .cm th.num,.cm td.num{text-align:left; font-variant-numeric:tabular-nums; font-family:var(--mono)}
-  /* per-profile columns: fixed width so they don't stretch to fill the screen */
-  .cm th.pcol, .cm td.pc{width:1px}
-  .cm th.pcol{white-space:normal; line-height:1.2; vertical-align:bottom}
-  .cm td.pc{color:var(--text-2); line-height:1.1; vertical-align:middle; position:relative}
-  /* slim per-cell quality cue: bar length = this result's normalized score in its profile */
-  .cm td.pc .cbar{position:absolute; left:0; bottom:0; height:2px; background:var(--muted); opacity:.45}
-  /* Heat map: the cell becomes the reading. The number and the memory figure go
-     away, the quality bar fills the cell instead of sitting 2px along the
-     bottom, and the score is carried by colour rather than by width - so a
-     column can be scanned vertically for shape instead of read value by value.
-     The hover popup still has every figure for the cell under the cursor. */
-  /* Geometry must not move when the toggle flips: the same table, recoloured.
-     So the cell keeps its padding, the value keeps its box and only loses its
-     ink (visibility, not display - display:none collapses the row height), and
-     the bar is stretched over the whole cell by its four offsets rather than by
-     a width. Nothing here sets a padding, a height or a row height. */
-  /* Deliberately not a .toggle. The two switches above the table change how the
-     numbers are computed - memory in the score, what the scale is relative to -
-     and belong with the heading that describes them. This changes how the table
-     is drawn, so it sits with the other thing that acts on the table, and looks
-     like a button you press rather than a setting you leave set. */
-  .heat-btn{cursor:pointer; font-family:inherit; font-size:.78rem; padding:.4rem .66rem}
-  .heat-btn svg{width:14px; height:14px; flex:none; fill:currentColor}
-  .heat-btn:hover{background:var(--accent); color:var(--bg)}
-  .heat-btn[aria-pressed="true"]{background:var(--accent); color:var(--bg); border-color:var(--accent)}
-  .heatkey{display:flex; align-items:center; flex-wrap:wrap; gap:.1rem .55rem;
-    font-size:.66rem; color:var(--muted)}
-  .heatkey .hk-l{margin-right:.1rem}
-  .heatkey .hk{display:inline-flex; align-items:center; gap:.28rem; white-space:nowrap}
-  .heatkey .hk i{width:11px; height:11px; border-radius:2px; display:inline-block}
-  /* The column leader. In heat mode it is otherwise just another cell in the top
-     band - everything above 75% of the leader is the same green, the leader
-     included - so the one cell that won the column carried no mark at all. Sits
-     over the band rather than replacing it, so the band still reads. */
-  .cm td.pc .hcrown{display:none}
-  .cm.heat td.pc .hcrown{display:flex; position:absolute; inset:0; z-index:1;
-    align-items:center; justify-content:center; pointer-events:none}
-  .cm.heat td.pc .hcrown svg{width:17px; height:17px; display:block;
-    fill:var(--gold); filter:drop-shadow(0 1px 1.2px rgba(0,0,0,.55))}
-  .heatkey .hk i.hk-crown{width:auto; height:auto; display:inline-flex; align-items:center}
-  .heatkey .hk i.hk-crown svg{width:13px; height:13px; display:block; fill:var(--gold)}
-  .cm.heat td.pc .pcv{visibility:hidden}
-  .cm.heat td.pc .cbar{left:0; right:0; top:0; bottom:0; width:auto; height:auto; opacity:1}
-  /* .cm td.pc.lead .cbar sets opacity:.7 for the non-heat bar and sits later in
-     this sheet at equal specificity, so it was still dimming the leader here -
-     rendering its band at 70% as a darker green that is in no legend. The crown
-     is the mark now, so the cell keeps its band exactly. Before the .nc rule, so
-     a leader in a column that does not count still reads as not counting. */
-  .cm.heat td.pc.lead .cbar{opacity:1}
-  .cm.heat td.pc.nc .cbar{opacity:.55}
-  .cm td.pc.lead .cbar{background:var(--accent); opacity:.7}
-  .cm td.pc .pcv{display:flex; align-items:baseline; justify-content:space-between; gap:.45rem}
-  .cm td.pc .crps{font-family:var(--mono); font-variant-numeric:tabular-nums; color:var(--text)}
-  .cm td.pc .cmem{font-size:.60rem; color:var(--muted)}
-  .cm td.pc.empty{color:var(--line-soft); text-align:center; font-family:var(--sans)}
-  .cm td.pc.lead .crps{font-weight:700}
-  .cm td.pc.nc{opacity:.4}
-/* The compliance (Spec) column: a profile-like cell, set off from the profiles after it. */
-.cm th.spech, .cm td.spec{border-right:1px solid var(--line-soft)}
-/* A crash during the suite: the percentage alone, in red. */
-.cm td.pc.spec.crashed .crps{color:#c0392b}
-html[data-theme="dark"] .cm td.pc.spec.crashed .crps{color:#f0857a}
-@media (prefers-color-scheme: dark){ html:not([data-theme="light"]) .cm td.pc.spec.crashed .crps{color:#f0857a} }
-.cm td.spec{cursor:pointer}
-.cm td.spec:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
-/* The Resilience column: three small per-surface survival scores (H1/H2/WS) in
-   one cell, set off from the profiles after it like the Spec column. A
-   standalone robustness read, never part of the composite. */
-.cm th.resilh, .cm td.resil{border-right:1px solid var(--line-soft)}
-.cm td.resil{vertical-align:middle}
-.cm td.resil .rzrow{display:flex; gap:.55rem; align-items:flex-end}
-.cm td.resil .rz{display:flex; flex-direction:column; align-items:flex-start; gap:.08rem; min-width:30px}
-.cm td.resil .rzl{font-family:var(--sans); font-size:.56rem; letter-spacing:.03em; color:var(--muted); text-transform:none; line-height:1}
-.cm td.resil .rzv{font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:.74rem; color:var(--text); line-height:1.1}
-.cm td.resil .rzp{font-size:.55rem; color:var(--muted); margin-left:.04rem}
-.cm td.resil .rz.full .rzv{font-weight:700}
-.cm td.resil .rzbar{position:relative; width:100%; height:2px; margin-top:.12rem; background:var(--bar-track); overflow:hidden}
-.cm td.resil .rzbar i{position:absolute; left:0; top:0; height:100%; background:var(--muted); opacity:.75}
-.cm td.resil .rz.full .rzbar i{background:var(--accent); opacity:.85}
-/* A surface the entry did not run: a muted dash and no track, so it reads as
-   absent rather than as a zero score. */
-.cm td.resil .rz-none .rzv{color:var(--line-soft)}
-.cm td.resil .rz-none .rzbar{background:transparent}
-  .cm th.pcol.refcol{opacity:.45}
-  /* The overall view: five family columns where a family board has a dozen
-     profile columns, so they can afford the room - the score, its place on the
-     family board and a bar long enough to compare. */
-  .cm th.famcol{min-width:8.5rem}
-  /* Two affordances per profile column: open that profile's detail view, and
-     open its implementation guide. They sit on their own line under the label,
-     so the column (width:1px, shrink-to-fit) does not get any wider. */
-  /* One segmented control spanning the column: left half opens the profile's
-     detail view, right half its implementation guide. Full width rather than a
-     pair of 12px squares - these are the only way into a profile from here, and
-     a target that small is hard to hit and easy to miss entirely. The 1px gap
-     over a --line background is the divider, so no inner borders are needed.
-     min-width:0 on the halves keeps min-content at zero, so a narrow column is
-     never widened by the control. */
-  .cm th.pcol .pnav{display:flex; gap:1px; margin:.4rem -.45rem -.24rem;
-    background:var(--line-soft); border-top:1px solid var(--line-soft)}
-  .cm th.pcol .pico{flex:1 1 0; min-width:0; display:inline-flex; align-items:center;
-    justify-content:center; height:21px; background:var(--panel); color:var(--text-2);
-    font:600 .74rem/1 var(--sans); text-transform:none; letter-spacing:0;
-    cursor:pointer; text-decoration:none; transition:background .12s ease, color .12s ease}
-  .cm th.pcol .pico:hover{background:var(--accent); color:var(--bg)}
-  .cm th.pcol .pico:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
-  /* flexible trailing column absorbs leftover width (keeps the box filled) */
-  .cm .spacer{width:auto; min-width:0; border-right:0; padding:0; cursor:default; background:var(--bg)}
-  .cm .sticky{position:sticky}
-  .cm thead th.sticky{z-index:5}
-  .cm tbody td.sticky{z-index:2}
-  .cm .rankh,.cm .rankc{left:0; width:44px; min-width:44px; text-align:left; color:var(--muted); font-family:var(--mono); font-variant-numeric:tabular-nums}
-  .cm .rankc.r1{color:var(--gold);font-weight:700} .cm .rankc.r2{color:var(--silver);font-weight:700} .cm .rankc.r3{color:var(--bronze);font-weight:700}
-  /* The medal counts that once sat after the name made this 356px; they are
-     gone from the table (the entry's modal and page still list them), and the
-     53px they took went back to the profile columns. */
-  .cm .fwh,.cm .fwcell{left:44px; width:303px; min-width:303px; max-width:303px; text-align:left}
-  .cm .fwcell .fl{display:flex; align-items:center; gap:.45rem}
-  .cm .fwcell .nm{font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0}
-  .cm .fwcell .lang{flex:none; font-size:.72rem; white-space:nowrap}
-  .cm .fwcell .nm a:hover{color:var(--accent)}
-  /* 8px wider than it was: the ? and its gap are what the header gained, and an
-     auto-layout column would otherwise grow past the 104px floor on its own.
-     Then 20px wider again for the 0-1000 per-profile scale: the largest total
-     on any board went from 1,041 to 10,412, and the completeness delta beside
-     it from (-26) to (-260). The cell is nowrap, so the digits had to fit.
-     Safe to widen because this is the last sticky column - nothing else has a
-     left offset that depends on its width. */
-  .cm .scoreh,.cm .scorec{left:347px; width:132px; min-width:132px; box-shadow:7px 0 9px -5px rgba(0,0,0,.22)}
-  .cm .scoreh + th, .cm .scorec + td{padding-left:1.3rem}
-  /* The one column with a method behind it, and the method has a term - the
-     completeness factor - that cannot be read off the table. Every other header
-     explains itself in a tooltip; this one needs to say out loud that there is
-     something to open. Sized to sit inside the header beside the sort arrow,
-     and it does not sort when clicked. Boxed rather than circled: the sharp-edge
-     reset at the end of this sheet wins over any border-radius set here. */
-  .cm .scoreh .hq{display:inline-flex; align-items:center; justify-content:center; width:12px; height:12px;
-    margin-left:.34rem; border:1px solid currentColor; font:700 .58rem/1 var(--sans);
-    text-transform:none; letter-spacing:0; opacity:.55; vertical-align:1px; color:inherit}
-  .cm .scoreh .hq:hover{opacity:1; color:var(--accent); border-color:var(--accent)}
-  .cm .scorec .sc{display:flex; flex-direction:column; align-items:flex-start; gap:.12rem}
-  .cm .scorec .sc b{font-weight:600; color:var(--text); font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:.80rem}
-  /* No bonus colour: the completeness factor is 1.00 at best, so the delta is
-     never positive and a green state here would be unreachable. */
-  .cm .scorec .sc b .cmp{font-weight:500; font-size:.68rem; line-height:1; letter-spacing:-.01em; margin-left:.2rem}
-  .cm .scorec .sc b .cmp.pen{color:#c0392b} html[data-theme="dark"] .cm .scorec .sc b .cmp.pen{color:#f0857a}
-  .cm .scorec .sc .bar{width:100%; height:3px; background:var(--bar-track); overflow:hidden}
-  .cm .scorec .sc .bar i{display:block; height:100%; border-radius:3px}
-  .cm tbody tr:nth-child(even) td{background:var(--zebra)}
-  .cm tbody tr:hover td{background:var(--panel-2)}
-  @media (max-width:820px){ .cm .fwh,.cm .fwcell{width:218px;min-width:218px;max-width:218px} .cm .scoreh,.cm .scorec{left:262px} }
-  /* Compact Framework column. The full cell carries a favourite star, the tuned
-     slot, the type square and a language slot before the name gets any room -
-     303px of a table whose point is the profile columns to the right of it.
-     Compact keeps the three things that identify the row and gives the other
-     103px back to the numbers.
-     Higher specificity than the 820px rule above, so it wins at every width
-     without repeating itself inside the media query. */
-  .cm.compact .fwh,.cm.compact .fwcell{width:200px; min-width:200px; max-width:200px}
-  .cm.compact .scoreh,.cm.compact .scorec{left:244px}
-  /* The tuned cue goes back to the bar it was before #1225: at this width there
-     is no room for the word, and next to the square it still reads as "this row
-     is marked". The pill is what the full column shows. */
-  .cm.compact .tsq.tuned{position:relative}
-  .cm.compact .tsq.tuned::after{content:""; position:absolute; top:0; bottom:0;
-    right:calc(100% + 2px); width:4px; background:#c89a3c}
-  /* Same boxed shape as the Composite header's ?, and like it, clicking it must
-     not sort the column it lives in. */
-  /* Sized and coloured as a control, not as an annotation. The ? next to
-     Composite is a footnote you may never need; this one is a thing to press,
-     and at 16x12 in currentColor at .55 opacity nobody found it. It carries its
-     own panel background and a filled .on state, so whether the column is
-     compact is readable without counting what is in the cells.
-     No border-radius: the reset at the end of this sheet squares everything. */
-  .cm .fwh .fwtog{display:inline-flex; align-items:center; justify-content:center;
-    min-width:30px; height:19px; padding:0 5px; margin-left:.5rem;
-    border:1px solid var(--line); background:var(--panel-2); color:var(--text-2);
-    font:700 .78rem/1 var(--mono); text-transform:none; letter-spacing:.04em;
-    vertical-align:-4px; cursor:pointer; user-select:none;
-    transition:background .12s ease, color .12s ease, border-color .12s ease}
-  .cm .fwh .fwtog:hover,.cm .fwh .fwtog:focus-visible{background:var(--accent-weak);
-    color:var(--accent); border-color:var(--accent); outline:none}
-  .cm .fwh .fwtog.on{background:var(--accent); border-color:var(--accent); color:var(--bg)}
-  /* small screens: un-freeze the left columns so the whole table scrolls horizontally and the result cells are reachable (header keeps vertical stick) */
-  @media (max-width:640px){ .cm .sticky{left:auto; box-shadow:none} .cm tbody td.sticky{z-index:auto} }
-
-  /* ── Favourites (shared with the classic board via localStorage) ── */
-  .star{cursor:pointer; flex:none; color:transparent; font-size:.92rem; line-height:1; transition:color .12s; user-select:none; -webkit-user-select:none}
-  .row:hover .star, .cm tbody tr:hover .star{color:var(--muted)}
-  .star:hover{color:#f5a623 !important}
-  .star.on{color:#caa23e !important}
-  .row.fav{background:var(--fav-bg); box-shadow:inset 3px 0 0 #caa23e}
-  .row.fav:hover{background:var(--fav-bg-h)}
-  .row.fav .nm{font-weight:700}
-  .cm tbody tr.fav td{background:var(--fav-bg)}
-  .cm tbody tr.fav:hover td{background:var(--fav-bg-h)}
-  .cm tbody tr.fav td.rankc{box-shadow:inset 3px 0 0 #caa23e}
-  .cm tbody tr.fav .nm{font-weight:700}
-
-  @media (max-width:1024px){ .col-cpu,.thead .th.col-cpu,.col-bw,.thead .th.col-bw{display:none} .grid{--cols:50px minmax(220px,2fr) minmax(140px,1fr) 86px 86px 84px} }
-  @media (max-width:820px){
-    .layout{grid-template-columns:1fr}
-    .brand{width:auto}
-    /* the tree is replaced by the select above, but keep page search reachable */
-    .nav{display:block; position:static; height:auto; overflow:visible; border-right:0; padding:.75rem 1.25rem 0}
-    #navTree{display:none}
-    .nav-search{position:static; padding:0}
-    .nav-mobile{display:block; padding:1rem 1.25rem 0}
-    .nav-mobile select{width:100%; font:inherit; padding:.55rem .7rem; border-radius:9px; border:1px solid var(--line); background:var(--panel); color:var(--text)}
-    .col-avg,.thead .th.col-avg,.col-mem,.thead .th.col-mem,.col-bw,.thead .th.col-bw{display:none}
-    .grid{--cols:42px minmax(190px,1.8fr) minmax(120px,1fr) 84px}
-    .main{padding:1.1rem 1.1rem 4rem}
-    .thead,.row{top:auto}
-    .hw{display:none}
-  }
-  /* sharp edges - no rounded corners anywhere */
-  *, *::before, *::after{border-radius:0 !important}
-</style>
+<link rel="stylesheet" href="/assets/sr/sr.css">
+<script>document.documentElement.className+=' js';</script>
 </head>
-<body>
+<body class="board">
   <header class="top">
-    <div class="brand">
-      <a class="brand-name" href="#" id="brandHome" aria-label="HttpArena home"><b>Http</b>Arena</a>
-      <a class="icon-btn" href="https://timeline.http-arena.com" target="_blank" rel="noopener" title="Timeline" aria-label="Timeline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></a>
-      <a class="icon-btn" href="https://mda2av.github.io/Http11Probe/" target="_blank" rel="noopener" title="RFC Compliance" aria-label="RFC Compliance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></a>
-    </div>
-    <div class="type-filter" id="typeFilter">
-      <button data-type="flagship" data-tip="Proven in production - real applications are built and operated on it at scale, and it is actively maintained. A runtime’s own HTTP server counts; a router and middleware are not required.">Flagship</button>
-      <button data-type="emerging" data-tip="A genuine, working server that is not yet production-proven - young, niche, or without real deployments to point to.">Emerging</button>
-      <button data-type="experimental" data-tip="Very new, unproven work. Ranked with frameworks but hidden until you select it.">Experimental</button>
-      <span class="tf-div" aria-hidden="true"></span>
-      <button data-type="engine" data-tip="An HTTP implementation applications are not written against - raw sockets, low-level I/O, or a WSGI/ASGI-style host. Ranked separately.">Engine</button>
-      <button data-type="infrastructure" data-tip="Reverse proxies and static-file servers (e.g. nginx, h2o) run without an application framework layer. Ranked separately.">Infra</button>
-      <span class="tf-div" aria-hidden="true"></span>
-      <button id="tunedToggle" type="button" class="on" data-tip="Show tuned entries - non-default configuration / optimizations (marked with a yellow TUNED pill).">Tuned</button>
-    </div>
-    <div class="round" id="round"></div>
-    <a class="fw-btn" href="/frameworks/" data-tip="A results page for every entry, grouped by language, plus a summary comparing the entries of each language."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Frameworks</span></a>
-    <div class="hw" id="hw"></div>
-    <div class="top-links">
-      <a class="icon-btn" href="https://github.com/MDA2AV/HttpArena" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .322.216.694.825.576C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
-      <a class="icon-btn" href="https://discord.gg/H84B5ZqDXR" target="_blank" rel="noopener" title="Discord" aria-label="Discord"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg></a>
-      <button class="icon-btn" id="theme" title="Toggle theme">◐</button>
-    </div>
-  </header>
-
-  <div class="nav-mobile"><select id="navSelect"></select></div>
-
-  <div class="layout">
-    <aside class="nav" id="nav">
-      <div class="nav-search">
-        <div class="ns-box">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-          <input id="navq" type="search" placeholder="Search pages" autocomplete="off" spellcheck="false"
-                 aria-label="Search pages" role="combobox" aria-expanded="false" aria-controls="navResults">
-        </div>
+    <div class="brand"><!--chrome:brand-->
+      <a class="brand-name" href="#" id="brandHome" aria-label="HttpArena home"><svg class="brand-ico" viewBox="0 0 28 28" aria-hidden="true"><rect class="bi-fr" x="1.75" y="1.75" width="24.5" height="24.5" rx="5"/><rect x="5.5" y="5.4" width="17" height="4.6" rx="1.2"/><rect x="5.5" y="11.7" width="17" height="4.6" rx="1.2"/><rect x="5.5" y="18" width="17" height="4.6" rx="1.2"/><circle class="bi-led" cx="19.3" cy="7.7" r="1.3"/><circle class="bi-led" cx="19.3" cy="14" r="1.3"/><circle class="bi-led a" cx="19.3" cy="20.3" r="1.3"/></svg><span><b>Http</b>Arena</span></a>
+    <!--/chrome:brand--></div>
+    <nav class="top-nav" aria-label="Site"><!--chrome:nav-->
+      <a class="tn" data-sec="board" href="/" data-tip="The leaderboard: every entry racked by its composite score."><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M4 9h16M4 15h16"/></svg><span>Racks</span></a>
+      <a class="tn fw-btn" data-sec="frameworks" href="/frameworks/" data-tip="A results page for every entry, grouped by language, plus a summary comparing the entries of each language."><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Frameworks</span></a>
+      <a class="tn" data-sec="compare" href="/compare/" data-tip="Put any two entries side by side on the bench."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg><span>Compare</span></a>
+      <a class="tn" data-sec="docs" href="/docs/" data-tip="The Knowledge Base: how the benchmark is run, scored and extended."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Knowledge Base</span></a>
+    <!--/chrome:nav--></nav>
+    <!--chrome:search--><div class="nav-search" id="nav">
+      <div class="ns-box">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="navq" type="search" placeholder="Search pages" autocomplete="off" spellcheck="false"
+               aria-label="Search pages" role="combobox" aria-expanded="false" aria-controls="navResults">
       </div>
       <div class="nav-results" id="navResults" role="listbox" aria-label="Search results" style="display:none"></div>
-      <div id="navTree"></div>
-    </aside>
+    </div><!--/chrome:search-->
+    <div class="round" id="round"></div>
+    <div class="top-links"><!--chrome:links-->
+      <a class="icon-btn" href="https://timeline.http-arena.com" target="_blank" rel="noopener" title="Timeline" aria-label="Timeline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></a>
+      <a class="icon-btn" href="https://mda2av.github.io/Http11Probe/" target="_blank" rel="noopener" title="RFC Compliance" aria-label="RFC Compliance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></a>
+      <a class="icon-btn" href="https://github.com/MDA2AV/HttpArena" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .322.216.694.825.576C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
+      <a class="icon-btn" href="https://discord.gg/H84B5ZqDXR" target="_blank" rel="noopener" title="Discord" aria-label="Discord"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg></a>
+      <button class="icon-btn" id="theme" title="Toggle theme" aria-label="Toggle light / dark theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17" /><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg></button>
+    <!--/chrome:links--></div>
+  </header>
+
+  <div class="nav-mobile"><select id="navSelect" aria-label="Choose a view"></select></div>
+
+  <div class="layout">
+    <!-- the views rail: every composite and every detailed view, collapsed to a
+         row of keys by default, opened into the full list (buildRail) -->
+    <aside class="vrail" id="rail" aria-label="Views"></aside>
     <main class="main">
-      <div class="phead">
-        <div>
-          <div class="cat" id="pcat"></div>
-          <h1 id="ptitle"></h1>
-          <p id="pblurb"></p>
+      <section class="console">
+        <div class="phead placard">
+          <i class="screw" aria-hidden="true"></i><i class="screw" aria-hidden="true"></i><i class="screw" aria-hidden="true"></i><i class="screw" aria-hidden="true"></i>
+          <div>
+            <div class="cat" id="pcat"></div>
+            <h1 id="ptitle"></h1>
+            <p id="pblurb"></p>
+          </div>
         </div>
-        <div id="headctl"></div>
-      </div>
+        <div class="asset" aria-label="Test machine">
+          <div class="asset-h">Test machine <a href="/docs/hardware/" data-tip="The machine every entry runs on, and how it is set up.">asset record</a></div>
+          <div class="hw" id="hw"></div>
+        </div>
+      </section>
+
+      <div class="kvm" id="navTree" aria-label="Views"></div>
 
       <div class="tools">
+        <!-- what is shown: the leagues as banks of keys (a key that is on is
+             raised and lit), then the filter box with its count -->
+        <div class="tools-row tools-filter">
+        <div class="type-filter" id="typeFilter" role="group" aria-label="Entry types" data-cap="Show">
+          <span class="kbank">
+          <button data-type="flagship" data-tip="Proven in production - real applications are built and operated on it at scale, and it is actively maintained. A runtime’s own HTTP server counts; a router and middleware are not required.">Flagship</button>
+          <button data-type="emerging" data-tip="A genuine, working server that is not yet production-proven - young, niche, or without real deployments to point to.">Emerging</button>
+          <button data-type="experimental" data-tip="Very new, unproven work. Ranked with frameworks but hidden until you select it.">Experimental</button>
+          </span>
+          <span class="kbank">
+          <button data-type="engine" data-tip="An HTTP implementation applications are not written against - raw sockets, low-level I/O, or a WSGI/ASGI-style host. Ranked separately.">Engine</button>
+          <button data-type="infrastructure" data-tip="Reverse proxies and static-file servers (e.g. nginx, h2o) run without an application framework layer. Ranked separately.">Infra</button>
+          </span>
+          <span class="kbank">
+          <button id="tunedToggle" type="button" class="on" data-tip="Show tuned entries - non-default configuration / optimizations (they wear a hazard-striped bezel).">Tuned</button>
+          </span>
+        </div>
         <div class="search">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-          <input id="q" type="search" placeholder="Search name, language, engine - comma to combine, ! to exclude (e.g. rust, !go)" autocomplete="off">
+          <input id="q" type="search" placeholder="Filter by name, language or engine (e.g. rust, !go)" autocomplete="off" aria-label="Filter entries">
+          <span class="count" id="count"></span>
         </div>
-        <a class="fw-btn cmp-btn" href="/compare/all/" data-tip="Put any two entries side by side - every profile they both run, requests per second, p99 and the delta. Any two, in any language."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg><span>Head to Head Comparison</span></a>
-        <button class="fw-btn heat-btn" id="heatBtn" type="button" aria-pressed="false"
-                data-tip="Colour every profile cell by its score as a share of that column\u2019s leader, instead of printing the number. For reading a column\u2019s shape at a glance; the figures stay in the hover popup."><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.6" height="7.6" rx="1.2"/><rect x="13.4" y="3" width="7.6" height="7.6" rx="1.2" opacity=".5"/><rect x="3" y="13.4" width="7.6" height="7.6" rx="1.2" opacity=".5"/><rect x="13.4" y="13.4" width="7.6" height="7.6" rx="1.2"/></svg><span>Heat map</span></button>
+        </div>
+        <!-- how: the view's own options, the view itself, the thermal camera
+             and the comparison -->
+        <div class="tools-row tools-view">
+        <div id="headctl"></div>
+        <div class="tool-btns">
+          <span class="sortctl" id="sortCtl"></span>
+          <div class="tgroup" data-cap="View">
+            <div class="kbank viewseg" id="viewSeg" role="group" aria-label="View">
+              <button class="vkey" id="rackBtn" type="button" aria-pressed="true"
+                      data-tip="Rack view: every entry a server unit - its figures on the front panel, its lights blinking at its throughput. Pull a unit out for the details."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3" width="17" height="5" rx="1"/><rect x="3.5" y="9.5" width="17" height="5" rx="1"/><rect x="3.5" y="16" width="17" height="5" rx="1"/></svg><span>Rack</span></button>
+              <button class="vkey aisle-btn" id="aisleBtn" type="button" aria-pressed="false"
+                      data-tip="Aisle view: step back and see the whole field at once, a row of cabinets with one slim unit per entry. Press a unit to walk up to it."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="3" width="5" height="18" rx="1"/><rect x="9.5" y="3" width="5" height="18" rx="1"/><rect x="16.5" y="3" width="5" height="18" rx="1"/></svg><span>Aisle</span></button>
+              <button class="vkey maint-btn" id="maintBtn" type="button" aria-pressed="false"
+                      data-tip="Old View: the same ranking as a plain table with every column, sortable, with the collapsible name column and the column scroller."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9.5h18M3 15h18M9 4v16M15 4v16"/></svg><span>Old View</span></button>
+            </div>
+          </div>
+          <button class="fw-btn a3d-btn" id="a3dBtn" type="button"
+                  data-tip="The aisle in 3D: the whole screen, every cabinet and unit as they stand. Drag to look around, click a unit to pull it out."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2.8 8.5 4.6v9.2L12 21.2l-8.5-4.6V7.4z"/><path d="m3.5 7.4 8.5 4.7 8.5-4.7M12 12.1v9.1"/></svg><span>3D aisle</span></button>
+          <button class="fw-btn heat-btn" id="heatBtn" type="button" aria-pressed="false"
+                  data-tip="Thermal camera: colour every panel and bay by its score as a share of that column’s leader, instead of printing the number. For reading the shape of the rack at a glance; the figures stay in the hover popup."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/><path d="M12 9v8"/></svg><span>Thermal camera</span></button>
+          <a class="fw-btn cmp-btn" href="/compare/all/" data-tip="Put any two entries side by side - every profile they both run, requests per second, p99 and the delta. Any two, in any language."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg><span>Head to Head Comparison</span></a>
+        </div>
+        </div>
         <div class="heatkey" id="heatKey" style="display:none"></div>
-        <span class="count" id="count"></span>
+      </div>
+
+      <details class="legend" id="legend">
+        <summary>How to read a unit</summary>
+        <div class="legend-b" id="legendB"></div>
+      </details>
+
+      <div class="hall" id="hall">
+        <div class="rack" id="rack" aria-label="Ranking"></div>
       </div>
 
       <div class="grid" id="grid">
@@ -742,6 +133,31 @@ html[data-theme="dark"] .cm td.pc.spec.crashed .crps{color:#f0857a}
       <section class="board-seo" id="boardSeo"></section>
     </main>
   </div>
+
+<script>
+/* First paint: rack the pre-rendered ranking straight away, before the 1.2 MB of
+   results arrive. The server-rendered table stays in the page (it is what a
+   no-JS reader and a crawler get, and what the maintenance view starts from). */
+(function(){
+  var rack=document.getElementById('rack'), tb=document.querySelector('#rows table.sb tbody');
+  var maint=false; try{ maint=localStorage.getItem('sr-maint')==='1'; }catch(e){}
+  if(/[#&]table=1/.test(location.hash)) maint=true;
+  if(/[#&]table=0/.test(location.hash)) maint=false;
+  document.documentElement.classList.toggle('maint', maint);
+  if(!rack||!tb||maint||location.hash.length>1||/[?&]round=/.test(location.search)) return;
+  function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  var h='', rows=tb.rows, n=Math.min(rows.length, 60);
+  for(var i=0;i<n;i++){
+    var c=rows[i].cells, rk=c[0].textContent, nm=c[1].textContent, lg=c[2].textContent, sc=c[3].textContent;
+    h+='<div class="unit skel'+(i<3?' r'+(i+1):'')+'"><div class="ear l"><span class="upos">'+(i<9?'0':'')+(i+1)+'</span></div>'
+      +'<div class="face"><span class="svc">'+esc(rk)+'</span><span class="uidslot"></span>'
+      +'<span class="plate">'+(lg?'<span class="vend">'+esc(lg)+'</span>':'')+'<span class="nm">'+esc(nm)+'</span></span>'
+      +'<span class="leds"><i class="led pwr"></i><i class="led"></i><i class="led"></i></span>'
+      +'<span class="lcd"><b>'+esc(sc)+'</b></span><span class="bays"></span></div><div class="ear r"></div></div>';
+  }
+  rack.innerHTML=h;
+})();
+</script>
 
 <!-- deferred so the browser can paint the pre-rendered ranking before it spends
      anything parsing 700KB of results. search.js is not here at all: it is the
@@ -784,17 +200,13 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
 
   // ── maps ─────────────────────────────────────────────────
   var PROF = {}; D.profiles.forEach(function(p){ PROF[p.id]=p; });
-  // Medals, gold first, computed at build time by gen_leaderboard_data.py out of
-  // the same fields the badges rank. Deliberately not recomputed against the
-  // filters in view: an entry holds a medal, it does not stop holding it while
-  // someone is looking at another league.
-  var ACHV = D.achievements || {};
   var FWLANG = {};
   Object.keys(D.results).forEach(function(k){ D.results[k].forEach(function(r){ if(r.lang) FWLANG[r.fw]=r.lang; }); });
 
   var COMPOSITE = '__composite__';
   // 'all' is the overall composite (computeOverall): the families below it
   // added up, one column each. Listed first so it heads the Composite menu.
+  var SCOPE_TITLE={all:'Overall web server benchmarks',h1:'HTTP/1.1 web server benchmarks',h2:'HTTP/2 web server benchmarks',h3:'HTTP/3 web server benchmarks',gw:'Gateway and production stack benchmarks',grpc:'gRPC server benchmarks',ws:'WebSocket server benchmarks'};
   var SCOPES = [{k:'all',label:'Overall'},{k:'h1',label:'H/1.1'},{k:'h2',label:'H/2'},{k:'h3',label:'H/3'},{k:'gw',label:'Gateway'},{k:'grpc',label:'gRPC'},{k:'ws',label:'WebSocket'}];
   function scopeLabel(k){ for(var i=0;i<SCOPES.length;i++) if(SCOPES[i].k===k) return SCOPES[i].label; return k; }
   function familyOf(p){ return {'Gateway':'gw','HTTP/2':'h2','HTTP/3':'h3','gRPC':'grpc','WebSocket':'ws'}[p.category]||'h1'; }
@@ -809,7 +221,9 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // useless as an addressable filter - q=C matches 73 of 78 entries, q=V matches
   // 33. The language rank badges link here, so the field they claim has to be
   // the field the page shows.
-  var state = { view:'composite', profile:null, conns:null, sortKey:'rps', sortDir:-1, types:['flagship','emerging'], q:'', lang:'', useMem:false, scope:'h1', showTuned:true, rescale:false, compactFw:false, heat:false };
+  var state = { view:'composite', profile:null, conns:null, sortKey:'score', sortDir:-1, types:['flagship','emerging'], q:'', lang:'', useMem:false, scope:'h1', showTuned:true, rescale:true, compactFw:false, heat:false, maint:false, aisle:false, open:'' };
+  // The maintenance view (the plain table) is remembered per reader; the rack is the default.
+  try{ state.maint=localStorage.getItem('sr-maint')==='1'; }catch(e){}
 
   // ── parsing helpers ──────────────────────────────────────
   function lat(s){ if(!s) return Infinity; var m=String(s).match(/([\d.]+)\s*(us|ms|s)/); if(!m) return Infinity; var v=parseFloat(m[1]); return m[2]==='us'?v:m[2]==='ms'?v*1e3:v*1e6; }
@@ -940,7 +354,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     function close(){ pan.style.display='none'; pan.classList.remove('pinned'); pinned=null; }
     specPanelClose=close;
     function held(){ return pinned && document.body.contains(pinned); }
-    function cellOf(e){ return e.target.closest?e.target.closest('td.spec[data-fw]'):null; }
+    function cellOf(e){ return e.target.closest?e.target.closest('.spec[data-fw]'):null; }
     function toggle(td){ if(held() && pinned===td) close(); else show(td, true); }
     document.addEventListener('mouseover', function(e){ if(held()) return; var td=cellOf(e); if(td) show(td, false); });
     document.addEventListener('mouseout', function(e){
@@ -1028,12 +442,6 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   function langOf(fw){ return FWLANG[fw] || ''; }
   function engineOf(fw){ return (D.meta[fw] && D.meta[fw].engine) || ''; }
 
-  // ── medals ───────────────────────────────────────────────
-  var MEDAL_ICO={gold:'🥇',silver:'🥈',bronze:'🥉'};
-  var AXIS_LABEL={family:'Family composite', language:'Within its language', profile:'Test profile'};
-  // Listed in the entry's modal only. The table used to carry a count of each
-  // after the name, which cost the name column 53px the profiles need more.
-  function medalsOf(fw){ return ACHV[fw] || []; }
   // Search: comma-separated terms matched against name/language/engine. Positive
   // terms are OR'd; a "!term" excludes any match. Show if (no positive terms or
   // one matches) AND no negative term matches.
@@ -1162,7 +570,11 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   function syncHeatCtl(){
     var btn=document.getElementById('heatBtn'), key=document.getElementById('heatKey');
     var on = state.view==='composite';
-    if(btn) btn.style.display = on ? '' : 'none';
+    if(btn){ btn.style.display = on ? '' : 'none'; btn.setAttribute('aria-pressed', state.heat?'true':'false'); }
+    // the view keys: rack, aisle or maintenance - one of them is always down
+    var vk={rackBtn:!state.maint && !state.aisle, aisleBtn:!!state.aisle && !state.maint, maintBtn:!!state.maint};
+    Object.keys(vk).forEach(function(id){ var b=document.getElementById(id); if(b) b.setAttribute('aria-pressed', vk[id]?'true':'false'); });
+    document.documentElement.classList.toggle('aisle', !!state.aisle && !state.maint);
     if(key) key.style.display = (on && state.heat) ? '' : 'none';
   }
 
@@ -1179,14 +591,14 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       dtip.style.left=l+'px'; dtip.style.top=t+'px';
     }
     document.addEventListener('mouseover', function(e){
-      var td=e.target.closest?e.target.closest('td.pc[data-pid]'):null;
+      var td=e.target.closest?e.target.closest('.pc[data-pid]'):null;
       if(!td) return;
       var h=dtipHtml(td.dataset.pid, td.dataset.fw, td.dataset.nc==='1');
       if(!h){ dtip.style.display='none'; return; }
       dtip.innerHTML=h; dpos(td);
     });
     document.addEventListener('mouseout', function(e){
-      var td=e.target.closest?e.target.closest('td.pc[data-pid]'):null;
+      var td=e.target.closest?e.target.closest('.pc[data-pid]'):null;
       if(td && !td.contains(e.relatedTarget)) dtip.style.display='none';
     });
     document.addEventListener('scroll', function(){ dtip.style.display='none'; }, true);
@@ -1207,16 +619,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       + '<div class="modal-meta">'+esc([lang, m.engine, typeAbbr(t), modeOf(fw)==='tuned'?'tuned':'',
           cmpDecl(fw)&&CMP_TYPES.indexOf(t)>=0 ? 'completeness '+(4-cmpMissing(fw).length)+'/4' : ''].filter(Boolean).join(' · '))+'</div>';
     if(m.desc) h+='<p class="modal-desc">'+esc(m.desc)+'</p>';
-    var mdl=medalsOf(fw);
-    if(mdl.length){
-      h+='<div class="modal-sub">Achievements</div><div class="modal-mdl">';
-      mdl.forEach(function(a){
-        h+='<a href="'+esc(a.link)+'"><span class="mi">'+MEDAL_ICO[a.medal]+'</span>'
-         + '<span class="mw">'+esc(a.group+' · '+a.label)+'<em>'+esc(AXIS_LABEL[a.axis])+'</em></span>'
-         + '<span class="mr">'+a.rank+' of '+a.of+'</span></a>';
-      });
-      h+='</div>';
-    }
+    h+=strengthHtml(fw);
     h+='<div class="modal-links">';
     h+='<a href="/frameworks/'+encodeURIComponent(slugOf(fw))+'/"><span>Results page</span><span>→</span></a>';
     if(m.repo) h+='<a href="'+esc(m.repo)+'" target="_blank" rel="noopener"><span>Official repository</span><span>↗</span></a>';
@@ -1246,6 +649,37 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     return '<span class="statwrap">'+ind+'<span class="stattip"><span><b>2xx</b>'+s2.toLocaleString()+'</span><span><b>3xx</b>'+s3.toLocaleString()+'</span><span><b>4xx</b>'+s4.toLocaleString()+'</span><span><b>5xx</b>'+s5.toLocaleString()+'</span></span></span>';
   }
   function lc(lang){ return D.langColors[lang] || {accent:'#94a3b8', text:'#64748b', textDark:'#94a3b8', rgb:'148,163,184'}; }
+  // The two buttons every test column carries, in the maintenance table's
+  // header and on the rack's patch panel: the detailed view, and the guide.
+  var PICO_VIEW='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="1"/><path d="M3.5 9.5h17M3.5 14.5h17M9 9.5v10"/></svg><span class="pt">View</span>';
+  var PICO_GUIDE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h9.5L19 9v10.5H5z"/><path d="M14 4.5V9h5M8.5 13h7M8.5 16.5h5"/></svg><span class="pt">Guide</span>';
+  // The language in its colour, nudged only as far as it takes to read at
+  // 4.6:1 on the row (a few colours in langcolors.json are too pale for small
+  // text - Nim's yellow is 2.3:1 on white); the others are exactly the data's.
+  var LCX={};
+  function langInk(lang, dark){
+    var k=(dark?'d:':'l:')+(lang||''); if(LCX[k]) return LCX[k];
+    var c=lc(lang);
+    // against the darkest row background of the light theme (the page, #e8ebee)
+    // and the lightest of the dark one (a hovered row, #1a1e23)
+    return (LCX[k]=dark ? legible(c.textDark,'#1a1e23','#ffffff') : legible(c.text,'#e8ebee','#000000'));
+  }
+  function relLum(hex){
+    var n=parseInt(hex.slice(1),16);
+    return [n>>16&255, n>>8&255, n&255].map(function(v){ v/=255; return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4); })
+      .reduce(function(s,v,i){ return s+v*[0.2126,0.7152,0.0722][i]; }, 0);
+  }
+  function contrast(a,b){ var x=relLum(a), y=relLum(b); return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05); }
+  function mixHex(a,b,t){
+    var x=parseInt(a.slice(1),16), y=parseInt(b.slice(1),16), o=0;
+    for(var s=16;s>=0;s-=8){ var u=x>>s&255, w=y>>s&255; o=o*256+Math.round(u+(w-u)*t); }
+    return '#'+(o+0x1000000).toString(16).slice(1);
+  }
+  function legible(hex, bg, toward){
+    if(!/^#[0-9a-f]{6}$/i.test(hex||'')) return hex;
+    for(var t=0, c=hex; t<=1; t+=0.04, c=mixHex(hex,toward,t)) if(contrast(c,bg)>=4.6) return c;
+    return toward;
+  }
   function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   var DARK = function(){ var t=document.documentElement.getAttribute('data-theme'); return t==='dark' || (t!=='light' && matchMedia('(prefers-color-scheme: dark)').matches); };
 
@@ -1261,68 +695,194 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   function starHtml(fw){ return '<span class="star'+(favs.has(fw)?' on':'')+'" data-fw="'+esc(fw)+'" title="Favourite - highlights this framework across every view">★</span>'; }
 
   // ── sidebar ──────────────────────────────────────────────
-  // Collapsible body: an inner wrapper enables the grid-rows accordion. Append
-  // children to body.firstChild.
-  function navBody(){
-    var b=document.createElement('div'); b.className='nav-grp-body';
-    var inner=document.createElement('div'); inner.className='nav-grp-inner';
-    b.appendChild(inner); return b;
-  }
-  // Small icons for the level-0 groups.
-  var NAVICO={
-    kb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
-    composite:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="20" x2="6" y2="14"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="10"/></svg>',
-    detailed:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>'
-  };
-  function navIco(k){ return '<span class="nav-ico">'+NAVICO[k]+'</span>'; }
+  // The view switcher is a KVM console now, not a sidebar tree: one row of keys
+  // for the composite views, one for the detailed views, where a family key
+  // opens the profiles of that family. Same destinations as the old tree
+  // (pickScope / pickProfile), and the phone keeps its <select>.
+  var kvmOpen=null;
   function buildNav(){
-    // #navTree, not #nav — the search box above it is static markup and must
-    // survive the rebuilds that every navigation triggers, or typing would
-    // lose focus mid-query.
+    // #navTree only — the page search box sits in the header as static markup
+    // and must survive the rebuilds that every navigation triggers.
     var nav=document.getElementById('navTree'); nav.innerHTML='';
     var byCat={}; D.profiles.forEach(function(p){ (byCat[p.category]=byCat[p.category]||[]).push(p); });
 
-    // 1. Knowledge Base (top) - a plain link out to /docs/. The docs are real
-    // pages now, so every leaf navigated away anyway; expanding the tree here
-    // just duplicated the nav that the Knowledge Base already carries.
-    if(D.docs && D.docs.c && D.docs.c.length){
-      var ks=document.createElement('div'); ks.className='nav-sec';
-      var kb=document.createElement('a');
-      kb.className='nav-grp-h lvl0-link'; kb.href=docUrl('');
-      kb.innerHTML=navIco('kb')+'<span class="nav-grp-t">'+esc(D.docs.t||'Knowledge Base')+'</span>';
-      ks.appendChild(kb);
-      nav.appendChild(ks);
-    }
-
-    // 2. Composite - scope options nested under it
-    var cs=document.createElement('div'); cs.className='nav-sec';
-    var cgrp=document.createElement('div'); cgrp.className='nav-grp lvl0'+(expanded.has('composite')?' open':'');
-    var cgh=document.createElement('div'); cgh.className='nav-grp-h'; cgh.innerHTML=navIco('composite')+'<span class="nav-grp-t">Composite</span><span class="caret">▸</span>';
-    cgh.onclick=function(){ toggleGrp(cgrp,'composite'); }; cgrp.appendChild(cgh);
-    var cbody=navBody();
+    var r1=document.createElement('div'); r1.className='kvm-row';
+    r1.innerHTML='<span class="kvm-l">Composite</span>';
+    var g1=document.createElement('div'); g1.className='kvm-keys';
     SCOPES.forEach(function(sc){
-      var it=document.createElement('div'); it.className='nav-item'+(state.view==='composite'&&state.scope===sc.k?' active':'');
-      it.textContent=sc.label; it.onclick=function(){ pickScope(sc.k); }; cbody.firstChild.appendChild(it);
+      var on=state.view==='composite'&&state.scope===sc.k;
+      var b=document.createElement('button'); b.type='button';
+      b.className='kvm-key'+(on?' active':''); b.setAttribute('aria-pressed', on?'true':'false');
+      b.innerHTML='<i class="kled"></i><span>'+esc(sc.label)+'</span>';
+      b.onclick=function(){ kvmOpen=null; pickScope(sc.k); }; g1.appendChild(b);
     });
-    cgrp.appendChild(cbody); cs.appendChild(cgrp); nav.appendChild(cs);
+    r1.appendChild(g1); nav.appendChild(r1);
 
-    // 3. Detailed Views - families (→ profiles) nested inside one collapsible group
-    var bs=document.createElement('div'); bs.className='nav-sec';
-    var dgrp=document.createElement('div'); dgrp.className='nav-grp lvl0'+(expanded.has('detailed')?' open':'');
-    var dgh=document.createElement('div'); dgh.className='nav-grp-h'; dgh.innerHTML=navIco('detailed')+'<span class="nav-grp-t">Detailed Views</span><span class="caret">▸</span>';
-    dgh.onclick=function(){ toggleGrp(dgrp,'detailed'); }; dgrp.appendChild(dgh);
-    var dbody=navBody();
+    var r2=document.createElement('div'); r2.className='kvm-row';
+    r2.innerHTML='<span class="kvm-l">Detailed views</span>';
+    var g2=document.createElement('div'); g2.className='kvm-keys';
     FAMILIES.forEach(function(fam){
-      var grp=document.createElement('div'); grp.className='nav-grp'+(expanded.has(fam.k)?' open':'');
-      var gh=document.createElement('div'); gh.className='nav-grp-h'; gh.innerHTML='<span>'+esc(fam.label)+'</span><span class="caret">▸</span>';
-      gh.onclick=function(){ toggleGrp(grp, fam.k); }; grp.appendChild(gh);
-      var body=navBody();
-      fam.cats.forEach(function(cat){ (byCat[cat]||[]).forEach(function(p){ body.firstChild.appendChild(profItem(p)); }); });
-      grp.appendChild(body); dbody.firstChild.appendChild(grp);
+      var profs=[]; fam.cats.forEach(function(cat){ (byCat[cat]||[]).forEach(function(p){ profs.push(p); }); });
+      if(!profs.length) return;
+      var cur=state.view==='profile' && profs.some(function(p){ return p.id===state.profile; });
+      var wrap=document.createElement('div'); wrap.className='kvm-fam'+(kvmOpen===fam.k?' open':'');
+      var b=document.createElement('button'); b.type='button';
+      b.className='kvm-key'+(cur?' active':''); b.setAttribute('aria-expanded', kvmOpen===fam.k?'true':'false');
+      b.innerHTML='<i class="kled"></i><span>'+esc(fam.label)+(cur?' · '+esc(PROF[state.profile].label):'')+'</span><span class="caret">▾</span>';
+      b.onclick=function(e){ e.stopPropagation(); kvmOpen=(kvmOpen===fam.k?null:fam.k); buildNav(); };
+      wrap.appendChild(b);
+      if(kvmOpen===fam.k){
+        var pop=document.createElement('div'); pop.className='kvm-pop';
+        var lastCat=null;
+        profs.forEach(function(p){
+          if(fam.cats.length>1 && p.category!==lastCat){ lastCat=p.category;
+            var hd=document.createElement('div'); hd.className='kvm-cat'; hd.textContent=p.category; pop.appendChild(hd); }
+          pop.appendChild(profItem(p));
+        });
+        wrap.appendChild(pop);
+      }
+      g2.appendChild(wrap);
     });
-    dgrp.appendChild(dbody); bs.appendChild(dgrp); nav.appendChild(bs);
+    r2.appendChild(g2); nav.appendChild(r2);
     buildMobileNav(byCat);
+    buildRail(byCat);
   }
+  // ── the views rail ───────────────────────────────────────
+  // On a desk the composites and the detailed views sit in a rail on the left
+  // instead of the KVM rows. Collapsed (the default) it is a strip of small keys
+  // under short names (ALL, H/1.1 ... WS). The view on screen leaves its place for
+  // the top: a bigger tab cut from the placard's plate and, while the two sit
+  // level, joined to it (railJoin), so the view and its title read as one piece.
+  // Open, it lays the whole list over the page, each family's profiles under it,
+  // and closes again on a pick.
+  var railOpen=false, railFocus=null, railFrom=null;
+  var RAIL_ABBR={all:'ALL',h1:'H/1.1',h2:'H/2',h3:'H/3',gw:'GW',grpc:'gRPC',ws:'WS'};
+  // The address a pick leads to, as writeHash would write it after the pick: the
+  // view, plus what carries over (types, Tuned, compact names, the room's view),
+  // so a key opened in a new tab lands on the same board.
+  function railHref(prof, v){
+    var p=[];
+    if(prof){ p.push('p='+encodeURIComponent(v)); p.push('conns='+PROF[v].conns[0]); }
+    else if(v!=='h1') p.push('scope='+v);
+    var ts=state.types.slice().sort().join(','); if(ts!=='emerging,flagship') p.push('type='+ts);
+    if(!state.showTuned) p.push('tuned=0');
+    if(state.compactFw) p.push('fw=compact');
+    if(state.maint) p.push('table=1');
+    if(state.aisle && !state.maint) p.push('aisle=1');
+    return esc(p.length ? '#'+p.join('&') : location.pathname+location.search);
+  }
+  var RAIL_MORE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 7 5 5-5 5M13 7l5 5-5 5"/></svg>';
+  var RAIL_BACK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>';
+  function buildRail(byCat){
+    var rail=document.getElementById('rail'); if(!rail) return;
+    var cur=state.view==='profile' ? PROF[state.profile] : null;
+    var fams=[];
+    FAMILIES.forEach(function(fam){
+      var profs=[]; fam.cats.forEach(function(cat){ (byCat[cat]||[]).forEach(function(p){ profs.push(p); }); });
+      if(profs.length) fams.push({fam:fam, profs:profs, mine:!!cur && profs.some(function(p){ return p.id===cur.id; })});
+    });
+    var h='<div class="rail-in">';
+    if(railOpen){
+      h+='<button class="rail-tog" type="button" id="railTog" aria-expanded="true" aria-label="Close the list of views">'+RAIL_BACK+'<span>Close</span></button>'
+        + '<div class="rail-sec"><div class="rail-h">Composite</div>';
+      SCOPES.forEach(function(sc){
+        var on=!cur && state.scope===sc.k;
+        h+='<a class="rail-key'+(on?' on':'')+'" href="'+railHref(false, sc.k)+'" data-scope="'+sc.k+'"'+(on?' aria-current="page"':'')+'><i class="kled"></i><span>'+esc(sc.label)+'</span></a>';
+      });
+      h+='</div><div class="rail-sec"><div class="rail-h">Detailed views</div>';
+      fams.forEach(function(f){
+        h+='<div class="rail-fam'+(f.mine?' on':'')+'" data-fam="'+f.fam.k+'"><div class="rail-key fam'+(f.mine?' on':'')+'"><i class="kled"></i><span>'+esc(f.fam.label)+'</span></div><div class="rail-list">';
+        var lastCat=null;
+        f.profs.forEach(function(p){
+          if(f.fam.cats.length>1 && p.category!==lastCat){ lastCat=p.category; h+='<div class="rail-cat">'+esc(p.category)+'</div>'; }
+          var on=!!cur && cur.id===p.id;
+          h+='<a class="rail-item'+(on?' on':'')+'" href="'+railHref(true, p.id)+'" data-pid="'+esc(p.id)+'"'+(on?' aria-current="page"':'')+(p.blurb?' data-tip="'+esc(p.blurb)+'"':'')+'>'+esc(p.label)+'</a>';
+        });
+        h+='</div></div>';
+      });
+      h+='</div>';
+    } else {
+      // the view on screen on top, out of its list; a profile shows under its family
+      var sel=null; fams.forEach(function(f){ if(f.mine) sel=f.fam; });
+      var sk=cur ? (sel ? sel.k : '') : state.scope;
+      var sname=cur ? (sel ? sel.label+' ' : '')+cur.label
+                    : (SCOPES.filter(function(s){ return s.k===state.scope; })[0]||{label:''}).label+' composite';
+      h+='<button class="rail-tab" type="button" id="railTab" aria-expanded="false" aria-label="'+esc('On screen: '+sname+'. Open every view')+'" data-tip="'+esc(sname)+'">'
+        + '<span class="rt-k"><i class="kled"></i><span>'+esc(RAIL_ABBR[sk]||sk)+'</span></span><span class="rt-c">'+esc(cur ? cur.label : 'Composite')+'</span></button>'
+        + '<div class="rail-sec"><div class="rail-h">Composite</div>';
+      SCOPES.forEach(function(sc){
+        if(!cur && sc.k===state.scope) return;
+        var nm=sc.label+' composite';
+        h+='<a class="rail-key" href="'+railHref(false, sc.k)+'" data-scope="'+sc.k+'" aria-label="'+esc(nm)+'" data-tip="'+esc(nm)+'"><i class="kled"></i><span>'+esc(RAIL_ABBR[sc.k]||sc.label)+'</span></a>';
+      });
+      h+='</div><div class="rail-sec"><div class="rail-h">Detailed</div>';
+      fams.forEach(function(f){
+        if(f.mine) return;
+        var nm=f.fam.label+' test profiles';
+        h+='<button class="rail-key fam" type="button" data-fam="'+f.fam.k+'" aria-label="'+esc(nm)+'" data-tip="'+esc(nm)+'"><i class="kled"></i><span>'+esc(RAIL_ABBR[f.fam.k]||f.fam.label)+'</span></button>';
+      });
+      h+='</div><button class="rail-tog" type="button" id="railTog" aria-expanded="false" aria-label="Open every view, by name" data-tip="Every view, by name">'+RAIL_MORE+'</button>';
+    }
+    // the rebuild takes the hovered key away before it can say mouseout: drop its tip
+    var tp=document.getElementById('tip'); if(tp) tp.style.display='none';
+    rail.innerHTML=h+'</div>';
+    rail.classList.toggle('open', railOpen);
+    railJoin();
+    if(railOpen && railFocus){
+      // focus the view on screen, or the first profile of the family asked for
+      var fam=railFocus==='cur' ? null : rail.querySelector('.rail-fam[data-fam="'+railFocus+'"]');
+      var a=fam ? fam.querySelector('.rail-item')
+                : (rail.querySelector('.rail-item.on') || rail.querySelector('a.rail-key.on') || rail.querySelector('a.rail-key'));
+      // scroll the list only (scrollIntoView would move the page too): a family to
+      // the top, the view on screen into sight
+      var box=rail.querySelector('.rail-in'), bb=box.getBoundingClientRect();
+      if(fam) box.scrollTop+=fam.getBoundingClientRect().top-bb.top-8;
+      else if(a){ var ar=a.getBoundingClientRect(); if(ar.top<bb.top || ar.bottom>bb.bottom) box.scrollTop+=ar.top-bb.top-bb.height/3; }
+      if(a) a.focus({preventScroll:true});
+      railFocus=null;
+    }
+  }
+  // The tab and the placard are one piece while they sit level - at the top of the
+  // page; once the page scrolls on under the sticky rail, the tab stands alone.
+  function railJoin(){
+    var rail=document.getElementById('rail'); if(!rail) return;
+    var tab=document.getElementById('railTab'), pl=document.querySelector('.phead.placard'), on=false;
+    if(tab && pl && !railOpen){
+      var a=tab.getBoundingClientRect(), b=pl.getBoundingClientRect(), box=tab.parentNode;
+      on = a.height>0 && b.height>0 && Math.abs(a.top-b.top)<1.5 && box.scrollHeight<=box.clientHeight+1;
+    }
+    if(rail.classList.contains('joined')!==on) rail.classList.toggle('joined', on);
+    // the plate's shading runs the placard's full height, so tab and placard shade alike
+    if(on) rail.style.setProperty('--ph', b.height.toFixed(1)+'px');
+  }
+  // open, or close; from = what opened it, where focus goes back on Escape / Close
+  function railSet(open, focus, from){
+    if(open && from) railFrom=from;
+    railOpen=open; railFocus=open ? (focus||null) : null; buildNav();
+    if(!open && focus==='back'){ var t=(railFrom && document.querySelector(railFrom)) || document.getElementById('railTab'); if(t) t.focus(); }
+  }
+  function initRail(){
+    var rail=document.getElementById('rail'); if(!rail) return;
+    rail.addEventListener('click', function(e){
+      var t=e.target.closest('#railTog, #railTab, .rail-key, .rail-item'); if(!t) return;
+      var plain=!(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey||e.button);
+      if(t.id==='railTog'){ if(railOpen) railSet(false, 'back'); else railSet(true, 'cur', '#railTog'); return; }
+      if(t.id==='railTab'){ railSet(true, 'cur', '#railTab'); return; }
+      if(t.dataset.scope){ if(!plain) return; e.preventDefault(); railOpen=false; pickScope(t.dataset.scope); return; }
+      if(t.dataset.pid){ if(!plain) return; e.preventDefault(); railOpen=false; pickProfile(t.dataset.pid); return; }
+      if(t.dataset.fam){ railSet(true, t.dataset.fam, '.rail-key.fam[data-fam="'+t.dataset.fam+'"]'); }
+    });
+    // A click outside closes it. The path, not the target: a click inside rebuilds
+    // the rail, so by the time it reaches the document its target is detached.
+    document.addEventListener('click', function(e){ if(railOpen && e.composedPath().indexOf(rail)<0) railSet(false); });
+    document.addEventListener('keydown', function(e){ if(e.key==='Escape' && railOpen){ railSet(false, 'back'); } });
+    window.addEventListener('scroll', railJoin, {passive:true});
+    window.addEventListener('resize', railJoin);
+  }
+  document.addEventListener('click', function(e){
+    if(kvmOpen && !(e.target.closest && e.target.closest('.kvm-fam'))){ kvmOpen=null; buildNav(); }
+  });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape' && kvmOpen){ kvmOpen=null; buildNav(); } });
   function expandDocAncestors(id){
     expanded.add('');  // the Knowledge Base root group
     var parts=id.split('/'), acc='';
@@ -1378,6 +938,8 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     document.addEventListener('click', function(e){ if(!el.contains(e.target)) close(); });
   }
   // Examples popover under the search input - appears on focus.
+  // the count inside the filter box; on a phone only the number shows
+  function setCount(n){ var c=document.getElementById('count'); if(c) c.innerHTML=n+'<span class="cw">'+(n===1?' framework':' frameworks')+'</span>'; }
   function initSearchHelp(){
     var wrap=document.querySelector('.search'), inp=document.getElementById('q'); if(!wrap||!inp) return;
     var EX=[
@@ -1404,9 +966,10 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     });
   }
   function profItem(p){
-    var it=document.createElement('div'); it.className='nav-item'+(state.view==='profile'&&p.id===state.profile?' active':'');
-    it.textContent=p.label;
-    it.onclick=function(){ pickProfile(p.id); }; return it;
+    var it=document.createElement('button'); it.type='button';
+    it.className='nav-item'+(state.view==='profile'&&p.id===state.profile?' active':'');
+    it.innerHTML='<span class="ni-t">'+esc(p.label)+'</span><span class="ni-d">'+esc(p.blurb||'')+'</span>';
+    it.onclick=function(){ kvmOpen=null; pickProfile(p.id); }; return it;
   }
   function toggleGrp(elm,key){ if(expanded.has(key)){ expanded.delete(key); elm.classList.remove('open'); } else { expanded.add(key); elm.classList.add('open'); } }
   function buildMobileNav(byCat){
@@ -1503,10 +1066,10 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
         inp=document.getElementById('navq');
     if(!q){
       SHITS=[]; SSEL=-1; box.style.display='none'; box.innerHTML='';
-      tree.style.display=''; inp.setAttribute('aria-expanded','false'); return;
+      inp.setAttribute('aria-expanded','false'); return;
     }
     SHITS=searchPages(q); SSEL=SHITS.length?0:-1;
-    tree.style.display='none'; box.style.display=''; inp.setAttribute('aria-expanded','true');
+    box.style.display=''; inp.setAttribute('aria-expanded','true');
     if(!SHITS.length){ box.innerHTML='<div class="nav-empty">No page matches <b>'+esc(q)+'</b>.</div>'; return; }
     var h='<div class="nav-res-h"><span>Pages</span><span>'+SHITS.length+(SHITS.length===25?'+':'')+'</span></div>';
     SHITS.forEach(function(hit,i){
@@ -1608,7 +1171,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       var sLabel={h1:'all HTTP/1.1 profiles',h2:'all HTTP/2 profiles',h3:'all HTTP/3 profiles',gw:'the gateway & production-stack profiles',grpc:'all gRPC profiles',ws:'all WebSocket profiles'}[state.scope];
       // The heading is the page's <h1>. "HTTP/1.1" alone said nothing about
       // what is on the page, so every view names its subject.
-      var sName={all:'Overall web server benchmarks',h1:'HTTP/1.1 web server benchmarks',h2:'HTTP/2 web server benchmarks',h3:'HTTP/3 web server benchmarks',gw:'Gateway and production stack benchmarks',grpc:'gRPC server benchmarks',ws:'WebSocket server benchmarks'}[state.scope];
+      var sName=SCOPE_TITLE[state.scope];
       cat.textContent='Composite ranking'; title.textContent=sName;
       // The family blurb is also written into the pre-rendered page by
       // gen_leaderboard_data.py (build_index_page), so keep the two the same.
@@ -1645,15 +1208,16 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       var b=esc(p.blurb||'');
       if(p.doc) b+=(b?' ':'')+'<a href="/docs/'+p.doc+'/">Implementation guidelines →</a>';
       blurb.innerHTML=b;
-      var seg=document.createElement('div'); seg.className='seg';
+      var cap=document.createElement('span'); cap.className='tcap'; cap.textContent='Connections';
+      var seg=document.createElement('div'); seg.className='seg'; seg.setAttribute('role','group'); seg.setAttribute('aria-label','Connections');
       var thumb=document.createElement('div'); thumb.className='seg-thumb'; seg.appendChild(thumb);
       p.conns.forEach(function(c){
-        var b=document.createElement('button'); b.textContent=c.toLocaleString('en-US')+'c';
+        var b=document.createElement('button'); b.textContent=c.toLocaleString('en-US');
         if(c===state.conns) b.className='on';
         b.onclick=function(){ state.conns=c; setSegActive(seg,b); render(); };
         seg.appendChild(b);
       });
-      ctl.innerHTML=''; ctl.appendChild(seg);
+      ctl.innerHTML=''; ctl.appendChild(cap); ctl.appendChild(seg);
       thumb.style.transition='none'; moveThumb(seg);           // position without an initial slide
       requestAnimationFrame(function(){ thumb.style.transition=''; });
     }
@@ -1961,10 +1525,10 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // Four steps, one hue each, so a cell has a band rather than a shade and the
   // legend beside the toggle says what each one means.
   var HEAT_BANDS=[
-    [0.25, 'rgb(198,60,48)',  'under 25%'],
-    [0.50, 'rgb(228,126,30)', '25-50%'],
-    [0.75, 'rgb(226,192,44)', '50-75%'],
-    [1.01, 'rgb(45,172,94)',  'over 75%']
+    [0.25, 'rgb(46,16,120)',  'under 25%'],
+    [0.50, 'rgb(176,36,122)', '25-50%'],
+    [0.75, 'rgb(240,120,32)', '50-75%'],
+    [1.01, 'rgb(255,226,92)', 'over 75%']
   ];
   // Six points and a base, filled rather than stroked: a stroked outline closes
   // up at this size and reads as a smudge. Gold is the token the board already
@@ -2024,7 +1588,9 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     if(grid)grid.style.display=''; if(tools)tools.style.display=''; if(phead)phead.style.display='';
     syncHeatCtl();
     if(seo)seo.style.display='';
-    if(state.view==='composite'){ th.style.display='none'; if(mn)mn.classList.add('cmfull'); renderComposite(); }
+    document.documentElement.classList.toggle('maint', !!state.maint);
+    if(!state.maint){ th.style.display='none'; renderRack(); }
+    else if(state.view==='composite'){ th.style.display='none'; if(mn)mn.classList.add('cmfull'); renderComposite(); }
     else { th.style.display=''; if(mn)mn.classList.remove('cmfull'); renderProfile(); }
     scheduleHash();
   }
@@ -2040,17 +1606,26 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       if(location.hash!==dh){ try{ history.replaceState(null,'', dh); }catch(e){} }
       return;
     }
-    var p=[];
+    var p=[], ts=state.types.slice().sort().join(',');
     if(state.view==='profile'){ p.push('p='+state.profile); p.push('conns='+state.conns); }
-    else { if(state.scope!=='h1') p.push('scope='+state.scope); if(state.useMem) p.push('mem=1'); if(state.rescale) p.push('rescale=1'); if(state.heat) p.push('heat=1'); }
+    else { if(state.scope!=='h1') p.push('scope='+state.scope); if(state.useMem) p.push('mem=1');
+      // Rescale is on by default, so it is written when off - and also whenever
+      // the address spells out its leagues: a link with type= and no rescale= is
+      // a ranking link (a rank badge), which opens with it off (restoreFromHash).
+      if(!state.rescale) p.push('rescale=0'); else if(ts!=='emerging,flagship') p.push('rescale=1');
+      if(state.heat) p.push('heat=1'); }
     var _dps=defProfileSort(state.profile);
     var defSort = state.view==='profile' ? (state.sortKey===_dps.k&&state.sortDir===_dps.d) : (state.sortKey==='score'&&state.sortDir===-1);
     if(!defSort) p.push('sort='+state.sortKey+':'+state.sortDir);
-    var ts=state.types.slice().sort().join(','); if(ts!=='emerging,flagship') p.push('type='+ts);
+    if(ts!=='emerging,flagship') p.push('type='+ts);
     if(!state.showTuned) p.push('tuned=0');
     if(state.compactFw) p.push('fw=compact');
     if(state.lang) p.push('lang='+encodeURIComponent(state.lang));
     if(state.q) p.push('q='+encodeURIComponent(state.q));
+    if(state.maint) p.push('table=1');
+    if(state.aisle && !state.maint) p.push('aisle=1');
+    if(A3D && state.aisle && !state.maint) p.push('3d=1');
+    if(state.open && !state.maint) p.push('open='+encodeURIComponent(state.open));
     var nh=p.length?('#'+p.join('&')):'';
     if(location.hash!==nh){ try{ history.replaceState(null,'', nh||(location.pathname+location.search)); }catch(e){} }
   }
@@ -2064,6 +1639,10 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     if(p.hasOwnProperty('fw')) state.compactFw = p.fw==='compact';
     state.lang = p.lang || '';
     state.q = p.q || '';
+    if(p.hasOwnProperty('table')) state.maint = p.table==='1';
+    state.open = p.open || '';
+    state.aisle = p.aisle==='1';
+    state.a3d = state.aisle && p['3d']==='1';
     if(p.p && PROF[p.p]){
       state.view='profile'; state.profile=p.p;
       var cc=+p.conns; state.conns=(PROF[p.p].conns.indexOf(cc)>=0)?cc:PROF[p.p].conns[0];
@@ -2073,7 +1652,14 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       state.view='composite';
       state.scope=(p.scope && SCOPES.some(function(s){return s.k===p.scope;}))?p.scope:'h1';
       state.useMem = p.mem==='1';
-      state.rescale = p.rescale==='1';
+      // On by default. A rank badge's link spells out its leagues (type=) and the
+      // tuned filter, never rescale=, and its rank was taken with rescale off:
+      // re-basing on the shown entries reorders a filtered field (#702), and with
+      // it on 68 badge ranks would disagree with the board they link to. So a
+      // link with type= and no rescale= opens with it off; the board's own
+      // addresses write rescale= whenever they write type= (writeHash).
+      state.rescale = p.hasOwnProperty('rescale') ? p.rescale!=='0' : !p.hasOwnProperty('type');
+      state.heat = p.heat==='1';
       state.sortKey='score'; state.sortDir=-1;
       expanded.add('composite');
     }
@@ -2106,7 +1692,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     var top=document.getElementById('cscrollTop'), wrap=document.getElementById('cwrap'); if(!top||!wrap) return;
     var prog=false;  // true during a programmatic smooth-scroll, so the bar->table mirror doesn't cancel it
     top.onscroll=function(){ if(prog) return; wrap.scrollLeft=top.scrollLeft; };
-    wrap.onscroll=function(){ top.scrollLeft=wrap.scrollLeft; updateEndBtn(); };
+    wrap.onscroll=function(){ top.scrollLeft=wrap.scrollLeft; if(FLOAT.inner) FLOAT.inner.scrollLeft=wrap.scrollLeft; updateEndBtn(); };
     function jump(){
       var max=wrap.scrollWidth-wrap.clientWidth, atEnd=wrap.scrollLeft>=max-2;
       prog=true; wrap.scrollTo({left:atEnd?0:max, behavior:'smooth'}); setTimeout(function(){ prog=false; }, 700);
@@ -2115,6 +1701,57 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     var b2=document.getElementById('cscrollEndTop'); if(b2) b2.onclick=jump;
     syncTopScroll();
   }
+  // The maintenance table runs its whole height and the page scrolls it (no
+  // box with a scrollbar of its own inside the page). So the header row is
+  // copied into a strip that floats under the site header once the real one
+  // has scrolled away - natively sticky, so it does not lag the scroll. The
+  // copy has the real columns' widths, follows the table sideways, and hands
+  // its clicks to the real header: sorting, View, Guide and the name-column
+  // toggle all work from it. The horizontal bar under the table stays at the
+  // bottom of the window while the table is in view (CSS, #cscrollRow).
+  var FLOAT={};
+  function setupFloatHead(){
+    var old=document.getElementById('cfloat'); if(old) old.parentNode.removeChild(old);
+    FLOAT={};
+    var wrap=document.getElementById('cwrap'), tbl=wrap&&wrap.querySelector('table.cm'), head=tbl&&tbl.tHead;
+    if(!head) return;
+    var fl=document.createElement('div'); fl.className='cfloat'; fl.id='cfloat'; fl.setAttribute('aria-hidden','true');
+    var inner=document.createElement('div'); inner.className='cfloat-in';
+    var t2=document.createElement('table'); t2.className=tbl.className;
+    var cg=document.createElement('colgroup'), h2=head.cloneNode(true);
+    t2.appendChild(cg); t2.appendChild(h2); inner.appendChild(t2); fl.appendChild(inner);
+    Array.prototype.forEach.call(h2.querySelectorAll('[id]'), function(e){ e.removeAttribute('id'); });
+    Array.prototype.forEach.call(h2.querySelectorAll('a,button,[tabindex]'), function(e){ e.setAttribute('tabindex','-1'); });
+    wrap.parentNode.insertBefore(fl, wrap);
+    function measure(){
+      if(!fl.isConnected) return;
+      var cells=head.rows[0].cells; cg.textContent='';
+      for(var i=0;i<cells.length;i++){ var c=document.createElement('col'); c.style.width=cells[i].getBoundingClientRect().width+'px'; cg.appendChild(c); }
+      t2.style.width=tbl.getBoundingClientRect().width+'px';
+      inner.style.left=wrap.clientLeft+'px'; inner.style.width=wrap.clientWidth+'px';
+      inner.scrollLeft=wrap.scrollLeft;
+    }
+    inner.addEventListener('click', function(e){
+      var th=e.target.closest('th'); if(!th) return;
+      var a=e.target.closest('a[href]');
+      if(a && !a.hasAttribute('role')) return;               // a real link (Guide, the docs) goes by itself
+      e.preventDefault(); e.stopPropagation();
+      var o=head.rows[0].cells[Array.prototype.indexOf.call(th.parentNode.children, th)]; if(!o) return;
+      var src=e.target.closest('a,button,[role="button"]')||th;
+      var k=src===th ? -1 : Array.prototype.indexOf.call(th.querySelectorAll('*'), src);
+      ((k>=0 && o.querySelectorAll('*')[k]) || o).click();
+    });
+    FLOAT={el:fl, inner:inner, head:head, wrap:wrap, measure:measure};
+    measure(); floatCheck();
+    if(document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+  }
+  function floatCheck(){
+    var fl=FLOAT.el; if(!fl || !fl.isConnected) return;
+    var r=FLOAT.head.getBoundingClientRect(), wr=FLOAT.wrap.getBoundingClientRect(), top=parseFloat(getComputedStyle(fl).top)||0;
+    var on=r.height>0 && r.top<top && wr.bottom>top+r.height+40;
+    if(on!==fl.classList.contains('on')) fl.classList.toggle('on', on);
+  }
+  window.addEventListener('scroll', function(){ if(FLOAT.el) floatCheck(); }, {passive:true});
   // ── overall view: one column per family ──────────────────
   var FAM_NAME={h1:'HTTP/1.1',h2:'HTTP/2',h3:'HTTP/3',grpc:'gRPC',ws:'WebSocket'};
   // The same two-part control a profile column has: the left half opens that
@@ -2125,10 +1762,10 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       + '<span class="pnav">'
       + '<a class="pico pscope" data-scope="'+esc(k)+'" role="button" tabindex="0"'
       +   ' data-tip="'+esc('Open the '+lab+' composite - every '+name+' profile, entry by entry.')+'"'
-      +   ' aria-label="'+esc('Open the '+lab+' composite')+'">▤</a>'
+      +   ' aria-label="'+esc('Open the '+lab+' composite')+'">'+PICO_VIEW+'</a>'
       + '<a class="pico" href="/docs/test-profiles/'+esc(k)+'/"'
       +   ' data-tip="'+esc('What the '+name+' profiles run, and the rules an entry has to follow.')+'"'
-      +   ' aria-label="'+esc(name+' test profiles')+'">?</a>'
+      +   ' aria-label="'+esc(name+' test profiles')+'">'+PICO_GUIDE+'</a>'
       + '</span></th>';
   }
   // The family composite, and under the same small type a profile cell uses
@@ -2155,14 +1792,14 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     var cut=Math.round(r.raw)-Math.round(r.score);
     return cut>0 ? t+' - completeness took '+cut+' of it' : t;
   }
-  function renderComposite(){
-    specPanelClose();
+  // The composite view as data: the rows in the order of the current sort, the
+  // rank each holds by score, and the leading score. The table and the rack
+  // both draw from it.
+  function compositeModel(){
     var all=overallView();
     var res=all?computeOverall():computeComposite(), pids=res.pids, rows=res.rows.slice();
-    renderTypes(rows.map(function(r){return r.fw;}));
     var rankMap={}; rows.slice().sort(function(a,b){return b.score-a.score;}).forEach(function(r,i){rankMap[r.fw]=i+1;});
     var maxScore=Math.max.apply(null, rows.map(function(r){return r.score;}).concat([1]));
-    var dark=DARK();
     var sk=state.sortKey, dir=state.sortDir;
     rows.sort(function(a,b){
       if(sk==='fw'){ var x=a.fw.toLowerCase(),y=b.fw.toLowerCase(); return x<y?-dir:x>y?dir:0; }
@@ -2172,7 +1809,15 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       var av=(a.cells[sk]&&a.cells[sk].v)||0, bv=(b.cells[sk]&&b.cells[sk].v)||0;
       return (av-bv)*dir || (b.score-a.score);
     });
-    document.getElementById('count').textContent=rows.length+(rows.length===1?' framework':' frameworks');
+    return {all:all, pids:pids, rows:rows, rankMap:rankMap, maxScore:maxScore};
+  }
+  function renderComposite(){
+    specPanelClose();
+    var M=compositeModel(), all=M.all, pids=M.pids, rows=M.rows, rankMap=M.rankMap, maxScore=M.maxScore;
+    renderTypes(rows.map(function(r){return r.fw;}));
+    var dark=DARK();
+    var sk=state.sortKey, dir=state.sortDir;
+    setCount(rows.length);
     var ar=function(k){ return sk===k?(dir<0?' ▼':' ▲'):''; };
     var th='<th class="sticky rankh">#</th>'
       + '<th class="sticky fwh" data-k="fw" data-tip="'+esc(TIP.fw)+'">Framework'
@@ -2192,7 +1837,9 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     // Resilience, beside Spec: a standalone robustness read (adversarial-attack
     // survival, H1 / H2 / WS), shown on every composite view since the
     // measurement does not change with the board. Not part of the composite.
-    if(resilCol()) th+='<th class="num pcol resilh" data-k="resil" data-tip="'+esc(TIP.resil)+'">Resilience'+ar('resil')
+    // "Resil.", as on the rack's patch panel: the column is narrow and the
+    // full word is in the tooltip and the accessible name.
+    if(resilCol()) th+='<th class="num pcol resilh" data-k="resil" aria-label="Resilience" data-tip="'+esc(TIP.resil)+'">Resil.'+ar('resil')
       + '<span class="pnav"><a class="pico" href="/docs/test-profiles/resilience/"'
       +   ' data-tip="'+esc('What the resilience suite attacks, the box it runs the entry in, and how an entry opts in.')+'"'
       +   ' aria-label="How the resilience score works">?</a></span></th>';
@@ -2202,14 +1849,13 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       var nav='<span class="pnav">'
         + '<a class="pico pgo" data-pid="'+esc(pid)+'" role="button" tabindex="0"'
         +   ' data-tip="'+esc('Open the '+p.label+' detail view — every entry\u2019s result on this profile, with the columns that profile reports.')+'"'
-        +   ' aria-label="Open the '+esc(p.label)+' detail view">▤</a>'
+        +   ' aria-label="Open the '+esc(p.label)+' detail view">'+PICO_VIEW+'</a>'
         + (p.doc?('<a class="pico" href="/docs/'+esc(p.doc)+'/"'
         +   ' data-tip="'+esc('Implementation guide for '+p.label+' — what the profile runs, and the rules an entry has to follow.')+'"'
-        +   ' aria-label="'+esc(p.label)+' implementation guide">?</a>'):'')
+        +   ' aria-label="'+esc(p.label)+' implementation guide">'+PICO_GUIDE+'</a>'):'')
         + '</span>';
       th+='<th class="num pcol'+(ref?' refcol':'')+'" data-k="'+pid+'" data-tip="'+esc(p.category+' · '+p.label+' - '+(p.blurb||'')+(ref?' Not part of the composite score.':''))+'">'+esc(p.label)+ar(pid)+nav+'</th>';
     });
-    th+='<th class="spacer"></th>';
     var body=rows.map(function(r){
       var c=lc(r.lang), rank=rankMap[r.fw], t=typeOf(r.fw), repo=repoOf(r.fw);
       var nm=esc(r.fw);
@@ -2225,7 +1871,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
               ? '<span class="tsq tsq-'+t+(modeOf(r.fw)==='tuned'?' tuned':'')+'" data-tip="'
                 + esc(typeTip(t)+(modeOf(r.fw)==='tuned'?'  ·  '+TUNED_TIP:''))+'"></span>'
                 + '<span class="nm">'+nm+'</span>'
-              : starHtml(r.fw)+'<span class="tndslot">'+tunedPill(r.fw,'tnd')+'</span><span class="tsq tsq-'+t+'" data-tip="'+esc(typeTip(t))+'"></span><span class="lang" style="color:'+(dark?c.textDark:c.text)+'">'+esc(r.lang)+'</span><span class="nm">'+nm+'</span>'+tlsCheckBadge(r.fw))
+              : starHtml(r.fw)+'<span class="tndslot">'+tunedPill(r.fw,'tnd')+'</span><span class="tsq tsq-'+t+'" data-tip="'+esc(typeTip(t))+'"></span><span class="lang" style="color:'+langInk(r.lang,dark)+'">'+esc(r.lang)+'</span><span class="nm">'+nm+'</span>'+tlsCheckBadge(r.fw))
         +   '</span></td>'
         + '<td class="sticky scorec" title="'+esc(all?overallTip(r):cmpTip(r))+'"><span class="sc"><b>'+r.score.toFixed(0)+cmpDelta(r)+'</b><span class="bar"><i style="width:'+Math.max(pct,2).toFixed(0)+'%;background:rgba('+c.rgb+','+(dark?0.55:0.42)+')"></i></span></span></td>';
       if(specSuite()) tr+=specCell(r.fw);
@@ -2250,7 +1896,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
         if(cell.c){ tr+='<td class="num pc'+(cell.best?' lead':'')+'"'+dat+'>'+inner+'</td>'; }
         else { tr+='<td class="num pc nc"'+dat+'>'+inner+'</td>'; }
       });
-      return tr+'<td class="spacer"></td></tr>';
+      return tr+'</tr>';
     }).join('');
     var colspan=pids.length+4+(specSuite()?1:0)+(resilCol()?1:0);
     document.getElementById('rows').innerHTML='<div class="cscroll-row endonly" id="cscrollRowTop"><button class="cscroll-end" id="cscrollEndTop" type="button"></button></div><div class="cwrap" id="cwrap"><table class="cm'+(state.compactFw?' compact':'')+(state.heat?' heat':'')+'"><thead><tr>'+th+'</tr></thead><tbody>'+(body||'<tr><td colspan="'+colspan+'" class="empty">No frameworks match this filter.</td></tr>')+'</tbody></table></div><div class="cscroll-row" id="cscrollRow"><div class="cscroll" id="cscrollTop"><div></div></div><button class="cscroll-end" id="cscrollEnd" type="button"></button></div>';
@@ -2269,7 +1915,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     var _ft=document.getElementById('fwTog');
     if(_ft){ _ft.onclick=function(ev){ ev.stopPropagation(); toggleCompactFw(); };
              _ft.onkeydown=function(ev){ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); ev.stopPropagation(); toggleCompactFw(); } }; }
-    setupTopScroll();
+    setupTopScroll(); setupFloatHead();
   }
 
   function val(r,k){ if(k==='rps')return r.rps||0; if(k==='bw')return bw(r.bandwidth); if(k==='bwreq'){var b=bw(r.bandwidth),q=r.rps||0;return q>0?b/q:0;} if(k==='inbw')return bw(r.input_bw); if(k==='avg')return lat(r.avg_latency); if(k==='p99')return lat(r.p99_latency); if(k==='l1mscore')return latScore(state.profile,r.fw); if(k==='p999')return lat(r.p99_9_latency); if(k==='cpureq')return (r.cpu_per_req_us!=null)?+r.cpu_per_req_us:Infinity; if(k==='cputot'){var t=cpuTotPct(r); return t==null?Infinity:t;} if(k==='cpu')return cpu(r.cpu); if(k==='mem')return mem(r.memory); if(k==='fw')return (r.fw||'').toLowerCase(); return 0; }
@@ -2341,8 +1987,8 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // measurement noise. Its metric is the CPU each one spent to do it, and less
   // of that is better.
   function defProfileSort(id){ return isLatProfile(id) ? {k:'l1mscore',d:-1} : {k:'rps',d:-1}; }
-  function profileCols(){
-    var W=window.innerWidth;
+  function profileCols(W){
+    W=W||window.innerWidth;
     var c=[
       {k:'rank', w:'54px', min:0},
       {k:'fw', label:'Framework', w:'minmax(200px,2fr)', min:0, tip:TIP.fw}
@@ -2380,7 +2026,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   }
   function profileCell(k, r, x){
     if(k==='rank') return '<div class="c rank'+(x.rank<=3?' r'+x.rank:'')+'">'+x.rank+'</div>';
-    if(k==='fw'){ var nm=esc(r.fw); return '<div class="c fw">'+starHtml(r.fw)+'<span class="tndslot">'+tunedPill(r.fw,'tnd')+'</span><span class="tsq tsq-'+x.t+'" data-tip="'+esc(typeTip(x.t))+'"></span><span class="lang" style="color:'+(x.dark?x.lc.textDark:x.lc.text)+'">'+esc(r.lang||'')+'</span><span class="nm">'+nm+'</span>'+tlsCheckBadge(r.fw)+'</div>'; }
+    if(k==='fw'){ var nm=esc(r.fw); return '<div class="c fw">'+starHtml(r.fw)+'<span class="tndslot">'+tunedPill(r.fw,'tnd')+'</span><span class="tsq tsq-'+x.t+'" data-tip="'+esc(typeTip(x.t))+'"></span><span class="lang" style="color:'+langInk(r.lang,x.dark)+'">'+esc(r.lang||'')+'</span><span class="nm">'+nm+'</span>'+tlsCheckBadge(r.fw)+'</div>'; }
     if(k==='rps'){ var pct=x.maxRps>0?Math.max((r.rps||0)/x.maxRps*100,(r.rps>0?1.5:0)):0; return '<div class="c meter"><span class="mtop"><span class="v'+(r.rps>0?'':' zero')+'">'+fmt(r.rps||0)+'</span>'+statusHtml(r)+'</span><span class="bar"><i style="width:'+pct.toFixed(1)+'%;background:rgba('+x.lc.rgb+','+(x.dark?0.55:0.42)+')"></i></span></div>'; }
     if(k==='bw') return '<div class="c num sub">'+esc(r.bandwidth||'-')+'</div>';
     if(k==='bwreq'){ var b=bw(r.bandwidth), q=r.rps||0; return '<div class="c num sub">'+(b>0&&q>0?fmtBytes(b/q):'-')+'</div>'; }
@@ -2395,7 +2041,8 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     if(k==='mem') return '<div class="c num sub">'+esc(r.memory||'-')+'</div>';
     return '<div class="c"></div>';
   }
-  function renderProfile(){
+  // A profile's detail view as data, for the table and the rack alike.
+  function profileModel(){
     var all=(D.results[state.profile+'-'+state.conns]||[]).slice();
     if(isLatProfile(state.profile)) latBuild(state.profile, all);
     // Rank on whatever this profile is actually about. Ranking the fixed-rate
@@ -2404,7 +2051,6 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     var byRps=all.slice().sort(function(a,b){var x=val(a,_rk.k),y=val(b,_rk.k); return x===y?0:(x<y?-1:1)*_rk.d;});
     var rankMap={}; byRps.forEach(function(r,i){rankMap[r.fw]=i+1;});
     var maxRps=byRps.length?(byRps[0].rps||0):0;
-    renderTypes();
     var rows=all.filter(function(r){
       if(state.types.indexOf(typeOf(r.fw))<0) return false;
       if(!state.showTuned && modeOf(r.fw)==='tuned') return false;
@@ -2412,9 +2058,26 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       return true;
     });
     rows.sort(function(a,b){var x=val(a,state.sortKey),y=val(b,state.sortKey); if(x<y)return -1*state.sortDir; if(x>y)return 1*state.sortDir; return (b.rps||0)-(a.rps||0);});
-    document.getElementById('count').textContent=rows.length+(rows.length===1?' framework':' frameworks');
-    var dark=DARK(), COLS=profileCols();
-    document.getElementById('grid').style.setProperty('--cols', COLS.map(function(c){return c.w;}).join(' '));
+    return {all:all, rows:rows, rankMap:rankMap, maxRps:maxRps};
+  }
+  function renderProfile(){
+    var M=profileModel(), all=M.all, rows=M.rows, rankMap=M.rankMap, maxRps=M.maxRps;
+    renderTypes();
+    setCount(rows.length);
+    // On a phone the columns' floors (54px rank, 200px name, 150px rate) add up
+    // to more than the screen. There the table keeps the rank, the name and the
+    // profile's first two figures, the rank narrows and no figure asks for more
+    // than 72-88px, so it fits without panning (the rest is one tap away, on the
+    // entry's card).
+    var narrow=window.innerWidth<600;
+    var dark=DARK(), COLS=narrow ? profileCols().slice(0,4) : profileCols();
+    document.getElementById('grid').style.setProperty('--cols', COLS.map(function(c){
+      if(!narrow) return c.w;
+      if(c.k==='rank') return '34px';
+      if(c.k==='fw') return 'minmax(0,1.5fr)';
+      return String(c.w).replace(/minmax\((\d+)px/, function(m, n){ return 'minmax('+Math.min(+n, 88)+'px'; })
+                        .replace(/^(\d+)px$/, function(m, n){ return Math.min(+n, 72)+'px'; });
+    }).join(' '));
     var thEl=document.getElementById('thead'); thEl.innerHTML='';
     COLS.forEach(function(col){
       var d=document.createElement('div'); d.className='th'+(col.num?' num':'')+(state.sortKey===col.k?' sorted':'');
@@ -2429,6 +2092,770 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       return '<div class="row'+(favs.has(r.fw)?' fav':'')+'" data-fw-row="'+esc(r.fw)+'">'+COLS.map(function(col){return profileCell(col.k, r, x);}).join('')+'</div>';
     }).join('');
     document.getElementById('rows').innerHTML=html||'<div class="empty">No frameworks match this filter.</div>';
+  }
+
+  // ── the rack ─────────────────────────────────────────────
+  // The board as hardware. Every entry is a 1U unit in a rack, top to bottom in
+  // the order of the current sort; the plain table (renderComposite /
+  // renderProfile) is the maintenance view, and both are fed by the same two
+  // models, so a number cannot differ between them.
+  //
+  // What a front panel says, left to right:
+  //   service label  the rank in this view (gold, silver, bronze for the top 3)
+  //   locator LED    the favourite star: blue when lit
+  //   name plate     entry name, a vendor badge for its language, its type, and
+  //                  a hazard-striped bezel when the entry is tuned
+  //   PWR ACT STS    PWR: ranked in this view. ACT blinks faster the closer the
+  //                  entry is to the leader (0.6 s at the leader, 2.6 s at the
+  //                  bottom). STS: completeness on a composite (amber when
+  //                  points were deducted), response status on a profile (amber
+  //                  when it answered with 4xx/5xx)
+  //   display        the composite, or the number the profile ranks on
+  //   modules        Spec and Resilience, or the profile's other columns
+  //   bays           one per profile (or per family on the overall view)
+  var REDUCED=!!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var RACK={els:{}, first:true, patch:null, cap:null, tail:null};
+  var rackIO=('IntersectionObserver' in window) ? new IntersectionObserver(function(es){
+    es.forEach(function(e){ e.target.classList.toggle('live', e.isIntersecting); });
+  }, {rootMargin:'60px 0px'}) : null;
+  function pad2(n){ return (n<10?'0':'')+n; }
+  function fwPhase(fw){ var h=0; for(var i=0;i<fw.length;i++) h=(h*31+fw.charCodeAt(i))%2600; return (h/1000).toFixed(2); }
+  function ledDur(share){ return (2.6-2.0*clamp01(share||0)).toFixed(2)+'s'; }
+  function svcHtml(rank){
+    return '<span class="svc'+(rank<=3?' r'+rank:'')+'"'
+      + (rank<=3?' data-tip="'+['Gold','Silver','Bronze'][rank-1]+' service label: '+['first','second','third'][rank-1]+' in this view."':'')
+      + '>'+rank+'</span>';
+  }
+  function uidHtml(fw){
+    return '<button type="button" class="uid star'+(favs.has(fw)?' on':'')+'" data-fw="'+esc(fw)+'"'
+      + ' aria-label="Favourite '+esc(fw)+'" data-tip="Locator LED - favourite this entry and it lights up blue in every view."><i></i></button>';
+  }
+  function plateHtml(fw, lang){
+    var c=lc(lang), t=typeOf(fw);
+    return '<span class="plate">'
+      + (lang?'<span class="vend" style="--vc:'+c.accent+'">'+esc(lang)+'</span>':'')
+      + '<span class="nm">'+esc(fw)+'</span>'+tlsCheckBadge(fw)
+      + (modeOf(fw)==='tuned'?'<span class="tun" data-tip="'+esc(TUNED_TIP)+'">tuned</span>':'')
+      + '<span class="ty ty-'+t+'" data-tip="'+esc(typeTip(t))+'">'+typeAbbr(t)+'</span>'
+      + '</span>';
+  }
+  function ledsHtml(fw, share, sts, tip){
+    return '<span class="leds" data-tip="'+esc(tip)+'"><i class="led pwr"></i>'
+      + '<i class="led act" style="animation-duration:'+ledDur(share)+';animation-delay:-'+fwPhase(fw)+'s"></i>'
+      + '<i class="led sts '+sts+'"></i></span>';
+  }
+  function lcdHtml(txt, extra, share, tip){
+    return '<span class="lcd"'+(tip?' title="'+esc(tip)+'"':'')+'><b data-g="'+String(txt).replace(/[0-9A-Za-z]/g,'8')+'">'+txt+'</b>'
+      + (extra||'')+'<i class="lcd-bar" style="transform:scaleX('+clamp01(share||0).toFixed(3)+')"></i></span>';
+  }
+  function pullHtml(fw){
+    var open=state.open===fw;
+    return '<button type="button" class="pull" aria-expanded="'+(open?'true':'false')+'" aria-label="'
+      + (open?'Slide '+esc(fw)+' back into the rack':'Slide '+esc(fw)+' out of the rack: every number, links and run logs')+'"><i></i></button>';
+  }
+  function specMod(fw){
+    var s=specOf(fw), at=' data-fw="'+esc(fw)+'" tabindex="0"';
+    if(!s) return '<span class="mod spec empty"'+at+'><span class="mv">·</span></span>';
+    if(s.e!=null||!s.t) return '<span class="mod spec nc"'+at+'><span class="mv">—</span></span>';
+    var r=s.p/s.t;
+    return '<span class="mod spec'+(r===1?' lead':'')+(s.c?' crashed':'')+'"'+at+' style="--p:'+r.toFixed(3)+(state.heat?';--hc:'+heatColor(r):'')+'">'
+      + '<span class="mv">'+(r===1?'100':(r*100).toFixed(1))+'%</span><i class="bl"></i></span>';
+  }
+  function resilMod(fw){
+    var s=resilSurface(), r=resilOf(fw), v=r&&r[s[0]];
+    if(!v) return '<span class="mod resil empty" data-tip="'+esc(resilTip(fw))+'"><span class="mv">—</span></span>';
+    var ratio=v[1]?v[0]/v[1]:0;
+    return '<span class="mod resil'+(ratio===1?' lead':'')+'" data-tip="'+esc(resilTip(fw))+'" style="--p:'+ratio.toFixed(3)+(state.heat?';--hc:'+heatColor(ratio):'')+'">'
+      + '<span class="mv">'+Math.round(ratio*100)+'%</span><i class="bl"></i></span>';
+  }
+  // One bay per profile: the figure the table cell prints, the memory under it,
+  // and a light bar for its share of the column leader.
+  // A figure and its unit, the unit a quieter suffix: "429.87MB/s" -> 429.87 +
+  // MB/s. The text is unchanged (anything reading it reads the same).
+  function numUnit(s){
+    s=String(s); var m=s.match(/^([-+]?\d[\d.,]*)(\s?)([A-Za-z\u00b5%][A-Za-z\u00b5%\/]*)$/);
+    return m ? esc(m[1])+'<span class="u">'+esc(m[2]+m[3])+'</span>' : esc(s);
+  }
+  function bayHtml(r, pid, all, gs){
+    var cell=r.cells[pid], G=gs?' gs':'';
+    if(all){
+      var lab=scopeLabel(pid);
+      if(!cell) return '<span class="bay empty'+G+'" data-tip="'+esc(r.fw+' has no '+lab+' results.')+'"><span class="bv">·</span></span>';
+      var cut=Math.round(cell.v)-Math.round(cell.raw), p0=Math.max(0,Math.min(100,cell.bar))/100;
+      return '<span class="bay fam'+G+(cell.best?' lead':'')+'" style="--p:'+p0.toFixed(3)+(state.heat?';--hc:'+heatColor(p0):'')+'" data-tip="'
+        + esc(lab+' composite '+cell.v.toFixed(0)+(cut?' ('+cut+' for completeness)':'')+' - #'+cell.rank+' of '+cell.of+' on the '+lab+' board.')+'">'
+        + '<span class="bv">'+cell.v.toFixed(0)+'</span><span class="bm">#'+cell.rank+'</span><i class="bl"></i></span>';
+    }
+    if(!cell) return '<span class="bay empty'+G+'" data-pid="'+esc(pid)+'"><span class="bv">·</span></span>';
+    var head=(cell.score!=null)?cell.score.toFixed(1):fmtK(cell.rps), p=Math.max(0,Math.min(100,cell.bar))/100;
+    return '<span class="bay pc'+G+(cell.best?' lead':'')+(cell.c?'':' nc')+'" data-pid="'+esc(pid)+'" data-fw="'+esc(r.fw)+'"'+(cell.c?'':' data-nc="1"')
+      + ' style="--p:'+p.toFixed(3)+(state.heat?';--hc:'+heatColor(p):'')+'">'
+      + '<span class="bv">'+numUnit(head)+'</span><span class="bm">'+numUnit(fmtMem(cell.mem).replace(' ',''))+'</span><i class="bl"></i></span>';
+  }
+  function unitComposite(r, M){
+    var fw=r.fw, rank=M.rankMap[fw], share=r.score/M.maxScore;
+    var graded=cmpGraded(fw)&&r.dec;
+    var sts=!graded?'off':(r.miss.length?'warn':'ok');
+    var tip='PWR: ranked in this view.  ACT: blinks faster the closer to the leader - this entry is at '+(share*100).toFixed(0)+'% of the leading score.  STS: '
+      + (!cmpGraded(fw)?'completeness does not apply here.':!r.dec?'completeness not assessed yet.':r.miss.length?'amber - no '+r.miss.join(', no ')+' (-2.5% each).':'green - routing, middleware, request and response all covered.');
+    var h='<div class="ear l"><span class="upos"></span></div><div class="face">'
+      + svcHtml(rank)+uidHtml(fw)+plateHtml(fw, r.lang)+ledsHtml(fw, share, sts, tip)
+      + lcdHtml(r.score.toFixed(0), cmpDelta(r), share, M.all?overallTip(r):cmpTip(r));
+    if(specSuite()) h+=specMod(fw);
+    if(resilCol()) h+=resilMod(fw);
+    h+='<span class="bays">'+M.pids.map(function(pid, i){ return bayHtml(r, pid, M.all, M.gs&&M.gs[i]); }).join('')+'</span>'
+      + pullHtml(fw)+'</div><div class="ear r"></div>';
+    return {fw:fw, cls:'t-'+typeOf(fw)+(modeOf(fw)==='tuned'?' tuned':'')+(rank<=3?' r'+rank:''),
+            style:state.heat?'--hc:'+heatColor(share):'', html:h};
+  }
+  function profText(k, r){
+    if(k==='rps') return fmt(r.rps||0);
+    if(k==='bw') return r.bandwidth||'-';
+    if(k==='bwreq'){ var b=bw(r.bandwidth), q=r.rps||0; return (b>0&&q>0)?fmtBytes(b/q):'-'; }
+    if(k==='inbw') return r.input_bw||'-';
+    if(k==='l1mscore'){ var v=latScore(state.profile,r.fw); return v?v.toFixed(1):'-'; }
+    if(k==='cpureq') return r.cpu_per_req_us!=null?(+r.cpu_per_req_us).toFixed(2)+' µs':'-';
+    if(k==='cputot'){ var t=cpuTotPct(r,state.profile); return t==null?'-':t.toFixed(1)+'%'; }
+    if(k==='avg') return r.avg_latency||'-';
+    if(k==='p99') return r.p99_latency||'-';
+    if(k==='cpu') return r.cpu||'-';
+    if(k==='mem') return r.memory||'-';
+    return '';
+  }
+  // The columns that read as a level rather than a figure get a gauge.
+  var GAUGE={rps:1, cpu:1, mem:1, cputot:1};
+  function unitProfile(r, M, COLS, mx){
+    var fw=r.fw, rank=M.rankMap[fw], lead=COLS[0];
+    var lv=lead.k==='l1mscore'?latScore(state.profile,fw):(r.rps||0);
+    var share=mx.lead>0?lv/mx.lead:0;
+    var errs=(+(r.status_4xx||0))+(+(r.status_5xx||0)), any=errs+(+(r.status_2xx||0))+(+(r.status_3xx||0));
+    var sts=any<=0?'off':(errs>0?'warn':'ok');
+    var tip='PWR: ran this profile.  ACT: blinks faster the closer to the leader - this entry is at '+(share*100).toFixed(0)+'% of the leading figure.  STS: '
+      + (any<=0?'no response counts recorded.':errs>0?'amber - '+errs.toLocaleString()+' responses were 4xx or 5xx.':'green - no 4xx or 5xx responses.');
+    var h='<div class="ear l"><span class="upos"></span></div><div class="face">'
+      + svcHtml(rank)+uidHtml(fw)+plateHtml(fw, r.lang||langOf(fw))+ledsHtml(fw, share, sts, tip)
+      + lcdHtml(esc(profText(lead.k, r)), lead.k==='rps'?statusHtml(r):'', share, '')
+      + '<span class="bays mods">'+COLS.slice(1).map(function(c){
+          var g=GAUGE[c.k], p=0;
+          if(g){ var x=val(r,c.k), m=mx[c.k]||0; p=(m>0&&isFinite(x))?clamp01(x/m):0; }
+          return '<span class="bay modv'+(g?' g':'')+'" data-col="'+esc(c.label)+'"'+(g?' style="--p:'+p.toFixed(3)+'"':'')+'>'
+            + '<span class="bv">'+numUnit(profText(c.k, r))+'</span>'+(c.k==='rps'?statusHtml(r):'')+(g?'<i class="bl"></i>':'')+'</span>';
+        }).join('')+'</span>'
+      + pullHtml(fw)+'</div><div class="ear r"></div>';
+    return {fw:fw, cls:'t-'+typeOf(fw)+(modeOf(fw)==='tuned'?' tuned':'')+(rank<=3?' r'+rank:''), style:'', html:h};
+  }
+  // The patch panel at the top of the rack is the column header: every port is
+  // a sort key, and carries the same help and links the table header does.
+  function portHtml(k, label, tip, cls, extra){
+    var on=state.sortKey===k;
+    return '<span class="port '+(cls||'')+(on?' sorted':'')+'" data-k="'+esc(k)+'" role="button" tabindex="0"'
+      + (tip?' data-tip="'+esc(tip)+'"':'')+' aria-label="Sort by '+esc(label)+'"><span class="pl">'+esc(label)
+      + (on?'<i class="ar">'+(state.sortDir<0?'▼':'▲')+'</i>':'')+'</span>'+(extra||'')+'</span>';
+  }
+  var LED_HELP='Three status LEDs. PWR: the entry is ranked in this view. ACT: blinks faster the closer the entry is to the leader. STS: green or amber, completeness on a composite and response status on a profile.';
+  function patchComposite(M){
+    var all=M.all;
+    // The rank and name columns carry no heading: the service labels and name
+    // plates below say what they are. Their places are kept, empty, so every
+    // column after them lines up with the units.
+    var h='<div class="ear l"></div><div class="face"><span class="svc ph" aria-hidden="true"></span><span class="uidslot"></span>'
+      + '<span class="plate ph" aria-hidden="true"></span>'
+      + '<span class="leds ph" data-tip="'+esc(LED_HELP)+'"><b>PWR</b><b>ACT</b><b>STS</b></span>'
+      + portHtml('score', all?'Overall':'Composite', all?TIP.scoreAll:cmpInScope()?TIP.score:TIP.scoreWs, 'lcdh',
+          '<a class="pico hq" href="/docs/scoring/composite-score/'+(all?'#overall-composite':'')+'" data-tip="'
+          + esc(all?TIP.scoreHelpAll:cmpInScope()?TIP.scoreHelp:TIP.scoreHelpWs)+'" aria-label="How the '+(all?'overall':'composite')+' score works">?</a>');
+    if(specSuite()) h+=portHtml('spec','Spec',TIP.spec,'mod',
+          '<a class="pico" href="/docs/test-profiles/compliance/" data-tip="'+esc('What the compliance suites test, the /spec route they run against, and how an entry subscribes to them.')+'" aria-label="How the compliance score works">?</a>');
+    if(resilCol()) h+=portHtml('resil','Resil.',TIP.resil,'mod',
+          '<a class="pico" href="/docs/test-profiles/resilience/" data-tip="'+esc('What the resilience suite attacks, the box it runs the entry in, and how an entry opts in.')+'" aria-label="How the resilience score works">?</a>');
+    h+='<span class="bays">'+M.pids.map(function(pid){
+      if(all){
+        var lab=scopeLabel(pid), name=FAM_NAME[pid]||lab;
+        return portHtml(pid, lab, name+' composite - the score this entry has on the '+lab+' board, and the place it holds there.', 'bay',
+          '<span class="pnav"><a class="pico pscope" data-scope="'+esc(pid)+'" role="button" tabindex="0" data-tip="'+esc('Open the '+lab+' composite - every '+name+' profile, entry by entry.')+'" aria-label="'+esc('Open the '+lab+' composite')+'">'+PICO_VIEW+'</a>'
+          + '<a class="pico" href="/docs/test-profiles/'+esc(pid)+'/" data-tip="'+esc('What the '+name+' profiles run, and the rules an entry has to follow.')+'" aria-label="'+esc(name+' test profiles')+'">'+PICO_GUIDE+'</a></span>');
+      }
+      var p=PROF[pid], ref=!scoredForType(pid, leagueType());
+      return portHtml(pid, p.label, p.category+' · '+p.label+' - '+(p.blurb||'')+(ref?' Not part of the composite score.':''), 'bay'+(ref?' refcol':''),
+        '<span class="pnav"><a class="pico pgo" data-pid="'+esc(pid)+'" role="button" tabindex="0" data-tip="'+esc('Open the '+p.label+' detail view — every entry’s result on this profile, with the columns that profile reports.')+'" aria-label="Open the '+esc(p.label)+' detail view">'+PICO_VIEW+'</a>'
+        + (p.doc?'<a class="pico" href="/docs/'+esc(p.doc)+'/" data-tip="'+esc('Implementation guide for '+p.label+' — what the profile runs, and the rules an entry has to follow.')+'" aria-label="'+esc(p.label)+' implementation guide">'+PICO_GUIDE+'</a>':'')+'</span>');
+    }).join('')+'</span><span class="pullslot"></span></div><div class="ear r"></div>';
+    return h;
+  }
+  function patchProfile(COLS){
+    return '<div class="ear l"></div><div class="face"><span class="svc ph" aria-hidden="true"></span><span class="uidslot"></span>'
+      + '<span class="plate ph" aria-hidden="true"></span>'
+      + '<span class="leds ph" data-tip="'+esc(LED_HELP)+'"><b>PWR</b><b>ACT</b><b>STS</b></span>'
+      + portHtml(COLS[0].k, COLS[0].label, COLS[0].tip, 'lcdh')
+      + '<span class="bays mods">'+COLS.slice(1).map(function(c){ return portHtml(c.k, c.label, c.tip, 'bay'); }).join('')+'</span>'
+      + '<span class="pullslot"></span></div><div class="ear r"></div>';
+  }
+  // ── the tray: a unit slid out of the rack ────────────────
+  // Everything the board knows about one entry in the view it was pulled from:
+  // the service tag (what the modal held), every published field of every run
+  // behind the view, the run logs as console links, Spec, Resilience, medals.
+  function findRun(pid, c, fw){
+    var list=(D.results&&D.results[pid+'-'+c])||[];
+    for(var i=0;i<list.length;i++) if(list[i].fw===fw) return list[i];
+    return null;
+  }
+  function runTable(fw, pids, cells){
+    var dir=(D.meta[fw]&&D.meta[fw].dir)||fw, runs=[];
+    pids.forEach(function(pid){
+      var p=PROF[pid]; if(!p) return;
+      var scored={}; (p.scoredConns||[]).forEach(function(c){ scored[c]=1; });
+      var first=true;
+      (p.conns||[]).forEach(function(c){
+        var r=findRun(pid, c, fw); if(!r) return;
+        runs.push({p:p, c:c, r:r, counted:!!scored[c], first:first}); first=false;
+      });
+    });
+    if(!runs.length) return '<p class="tray-none">No published run in this view.</p>';
+    var fields=DT_ROWS.filter(function(f){
+      return runs.some(function(x){ var v=x.r[f[0]]; return !(v===undefined||v===null||v===''); });
+    });
+    var h='<div class="sheet-x"><table class="runs"><thead><tr><th>Profile</th><th class="n">Conns</th>'
+      + (cells?'<th class="n" data-tip="The normalized score this profile adds to the composite: 1000 to its leader.">Points</th>':'')
+      + fields.map(function(f){ return '<th class="n">'+esc(f[1])+'</th>'; }).join('')
+      + '<th data-tip="The raw output of the load generator for this run.">Console</th></tr></thead><tbody>';
+    runs.forEach(function(x){
+      var cell=cells&&cells[x.p.id];
+      h+='<tr'+(x.first?' class="first"':'')+'><td>'+(x.first?'<a class="rp" data-pid="'+esc(x.p.id)+'" role="button" tabindex="0" data-tip="'+esc(x.p.category+' · '+(x.p.blurb||''))+'">'+esc(x.p.label)+'</a>':'')+'</td>'
+        + '<td class="n">'+(+x.c).toLocaleString()+(x.counted?'':' <i class="ncnt" data-tip="This connection count is measured but not counted toward the composite.">ref</i>')+'</td>'
+        + (cells?'<td class="n">'+(x.first&&cell?cell.v.toFixed(0)+(cell.c?'':' <i class="ncnt" data-tip="'+(x.p.scored===false?'Reference profile, not part of the composite.':'Ran, but not counted toward this type’s composite.')+'">ref</i>'):'')+'</td>':'')
+        + fields.map(function(f){
+            var v=x.r[f[0]];
+            if(v===undefined||v===null||v==='') return '<td class="n">-</td>';
+            if(f[2]===1) v=(+v).toLocaleString(); else if(f[2]) v=v+f[2];
+            return '<td class="n">'+esc(String(v))+'</td>';
+          }).join('')
+        + '<td><a class="cable" href="'+LOGBASE+x.p.id+'/'+x.c+'/'+encodeURIComponent(dir)+'.log" target="_blank" rel="noopener" aria-label="Run log, '+esc(x.p.label)+' at '+x.c+' connections">log ↗</a></td></tr>';
+    });
+    return h+'</tbody></table></div>';
+  }
+  function traySpec(fw){
+    var k=specSuite(); if(!k) return '';
+    var s=specOf(fw), label=SPEC_LABEL[k], page='/frameworks/'+encodeURIComponent(slugOf(fw))+'/#spec', v, a;
+    if(!s){ v='does not run the '+label+' suite'; a='<a href="/docs/test-profiles/compliance/">How an entry gets a score →</a>'; }
+    else if(s.e!=null||!s.t){ v='could not be measured: '+(s.e||'no tests were scored')+' ('+s.tool+')'; a='<a href="'+page+'">Full report →</a>'; }
+    else { var r=s.p/s.t;
+      v=(r===1?'100':(r*100).toFixed(1))+'% · '+s.p+' of '+s.t+' passed · '+s.tool+(s.c?' · the server crashed during the suite':'');
+      a='<a href="'+page+'">'+(s.f?'Every failed test, and why →':'Full report →')+'</a>'; }
+    return '<div class="kv"><span class="k">Spec · '+esc(label)+'</span><span class="v">'+esc(v)+' '+a+'</span></div>';
+  }
+  function trayResil(fw){
+    var r=resilOf(fw); if(!r) return '';
+    var bits=[]; RESIL_SURF.forEach(function(s){ var v=r[s[0]]; if(v) bits.push(s[1]+' '+v[0]+' of '+v[1]+' attacks survived'); });
+    if(!bits.length) return '';
+    return '<div class="kv"><span class="k">Resilience</span><span class="v">'+esc(bits.join(' · '))
+      + ' <a href="/docs/test-profiles/resilience/">How it is attacked →</a></span></div>';
+  }
+  // ── Strength: the reading aid on an entry's tray and card ──
+  // Five readings, 0-100, drawn as a radar and a row of LED meters:
+  //   throughput, latency, memory - percentiles. In every test (profile x
+  //     connection count) the entry has a result in, the share of the other
+  //     entries in that test it beats, ties counted half, averaged over its
+  //     tests: requests per second (the fixed-rate profiles left out - every
+  //     entry is offered the same rate there), p99 (lower is better), peak
+  //     memory (lower is better). The whole field, whatever the league.
+  //   coverage - the profiles it has a result in, over the profiles of the round.
+  //   spec / resilience - the published scores: protocol tests passed and
+  //     attacks survived, over all the suites it runs; their mean when it runs
+  //     both.
+  // Worked out once from D, nothing new is published: the ranking is still the
+  // composite, and the card says so.
+  var STRENGTH=null;
+  function strengthAll(){
+    if(STRENGTH) return STRENGTH;
+    var acc={}, entered={}, total=0;
+    function pct(key, list, higher){
+      var n=list.length; if(n<2) return;
+      list.forEach(function(a){
+        var beat=0, ties=-1;
+        for(var i=0;i<n;i++){ var o=list[i][1]; if(o===a[1]) ties++; else if(higher ? o<a[1] : o>a[1]) beat++; }
+        var e=acc[a[0]]||(acc[a[0]]={}); (e[key]=e[key]||[]).push((beat+0.5*ties)/(n-1));
+      });
+    }
+    D.profiles.forEach(function(p){
+      var any=false, paced=isLatProfile(p.id);
+      p.conns.forEach(function(c){
+        var thr=[], lt=[], mm=[];
+        (D.results[p.id+'-'+c]||[]).forEach(function(r){
+          if(!(r.rps>0)) return;
+          any=true; (entered[r.fw]=entered[r.fw]||{})[p.id]=1;
+          if(!paced) thr.push([r.fw, r.rps]);
+          var l=lat(r.p99_latency); if(isFinite(l) && l>0) lt.push([r.fw, l]);
+          var mb=mem(r.memory); if(mb>0) mm.push([r.fw, mb]);
+        });
+        pct('thr', thr, true); pct('lat', lt, false); pct('mem', mm, false);
+      });
+      if(any) total++;
+    });
+    STRENGTH={};
+    Object.keys(entered).forEach(function(fw){
+      var a=acc[fw]||{}, n=Object.keys(entered[fw]).length;
+      function avg(k){ var l=a[k]; return l&&l.length ? Math.round(100*l.reduce(function(s,v){ return s+v; },0)/l.length) : null; }
+      var sp=specPct(fw), rz=resilPct(fw), both=[sp,rz].filter(function(v){ return v!=null; });
+      STRENGTH[fw]={thr:avg('thr'), lat:avg('lat'), mem:avg('mem'), cov:total?Math.round(100*n/total):null, n:n, total:total,
+        spec:sp, resil:rz, sr:both.length ? Math.round(both.reduce(function(s,v){ return s+v; },0)/both.length) : null};
+    });
+    return STRENGTH;
+  }
+  // Protocol tests passed over all the suites an entry runs (a suite that could
+  // not be measured is left out), and attacks survived over its surfaces.
+  function specPct(fw){
+    var sp=(D.meta[fw]||{}).spec, p=0, t=0; if(!sp) return null;
+    Object.keys(sp).forEach(function(k){ var s=sp[k]; if(s && s.e==null && s.t>0){ p+=s.p; t+=s.t; } });
+    return t ? Math.round(1000*p/t)/10 : null;
+  }
+  function resilPct(fw){
+    var rz=resilOf(fw), v=0, n=0; if(!rz) return null;
+    Object.keys(rz).forEach(function(k){ var x=rz[k]; if(x && x[1]>0){ v+=x[0]; n+=x[1]; } });
+    return n ? Math.round(1000*v/n)/10 : null;
+  }
+  var STR_AXES=[
+    {k:'thr', l:'Throughput', tip:'Requests per second: in every test it ran, the share of the other entries it beats, averaged. The fixed-rate profiles are left out - every entry is offered the same rate there.'},
+    {k:'lat', l:'Latency', tip:'p99 latency, lower is better: in every test it ran, the share of the other entries it beats, averaged.'},
+    {k:'mem', l:'Memory', tip:'Peak memory, lower is better: in every test it ran, the share of the other entries it beats, averaged.'},
+    {k:'cov', l:'Coverage', tip:'The test profiles it has a result in, over the profiles of the round.'},
+    {k:'sr', l:'Spec / Resil.', tip:'Protocol compliance (tests passed) and resilience (attacks survived), as published; their mean when it runs both. Both are opt-in suites.'}
+  ];
+  function strengthHtml(fw){
+    var S=strengthAll()[fw]; if(!S) return '';
+    var R=78, pts=[], spokes='', rings='', labels='';
+    STR_AXES.forEach(function(ax, i){
+      var a=-Math.PI/2+i*2*Math.PI/STR_AXES.length, cx=Math.cos(a), cy=Math.sin(a), v=S[ax.k];
+      var r=R*Math.max(0, Math.min(100, v||0))/100;
+      pts.push((cx*r).toFixed(1)+','+(cy*r).toFixed(1));
+      spokes+='<line class="spoke" x1="0" y1="0" x2="'+(cx*R).toFixed(1)+'" y2="'+(cy*R).toFixed(1)+'"/>';
+      var lx=cx*(R+12), ly=cy*(R+12)+(cy>0.5?12:cy<-0.5?-4:5), anchor=Math.abs(cx)<0.2?'middle':cx>0?'start':'end';
+      labels+='<text x="'+lx.toFixed(1)+'" y="'+ly.toFixed(1)+'" text-anchor="'+anchor+'"'+(v==null?' class="na"':'')+'>'+esc(ax.l)+'</text>';
+    });
+    [25,50,75,100].forEach(function(q){
+      var ring=STR_AXES.map(function(ax,i){ var a=-Math.PI/2+i*2*Math.PI/STR_AXES.length; return (Math.cos(a)*R*q/100).toFixed(1)+','+(Math.sin(a)*R*q/100).toFixed(1); }).join(' ');
+      rings+='<polygon class="ring" points="'+ring+'"/>';
+    });
+    var said=STR_AXES.map(function(ax){ return ax.l+' '+(S[ax.k]==null?'not measured':S[ax.k]); }).join(', ');
+    var svg='<svg viewBox="-182 -112 364 226" role="img" aria-label="'+esc('Strength: '+said)+'">'+rings+spokes
+      + '<polygon class="poly" points="'+pts.join(' ')+'"/>'
+      + pts.map(function(pt){ var c=pt.split(','); return '<circle class="dot" cx="'+c[0]+'" cy="'+c[1]+'" r="2.4"/>'; }).join('')
+      + labels+'</svg>';
+    var bars=STR_AXES.map(function(ax){
+      var v=S[ax.k], tip=ax.tip;
+      if(ax.k==='cov') tip+=' '+S.n+' of '+S.total+'.';
+      if(ax.k==='sr') tip+=' Spec: '+(S.spec==null?'not run':S.spec+'%')+'. Resilience: '+(S.resil==null?'not run':S.resil+'%')+'.';
+      return '<div class="str-row'+(v==null?' na':'')+'" data-tip="'+esc(tip)+'"><span class="str-l">'+esc(ax.l)+'</span>'
+        + '<span class="str-m" style="--v:'+(v==null?0:v)+'"></span>'
+        + '<b class="str-v">'+(v==null?'not run':v)+'</b></div>';
+    }).join('');
+    var sub=(S.spec!=null||S.resil!=null)
+      ? '<div class="str-sub">Spec '+(S.spec==null?'not run':S.spec+'%')+' &middot; Resilience '+(S.resil==null?'not run':S.resil+'%')+'</div>' : '';
+    return '<div class="str"><div class="str-h"><span>Strength</span><span class="str-k">0 - 100</span></div>'
+      + '<div class="str-radar">'+svg+'</div><div class="str-bars">'+bars+sub+'</div>'
+      + '<p class="str-note">A reading aid drawn from the published results, not a score: throughput, latency and memory are percentiles against every entry in the same test. The ranking is the composite.</p></div>';
+  }
+  function trayHtml(fw, row){
+    var m=D.meta[fw]||{}, lang=langOf(fw)||m.language||'', t=m.type||'emerging', dir=m.dir||fw, comp=state.view==='composite';
+    var impl='https://github.com/MDA2AV/HttpArena/tree/main/frameworks/'+encodeURIComponent(dir);
+    var h='<div class="tray"><i class="rail l" aria-hidden="true"></i><i class="rail r" aria-hidden="true"></i><div class="tray-in">'
+      + '<div class="tag"><div class="tag-h"><span class="tag-k">Service tag</span>'
+      + '<button type="button" class="tray-x" data-close>Slide back in <kbd>Esc</kbd></button></div>'
+      + '<h3>'+esc(fw)+tlsCheckBadge(fw)+'</h3>'
+      + '<div class="tag-badges"><span class="badge b-'+t+'" data-tip="'+esc(typeTip(t))+'">'+typeAbbr(t)+'</span>'+tunedPill(fw)+'</div>'
+      + '<div class="tag-meta">'+esc([lang, m.engine&&m.engine!==fw?'engine '+m.engine:'',
+          cmpDecl(fw)&&CMP_TYPES.indexOf(t)>=0 ? 'completeness '+(4-cmpMissing(fw).length)+'/4' : ''].filter(Boolean).join(' · '))+'</div>'
+      + '<div class="tag-links">'
+      + '<a class="go" href="/frameworks/'+encodeURIComponent(slugOf(fw))+'/"><span>Results page</span><span>→</span></a>'
+      + (m.repo?'<a href="'+esc(m.repo)+'" target="_blank" rel="noopener"><span>Official repository</span><span>↗</span></a>':'')
+      + (m.website?'<a href="'+esc(m.website)+'" target="_blank" rel="noopener"><span>Official website</span><span>↗</span></a>':'')
+      + '<a href="'+impl+'" target="_blank" rel="noopener"><span>Benchmark implementation</span><span>↗</span></a>'
+      + '<a href="/compare/all/#'+encodeURIComponent(fw)+'"><span>Put it on the bench against another</span><span>→</span></a>'
+      + '</div>'
+      + (m.desc?'<p class="tag-desc">'+esc(m.desc)+'</p>':'');
+    h+='</div><div class="sheet">'+strengthHtml(fw);
+    if(comp && row && row.r){
+      var r=row.r, M=row.M;
+      h+='<div class="kv big"><span class="k">'+(M.all?'Overall':esc(scopeLabel(state.scope))+' composite')+'</span><span class="v"><b>'+r.score.toFixed(0)+'</b>'
+        + ' · rank '+M.rankMap[fw]+' of '+M.rows.length+' in this view · '+esc(M.all?overallTip(r):cmpTip(r))+'</span></div>';
+      h+=traySpec(fw)+trayResil(fw);
+      if(M.all){
+        h+='<div class="sheet-x"><table class="runs"><thead><tr><th>Family</th><th class="n">Composite</th><th class="n">Before completeness</th><th class="n">Rank on its board</th></tr></thead><tbody>'
+          + M.pids.map(function(k){ var c=r.cells[k];
+              return '<tr><td><a class="rs" data-scope="'+esc(k)+'" role="button" tabindex="0">'+esc(FAM_NAME[k]||k)+'</a></td>'
+                + (c?'<td class="n">'+c.v.toFixed(0)+'</td><td class="n">'+c.raw.toFixed(0)+'</td><td class="n">#'+c.rank+' of '+c.of+'</td>'
+                    :'<td class="n">-</td><td class="n">-</td><td class="n">no results</td>')+'</tr>'; }).join('')
+          + '</tbody></table></div>';
+        var ap=[]; D.profiles.forEach(function(p){ if(M.pids.indexOf(familyOf(p))>=0) ap.push(p.id); });
+        h+=runTable(fw, ap, null);
+      } else h+=runTable(fw, M.pids, r.cells);
+    } else if(!comp){
+      var p=PROF[state.profile];
+      h+='<div class="kv big"><span class="k">'+esc(p.label)+'</span><span class="v">'+esc(p.category)+' · '+esc(p.blurb||'')
+        + (row&&row.rank?' · rank '+row.rank+' at '+(+state.conns).toLocaleString()+' connections':'')+'</span></div>';
+      h+=trayResil(fw)+runTable(fw, [state.profile], null);
+    }
+    return h+'</div></div></div>';
+  }
+  function toggleTray(fw){
+    state.open=(state.open===fw)?'':fw;
+    render();
+    if(state.open){
+      var el=RACK.els[fw];
+      if(el && el.scrollIntoView){
+        var r=el.getBoundingClientRect(), tr=state.aisle && el.querySelector('.tray');
+        if(tr){   // in the aisle the tray hangs over the units below: bring all of it into sight
+          var b=tr.offsetHeight+r.bottom+16;
+          if(b>window.innerHeight) window.scrollBy({top:b-window.innerHeight, behavior:REDUCED?'auto':'smooth'});
+        } else if(r.bottom>window.innerHeight-8 || r.top<120) el.scrollIntoView({block:r.height>window.innerHeight-140?'start':'nearest', behavior:REDUCED?'auto':'smooth'});
+      }
+    }
+  }
+  // ── the aisle in 3D ──────────────────────────────────────
+  // A whole-screen server room (assets/sr/aisle3d.js on three.js, both loaded
+  // on first use): the racks as they stand, a unit pulled out on a click. Fed
+  // from the rack as rendered - the same order, lights, locator LEDs and
+  // trays; the board's own popup for a light.
+  var A3D=null;
+  // One run as the room reads it: requests/s, p99 in ms, CPU % of one core,
+  // memory in MiB, bandwidth in MB/s, 4xx+5xx responses.
+  function a3dRun(r){
+    if(!r) return null;
+    var p99=lat(r.p99_latency);
+    return {rps:r.rps||0, p99ms:isFinite(p99)?+(p99/1000).toFixed(3):null, cpu:cpu(r.cpu), memMiB:Math.round(mem(r.memory)),
+            bwMBs:+(bw(r.bandwidth)/1e6).toFixed(1), errors:(+(r.status_4xx||0))+(+(r.status_5xx||0))};
+  }
+  // The tests and units of one ranking as the room reads them: the board's view,
+  // or a section of the corridor.
+  function a3dRack(V, comp, lk){
+    var M=V.M, fam=comp&&M.all;
+    var runs={};   // each test's run, at the connection count it is scored at, by framework
+    var tests=comp ? M.pids.map(function(pid){
+      if(fam) return {id:pid, label:scopeLabel(pid)};
+      var p=PROF[pid]||{}, c=(p.scoredConns&&p.scoredConns[0])||(p.conns&&p.conns[0]);
+      var by={}; ((D.results&&D.results[pid+'-'+c])||[]).forEach(function(r){ by[r.fw]=r; }); runs[pid]=by;
+      return {id:pid, label:p.label||pid, category:p.category||'', conns:c||null};
+    }) : [];
+    var SA=strengthAll();
+    var units=V.order.map(function(fw){
+      var row=V.by[fw]||{}, r=row.r||{}, m=D.meta[fw]||{}, lang=langOf(fw)||m.language||'', S=SA[fw];
+      var u={fw:fw, rank:comp?M.rankMap[fw]:row.rank, lang:lang, langColor:lc(lang).accent, type:typeOf(fw), tuned:modeOf(fw)==='tuned', fav:favs.has(fw),
+             engine:(m.engine&&m.engine!==fw)?m.engine:'',
+             strength:S?{thr:S.thr==null?null:S.thr, lat:S.lat==null?null:S.lat, mem:S.mem==null?null:S.mem, cov:S.cov==null?null:S.cov, sr:S.sr==null?null:S.sr}:null,
+             spec:S&&S.spec!=null?S.spec:null, resil:S&&S.resil!=null?S.resil:null,
+             completeness:(cmpDecl(fw)&&CMP_TYPES.indexOf(typeOf(fw))>=0)?{routing:!!m.cmp.routing, middleware:!!m.cmp.middleware, request:!!m.cmp.request, response:!!m.cmp.response}:null,
+             run:null};
+      if(comp){
+        u.score=r.score!=null?r.score.toFixed(0):''; u.share=M.maxScore>0?(r.score||0)/M.maxScore:0;
+        u.leds=M.pids.map(function(pid){
+          var c=r.cells&&r.cells[pid]; if(!c) return null;
+          var l={p:Math.max(0,Math.min(100,c.bar))/100, best:!!c.best};
+          if(!fam){ var x=a3dRun(runs[pid]&&runs[pid][fw]); if(x) for(var k in x) l[k]=x[k]; }
+          return l;
+        });
+      } else { u.score=profText(lk, r); u.share=(V.share&&V.share[fw])||0; u.leds=[]; u.run=a3dRun(r); }
+      return u;
+    });
+    return {tests:tests, units:units};
+  }
+  // The corridor: a section per family composite, each ranked on its own as the
+  // board would rank it (the same leagues and filters), best first.
+  var A3D_FAMS=['h1','h2','h3','gw','grpc','ws'];
+  function a3dSection(scope){
+    var res=computeComposite(scope); if(!res || !res.rows || !res.rows.length) return null;
+    var rows=res.rows.slice().sort(function(a,b){ return b.score-a.score; });
+    var rankMap={}; rows.forEach(function(r, i){ rankMap[r.fw]=i+1; });
+    var M={all:false, pids:res.pids, rows:rows, rankMap:rankMap, maxScore:Math.max.apply(null, rows.map(function(r){ return r.score; }).concat([1]))};
+    var by={}; rows.forEach(function(r){ by[r.fw]={r:r, M:M}; });
+    return {M:M, by:by, order:rows.map(function(r){ return r.fw; }), share:{}};
+  }
+  function a3dData(){
+    var R=RACK.view; if(!R) return null;
+    var comp=R.comp, lk=comp ? '' : (defProfileSort(state.profile).k==='l1mscore'?'l1mscore':'rps');
+    var main=a3dRack(R, comp, lk), units=main.units;
+    var secs=[], SEC={};
+    A3D_FAMS.forEach(function(k){
+      var V=a3dSection(k); if(!V) return; SEC[k]=V;
+      var x=a3dRack(V, true, '');
+      secs.push({id:k, label:scopeLabel(k), name:SCOPE_TITLE[k], metric:'Composite score', tests:x.tests, units:x.units});
+    });
+    var ov=computeOverall(), orows=((ov&&ov.rows)||[]).slice().sort(function(a,b){ return b.score-a.score; }), omax=orows.length?orows[0].score:1;
+    var overall=orows.map(function(r, i){ var lang=langOf(r.fw)||((D.meta[r.fw]||{}).language)||'';
+      return {fw:r.fw, rank:i+1, lang:lang, langColor:lc(lang).accent, score:r.score.toFixed(0), share:omax>0?r.score/omax:0}; });
+    var start=comp ? (state.scope==='all'?'h1':state.scope) : familyOf(PROF[state.profile]);
+    var rr=D.rounds||{}, act=null; (rr.archived||[]).forEach(function(x){ if(String(x.id)===ROUND_ID) act=x; });
+    var c=D.current||{};
+    return {tests:main.tests, units:units, title:'Rack '+R.label,
+            subtitle:units.length+(units.length===1?' unit':' units')+' racked · '+(state.sortDir<0?'best first':'reversed'),
+            sections:secs, sec:SEC, start:SEC[start]?start:(secs[0]&&secs[0].id), overall:overall,
+            world:{view:R.label,
+                   metric:comp?(R.M.all?'Overall score':'Composite score'):(lk==='l1mscore'?'Latency score':'Requests per second'),
+                   round:act?(act.name||act.id)+(act.date?' · '+act.date:''):(rr.name||'Current round')+(rr.ongoing?' · ongoing':''),
+                   machine:{cpu:shortCpu(c.cpu||''), cores:+c.cores||null, threads:+c.threads||null, ram:c.ram||'', os:c.os||'', kernel:c.kernel||''}}};
+  }
+  function a3dTip(fw, i, V){
+    var R=V||RACK.view; if(!R || !(V || R.comp)) return null;
+    var pid=R.M.pids[i], row=R.by[fw], c=row&&row.r&&row.r.cells&&row.r.cells[pid];
+    var lab=R.M.all?scopeLabel(pid):(PROF[pid]?PROF[pid].label:pid);
+    if(!c) return '<div class="a3dtip"><div class="dh">'+esc(fw)+'</div><div class="dsub">No '+esc(lab)+' results.</div></div>';
+    if(R.M.all) return '<div class="a3dtip"><div class="dh">'+esc(fw)+'</div><div class="dsub">'+esc(lab+' composite '+c.v.toFixed(0)+' - #'+c.rank+' of '+c.of+' on the '+lab+' board.')+'</div></div>';
+    return '<div class="a3dtip">'+dtipHtml(pid, fw, !c.c)+'</div>';
+  }
+  function open3d(){
+    if(A3D || !state.aisle || state.maint) return;
+    var data=a3dData(); if(!data) return;
+    if(state.open){ state.open=''; render(); }
+    var host=document.createElement('div'); host.className='sr3d-host';
+    host.setAttribute('role','dialog'); host.setAttribute('aria-label','The data center in 3D');
+    host.innerHTML='<div class="sr3d-wait">Racking up the aisle…</div>';
+    document.body.appendChild(host);
+    var root=document.documentElement; A3D={host:host, ov:root.style.overflow, inert:[]}; root.style.overflow='hidden';
+    // the board behind is out of reach while the room is open
+    Array.prototype.forEach.call(document.body.children, function(el){ if(el!==host && !el.inert && el.tagName!=='SCRIPT'){ el.inert=true; A3D.inert.push(el); } });
+    scheduleHash();
+    import('/assets/sr/aisle3d.js').then(function(mod){
+      if(!A3D || A3D.host!==host) return null;
+      host.innerHTML='';
+      return mod.open({host:host, theme:DARK()?'dark':'light', title:data.sections.length?'HttpArena data center':data.title, subtitle:data.subtitle,
+        tests:data.tests, units:data.units, perRack:42, world:data.world,
+        sections:data.sections, start:data.start, overall:data.overall,
+        sourceUrl:function(fw){ return '/frameworks/'+encodeURIComponent(slugOf(fw))+'/source.json'; },
+        repoUrl:function(fw){ return 'https://github.com/MDA2AV/HttpArena/tree/main/frameworks/'+encodeURIComponent((D.meta[fw]||{}).dir||fw); },
+        detailHtml:function(fw, sid){ var V=sid&&data.sec[sid]; if(V) return trayMini(fw, V.by[fw], sid); var R=RACK.view; return trayMini(fw, R&&R.by[fw]); },
+        ledTipHtml:function(fw, i, sid){ return a3dTip(fw, i, sid&&data.sec[sid]); },
+        onFav:function(fw){ toggleFav(fw); return favs.has(fw); },
+        onClose:function(){ if(A3D) A3D.h=null; close3d(); }});   // it has closed itself
+    }).then(function(h){ if(A3D && A3D.host===host && h) A3D.h=h; }).catch(function(e){
+      host.innerHTML='<div class="sr3d-wait">The 3D aisle could not start ('+esc(e&&e.message||String(e))+'). <button type="button" class="tray-x" data-x>Back to the aisle</button></div>';
+      var x=host.querySelector('[data-x]'); if(x) x.onclick=function(){ close3d(); };
+    });
+  }
+  function close3d(){
+    if(!A3D) return;
+    var a=A3D; A3D=null; state.a3d=false;
+    if(a.h && a.h.close){ try{ a.h.close(); }catch(e){} }
+    a.inert.forEach(function(el){ el.inert=false; });
+    if(a.host.parentNode) a.host.parentNode.removeChild(a.host);
+    document.documentElement.style.overflow=a.ov||'';
+    scheduleHash();
+    var b=document.getElementById('a3dBtn'); if(b) b.focus();
+  }
+  function init3d(){
+    var b=document.getElementById('a3dBtn'); if(b) b.onclick=function(){ open3d(); };
+    document.addEventListener('keydown', function(e){ if(e.key==='Escape' && A3D && !A3D.h){ close3d(); } });
+    if(state.a3d) setTimeout(open3d, 0);
+  }
+  // The aisle as cabinets: a grid filled column by column, as many cabinets as
+  // fit (each wide enough for a name, a score and a light per test), the units
+  // shared out evenly. A grid rather than CSS columns, so a unit sliding out
+  // hangs over its neighbours instead of pushing units into the next cabinet.
+  function aisleGrid(){
+    var rack=document.getElementById('rack'); if(!rack) return;
+    if(!rack.classList.contains('aisle')){ rack.style.removeProperty('--acols'); rack.style.removeProperty('--arows'); return; }
+    var n=Object.keys(RACK.els).length||1, nt=+rack.style.getPropertyValue('--n')||0, gap=18;
+    var min=(rack.classList.contains('v-comp') && window.innerWidth>900) ? 380+nt*12 : 400;
+    var C=Math.max(1, Math.min(Math.floor((rack.clientWidth+gap)/(min+gap)), Math.ceil(n/6)));
+    rack.style.setProperty('--acols', C); rack.style.setProperty('--arows', Math.ceil(n/C));
+  }
+  window.addEventListener('resize', function(){ aisleGrid(); });
+  // The aisle's tray: the unit lifts out of its cabinet and a compact card
+  // slides out under it, over the units below - the figures, the strength,
+  // the way on. The full tray is the rack's.
+  function trayMini(fw, row, scope){
+    var m=D.meta[fw]||{}, lang=langOf(fw)||m.language||'', t=m.type||'emerging', comp=scope ? true : state.view==='composite';
+    var h='<div class="tray mini"><i class="rail l" aria-hidden="true"></i><i class="rail r" aria-hidden="true"></i><div class="tray-in">'
+      + '<div class="mini-h"><span class="badge b-'+t+'" data-tip="'+esc(typeTip(t))+'">'+typeAbbr(t)+'</span>'+tunedPill(fw)
+      + '<span class="mini-meta">'+esc([lang, m.engine&&m.engine!==fw?'engine '+m.engine:''].filter(Boolean).join(' · '))+'</span>'
+      + '<button type="button" class="tray-x" data-close aria-label="Slide '+esc(fw)+' back in">Close <kbd>Esc</kbd></button></div>';
+    if(comp && row && row.r){
+      var r=row.r, M=row.M;
+      h+='<div class="mini-k"><b>'+r.score.toFixed(0)+'</b><span>'+(M.all?'Overall':esc(scopeLabel(scope||state.scope))+' composite')
+        + ' · #'+M.rankMap[fw]+' of '+M.rows.length+'</span></div>';
+    } else if(!comp && row && row.r){
+      var p=PROF[state.profile], lk=defProfileSort(state.profile).k;
+      h+='<div class="mini-k"><b>'+numUnit(profText(lk==='l1mscore'?'l1mscore':'rps', row.r))+'</b><span>'+esc(p.label)
+        + (row.rank?' · #'+row.rank+' at '+(+state.conns).toLocaleString()+' connections':'')+'</span></div>';
+    }
+    h+=strengthHtml(fw)
+      + '<div class="mini-links"><a class="go" href="/frameworks/'+encodeURIComponent(slugOf(fw))+'/">Results page <span>→</span></a>'
+      + '<a href="/compare/all/#'+encodeURIComponent(fw)+'">Put it on the bench <span>→</span></a></div>';
+    return h+'</div></div>';
+  }
+  // Re-rack: keep every unit's node, put them in the new order, and let each
+  // one travel from where it was (transform only; nothing is animated when the
+  // reader asked for reduced motion, and nothing that is far off screen).
+  function paintRack(rack, capHtml, patchHtml, units, rowsOf){
+    var old=RACK.els, vh=window.innerHeight, before=null, i;
+    var animate=!REDUCED && !RACK.first && !!rack.animate;
+    if(RACK.first){ rack.textContent=''; }
+    if(animate){ before={}; Object.keys(old).forEach(function(fw){
+      var r=old[fw].getBoundingClientRect(); if(r.bottom>-240 && r.top<vh+240) before[fw]=[r.top, r.left]; }); }
+    if(!RACK.cap){ RACK.cap=document.createElement('div'); RACK.cap.className='rack-cap';
+                   RACK.patch=document.createElement('div');
+                   RACK.tail=document.createElement('div'); RACK.tail.className='rack-tail'; }
+    RACK.cap.innerHTML=capHtml;
+    RACK.patch.className='unit patch';
+    if(RACK.patch._h!==patchHtml){ RACK.patch.innerHTML=patchHtml; RACK.patch._h=patchHtml; }
+    var els={}, order=[RACK.cap, RACK.patch];
+    units.forEach(function(u, idx){
+      var el=old[u.fw];
+      if(!el){ el=document.createElement('div'); el.setAttribute('data-fw-row', u.fw); el._new=true; if(rackIO) rackIO.observe(el); }
+      var open=state.open===u.fw;
+      var cls='unit '+u.cls+(favs.has(u.fw)?' fav':'')+(open?' out':'')+(el.classList.contains('live')?' live':'');
+      if(el.className!==cls) el.className=cls;
+      if(el._s!==u.style){ el.style.cssText=u.style; el._s=u.style; }
+      var html=u.html+(open?(state.aisle?trayMini(u.fw, rowsOf(u.fw)):trayHtml(u.fw, rowsOf(u.fw))):'');
+      if(el._h!==html){ el.innerHTML=html; el._h=html; }
+      var up=el.firstChild && el.firstChild.firstChild; if(up) up.textContent=pad2(idx+1);
+      els[u.fw]=el; order.push(el);
+    });
+    Object.keys(old).forEach(function(fw){ if(!els[fw]){ if(rackIO) rackIO.unobserve(old[fw]); } });
+    RACK.tail.innerHTML=(units.length?'':'<div class="unit blank msg"><div class="ear l"></div><div class="face"><span>No frameworks match this filter.</span></div><div class="ear r"></div></div>')
+      + '<div class="unit blank"><div class="ear l"></div><div class="face"></div><div class="ear r"></div></div>'
+      + '<div class="unit blank cm"><div class="ear l"></div><div class="face"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="ear r"></div></div>'
+      + '<div class="rack-foot"><i></i><i></i></div>';
+    order.push(RACK.tail);
+    for(i=0;i<order.length;i++){ if(rack.children[i]!==order[i]) rack.insertBefore(order[i], rack.children[i]||null); }
+    while(rack.children.length>order.length) rack.removeChild(rack.lastChild);
+    RACK.els=els;
+    if(animate){
+      units.forEach(function(u){
+        var el=els[u.fw], r=el.getBoundingClientRect(), b=before[u.fw];
+        var vis=r.bottom>-60 && r.top<vh+60;
+        if(b!=null){
+          var dy=b[0]-r.top, dx=b[1]-r.left;
+          if(Math.abs(dy)>1 || Math.abs(dx)>1){ dy=Math.max(-vh, Math.min(vh, dy));
+            el.animate([{transform:'translate('+dx+'px,'+dy+'px)'},{transform:'none'}],
+                       {duration:Math.min(680, 240+(Math.abs(dy)+Math.abs(dx))*0.5), easing:'cubic-bezier(.2,.75,.2,1)'}); }
+        } else if(vis){
+          el.animate(el._new ? [{transform:'translateX(-36px)', opacity:0},{transform:'none', opacity:1}]
+                             : [{transform:'translateY(46px)', opacity:0},{transform:'none', opacity:1}],
+                     {duration:340, easing:'cubic-bezier(.2,.75,.2,1)'});
+        }
+        el._new=false;
+      });
+    } else units.forEach(function(u){ els[u.fw]._new=false; });
+    RACK.first=false;
+  }
+  function renderSortCtl(opts){
+    var el=document.getElementById('sortCtl'); if(!el) return;
+    el.innerHTML='<label for="sortSel">Sort</label><select id="sortSel">'
+      + opts.map(function(o){ return '<option value="'+esc(o[0])+'"'+(state.sortKey===o[0]?' selected':'')+'>'+esc(o[1])+'</option>'; }).join('')
+      + '</select><button type="button" id="sortDir" aria-label="Reverse the sort order">'+(state.sortDir<0?'▼':'▲')+'</button>';
+    el.querySelector('#sortSel').onchange=function(){ sortBy(this.value); };
+    el.querySelector('#sortDir').onclick=function(){ state.sortDir=-state.sortDir; render(); };
+  }
+  function renderRack(){
+    specPanelClose();
+    var rack=document.getElementById('rack'), comp=state.view==='composite';
+    var M=comp?compositeModel():profileModel(), units=[], patch, by={}, sortOpts=[['fw','Framework']];
+    // where a new category of tests starts: a gap in the aisle's row of lights
+    if(comp) M.gs=M.all ? null : M.pids.map(function(pid, i){ var a=PROF[pid], b=i?PROF[M.pids[i-1]]:null; return !!(a && b && a.category!==b.category); });
+    renderTypes();
+    var n=M.rows.length;
+    setCount(n);
+    var label, COLS=null;
+    if(comp){
+      M.rows.forEach(function(r){ units.push(unitComposite(r, M)); by[r.fw]={r:r, M:M}; });
+      patch=patchComposite(M);
+      label=(M.all?'Overall':scopeLabel(state.scope))+' composite';
+      sortOpts.push(['score', M.all?'Overall':'Composite']);
+      if(specSuite()) sortOpts.push(['spec','Spec']);
+      if(resilCol()) sortOpts.push(['resil','Resilience']);
+      M.pids.forEach(function(pid){ sortOpts.push([pid, M.all?scopeLabel(pid):PROF[pid].label]); });
+    } else {
+      COLS=profileCols(1e9).filter(function(c){ return c.k!=='rank' && c.k!=='fw'; });
+      var mx={lead:0, rps:M.maxRps, cpu:0, mem:0, cputot:100};
+      M.all.forEach(function(r){
+        var lv=COLS[0].k==='l1mscore'?latScore(state.profile,r.fw):(r.rps||0); if(lv>mx.lead) mx.lead=lv;
+        var c=cpu(r.cpu), m=mem(r.memory); if(c>mx.cpu) mx.cpu=c; if(m>mx.mem) mx.mem=m;
+      });
+      M.rows.forEach(function(r){ units.push(unitProfile(r, M, COLS, mx)); by[r.fw]={r:r, rank:M.rankMap[r.fw]}; });
+      patch=patchProfile(COLS);
+      label=PROF[state.profile].label+' · '+(+state.conns).toLocaleString()+' connections';
+      COLS.forEach(function(c){ sortOpts.push([c.k, c.label]); });
+    }
+    rack.className='rack '+(comp?'v-comp':'v-prof')+(comp&&M.all?' v-all':'')+(comp&&state.heat?' thermal':'')
+      + (comp&&specSuite()?' has-spec':'')+(comp&&resilCol()?' has-resil':'')+(state.aisle?' aisle':'')
+      + (comp&&M.pids.length>8?' many':'');
+    rack.style.setProperty('--n', comp?M.pids.length:COLS.length-1);
+    var cap='<span class="rc-id"><i class="kled"></i>Rack '+esc(label)+'</span>'
+      + '<span class="rc-n">'+n+(n===1?' unit':' units')+' racked · '
+      + (state.sortDir<0?'best first':'reversed')+'</span>'
+      + (comp&&state.heat?'<span class="rc-th">Thermal camera · share of column leader</span>':'');
+    // The aisle's key to its lights: every test, in the order of each unit's
+    // row of lights; hovering one lights up its column (aisleHl).
+    if(comp) cap+='<span class="rc-tests"><span class="rc-tl">Lights, left to right</span>'
+      + M.pids.map(function(pid, i){ return '<span class="rct'+(M.gs&&M.gs[i]?' gs':'')+'" data-i="'+i+'"><i></i>'
+          + esc(M.all?scopeLabel(pid):(PROF[pid]?PROF[pid].label:pid))+'</span>'; }).join('')+'</span>';
+    paintRack(rack, cap, patch, units, function(fw){ return by[fw]; });
+    aisleGrid();
+    var shares={}; if(!comp) units.forEach(function(u){ var r=by[u.fw]&&by[u.fw].r; if(r) shares[u.fw]=(r.rps||0)/(M.maxRps||1); });
+    RACK.view={comp:comp, M:M, by:by, order:units.map(function(u){ return u.fw; }), label:label, share:shares};
+    renderSortCtl(sortOpts);
+  }
+  function initRack(){
+    var rack=document.getElementById('rack'); if(!rack) return;
+    rack.addEventListener('click', function(e){
+      var t=e.target, c=t.closest?function(s){ return t.closest(s); }:function(){ return null; };
+      var s=c('.star'); if(s){ e.preventDefault(); e.stopPropagation(); toggleFav(s.getAttribute('data-fw')); return; }
+      var a;
+      if((a=c('.pico.pgo'))||(a=c('.rp[data-pid]'))){ e.preventDefault(); pickProfile(a.dataset.pid); return; }
+      if((a=c('.pico.pscope'))||(a=c('.rs[data-scope]'))){ e.preventDefault(); pickScope(a.dataset.scope); return; }
+      if(c('a')) return;
+      if(c('.spec')) return;                       // a Spec module pins its panel
+      var port=c('.port[data-k]'); if(port){ sortBy(port.dataset.k); return; }
+      if(c('[data-close]')){ var u0=c('[data-fw-row]'); if(u0) toggleTray(u0.getAttribute('data-fw-row')); return; }
+      if(c('.tray')) return;                       // reading the tray must not close it
+      var u=c('[data-fw-row]');
+      if(u && c('.face')){
+        toggleTray(u.getAttribute('data-fw-row'));   // in the aisle it slides out where it stands
+      }
+    });
+    rack.addEventListener('keydown', function(e){
+      if(e.key!=='Enter' && e.key!==' ') return;
+      var t=e.target;
+      if(t.matches && t.matches('.port[data-k]')){ e.preventDefault(); sortBy(t.dataset.k); }
+      else if(t.matches && t.matches('.pico.pgo, .rp[data-pid]')){ e.preventDefault(); e.stopPropagation(); pickProfile(t.dataset.pid); }
+      else if(t.matches && t.matches('.pico.pscope, .rs[data-scope]')){ e.preventDefault(); e.stopPropagation(); pickScope(t.dataset.scope); }
+    });
+    // In the aisle a unit slides out over its neighbours: a click anywhere else
+    // slides it back in (a click on a unit is the rack's own, above).
+    document.addEventListener('click', function(e){
+      if(!state.aisle || !state.open || state.maint) return;
+      // the path, not the target: the click that opened it rebuilt the unit
+      if(e.composedPath().some(function(n){ return n.matches && n.matches('#rack .unit[data-fw-row]'); })) return;
+      state.open=''; render();
+    });
+    // The aisle's lights and their key: hover a test in the key and its light
+    // lights up in every unit (the rest dim); hover a light and its test does.
+    function aisleHl(i, dim){
+      rack.classList.toggle('hl-on', i!=null && !!dim);
+      Array.prototype.forEach.call(rack.querySelectorAll('.hl'), function(x){ x.classList.remove('hl'); });
+      if(i==null) return;
+      Array.prototype.forEach.call(rack.querySelectorAll('.unit .bays>.bay:nth-child('+(i+1)+'), .rct[data-i="'+i+'"]'), function(x){ x.classList.add('hl'); });
+    }
+    rack.addEventListener('mouseover', function(e){
+      if(!state.aisle || !e.target.closest) return;
+      var t=e.target.closest('.rct[data-i], .unit .bays>.bay');
+      if(!t){ if(rack.querySelector('.hl')) aisleHl(null); return; }
+      var key=t.classList.contains('rct'), i=key ? +t.getAttribute('data-i') : Array.prototype.indexOf.call(t.parentNode.children, t);
+      aisleHl(i, key);
+    });
+    rack.addEventListener('mouseleave', function(){ aisleHl(null); });
+    document.addEventListener('keydown', function(e){
+      if(e.key==='Escape' && state.open && !state.maint && document.getElementById('spanel').style.display!=='block'){ var fw=state.open; state.open=''; render();
+        var el=RACK.els[fw], b=el&&el.querySelector('.pull'); if(b) b.focus(); }
+    });
+    // Rack, Aisle, Old View: pressing the key that is down does nothing
+    function setView(maint, aisle){
+      if(maint ? state.maint : (!state.maint && !!state.aisle===aisle)) return;
+      state.maint=maint; if(!maint) state.aisle=aisle;
+      try{ localStorage.setItem('sr-maint', maint?'1':'0'); }catch(e){}
+      render();
+    }
+    var rb=document.getElementById('rackBtn'); if(rb) rb.onclick=function(){ setView(false, false); };
+    var ab=document.getElementById('aisleBtn'); if(ab) ab.onclick=function(){ setView(false, true); };
+    var mb=document.getElementById('maintBtn'); if(mb) mb.onclick=function(){ setView(true); };
   }
 
   // ── hardware chips ──────────────────────────────────────
@@ -2465,10 +2892,25 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   try{ var _fc=localStorage.getItem('lb-fwcompact'); if(_fc!==null) state.compactFw=_fc==='1'; }catch(e){}
   document.getElementById('tunedToggle').addEventListener('click', function(){ state.showTuned=!state.showTuned; saveTuned(); render(); });
   restoreFromHash();
-  initTips(); initSpecPanel(); initHeat(); initModal(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initNavSearch(); hw(); buildNav(); renderHead(); render();
+  // "How to read a unit" is written when a reader opens it: the key explains
+  // the rack, and the page's own text - what a crawler reads - stays the
+  // ranking and the copy under it, as before the restyle.
+  function initLegend(){
+    var d=document.getElementById('legend'), b=document.getElementById('legendB'); if(!d||!b) return;
+    d.addEventListener('toggle', function(){ if(d.open && !b.firstChild) b.innerHTML=''
+    +'<div><b>Service label</b>The rank in this view. The first three wear gold, silver and bronze.</div>'
+    +'<div><b>Locator LED</b>The round button after the rank: press it to favourite an entry, and it lights blue in every view.</div>'
+    +'<div><b>Name plate</b>The entry, a vendor badge for its language and its type. A tuned entry wears a hazard-striped bezel.</div>'
+    +'<div><b>PWR · ACT · STS</b>PWR: ranked here. ACT blinks faster the closer the entry is to the leader. STS: green, or amber when completeness cost it points (on a profile: when it answered with errors).</div>'
+    +'<div><b>Display</b>The composite score, or the figure the profile ranks on. The small amber number is what completeness took off.</div>'
+    +'<div><b>Bays</b>One per test profile: its result, the memory under it, and a light bar for its share of that profile&rsquo;s leader. A dashed bay ran but does not count.</div>'
+    +'<div><b>Patch panel</b>The strip above the first unit names every column. Press a port to sort by it.</div>'
+    +'<div><b>Pull handle</b>Press a unit to slide it out on its rails: every number, the run logs, Spec, Resilience, medals and the link to its results page.</div>'; });
+  }
+  initRail(); initLegend(); initTips(); init3d(); initSpecPanel(); initHeat(); initModal(); initRack(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initNavSearch(); hw(); buildNav(); renderHead(); render();
   (function(){ var b=document.getElementById('brandHome'); if(b) b.onclick=function(e){ e.preventDefault(); pickScope('h1'); }; })();
   window.addEventListener('hashchange', function(){ restoreFromHash(); buildNav(); renderHead(); render(); });
-  var _rz; window.addEventListener('resize', function(){ clearTimeout(_rz); _rz=setTimeout(function(){ if(state.view==='profile') render(); else if(state.view==='composite') syncTopScroll(); }, 150); });
+  var _rz; window.addEventListener('resize', function(){ clearTimeout(_rz); _rz=setTimeout(function(){ if(state.view==='profile') render(); else if(state.view==='composite'){ syncTopScroll(); if(FLOAT.measure){ FLOAT.measure(); floatCheck(); } } }, 150); });
 });
 </script>
 </body>
