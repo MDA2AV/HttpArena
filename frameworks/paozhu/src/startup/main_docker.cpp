@@ -1,4 +1,4 @@
-// Pinned for 64c98a8a (identical to upstream; kept under this entry's control).
+// Pinned for ecc3e6c9 (identical to upstream; kept under this entry's control).
 // Refresh from PAOZHU_REF when bumping the upstream revision.
 
 #include <string>
