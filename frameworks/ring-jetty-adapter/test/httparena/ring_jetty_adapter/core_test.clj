@@ -63,7 +63,7 @@
             :body    "payload"}
            (update response :body #(if (string? %)
                                     %
-                                    (String. ^bytes % java.nio.charset.StandardCharsets/UTF_8))))))
+                                    (String. ^bytes % java.nio.charset.StandardCharsets/UTF_8)))))))
 
 (deftest baseline-and-delay-routes-retain-engine-semantics
   (is (= {:status  200
@@ -80,4 +80,4 @@
 (defn -main [& _args]
   (let [results (test/run-tests 'httparena.ring-jetty-adapter.core-test)]
     (when (pos? (+ (:fail results) (:error results)))
-      (throw (ex-info "tests failed" results))))))
+      (throw (ex-info "tests failed" results)))))

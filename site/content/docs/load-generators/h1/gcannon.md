@@ -83,6 +83,17 @@ Latency is measured per-request from the moment the send SQE is prepared (not wh
 
 For pipelined requests, each request in the batch gets its own send timestamp, and latencies are matched FIFO to response completions.
 
+## Fixed-rate mode (`--rate`, gcannon ≥ 0.8.1)
+
+Everywhere else gcannon sends the next request the moment the last response arrives. With `--rate N` it holds a fixed total rate instead, which is how [CON-5M and CON-1M-TLS](/docs/test-profiles/h1/connections/implementation/) run, plaintext and over TLS:
+
+- every connection has its own schedule, one request per (connections / rate) seconds, the first offset by its share of the interval so the fleet sends evenly rather than in waves. Each thread spreads its connections over the whole interval, interleaved with the other threads. 0.8.0 gave each thread one contiguous slice instead, so one thread at a time sent the whole rate, and above what one thread can send its latency figures measured gcannon (p50 ~150 ms at a million connections); 0.8.1 fixes it;
+- latency counts from each request's scheduled time (coordinated-omission correction), so a stall is charged to every request scheduled during it, not only to those already on the wire;
+- the event loop sleeps exactly until the next send is due, with 1 ns timer slack, so sends leave within tens of microseconds of their slot; at the same paced load it reads the same p50-p99 as [zrk](../zrk/);
+- one process holds five million connections in ~16 GiB (~3.3 KiB each), where zrk 2.3.0 needs ~303 KiB per connection and 3.0.2 ~41 KiB ([CON-1M](/docs/test-profiles/h1/connections/implementation/#con-1m-a-million-on-zrk) runs a million on it). Over TLS (`https://`), each connection handshakes TLS 1.3 with OpenSSL and is then handed to kernel TLS, and gcannon frees its own TLS state, so a held TLS connection costs it about what a plaintext one does.
+
+Three options make a fleet that large possible: `--addr-span 160` spreads it over `127.0.0.1`-`127.0.0.160` (one source address holds ~64.5K connections to one destination), `--connect-limit` caps first connects in flight per thread so five million SYNs never land at once, and `--warmup-max` lets the warmup wait long enough for all of them to open. `--settle` (gcannon ≥ 0.8.2) then keeps the load running before the window opens, so the server has worked off the connect phase by the time measuring starts; CON-5M settles for 30s. On stderr it marks the window's start and end (`gcannon: warmup done ...`, `gcannon: measurement done`), which `scripts/conn_hold.py` uses to read the server's CPU over exactly that window.
+
 ## Command-line reference
 
 ```
@@ -99,3 +110,7 @@ Usage: gcannon <url> -c <conns> -t <threads> -d <duration>
 | `-p` | Pipeline depth | 1 |
 | `-r` | Requests per connection (0 = unlimited) | 0 |
 | `--raw` | Comma-separated raw request template files | -- |
+| `--rate` | Fixed total request rate (req/s), paced per connection; needs `-p 1`, no `-r` | closed loop |
+| `--addr-span` | Spread connections over N consecutive IPv4 addresses from the target's | 1 |
+| `--connect-limit` | First connects in flight per thread | all at once |
+| `--warmup-max` | Longest the warmup waits for connections to open | 10s |

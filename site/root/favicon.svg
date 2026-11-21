@@ -1,23 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <style>
-    .s { stroke: #111; fill: none; }
-    .f { fill: #111; }
-    @media (prefers-color-scheme: dark) {
-      .s { stroke: #fff; }
-      .f { fill: #fff; }
-    }
-  </style>
-  <!-- Blade -->
-  <path d="M16 1 L19 21 L16 23 L13 21 Z" class="f"/>
-  <!-- Fuller -->
-  <line x1="16" y1="4" x2="16" y2="19" class="s" stroke-width="0.8" opacity="0.3"/>
-  <!-- Crossguard -->
-  <path d="M7 22.5 Q7 21 9 21 L23 21 Q25 21 25 22.5 Q25 24 23 24 L9 24 Q7 24 7 22.5 Z" class="f"/>
-  <!-- Grip -->
-  <rect x="14" y="24" width="4" height="4" rx="0.5" class="f"/>
-  <!-- Grip wrap -->
-  <line x1="14" y1="25.5" x2="18" y2="25.5" class="s" stroke-width="0.5" opacity="0.3"/>
-  <line x1="14" y1="27" x2="18" y2="27" class="s" stroke-width="0.5" opacity="0.3"/>
-  <!-- Pommel -->
-  <ellipse cx="16" cy="30" rx="2.5" ry="1.8" class="f"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- HttpArena: a server rack. Light units in a dark cabinet, so it reads on
+       light and dark tab bars alike; the status lights are the board's LEDs. -->
+  <rect width="64" height="64" rx="14" fill="#12171d"/>
+  <rect x="5" y="5" width="54" height="54" rx="10" fill="none" stroke="#3b444e" stroke-width="2"/>
+  <rect x="12" y="12.5" width="40" height="10.5" rx="2.5" fill="#dfe5eb"/>
+  <rect x="12" y="26.75" width="40" height="10.5" rx="2.5" fill="#dfe5eb"/>
+  <rect x="12" y="41" width="40" height="10.5" rx="2.5" fill="#dfe5eb"/>
+  <rect x="17" y="16.25" width="15" height="3" rx="1.5" fill="#8a96a3"/>
+  <rect x="17" y="30.5" width="11" height="3" rx="1.5" fill="#8a96a3"/>
+  <rect x="17" y="44.75" width="13" height="3" rx="1.5" fill="#8a96a3"/>
+  <circle cx="45" cy="17.75" r="3.2" fill="#14c463"/>
+  <circle cx="45" cy="32" r="3.2" fill="#14c463"/>
+  <circle cx="45" cy="46.25" r="3.2" fill="#f0a81c"/>
 </svg>

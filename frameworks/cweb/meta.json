@@ -10,7 +10,6 @@
     "baseline",
     "latency-10k",
     "latency-1m",
-    "latency-500k-8cpu",
     "echo-ws",
     "echo-ws-limited",
     "echo-ws-pipeline",

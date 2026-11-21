@@ -1,10 +1,10 @@
 ---
 title: zrk
 seo_title: "zrk: Constant-Throughput Load Generator"
-description: "HttpArena uses zrk to hold a fixed offered rate for the fixed-rate profiles (Latency-1M, Latency-10K, Latency-500K/8 and 8Gbit), with coordinated-omission correction and a machine-readable summary."
+description: "HttpArena uses zrk to hold a fixed offered rate for the fixed-rate profiles (Latency-1M, Latency-10K and 8Gbit), with coordinated-omission correction and a machine-readable summary."
 ---
 
-[zrk](https://github.com/zoxy-io/zrk) is a constant-throughput HTTP load generator, used for the fixed-rate profiles: **Latency-1M**, **Latency-10K**, **Latency-500K/8** and **8Gbit**.
+[zrk](https://github.com/zoxy-io/zrk) is a constant-throughput HTTP load generator, used for the fixed-rate profiles: **Latency-1M**, **Latency-10K** and **8Gbit**.
 
 ## Why a third generator
 
@@ -36,13 +36,15 @@ The image pins an exact version and verifies its checksum, unlike gcannon which 
 
 zrk has no distro package. `benchmark.sh` builds the `zrk:local` image from `docker/zrk.Dockerfile` automatically when a framework subscribes to one of these profiles and no `zrk` binary is on the `PATH`.
 
+`connections-1m` (CON-1M) is the exception: it runs zrk **3.0.2** from its own `zrk:3.0.2` image, the same Dockerfile built with that version and checksum, while the profiles above stay on 2.3.0. A million held connections need 3.0.2's per-thread latency histograms: 2.3.0 keeps ~303 KiB resident per connection, 3.0.2 ~41 KiB. It holds [a million connections](/docs/test-profiles/h1/connections/implementation/#con-1m-a-million-on-zrk) at 250K req/s, the cross-check that caught gcannon 0.8.0's `--rate` bursts; gcannon's own test has since moved to five million.
+
 ## Parameters
 
 | Profile | Request | Offered rate | Connections | Duration |
 |---|---|---|---|---|
 | `latency-1m` | `GET /baseline11?a=1&b=2` | 1,000,000 req/s | 1,024 | 20s |
 | `latency-10k` | `GET /baseline11?a=1&b=2` | 10,000 req/s | 1,024 | 20s |
-| `latency-500k-8cpu` | `GET /baseline11?a=1&b=2` | 500,000 req/s | 1,024 | 20s |
 | `8gbit` | `POST /echo` with a 10 KB body, over TLS on port 8081 | 50,000 req/s | 512 | 5s |
+| `connections-1m` | `GET /baseline11?a=1&b=2`, over 127.0.0.1-.32 | 250,000 req/s | 1,000,000 (32 processes) | 20s window |
 
 All of them run with 64 threads and 3 runs, keeping the run with the best score.

@@ -511,6 +511,8 @@ jobs:
                       rows = parse_rows(logs_dir + "/" + fw + ".log", fw)
                       deltas = parse_deltas(logs_dir + "/" + fw + ".compare.md")
                       head = (table(rows, deltas) + composite(fw) if rows else "No results captured") + spec(fw, limit)
+                  if fw in failed:
+                      head = "**Run failed; valid partial results follow.**\n\n" + head
                   if tails:
                       head += "\n\n" + details("Full log", tail(logs_dir + "/" + fw + log_suffix, 200))
                   return head

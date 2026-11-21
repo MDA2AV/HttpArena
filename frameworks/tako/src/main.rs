@@ -2,7 +2,6 @@ mod db;
 
 use std::time::Duration;
 
-use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use tako::extractors::json::Json;
 use tako::extractors::path::Path;
@@ -13,7 +12,7 @@ use tako::responder::Responder;
 use tako::router::Router;
 use tako::r#static::{PrecompressedPolicy, ServeDir};
 use tako::types::{BoxError, Request};
-use tako::ws::TakoWs;
+use tako::ws::WebSocketUpgrade;
 use tako::{Bytes, PerThreadConfig, Server, TlsCert};
 use tokio::net::TcpListener;
 
@@ -139,8 +138,8 @@ async fn echo(body: Bytes) -> Bytes {
 }
 
 async fn ws_echo(req: Request) -> impl Responder {
-    TakoWs::new(req, |mut ws| async move {
-        while let Some(Ok(message)) = ws.next().await {
+    WebSocketUpgrade::new(req, |mut ws| async move {
+        while let Some(Ok(message)) = ws.recv().await {
             if (message.is_text() || message.is_binary()) && ws.send(message).await.is_err() {
                 break;
             }

@@ -1,26 +1,163 @@
-[main] INFO org.eclipse.jetty.server.Server - jetty-12.0.36; built: 2026-05-31T22:48:44.797Z; git: a8f56e2a89f28be5a9466418a05f9e536b3b2c81; jvm 26.0.2+10
+[main] INFO org.eclipse.jetty.server.Server - jetty-12.0.36; built: 2026-05-31T22:48:44.797Z; git: a8f56e2a89f28be5a9466418a05f9e536b3b2c81; jvm 27.0.1.0.2+1
 [main] INFO org.eclipse.jetty.session.DefaultSessionIdManager - Session workerName=node0
-[main] INFO org.eclipse.jetty.server.handler.ContextHandler - Started oeje10s.ServletContextHandler@5a6d931c{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@3b606079{STARTED,min=32,inflate=-1}}
-[main] INFO org.eclipse.jetty.ee10.servlet.ServletContextHandler - Started oeje10s.ServletContextHandler@5a6d931c{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@3b606079{STARTED,min=32,inflate=-1}}
-[main] INFO org.eclipse.jetty.server.AbstractConnector - Started ServerConnector@6ed99ce0{HTTP/1.1, (http/1.1)}{0.0.0.0:8080}
-[main] INFO org.eclipse.jetty.server.Server - Started oejs.Server@48f3210f{STARTING}[12.0.36,sto=0] @4737ms
-[main] INFO org.eclipse.jetty.server.Server - jetty-12.0.36; built: 2026-05-31T22:48:44.797Z; git: a8f56e2a89f28be5a9466418a05f9e536b3b2c81; jvm 26.0.2+10
+[main] INFO org.eclipse.jetty.server.handler.ContextHandler - Started oeje10s.ServletContextHandler@16d7b13{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@53e968c2{STARTED,min=32,inflate=-1}}
+[main] INFO org.eclipse.jetty.ee10.servlet.ServletContextHandler - Started oeje10s.ServletContextHandler@16d7b13{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@53e968c2{STARTED,min=32,inflate=-1}}
+[main] INFO org.eclipse.jetty.server.AbstractConnector - Started ServerConnector@9addea4{HTTP/1.1, (http/1.1)}{0.0.0.0:8080}
+[main] INFO org.eclipse.jetty.server.Server - Started oejs.Server@1b0e55b{STARTING}[12.0.36,sto=0] @4912ms
+[main] INFO org.eclipse.jetty.server.Server - jetty-12.0.36; built: 2026-05-31T22:48:44.797Z; git: a8f56e2a89f28be5a9466418a05f9e536b3b2c81; jvm 27.0.1.0.2+1
 [main] INFO org.eclipse.jetty.session.DefaultSessionIdManager - Session workerName=node0
-[main] INFO org.eclipse.jetty.server.handler.ContextHandler - Started oeje10s.ServletContextHandler@5762dc14{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@30ba29cf{STARTED,min=32,inflate=-1}}
-[main] INFO org.eclipse.jetty.ee10.servlet.ServletContextHandler - Started oeje10s.ServletContextHandler@5762dc14{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@30ba29cf{STARTED,min=32,inflate=-1}}
-[main] INFO org.eclipse.jetty.util.ssl.SslContextFactory - x509=X509@9405163(1,h=[localhost],a=[/127.0.0.1, /0.0.0.0, /0:0:0:0:0:0:0:1],w=[localhost]) for Server@15ad8968[provider=null,keyStore=file:///tmp/server.p12,trustStore=null]
-[main] INFO org.eclipse.jetty.server.AbstractConnector - Started ServerConnector@4988d5b0{SSL, (ssl, http/1.1)}{0.0.0.0:8081}
-[main] INFO org.eclipse.jetty.server.Server - Started oejs.Server@463aa3da{STARTING}[12.0.36,sto=0] @4864ms
-[main] INFO org.eclipse.jetty.server.Server - jetty-12.0.36; built: 2026-05-31T22:48:44.797Z; git: a8f56e2a89f28be5a9466418a05f9e536b3b2c81; jvm 26.0.2+10
+[main] INFO org.eclipse.jetty.server.handler.ContextHandler - Started oeje10s.ServletContextHandler@2a37e02b{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@29a1c0b7{STARTED,min=32,inflate=-1}}
+[main] INFO org.eclipse.jetty.ee10.servlet.ServletContextHandler - Started oeje10s.ServletContextHandler@2a37e02b{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@29a1c0b7{STARTED,min=32,inflate=-1}}
+[main] INFO org.eclipse.jetty.util.ssl.SslContextFactory - x509=X509@56502cbd(1,h=[localhost],a=[/127.0.0.1, /0.0.0.0, /0:0:0:0:0:0:0:1],w=[localhost]) for Server@2fe6a72d[provider=null,keyStore=file:///tmp/server.p12,trustStore=null]
+[main] INFO org.eclipse.jetty.server.AbstractConnector - Started ServerConnector@b1982c5{SSL, (ssl, http/1.1)}{0.0.0.0:8081}
+[main] INFO org.eclipse.jetty.server.Server - Started oejs.Server@258c177a{STARTING}[12.0.36,sto=0] @5036ms
+[main] INFO org.eclipse.jetty.server.Server - jetty-12.0.36; built: 2026-05-31T22:48:44.797Z; git: a8f56e2a89f28be5a9466418a05f9e536b3b2c81; jvm 27.0.1.0.2+1
 [main] INFO org.eclipse.jetty.session.DefaultSessionIdManager - Session workerName=node0
-[main] INFO org.eclipse.jetty.server.handler.ContextHandler - Started oeje10s.ServletContextHandler@84fb597{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@21219074{STARTED,min=32,inflate=-1}}
-[main] INFO org.eclipse.jetty.ee10.servlet.ServletContextHandler - Started oeje10s.ServletContextHandler@84fb597{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@21219074{STARTED,min=32,inflate=-1}}
-[main] INFO org.eclipse.jetty.server.AbstractConnector - Started ServerConnector@6061d185{HTTP/1.1, (http/1.1, h2c)}{0.0.0.0:8082}
-[main] INFO org.eclipse.jetty.server.Server - Started oejs.Server@70d4ea55{STARTING}[12.0.36,sto=0] @4870ms
-[main] INFO org.eclipse.jetty.server.Server - jetty-12.0.36; built: 2026-05-31T22:48:44.797Z; git: a8f56e2a89f28be5a9466418a05f9e536b3b2c81; jvm 26.0.2+10
+[main] INFO org.eclipse.jetty.server.handler.ContextHandler - Started oeje10s.ServletContextHandler@19bc800a{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@52214284{STARTED,min=32,inflate=-1}}
+[main] INFO org.eclipse.jetty.ee10.servlet.ServletContextHandler - Started oeje10s.ServletContextHandler@19bc800a{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@52214284{STARTED,min=32,inflate=-1}}
+[main] INFO org.eclipse.jetty.server.AbstractConnector - Started ServerConnector@56062720{HTTP/1.1, (http/1.1, h2c)}{0.0.0.0:8082}
+[main] INFO org.eclipse.jetty.server.Server - Started oejs.Server@43ebc9b5{STARTING}[12.0.36,sto=0] @5042ms
+[main] INFO org.eclipse.jetty.server.Server - jetty-12.0.36; built: 2026-05-31T22:48:44.797Z; git: a8f56e2a89f28be5a9466418a05f9e536b3b2c81; jvm 27.0.1.0.2+1
 [main] INFO org.eclipse.jetty.session.DefaultSessionIdManager - Session workerName=node0
-[main] INFO org.eclipse.jetty.server.handler.ContextHandler - Started oeje10s.ServletContextHandler@2c56d4ab{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@70d444ed{STARTED,min=32,inflate=-1}}
-[main] INFO org.eclipse.jetty.ee10.servlet.ServletContextHandler - Started oeje10s.ServletContextHandler@2c56d4ab{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@70d444ed{STARTED,min=32,inflate=-1}}
-[main] INFO org.eclipse.jetty.util.ssl.SslContextFactory - x509=X509@3977c325(1,h=[localhost],a=[/127.0.0.1, /0.0.0.0, /0:0:0:0:0:0:0:1],w=[localhost]) for Server@231eab2c[provider=null,keyStore=file:///tmp/server.p12,trustStore=null]
-[main] INFO org.eclipse.jetty.server.AbstractConnector - Started ServerConnector@6125b27a{SSL, (ssl, alpn, h2, http/1.1)}{0.0.0.0:8443}
-[main] INFO org.eclipse.jetty.server.Server - Started oejs.Server@16c5e7ad{STARTING}[12.0.36,sto=0] @4916ms
+[main] INFO org.eclipse.jetty.server.handler.ContextHandler - Started oeje10s.ServletContextHandler@508bd0d5{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@35ea9d72{STARTED,min=32,inflate=-1}}
+[main] INFO org.eclipse.jetty.ee10.servlet.ServletContextHandler - Started oeje10s.ServletContextHandler@508bd0d5{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@35ea9d72{STARTED,min=32,inflate=-1}}
+[main] INFO org.eclipse.jetty.util.ssl.SslContextFactory - x509=X509@53f04a20(1,h=[localhost],a=[/127.0.0.1, /0.0.0.0, /0:0:0:0:0:0:0:1],w=[localhost]) for Server@5d7325f3[provider=null,keyStore=file:///tmp/server.p12,trustStore=null]
+[main] INFO org.eclipse.jetty.server.AbstractConnector - Started ServerConnector@2fc58f15{SSL, (ssl, alpn, h2, http/1.1)}{0.0.0.0:8443}
+[main] INFO org.eclipse.jetty.server.Server - Started oejs.Server@69f9ab8a{STARTING}[12.0.36,sto=0] @5092ms
+[qtp1890258988-321] ERROR io.pedestal.http.impl.servlet-interceptor - {:msg "error-stylobate triggered", :context {:response {:status 200, :headers {"content-type" "text/plain", "Content-Type" "text/plain"}, :body "2"}, :io.pedestal.interceptor.chain/leave-queue (), :request {:protocol "HTTP/2.0", :async-supported? true, :remote-addr "127.0.0.1", :params {:a "1", :b "1"}, :servlet-response #object[org.eclipse.jetty.ee10.servlet.ServletApiResponse 0x5da4100a "ServletApiResponse@5da4100a{org.eclipse.jetty.ee10.servlet.ServletContextResponse@51bee5c3,org.eclipse.jetty.ee10.servlet.ServletContextResponse@51bee5c3}"], :servlet #object[io.pedestal.servlet.FnServlet 0x192dd32a "io.pedestal.servlet.FnServlet@192dd32a"], :headers {"user-agent" "h2load nghttp2/1.59.0"}, :server-port 8082, :servlet-request #object[org.eclipse.jetty.ee10.servlet.ServletApiRequest 0x10925629 "ServletApiRequest@10925629{ServletContextRequest@6dcb2071{GET@4bfd50f6 http://localhost:8082/baseline2?a=1&b=1 HTTP/2.0}}"], :query-params {:a "1", :b "1"}, :path-info "/baseline2", :url-for #object[clojure.lang.Delay 0xa63338a {:status :pending, :val nil}], :uri "/baseline2", :server-name "localhost", :query-string "a=1&b=1", :path-params {}, :body #object[org.eclipse.jetty.ee10.servlet.HttpInput 0x2bb8b8d0 "HttpInput@733526224 cs=ServletChannelState@64389ce9{s=HANDLING rs=BLOCKING os=OPEN is=IDLE awp=false se=false i=true al=0} cp=org.eclipse.jetty.ee10.servlet.BlockingContentProducer@2047ef2a eof=false"], :scheme :http, :request-method :get, :context-path ""}, :io.pedestal.http.route/path-params-decoded? true, :bindings {#'io.pedestal.http.route/*url-for* #object[clojure.lang.Delay 0xa63338a {:status :pending, :val nil}]}, :io.pedestal.interceptor.chain/terminators (#object[io.pedestal.http.response$terminate_when_response_STAR_ 0x523ba403 "io.pedestal.http.response$terminate_when_response_STAR_@523ba403"]), :servlet-response #object[org.eclipse.jetty.ee10.servlet.ServletApiResponse 0x5da4100a "ServletApiResponse@5da4100a{org.eclipse.jetty.ee10.servlet.ServletContextResponse@51bee5c3,org.eclipse.jetty.ee10.servlet.ServletContextResponse@51bee5c3}"], :route {:path "/baseline2", :method :get, :path-parts ["baseline2"], :interceptors [#Interceptor{:name :httparena.pedestal.core/baseline-handler}], :route-name :httparena.pedestal.core/baseline-h2, :path-params [], :path-re #"/\Qbaseline2\E", :io.pedestal.http.route.internal/satisfies-constraints? #object[io.pedestal.http.route.internal$add_satisfies_constraints_QMARK_$fn__11365 0x1d5ea594 "io.pedestal.http.route.internal$add_satisfies_constraints_QMARK_$fn__11365@1d5ea594"]}, :servlet #object[io.pedestal.servlet.FnServlet 0x192dd32a "io.pedestal.servlet.FnServlet@192dd32a"], :servlet-request #object[org.eclipse.jetty.ee10.servlet.ServletApiRequest 0x10925629 "ServletApiRequest@10925629{ServletContextRequest@6dcb2071{GET@4bfd50f6 http://localhost:8082/baseline2?a=1&b=1 HTTP/2.0}}"], :websocket-channel-source #object[org.eclipse.jetty.ee10.servlet.ServletApiRequest 0x10925629 "ServletApiRequest@10925629{ServletContextRequest@6dcb2071{GET@4bfd50f6 http://localhost:8082/baseline2?a=1&b=1 HTTP/2.0}}"], :io.pedestal.interceptor.chain/enter-async [#object[io.pedestal.http.impl.servlet_interceptor$start_servlet_async 0x57f693b1 "io.pedestal.http.impl.servlet_interceptor$start_servlet_async@57f693b1"]], :url-for #object[clojure.lang.Delay 0xa63338a {:status :pending, :val nil}], :io.pedestal.interceptor.chain/execution-id 2859583, :servlet-config #object[org.eclipse.jetty.ee10.servlet.ServletHolder$Config 0x35cb86c4 "org.eclipse.jetty.ee10.servlet.ServletHolder$Config@35cb86c4"]}, :line 326}
+clojure.lang.ExceptionInfo: org.eclipse.jetty.io.EofException in Interceptor :io.pedestal.http.impl.servlet-interceptor/ring-response - Closed {:execution-id nil, :stage :leave, :interceptor :io.pedestal.http.impl.servlet-interceptor/ring-response, :exception-type :org.eclipse.jetty.io.EofException, :exception #error {
+ :cause "Closed"
+ :via
+ [{:type org.eclipse.jetty.io.EofException
+   :message "Closed"
+   :at [org.eclipse.jetty.ee10.servlet.HttpOutput checkWritable "HttpOutput.java" 716]}]
+ :trace
+ [[org.eclipse.jetty.ee10.servlet.HttpOutput checkWritable "HttpOutput.java" 716]
+  [org.eclipse.jetty.ee10.servlet.HttpOutput write "HttpOutput.java" 740]
+  [sun.nio.cs.StreamEncoder writeBytes "StreamEncoder.java" 220]
+  [sun.nio.cs.StreamEncoder implFlushBuffer "StreamEncoder.java" 315]
+  [sun.nio.cs.StreamEncoder implFlush "StreamEncoder.java" 320]
+  [sun.nio.cs.StreamEncoder flush "StreamEncoder.java" 150]
+  [java.io.OutputStreamWriter flush "OutputStreamWriter.java" 249]
+  [io.pedestal.http.impl.servlet_interceptor$eval15780$fn__15783 invoke "servlet_interceptor.clj" 64]
+  [io.pedestal.http.impl.servlet_interceptor$eval15750$fn__15762$G__15741__15769 invoke "servlet_interceptor.clj" 52]
+  [io.pedestal.http.impl.servlet_interceptor$write_body invokeStatic "servlet_interceptor.clj" 151]
+  [io.pedestal.http.impl.servlet_interceptor$write_body invoke "servlet_interceptor.clj" 149]
+  [io.pedestal.http.impl.servlet_interceptor$send_response invokeStatic "servlet_interceptor.clj" 224]
+  [io.pedestal.http.impl.servlet_interceptor$send_response invoke "servlet_interceptor.clj" 216]
+  [io.pedestal.http.impl.servlet_interceptor$leave_ring_response invokeStatic "servlet_interceptor.clj" 284]
+  [io.pedestal.http.impl.servlet_interceptor$leave_ring_response invoke "servlet_interceptor.clj" 261]
+  [io.pedestal.interceptor.chain$try_stage invokeStatic "chain.clj" 116]
+  [io.pedestal.interceptor.chain$try_stage invoke "chain.clj" 111]
+  [io.pedestal.interceptor.chain$execute_leave$fn__11059 invoke "chain.clj" 273]
+  [clojure.lang.AFn applyToHelper "AFn.java" 152]
+  [clojure.lang.AFn applyTo "AFn.java" 144]
+  [clojure.core$apply invokeStatic "core.clj" 667]
+  [clojure.core$with_bindings_STAR_ invokeStatic "core.clj" 1994]
+  [clojure.core$with_bindings_STAR_ doInvoke "core.clj" 1994]
+  [clojure.lang.RestFn invoke "RestFn.java" 428]
+  [io.pedestal.interceptor.chain$execute_leave invokeStatic "chain.clj" 253]
+  [io.pedestal.interceptor.chain$execute_leave invoke "chain.clj" 246]
+  [io.pedestal.interceptor.chain$execute_continue invokeStatic "chain.clj" 365]
+  [io.pedestal.interceptor.chain$execute_continue invoke "chain.clj" 362]
+  [io.pedestal.interceptor.chain$execute invokeStatic "chain.clj" 427]
+  [io.pedestal.interceptor.chain$execute invoke "chain.clj" 376]
+  [io.pedestal.interceptor.chain$execute invokeStatic "chain.clj" 432]
+  [io.pedestal.interceptor.chain$execute invoke "chain.clj" 376]
+  [io.pedestal.http.impl.servlet_interceptor$interceptor_service_fn$fn__16193 invoke "servlet_interceptor.clj" 407]
+  [io.pedestal.servlet.FnServlet service "FnServlet.java" 57]
+  [jakarta.servlet.http.HttpServlet service "HttpServlet.java" 614]
+  [org.eclipse.jetty.ee10.servlet.ServletHolder handle "ServletHolder.java" 753]
+  [org.eclipse.jetty.ee10.servlet.ServletHandler$ChainEnd doFilter "ServletHandler.java" 1624]
+  [org.eclipse.jetty.ee10.websocket.servlet.WebSocketUpgradeFilter doFilter "WebSocketUpgradeFilter.java" 195]
+  [org.eclipse.jetty.ee10.servlet.FilterHolder doFilter "FilterHolder.java" 205]
+  [org.eclipse.jetty.ee10.servlet.ServletHandler$Chain doFilter "ServletHandler.java" 1596]
+  [org.eclipse.jetty.ee10.servlet.ServletHandler$MappedServlet handle "ServletHandler.java" 1557]
+  [org.eclipse.jetty.ee10.servlet.ServletChannel dispatch "ServletChannel.java" 828]
+  [org.eclipse.jetty.ee10.servlet.ServletChannel handle "ServletChannel.java" 438]
+  [org.eclipse.jetty.ee10.servlet.ServletHandler handle "ServletHandler.java" 470]
+  [org.eclipse.jetty.ee10.servlet.SessionHandler handle "SessionHandler.java" 717]
+  [org.eclipse.jetty.server.handler.gzip.GzipHandler handle "GzipHandler.java" 613]
+  [org.eclipse.jetty.server.handler.ContextHandler handle "ContextHandler.java" 1102]
+  [org.eclipse.jetty.server.Server handle "Server.java" 182]
+  [org.eclipse.jetty.server.internal.HttpChannelState$HandlerInvoker run "HttpChannelState.java" 772]
+  [org.eclipse.jetty.util.thread.Invocable$ReadyTask run "Invocable.java" 177]
+  [org.eclipse.jetty.http2.server.internal.HttpStreamOverHTTP2$1 run "HttpStreamOverHTTP2.java" 144]
+  [org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy runTask "AdaptiveExecutionStrategy.java" 492]
+  [org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy epcRunTask "AdaptiveExecutionStrategy.java" 428]
+  [org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy consumeTask "AdaptiveExecutionStrategy.java" 401]
+  [org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy tryProduce "AdaptiveExecutionStrategy.java" 255]
+  [org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy run "AdaptiveExecutionStrategy.java" 204]
+  [org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread run "ReservedThreadExecutor.java" 311]
+  [org.eclipse.jetty.util.thread.QueuedThreadPool runJob "QueuedThreadPool.java" 981]
+  [org.eclipse.jetty.util.thread.QueuedThreadPool$Runner doRunJob "QueuedThreadPool.java" 1212]
+  [org.eclipse.jetty.util.thread.QueuedThreadPool$Runner run "QueuedThreadPool.java" 1166]
+  [java.lang.Thread run "Thread.java" 1527]]}}
+	at io.pedestal.interceptor.chain$throwable__GT_ex_info.invokeStatic(chain.clj:44)
+	at io.pedestal.interceptor.chain$throwable__GT_ex_info.invoke(chain.clj:38)
+	at io.pedestal.interceptor.chain$begin_error.invokeStatic(chain.clj:77)
+	at io.pedestal.interceptor.chain$begin_error.invoke(chain.clj:65)
+	at io.pedestal.interceptor.chain$try_stage.invokeStatic(chain.clj:127)
+	at io.pedestal.interceptor.chain$try_stage.invoke(chain.clj:111)
+	at io.pedestal.interceptor.chain$execute_leave$fn__11059.invoke(chain.clj:273)
+	at clojure.lang.AFn.applyToHelper(AFn.java:152)
+	at clojure.lang.AFn.applyTo(AFn.java:144)
+	at clojure.core$apply.invokeStatic(core.clj:667)
+	at clojure.core$with_bindings_STAR_.invokeStatic(core.clj:1994)
+	at clojure.core$with_bindings_STAR_.doInvoke(core.clj:1994)
+	at clojure.lang.RestFn.invoke(RestFn.java:428)
+	at io.pedestal.interceptor.chain$execute_leave.invokeStatic(chain.clj:253)
+	at io.pedestal.interceptor.chain$execute_leave.invoke(chain.clj:246)
+	at io.pedestal.interceptor.chain$execute_continue.invokeStatic(chain.clj:365)
+	at io.pedestal.interceptor.chain$execute_continue.invoke(chain.clj:362)
+	at io.pedestal.interceptor.chain$execute.invokeStatic(chain.clj:427)
+	at io.pedestal.interceptor.chain$execute.invoke(chain.clj:376)
+	at io.pedestal.interceptor.chain$execute.invokeStatic(chain.clj:432)
+	at io.pedestal.interceptor.chain$execute.invoke(chain.clj:376)
+	at io.pedestal.http.impl.servlet_interceptor$interceptor_service_fn$fn__16193.invoke(servlet_interceptor.clj:407)
+	at io.pedestal.servlet.FnServlet.service(FnServlet.java:57)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:614)
+	at org.eclipse.jetty.ee10.servlet.ServletHolder.handle(ServletHolder.java:753)
+	at org.eclipse.jetty.ee10.servlet.ServletHandler$ChainEnd.doFilter(ServletHandler.java:1624)
+	at org.eclipse.jetty.ee10.websocket.servlet.WebSocketUpgradeFilter.doFilter(WebSocketUpgradeFilter.java:195)
+	at org.eclipse.jetty.ee10.servlet.FilterHolder.doFilter(FilterHolder.java:205)
+	at org.eclipse.jetty.ee10.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1596)
+	at org.eclipse.jetty.ee10.servlet.ServletHandler$MappedServlet.handle(ServletHandler.java:1557)
+	at org.eclipse.jetty.ee10.servlet.ServletChannel.dispatch(ServletChannel.java:828)
+	at org.eclipse.jetty.ee10.servlet.ServletChannel.handle(ServletChannel.java:438)
+	at org.eclipse.jetty.ee10.servlet.ServletHandler.handle(ServletHandler.java:470)
+	at org.eclipse.jetty.ee10.servlet.SessionHandler.handle(SessionHandler.java:717)
+	at org.eclipse.jetty.server.handler.gzip.GzipHandler.handle(GzipHandler.java:613)
+	at org.eclipse.jetty.server.handler.ContextHandler.handle(ContextHandler.java:1102)
+	at org.eclipse.jetty.server.Server.handle(Server.java:182)
+	at org.eclipse.jetty.server.internal.HttpChannelState$HandlerInvoker.run(HttpChannelState.java:772)
+	at org.eclipse.jetty.util.thread.Invocable$ReadyTask.run(Invocable.java:177)
+	at org.eclipse.jetty.http2.server.internal.HttpStreamOverHTTP2$1.run(HttpStreamOverHTTP2.java:144)
+	at org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy.runTask(AdaptiveExecutionStrategy.java:492)
+	at org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy.epcRunTask(AdaptiveExecutionStrategy.java:428)
+	at org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy.consumeTask(AdaptiveExecutionStrategy.java:401)
+	at org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy.tryProduce(AdaptiveExecutionStrategy.java:255)
+	at org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy.run(AdaptiveExecutionStrategy.java:204)
+	at org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.run(ReservedThreadExecutor.java:311)
+	at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:981)
+	at org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.doRunJob(QueuedThreadPool.java:1212)
+	at org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:1166)
+	at java.base/java.lang.Thread.run(Thread.java:1527)
+Caused by: org.eclipse.jetty.io.EofException: Closed
+	at org.eclipse.jetty.ee10.servlet.HttpOutput.checkWritable(HttpOutput.java:716)
+	at org.eclipse.jetty.ee10.servlet.HttpOutput.write(HttpOutput.java:740)
+	at java.base/sun.nio.cs.StreamEncoder.writeBytes(StreamEncoder.java:220)
+	at java.base/sun.nio.cs.StreamEncoder.implFlushBuffer(StreamEncoder.java:315)
+	at java.base/sun.nio.cs.StreamEncoder.implFlush(StreamEncoder.java:320)
+	at java.base/sun.nio.cs.StreamEncoder.flush(StreamEncoder.java:150)
+	at java.base/java.io.OutputStreamWriter.flush(OutputStreamWriter.java:249)
+	at io.pedestal.http.impl.servlet_interceptor$eval15780$fn__15783.invoke(servlet_interceptor.clj:64)
+	at io.pedestal.http.impl.servlet_interceptor$eval15750$fn__15762$G__15741__15769.invoke(servlet_interceptor.clj:52)
+	at io.pedestal.http.impl.servlet_interceptor$write_body.invokeStatic(servlet_interceptor.clj:151)
+	at io.pedestal.http.impl.servlet_interceptor$write_body.invoke(servlet_interceptor.clj:149)
+	at io.pedestal.http.impl.servlet_interceptor$send_response.invokeStatic(servlet_interceptor.clj:224)
+	at io.pedestal.http.impl.servlet_interceptor$send_response.invoke(servlet_interceptor.clj:216)
+	at io.pedestal.http.impl.servlet_interceptor$leave_ring_response.invokeStatic(servlet_interceptor.clj:284)
+	at io.pedestal.http.impl.servlet_interceptor$leave_ring_response.invoke(servlet_interceptor.clj:261)
+	at io.pedestal.interceptor.chain$try_stage.invokeStatic(chain.clj:116)
+	... 45 more

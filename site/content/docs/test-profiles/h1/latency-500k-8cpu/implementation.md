@@ -3,6 +3,9 @@ title: Implementation Guidelines
 seo_title: "Latency-500K/8 Benchmark: Implementation Guide"
 description: "What to implement, what is measured, and how the fixed-rate CPU profile at 500,000 requests per second on four cores plus SMT is scored."
 ---
+
+> **Retired.** This profile was removed on 21 November 2026: it no longer runs, and its results were cleared. The page stays for reference.
+
 {{< type-rules standard="Nothing to implement - the profile drives `GET /baseline11`, which the baseline profile already specifies and validates. What it asks of you is a serving model whose cost per request stays flat when the machine is busy: on eight logical CPUs at 500K req/s there is little spare capacity to hide a wake-up in, so every syscall, allocation and context switch on the request path is charged, and every request left waiting to amortise them is charged to the mean." tuned="May tune poll intervals, batching, affinity and ring sizing freely. Spin modes are charged in full here as on Latency-1M, and with four cores they are charged out of the same budget the requests need." engine="Same as above. An engine that pins one event loop per logical CPU gets eight of them; one that sizes its pool from the host rather than the cpuset will oversubscribe, and the scheduling shows in both the CPU and the mean." >}}
 
 

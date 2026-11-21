@@ -12,6 +12,16 @@ description: "h2load from the nghttp2 project drives every HTTP/2 profile in Htt
 sudo apt install nghttp2-client
 ```
 
+The benchmark requires nghttp2 1.69.0 or newer to avoid a duration-mode hang
+during connection setup. When the default `h2load` is missing or too old,
+the full runner first tries a compatible native `h2load-h3` in HTTP/2 mode,
+then builds the pinned `docker/h2load.Dockerfile` image for HTTP/2 profiles.
+Other load generators keep their configured mode. Setup runs before host
+tuning and the selected client is recorded in the log.
+
+Explicit `H2LOAD` or `H2LOAD_CMD` overrides are validated and fail if unsupported;
+they are never replaced automatically.
+
 ## How it's used
 
 For `baseline-h2`:

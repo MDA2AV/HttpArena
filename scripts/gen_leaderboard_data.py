@@ -17,6 +17,7 @@ Run after scripts/rebuild_site_data.py (or any time site/data changes):
 from __future__ import annotations
 import functools
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -59,6 +60,27 @@ CATALOG = [
         # application handler to await in.
         ("async", "Async Delay", "A 10ms wait named in the route, at 32K held connections.",
                                                     [32000],             [32000],         True,True,False),
+        # The held-connection profiles: a fleet of keep-alive connections held
+        # open, with the baseline GET paced across it at one request per
+        # connection every four seconds. They sit here because what they vary is
+        # how many connections are open, which is this group's question. Paced,
+        # so they carry a fixed-rate score (latency_score.HELD): what holding the
+        # fleet costs - CPU per request, memory, p50 and p99 - against the best
+        # in the field, times the share of the rate delivered.
+        #
+        # CON-1M: a million at 250K req/s on zrk 3.0.2, one process per loopback
+        # address (scripts/zrk_fanout.py). CON-1M-TLS: a million TLS 1.3 sessions
+        # at 250K req/s on gcannon. Both scored for frameworks and engines, not
+        # infrastructure, like the other fixed-rate profiles.
+        ("connections-1m", "CON-1M", "Score out of 100: CPU per request, memory, p50 and p99 latency with one million held connections at 250K req/s.",
+                                                    [1000000],           [1000000],       True,True,False),
+        ("connections-1m-tls", "CON-1M-TLS", "Score out of 100: CPU per request, memory, p50 and p99 latency with one million TLS 1.3 sessions held at 250K req/s.",
+                                                    [1000000],           [1000000],       True,True,False),
+        # CON-5M: five million at 1.25M req/s on gcannon. Reference-only, and it
+        # runs only for the entries on scripts/connections-5m-allowlist.json: the
+        # server may grow to 128 GiB, so the field is chosen rather than open.
+        ("connections-5m", "CON-5M", "Score out of 100 (reference): CPU per request, memory, p50 and p99 latency with five million held connections at 1.25M req/s.",
+                                                    [5000000],           [5000000],       False,False,False),
     ]),
     ("Efficiency", [
         # Scored, on the same terms as latency-1m below: the rate is pinned, so
@@ -79,14 +101,6 @@ CATALOG = [
         # and no infrastructure entry has been measured on this profile yet.
         ("latency-1m", "Latency-1M", "Score out of 100: CPU, mean and p99 latency at a pinned 1M req/s.",
                                                     [1024],              [1024],          True,True,False),
-        # Reference-only while the first field is measured. Two cores and their
-        # SMT siblings (cpuset 0-3,64-67) at a pinned 500K req/s: on 64 threads
-        # at 1M every thin server sits on the same per-wakeup floor and only a
-        # server that queues can amortise it, so on eight logical CPUs the load
-        # sits near saturation for most entries and the marginal cost and the
-        # queue it builds are what get measured. Same formula as latency-1m.
-        ("latency-500k-8cpu", "Latency-500K/8", "Score out of 100: CPU, mean and p99 latency at a pinned 500K req/s on four cores plus SMT.",
-                                                    [1024],              [1024],          False,False,False),
     ]),
     ("Workload", [
         ("json-comp", "JSON Comp", "gzip/brotli content negotiation.",         [4096,16384],        [4096,16384],    True,False,False),
@@ -103,12 +117,14 @@ CATALOG = [
         ("static-tls","Static TLS",      "20-file static serving over TLS (reference for frameworks).", [1024],              [1024],          False,False,True),
     ]),
     ("Database", [
-        # Reference-only. The database and its driver dominate these two far
-        # more than the framework does, which is the case #1310 makes: they
-        # measure the connector, not the HTTP path. Still measured and shown,
-        # just no longer deciding the ranking.
-        ("async-db",  "Async DB",  "Async Postgres sequential scan (reference).",     [1024],     [1024],  False,True,False),
-        ("fortunes",  "Fortunes",  "DB query + HTML template render (reference).",    [1024],     [1024],  False,False,False),
+        # Their own family. The database and its driver dominate these two far
+        # more than the framework does, which is the case #1310 makes: that rules
+        # them out of a ranking of HTTP paths, and it is what this one ranks. They
+        # run over HTTP/1.1 with the box split three ways, see DB_* in profiles.sh.
+        # Both count. The results measured before the split were cleared, so the
+        # board is built from runs of both on it.
+        ("async-db",  "Async DB",  "Async Postgres sequential scan.",                 [1024],     [1024],  True,True,False),
+        ("fortunes",  "Fortunes",  "DB query + HTML template render.",                [1024],     [1024],  True,True,False),
     ]),
     ("HTTP/2", [
         ("baseline-h2",  "Baseline",       "Baseline over h2 (TLS, ALPN).",          [256,1024],     [256,1024],     True,True,True),
@@ -151,7 +167,7 @@ TPL_FIELDS = ("tpl_baseline", "tpl_json", "tpl_upload", "tpl_static", "tpl_async
 # Efficiency-only. Emitted like TPL_FIELDS - only where present - so the
 # other ~2,300 rows in data.js do not each grow four nulls.
 EFF_FIELDS = ("cpu_usec", "cpu_per_req_us", "rate_ratio", "target_rate",
-              "p99_9_latency")
+              "p99_9_latency", "connections_open", "p50_latency")
 
 # Map each benchmark profile to its Knowledge Base "Implementation Guidelines"
 # page (docs ids differ from profile ids; TLS gRPC variants share one page).
@@ -166,7 +182,11 @@ PROFILE_DOC = {
     "async":            "test-profiles/h1/async/implementation",
     "latency-1m":      "test-profiles/h1/latency-1m/implementation",
     "latency-10k":     "test-profiles/h1/latency-10k/implementation",
-    "latency-500k-8cpu": "test-profiles/h1/latency-500k-8cpu/implementation",
+    "connections-1m":     "test-profiles/h1/connections/implementation",
+    "connections-1m-tls": "test-profiles/h1/connections/implementation",
+    "connections-5m":     "test-profiles/h1/connections/implementation",
+    # The database profiles rank on their own board but keep their docs under
+    # h1/: those pages are linked from outside, so their URLs stay.
     "async-db":         "test-profiles/h1/async-database/implementation",
     "fortunes":         "test-profiles/h1/fortunes/implementation",
     "baseline-h2":      "test-profiles/h2/baseline-h2/implementation",
@@ -803,15 +823,9 @@ def _sidebar(tree, curid):
                            % (" active" if u == curid else "", _doc_url(u), title))
         return "".join(out)
 
+    # The page search is in the header, as on every other page; the sidebar
+    # is the contents.
     return (
-        '<div class="nav-search"><div class="ns-box">'
-        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
-        'stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>'
-        '<input id="navq" type="search" placeholder="Search pages" autocomplete="off" '
-        'spellcheck="false" aria-label="Search pages" role="combobox" aria-expanded="false" '
-        'aria-controls="navResults"></div></div>'
-        '<div class="nav-results" id="navResults" role="listbox" aria-label="Search results" '
-        'style="display:none"></div>'
         '<div id="navTree">'
         '<a class="nav-item" href="/">\u2190 Leaderboard</a>'
         '<div class="nav-sec"><div class="nav-grp lvl0 open">'
@@ -827,73 +841,29 @@ def _sidebar(tree, curid):
 
 BOARD = ROOT / "site" / "leaderboard" / "index.html"
 
-# Selectors the doc pages share with the board. Everything else in the board's
-# stylesheet is leaderboard furniture - the table, the filters, its own nav -
-# and stays there.
-_SHARED_EXACT = {
-    ":root", "html", "body", "a", "*",
-    ".top", ".brand", ".brand-name", ".brand-name b", ".brand-name:hover",
-    ".icon-btn", ".icon-btn:hover", ".icon-btn svg", ".top-links",
-    ".fw-btn", ".fw-btn svg", ".fw-btn:hover",
-}
-_SHARED_PREFIX = (".doc-", ".type-rules", ".tr-sq", ".nav", ".ns-box", ".caret")
-
-
-def _top_level_rules(css):
-    """Split a stylesheet into top-level rules, keeping @media blocks whole."""
-    out, buf, depth = [], "", 0
-    for ch in css:
-        buf += ch
-        if ch == "{":
-            depth += 1
-        elif ch == "}":
-            depth -= 1
-            if depth == 0:
-                out.append(buf.strip())
-                buf = ""
-    return out
-
-
-def _is_shared(rule):
-    # a rule can carry a leading /* comment */; that is not part of the selector
-    sel = re.sub(r"/\*.*?\*/", " ", rule.split("{", 1)[0], flags=re.S).strip()
-    if sel.startswith("@media"):
-        # the dark-mode preference block defines the same variables as :root
-        return "prefers-color-scheme" in sel
-    first = sel.split(",")[0].strip()
-    return first in _SHARED_EXACT or first.startswith(_SHARED_PREFIX)
-
-
 def board_chrome():
-    """Header markup and shared CSS, read out of the board at build time.
+    """Header markup, read out of the board at build time.
 
-    The board is the single source of truth for site chrome. Copying it by hand
-    is what let the doc pages drift twice - the type-rules widget lost the rules
-    that hide its inactive panels, and the header lost its icon buttons - so
-    this reads the real thing instead. Editing the board now updates the doc
-    pages automatically, and a structural change here fails the build loudly
-    rather than silently shipping a half-styled page.
+    The board is the single source of truth for site chrome: the brand, the
+    section nav and the icon links sit between <!--chrome:x--> markers in its
+    header and are lifted from there, so editing the board updates every
+    generated page and a structural change fails the build loudly rather than
+    silently shipping a half-built header. The stylesheet is no longer lifted:
+    it is one shared file, /assets/sr/sr.css, that the board and every
+    generated page link.
     """
     html = BOARD.read_text(encoding="utf-8")
-    brand = re.search(r'<div class="brand">(.*?)</div>', html, re.S)
-    links = re.search(r'<div class="top-links">(.*?)</div>', html, re.S)
-    style = re.search(r"<style>(.*?)</style>", html, re.S)
-    # The Frameworks button lives beside the board's round selector, which no
-    # generated page has, so it is lifted separately rather than riding along
-    # inside .top-links. Same rule as the rest of the chrome: read the board,
-    # never retype it.
-    fwbtn = re.search(r'<a class="fw-btn".*?</a>', html, re.S)
-    if not (brand and links and style and fwbtn):
-        raise SystemExit(f"gen: cannot read site chrome from {BOARD.relative_to(ROOT)} - "
-                         "expected .brand, .top-links, .fw-btn and a <style> block")
-    shared = [r for r in _top_level_rules(style.group(1)) if _is_shared(r)]
-    if len(shared) < 40:
-        raise SystemExit(f"gen: only {len(shared)} shared CSS rules found in "
-                         f"{BOARD.relative_to(ROOT)} - the selector list is stale")
-    # the board's brand link drives its in-page router; on a doc page it goes home
-    brand_html = brand.group(1).strip().replace('href="#" id="brandHome"', 'href="/"')
-    return (brand_html, links.group(1).strip(), "\n".join(shared),
-            fwbtn.group(0).strip())
+
+    def part(name):
+        m = re.search(r"<!--chrome:%s-->(.*?)<!--/chrome:%s-->" % (name, name), html, re.S)
+        if not m:
+            raise SystemExit(f"gen: cannot read site chrome from {BOARD.relative_to(ROOT)} - "
+                             f"expected a <!--chrome:{name}--> block")
+        return m.group(1).strip()
+
+    # the board's brand link drives its in-page router; on a generated page it goes home
+    brand = part("brand").replace('href="#" id="brandHome"', 'href="/"')
+    return brand, part("links"), "", part("nav"), part("search")
 
 
 # Resolved once at import: the board's chrome, shared by every generated page.
@@ -904,62 +874,50 @@ _THEME_INIT = ("<script>try{var t=localStorage.getItem('lb-theme');"
 # search.js is the whole Knowledge Base as text - 290KB - and it was loaded on
 # every doc page for a search box most readers never open. It is fetched on the
 # first use of the box instead.
-_NAV_JS = ("<script>(function(){"
-           # accordion: same behaviour as the board's toggleGrp
-           "document.querySelectorAll('.nav-grp-h .caret').forEach(function(c){"
+# The contents tree of a Knowledge Base page folds open and shut like the
+# board's; the page search in the header is run by sr.js on every page.
+_NAV_JS = ("<script>document.querySelectorAll('.nav-grp-h .caret').forEach(function(c){"
            "c.onclick=function(e){e.preventDefault();e.stopPropagation();"
-           "c.closest('.nav-grp').classList.toggle('open');};});"
-           # page search over the index the generator emits
-           "var inp=document.getElementById('navq'),box=document.getElementById('navResults'),"
-           "tree=document.getElementById('navTree');if(!inp)return;"
-           "var req=null,cb=null;"
-           "function need(f){if(window.LB_SEARCH){f();return;}cb=f;if(req)return;"
-           "req=document.createElement('script');req.src='/search.js';"
-           "req.onload=function(){var g=cb;cb=null;if(g)g();};"
-           # Run the pending callback on failure too, so the box answers "no
-           # page matches" instead of staying blank forever, and clear req so
-           # the next keystroke can retry the fetch.
-           "req.onerror=function(){req=null;var g=cb;cb=null;if(g)g();};"
-           "document.head.appendChild(req);}"
-           "inp.addEventListener('focus',function(){need(function(){});},{once:true});"
-           "function esc(s){return String(s).replace(/[&<>\"]/g,function(c){"
-           "return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});}"
-           "function snip(x,t){var i=x.toLowerCase().indexOf(t);if(i<0)return esc(x.slice(0,110));"
-           "var a=Math.max(0,i-45),b=Math.min(x.length,i+t.length+75);"
-           "return (a>0?'\u2026':'')+esc(x.slice(a,i))+'<mark>'+esc(x.slice(i,i+t.length))+'</mark>'"
-           "+esc(x.slice(i+t.length,b))+(b<x.length?'\u2026':'');}"
-           "function run(){var q=inp.value.trim().toLowerCase();"
-           "if(!q){box.style.display='none';tree.style.display='';inp.setAttribute('aria-expanded','false');return;}"
-           "var terms=q.split(/\\s+/).filter(Boolean),hits=[];"
-           # Guarded the way the board's buildSearchIndex() guards it: a script
-           # that loads but defines nothing (proxy error page, blocked fetch)
-           # would otherwise throw on every keystroke for the rest of the visit.
-           "(window.LB_SEARCH||[]).forEach(function(e){var t=(e.t||'').toLowerCase(),"
-           "b=((e.d||'')+' '+(e.x||'')).toLowerCase(),sc=0;"
-           "for(var i=0;i<terms.length;i++){var ti=t.indexOf(terms[i]),bi=b.indexOf(terms[i]);"
-           "if(ti<0&&bi<0)return;sc+=ti===0?60:ti>0?35:0;if(bi>=0)sc+=5;}"
-           "if(t===q)sc+=50;hits.push({e:e,sc:sc});});"
-           "hits.sort(function(a,b){return b.sc-a.sc||a.e.t.length-b.e.t.length;});"
-           "hits=hits.slice(0,25);"
-           "tree.style.display='none';box.style.display='';inp.setAttribute('aria-expanded','true');"
-           "if(!hits.length){box.innerHTML='<div class=\"nav-empty\">No page matches <b>'+esc(inp.value)+'</b>.</div>';return;}"
-           "var h='<div class=\"nav-res-h\"><span>Pages</span><span>'+hits.length+'</span></div>';"
-           "hits.forEach(function(hit){var e=hit.e;"
-           "h+='<a class=\"nav-res\" href=\"/docs/'+(e.u?e.u+'/':'')+'\">'"
-           "+'<span class=\"nav-res-t\">'+esc(e.t)+'</span>'"
-           "+'<span class=\"nav-res-c\">'+esc(e.c||'')+'</span>'"
-           "+'<span class=\"nav-res-s\">'+snip((e.d||'')+' '+(e.x||''),terms[0])+'</span></a>';});"
-           "box.innerHTML=h;}"
-           "var t;inp.addEventListener('input',function(){clearTimeout(t);"
-           "t=setTimeout(function(){if(!inp.value.trim())run();else need(run);},90);});"
-           "inp.addEventListener('keydown',function(e){if(e.key==='Escape'){inp.value='';run();inp.blur();}});"
-           "})();</script>")
+           "c.closest('.nav-grp').classList.toggle('open');};});</script>")
 
-_THEME_TOGGLE = ("<script>var b=document.getElementById('theme');if(b)b.onclick=function(){"
-                 "var d=document.documentElement,c=d.getAttribute('data-theme')==='dark'||"
-                 "(d.getAttribute('data-theme')!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);"
-                 "var n=c?'light':'dark';d.setAttribute('data-theme',n);"
-                 "try{localStorage.setItem('lb-theme',n);}catch(e){}};</script>")
+# The theme toggle, the tooltips of the header, and the hardware's motion (LEDs
+# and fans that only run while on screen) for every generated page.
+_THEME_TOGGLE = '<script src="/assets/sr/sr.js"></script>'
+
+
+_CSS_LINK = '<link rel="stylesheet" href="/assets/sr/sr.css">'
+
+# ── hardware, as markup ──────────────────────────────────────────────────────
+# The generated pages keep the live site's text word for word, so the hardware
+# on them is furniture without words: the status LEDs on the compare picker's
+# units, and the language colour of each cabinet on the frameworks index.
+
+_LANG_COLORS = {}
+
+_LEDS = ('<span class="leds" aria-hidden="true"><i class="led pwr"></i>'
+         '<i class="led act"></i><i class="led sts ok"></i></span>')
+def _header(sec, extra=""):
+    """The site header of a generated page: the board's own chrome, with the
+    section this page belongs to marked in the nav, and the board's page search
+    (sr.js runs it over the Knowledge Base on these pages)."""
+    nav = _CHROME[3].replace('data-sec="%s"' % sec, 'data-sec="%s" aria-current="page"' % sec)
+    return ('<body class="pg pg-' + sec + '"><header class="top">'
+            '<div class="brand">' + _CHROME[0] + '</div>'
+            '<nav class="top-nav" aria-label="Site">' + nav + '</nav>'
+            + _CHROME[4]
+            + extra
+            + '<div class="top-links">' + _CHROME[1] + '</div>'
+            '</header>')
+
+
+def check_404_header():
+    """site/root/404.html is static - assemble_site.sh copies it as it is - so it
+    carries its own copy of the header. Fail the build when the board's chrome
+    has moved on without it, rather than ship a 404 with a stale header."""
+    page = (ROOT / "site" / "root" / "404.html").read_text(encoding="utf-8")
+    if _header("404") not in page:
+        raise SystemExit("gen: the header in site/root/404.html no longer matches the board's chrome - "
+                         "write it again from _header(\"404\")")
 
 
 def _doc_page(did, title, body_html, tree, seo_title="", description="",
@@ -1003,21 +961,21 @@ def _doc_page(did, title, body_html, tree, seo_title="", description="",
             + '<meta property="og:url" content="' + url + '">'
             + _og_meta(og_url)
             + _jsonld({"@context": "https://schema.org", "@graph": graph})
-            + '<link rel="stylesheet" href="/docs/docs.css">'
+            + _CSS_LINK
             + "</head>")
     # Same markup and classes as the board's header, so crossing between /
     # and /docs/ doesn't change the chrome. The board-only controls (type
     # filters, round selector, hardware chips) are leaderboard state, not site
     # chrome, so they aren't carried over; everything else is identical.
-    header = ('<body><header class="top">'
-              '<div class="brand">' + _CHROME[0] + '</div>'
-              '<a class="brand-sub" href="/docs/">Knowledge Base</a>'
-              + _CHROME[3]
-              + '<div class="top-links">' + _CHROME[1] + '</div>'
-              '</header>')
+    header = _header("docs")
+    # The page's own text is the article, exactly as before the restyle: the
+    # phone toggle for the contents draws its label in CSS (aria-label for
+    # screen readers), and there is no breadcrumb or revision strip.
     body = ('<div class="docs-layout">'
+            '<button type="button" class="toc-btn" id="tocBtn" aria-expanded="false" '
+            'aria-label="Runbook contents"></button>'
             '<aside class="nav">' + _sidebar(tree, did) + '</aside>'
-            '<main class="doc-main"><article class="doc-wrap">'
+            '<main class="doc-main"><article class="doc-wrap sheet-page">'
             '<h1 class="doc-title">' + t + "</h1>"
             + _static_links(body_html)
             + "</article></main></div>")
@@ -1025,49 +983,11 @@ def _doc_page(did, title, body_html, tree, seo_title="", description="",
 
 
 def _docs_css():
-    """The board's shared chrome, plus the rules only these pages need.
+    """/docs/docs.css, kept as an address: older copies of the pages link it.
 
-    Everything shared - theme variables, reset, header, doc body, cards and the
-    shortcode widgets - comes from the board itself, so the two can't diverge.
-    Only the standalone-page shell is defined here: the board has no two-column
-    docs layout and no sidebar of its own.
-    """
-    return _CHROME[2] + """
-/* ── standalone doc-page shell (not present on the board) ─────────────── */
-.brand-sub{color:var(--text-2);font-size:.9rem;padding-left:.7rem;border-left:1px solid var(--line)}
-.top-links{margin-left:auto}
-/* Same two-column shape as the board's .layout; the rail itself is the board's
-   .nav, styled by the board's own CSS. */
-/* wider than the board's 264px rail: this tree goes five levels deep and
-   each level costs .8rem of indent, so names would truncate. */
-.docs-layout{display:grid;grid-template-columns:320px 1fr;align-items:start}
-/* framework pages have no sidebar to sit next to */
-.docs-layout.one-col{grid-template-columns:1fr;justify-items:center}
-.docs-layout.one-col .doc-main{width:100%}
-.fw-kind{color:var(--muted);font-size:.78rem}
-/* the "compare these N entries" line under each language heading on /frameworks/ */
-.fw-compare{margin:-.4rem 0 .6rem;font-size:.85rem}
-/* the head-to-head picker and its table */
-.cmp-pick{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:1rem 0}
-.cmp-pick select{font:inherit;font-size:.9rem;padding:.35rem .5rem;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--text)}
-.doc-body td.n,.doc-body th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
-/* A table wider than the screen scrolls sideways inside its own box. Left to
-   itself it widened the page, so on a phone everything panned: the head-to-head
-   table is 625px across on a 375px screen and an entry's results table 688px.
-   The table's margin moves out to the box, so the space around it is unchanged. */
-.tbl-x,#cmpOut{overflow-x:auto;margin:1.1rem 0}
-.tbl-x>table,#cmpOut>table{margin:0}
-/* the line over each group of rows in a head-to-head table, naming its unit */
-.cmp-table tr.cmp-sub th{text-align:left;font-weight:600;font-size:.8rem;color:var(--text-2);background:var(--panel-2)}
-/* the date the numbers were last published, on every generated page */
-.updated{color:var(--muted);font-size:.82rem;margin-top:1.6rem}
-/* the one-sentence answer at the top of a language page, before any table */
-.lead-answer{font-size:1.02rem;line-height:1.6;padding:.85rem 1rem;margin:0 0 1rem;border-left:3px solid var(--accent);background:var(--panel-2);border-radius:0 8px 8px 0}
-.doc-main{min-width:0;padding:1.6rem 2rem 4rem;max-width:900px}
-.doc-wrap{max-width:none}
-.nav-grp-link{display:block;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit;font:inherit;text-decoration:none}
-@media (max-width:820px){.docs-layout{grid-template-columns:1fr}.nav{position:static;height:auto;width:100%;border-right:0;border-bottom:1px solid var(--line)}.doc-main{padding:1.1rem 1.1rem 4rem;max-width:100%}.brand{width:auto}}
-"""
+    Every rule now lives in the one shared stylesheet that the board and every
+    generated page link directly, so this only forwards to it."""
+    return "@import url(/assets/sr/sr.css);\n"
 
 
 def build_doc_pages(tree, content, trails=None, with_og=False):
@@ -1264,11 +1184,11 @@ def _slug(name):
     return (re.sub(r"[^A-Za-z0-9._-]+", "-", name).strip("-") or "unnamed").lower()
 
 # category -> family key. Mirrors familyOf() in index.html; anything unlisted is
-# HTTP/1.1 (Connection, Workload, Database, Multi-endpoint).
+# HTTP/1.1 (Connection, Concurrency, Efficiency, Workload).
 FAMILY_OF_CAT = {"Gateway": "gw", "HTTP/2": "h2", "HTTP/3": "h3",
-                 "gRPC": "grpc", "WebSocket": "ws"}
+                 "gRPC": "grpc", "WebSocket": "ws", "Database": "db"}
 FAMILY_LABEL = {"h1": "H/1.1", "h2": "H/2", "h3": "H/3",
-                "gw": "Gateway", "grpc": "gRPC", "ws": "WebSocket"}
+                "gw": "Gateway", "grpc": "gRPC", "ws": "WebSocket", "db": "Database"}
 
 # Leagues are the board's type filter. flagship+emerging is its default view and
 # ranks as one field; engine and infrastructure entries are each scored on their
@@ -1357,12 +1277,18 @@ _LAT_CACHE: dict[str, dict] = {}
 def lat_scores(pid):
     if pid in _LAT_CACHE:
         return _LAT_CACHE[pid]
+    # The exact profile's keys: "connections-1m-" also starts every
+    # "connections-1m-tls-<conns>" key. p50 and mem are read by the
+    # held-connection profiles' score only (latency_score.HELD).
     rows = [{"fw": r.get("framework") or r.get("fw"),
              "rps": r.get("rps") or 0,
              "cpu": r.get("cpu_per_req_us"),
              "p99": _lat.to_us(r.get("p99_latency")),
-             "mean": _lat.to_us(r.get("avg_latency"))}
-            for key, rs in RESULTS.items() if key.startswith(pid + "-")
+             "mean": _lat.to_us(r.get("avg_latency")),
+             "p50": _lat.to_us(r.get("p50_latency")),
+             "mem": _lat.to_mib(r.get("memory"))}
+            for key, rs in RESULTS.items()
+            if key.startswith(pid + "-") and key[len(pid) + 1:].isdigit()
             for r in rs]
     out: dict = {}
     if rows:
@@ -1854,22 +1780,30 @@ def compute_achievements(agg, profiles, meta, badge_index):
 #     as plain text, for readers that will never run a script.
 
 OG_SIZE = (1200, 630)
-OG_BG = (26, 27, 30)
-OG_ACCENT = (138, 180, 248)
-OG_TEXT = (232, 234, 237)
-OG_MUTED = (154, 160, 166)
+OG_BG = (9, 11, 14)
+OG_ACCENT = (98, 196, 255)
+OG_TEXT = (231, 234, 237)
+OG_MUTED = (152, 162, 173)
+# the hardware of the cards: a unit's face, its seam, an LED, a display
+OG_FACE = (34, 38, 43)
+OG_EDGE = (59, 66, 74)
+OG_LED = (61, 255, 143)
+OG_LCD = (125, 251, 216)
+OG_HAZARD = (242, 189, 0)
 
 SCOPE_NAME = {"h1": "HTTP/1.1", "h2": "HTTP/2", "h3": "HTTP/3",
-              "gw": "Gateway", "grpc": "gRPC", "ws": "WebSocket"}
+              "gw": "Gateway", "grpc": "gRPC", "ws": "WebSocket", "db": "Database"}
 # The board's <h1> per family. renderHead() writes the same strings, so the
 # pre-rendered heading and the rendered one match.
 SCOPE_H1 = {"h1": "HTTP/1.1 web server benchmarks", "h2": "HTTP/2 web server benchmarks",
             "h3": "HTTP/3 web server benchmarks",
             "gw": "Gateway and production stack benchmarks",
-            "grpc": "gRPC server benchmarks", "ws": "WebSocket server benchmarks"}
+            "grpc": "gRPC server benchmarks", "ws": "WebSocket server benchmarks",
+            "db": "Database-backed web server benchmarks"}
 SCOPE_BLURB = {"h1": "all HTTP/1.1 profiles", "h2": "all HTTP/2 profiles",
                "h3": "all HTTP/3 profiles", "gw": "the gateway & production-stack profiles",
-               "grpc": "all gRPC profiles", "ws": "all WebSocket profiles"}
+               "grpc": "all gRPC profiles", "ws": "all WebSocket profiles",
+               "db": "the database profiles"}
 # The board's own default: view=composite, scope=h1, flagship+emerging, tuned
 # shown, useMem and rescale off. Prerendering anything else would show a crawler
 # a page no visitor lands on.
@@ -1931,7 +1865,10 @@ def _og_card(dest, kicker, title, rows, footer, blurb=""):
     from PIL import Image, ImageDraw
     img = Image.new("RGB", OG_SIZE, OG_BG)
     d = ImageDraw.Draw(img)
-    d.rectangle([0, 0, OG_SIZE[0], 9], fill=OG_ACCENT)
+    # the hazard tape that runs under the site's header
+    d.rectangle([0, 0, OG_SIZE[0], 12], fill=(24, 27, 31))
+    for x in range(-12, OG_SIZE[0], 28):
+        d.polygon([(x, 12), (x + 12, 0), (x + 26, 0), (x + 14, 12)], fill=OG_HAZARD)
 
     mark = _og_font(36, bold=True)
     d.text((72, 58), "Http", font=mark, fill=OG_ACCENT)
@@ -1961,11 +1898,17 @@ def _og_card(dest, kicker, title, rows, footer, blurb=""):
     if rows:
         y = max(y + 22, 350)
         fr = _og_font(29, bold=True)
+        y -= 6
         for i, (name, right) in enumerate(rows[:5]):
-            d.text((72, y), f"{i + 1}.", font=fr, fill=OG_MUTED)
-            d.text((122, y), name, font=fr, fill=OG_TEXT)
-            d.text((1128 - d.textlength(right, font=fr), y), right, font=fr, fill=OG_ACCENT)
-            y += 40
+            # one unit of the rack per row: face, rank, LED, name, display
+            d.rounded_rectangle([60, y, 1140, y + 38], radius=4, fill=OG_FACE, outline=OG_EDGE)
+            d.text((80, y + 3), f"{i + 1}", font=fr, fill=OG_MUTED)
+            d.ellipse([118, y + 14, 128, y + 24], fill=OG_LED)
+            d.text((146, y + 3), name, font=fr, fill=OG_TEXT)
+            w = d.textlength(right, font=fr)
+            d.rounded_rectangle([1116 - w - 12, y + 4, 1132, y + 34], radius=3, fill=(3, 6, 5))
+            d.text((1124 - w, y + 3), right, font=fr, fill=OG_LCD)
+            y += 42
 
     if footer:
         f = _og_font(23)
@@ -2412,6 +2355,167 @@ def build_index_page(rows, fw_lang, current, round_name, n_profiles, n_entries,
 
 FW_OUT = GEN / "frameworks"
 
+# ── implementation bundles: /frameworks/<slug>/source.json ──────────────────────
+# The 3D aisle plugs a monitor into a unit and shows its implementation: the
+# readable files of frameworks/<dir>, entry point first. Lockfiles, binaries and
+# very large files are listed as omitted, not shipped. Read from the work tree,
+# or from git when the checkout is sparse (the preview worktrees have no
+# frameworks/ on disk).
+SRC_REPO = "https://github.com/MDA2AV/HttpArena/tree/main/frameworks/"
+SRC_MAX_FILE = 120_000
+SRC_MAX_TOTAL = 600_000
+SRC_LOCKS = {"Cargo.lock", "package-lock.json", "yarn.lock", "go.sum", "composer.lock", "Gemfile.lock",
+             "poetry.lock", "pnpm-lock.yaml", "bun.lockb", "bun.lock", "mix.lock", "Package.resolved",
+             "packages.lock.json", "uv.lock", "deno.lock", "pubspec.lock", "stack.yaml.lock", "flake.lock",
+             "cabal.project.freeze", "Manifest.toml", "gradle-wrapper.jar", "shard.lock", "nimble.lock"}
+SRC_SKIP_DIRS = {"node_modules", "target", "vendor", ".git", "build", "dist", "bin", "obj", "__pycache__",
+                 ".gradle", "_build", "deps", ".zig-cache", "zig-out", ".venv", "venv", ".idea", ".vscode"}
+SRC_LANG = {".rs": "rust", ".go": "go", ".cs": "csharp", ".fs": "fsharp", ".fsx": "fsharp", ".java": "java",
+            ".kt": "kotlin", ".kts": "kotlin", ".scala": "scala", ".sc": "scala", ".js": "js", ".mjs": "js",
+            ".cjs": "js", ".jsx": "js", ".ts": "ts", ".tsx": "ts", ".py": "python", ".rb": "ruby", ".php": "php",
+            ".ex": "elixir", ".exs": "elixir", ".erl": "erlang", ".hrl": "erlang", ".zig": "zig", ".c": "c",
+            ".h": "c", ".cc": "cpp", ".cpp": "cpp", ".cxx": "cpp", ".hpp": "cpp", ".hh": "cpp", ".swift": "swift",
+            ".dart": "dart", ".hs": "haskell", ".ml": "ocaml", ".mli": "ocaml", ".clj": "clojure", ".cljs": "clojure",
+            ".edn": "clojure", ".cr": "crystal", ".nim": "nim", ".d": "d", ".jl": "julia", ".lua": "lua",
+            ".pl": "perl", ".pm": "perl", ".v": "v", ".mojo": "mojo", ".toml": "toml", ".yml": "yaml",
+            ".yaml": "yaml", ".json": "json", ".xml": "xml", ".csproj": "xml", ".fsproj": "xml", ".props": "xml",
+            ".sln": "text", ".html": "html", ".htm": "html", ".mustache": "html", ".hbs": "html", ".jinja": "html",
+            ".j2": "html", ".erb": "html", ".eex": "html", ".heex": "html", ".tmpl": "html", ".tpl": "html",
+            ".sh": "shell", ".bash": "shell", ".md": "markdown", ".gradle": "gradle", ".cmake": "cmake",
+            ".sql": "text", ".txt": "text", ".conf": "text", ".ini": "text", ".cfg": "text", ".properties": "text"}
+SRC_CODE = {"rust", "go", "csharp", "fsharp", "java", "kotlin", "scala", "js", "ts", "python", "ruby", "php",
+            "elixir", "erlang", "zig", "c", "cpp", "swift", "dart", "haskell", "ocaml", "clojure", "crystal",
+            "nim", "d", "julia", "lua", "perl", "v", "mojo"}
+SRC_ENTRY = {"main", "app", "server", "program", "index", "startup", "application", "handler", "handlers",
+             "routes", "router", "lib", "mod", "http", "bench", "benchmark", "web", "api"}
+
+
+def _src_lang(path):
+    base = path.rsplit("/", 1)[-1]
+    low = base.lower()
+    if low.startswith("dockerfile") or low.endswith(".dockerfile"):
+        return "docker"
+    if low in ("makefile", "gnumakefile"):
+        return "make"
+    if low == "cmakelists.txt":
+        return "cmake"
+    if low in ("gemfile", "rakefile", "config.ru"):
+        return "ruby"
+    if low.startswith("build.gradle") or low.startswith("settings.gradle"):
+        return "gradle"
+    dot = low.rfind(".")
+    return SRC_LANG.get(low[dot:], "text") if dot > 0 else "text"
+
+
+def _src_order(path, lang):
+    base = path.rsplit("/", 1)[-1].lower()
+    stem = base.rsplit(".", 1)[0]
+    depth = path.count("/")
+    if lang in SRC_CODE:
+        return (0 if stem in SRC_ENTRY else 1, depth, path.lower())
+    if lang == "docker":
+        return (2, depth, path.lower())
+    if base == "meta.json":
+        return (6, 0, path.lower())
+    if lang == "markdown":
+        return (7, 0, path.lower())
+    if lang == "html":
+        return (4, depth, path.lower())
+    return (3, depth, path.lower())
+
+
+def _src_files_worktree(dir_name):
+    base = ROOT / "frameworks" / dir_name
+    for dp, dns, fns in os.walk(base):
+        dns[:] = sorted(d for d in dns if d not in SRC_SKIP_DIRS)
+        for fn in sorted(fns):
+            fp = Path(dp) / fn
+            try:
+                yield fp.relative_to(base).as_posix(), fp.stat().st_size, (lambda fp=fp: fp.read_bytes())
+            except OSError:
+                continue
+
+
+_GIT_SRC = None
+
+
+def _src_files_git(dir_name):
+    """The same, from HEAD - one ls-tree for every framework, one cat-file process."""
+    global _GIT_SRC
+    if _GIT_SRC is None:
+        _GIT_SRC = {}
+        try:
+            out = subprocess.run(["git", "-C", str(ROOT), "ls-tree", "-r", "-l", "-z", "HEAD", "--", "frameworks/"],
+                                 capture_output=True, check=True).stdout.decode("utf-8", "replace")
+        except Exception:
+            out = ""
+        for rec in out.split("\0"):
+            if not rec or "\t" not in rec:
+                continue
+            head, path = rec.split("\t", 1)
+            parts = head.split()
+            if len(parts) < 4 or parts[1] != "blob":
+                continue
+            segs = path.split("/")
+            if len(segs) < 3 or any(x in SRC_SKIP_DIRS for x in segs[2:-1]):
+                continue
+            size = int(parts[3]) if parts[3].isdigit() else 0
+            _GIT_SRC.setdefault(segs[1], []).append(("/".join(segs[2:]), size, parts[2]))
+    entries = sorted(_GIT_SRC.get(dir_name, []))
+    if not entries:
+        return
+    shas = [sha for _, size, sha in entries if size <= SRC_MAX_FILE]
+    blobs = {}
+    if shas:
+        proc = subprocess.run(["git", "-C", str(ROOT), "cat-file", "--batch"], input=("\n".join(shas) + "\n").encode(),
+                              capture_output=True)
+        buf, i = proc.stdout, 0
+        while i < len(buf):
+            nl = buf.index(b"\n", i)
+            hdr = buf[i:nl].split()
+            if len(hdr) < 3:
+                break
+            n = int(hdr[2])
+            blobs[hdr[0].decode()] = buf[nl + 1:nl + 1 + n]
+            i = nl + 1 + n + 1
+    for rel, size, sha in entries:
+        yield rel, size, (lambda sha=sha: blobs.get(sha, b""))
+
+
+def _source_bundle(fw, dir_name):
+    have_tree = (ROOT / "frameworks" / dir_name).is_dir()
+    files, omitted, total = [], [], 0
+    found = list(_src_files_worktree(dir_name) if have_tree else _src_files_git(dir_name))
+    if not found:
+        return None
+    for rel, size, read in found:
+        name = rel.rsplit("/", 1)[-1]
+        if name in SRC_LOCKS:
+            omitted.append({"path": rel, "why": "lockfile", "bytes": size})
+            continue
+        if size > SRC_MAX_FILE:
+            omitted.append({"path": rel, "why": "large", "bytes": size})
+            continue
+        data = read()
+        if b"\0" in data:
+            omitted.append({"path": rel, "why": "binary", "bytes": size})
+            continue
+        try:
+            text = data.decode("utf-8")
+        except UnicodeDecodeError:
+            omitted.append({"path": rel, "why": "binary", "bytes": size})
+            continue
+        files.append({"path": rel, "lang": _src_lang(rel), "bytes": size, "text": text})
+    files.sort(key=lambda f: _src_order(f["path"], f["lang"]))
+    kept = []
+    for f in files:
+        if total + f["bytes"] > SRC_MAX_TOTAL:
+            omitted.append({"path": f["path"], "why": "size budget", "bytes": f["bytes"]})
+            continue
+        total += f["bytes"]
+        kept.append(f)
+    return {"fw": fw, "dir": dir_name, "repo": SRC_REPO + dir_name, "files": kept, "omitted": omitted}
+
 TYPE_LABEL = {"flagship": "Flagship", "emerging": "Emerging",
               "experimental": "Experimental", "engine": "Engine",
               "infrastructure": "Infrastructure"}
@@ -2808,18 +2912,16 @@ def _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url="", achievem
             + '<meta property="og:url" content="' + url + '">'
             + _og_meta(og_url)
             + _jsonld({"@context": "https://schema.org", "@graph": graph})
-            + '<link rel="stylesheet" href="/docs/docs.css">'
+            + _CSS_LINK
             + "</head>")
-    header = ('<body><header class="top">'
-              '<div class="brand">' + _CHROME[0] + '</div>'
-              '<a class="brand-sub" href="/frameworks/">Frameworks</a>'
-              '<div class="top-links">' + _CHROME[1] + '</div>'
-              '</header>')
+    header = _header("frameworks")
     body = ('<div class="docs-layout one-col"><main class="doc-main">'
-            '<article class="doc-wrap"><h1 class="doc-title">' + e(fw) + "</h1>"
+            '<article class="doc-wrap">'
+            '<h1 class="doc-title">' + e(fw) + "</h1>"
+            '<div class="sheet-page">'
             + _fw_body(fw, m, lang, ranks, runs, round_name, lang_url, achievements,
                        lang_scopes, updated, has_compare, spec)
-            + "</article></main></div>")
+            + "</div></article></main></div>")
     return head + header + body + _THEME_TOGGLE + "</body></html>"
 
 
@@ -2892,7 +2994,8 @@ def _lang_faq(lang, scopes, n_entries, round_name, has_compare=False):
                 f"{rs[0][4]} of {rs[0][5]} in that league)" for league, rs in groups)
             answer = (answer[0].upper() + answer[1:] + ". The leagues are scored separately, "
                       "so those composites are not on one scale.")
-        qa.append((f"What is the fastest {lang} {SCOPE_NAME[scope]} server?", answer))
+        qa.append((f"What is the fastest {lang} "
+                   f"{'database-backed' if scope == 'db' else SCOPE_NAME[scope]} server?", answer))
     qa.append((
         f"How many {lang} web frameworks are benchmarked?",
         f"{n_entries} {lang} " + ("entry is" if n_entries == 1 else "entries are")
@@ -3004,13 +3107,9 @@ def _lang_page(lang, scopes, all_entries, round_name, siblings=(), updated="",
             + '<meta property="og:description" content="' + e(desc) + '">'
             + '<meta property="og:url" content="' + url + '">'
             + _jsonld({"@context": "https://schema.org", "@graph": graph})
-            + '<link rel="stylesheet" href="/docs/docs.css">'
+            + _CSS_LINK
             + "</head>")
-    header = ('<body><header class="top">'
-              '<div class="brand">' + _CHROME[0] + '</div>'
-              '<a class="brand-sub" href="/frameworks/">Frameworks</a>'
-              '<div class="top-links">' + _CHROME[1] + '</div>'
-              '</header>')
+    header = _header("frameworks")
     # The answer first, in a sentence, before any table. Both a reader skimming
     # and an assistant summarising take the first paragraph.
     answer = ""
@@ -3073,7 +3172,7 @@ def _lang_page(lang, scopes, all_entries, round_name, siblings=(), updated="",
                      "it is listed" if len(rest) == 1 else "they are listed"))
     body = ('<div class="docs-layout one-col"><main class="doc-main">'
             '<article class="doc-wrap"><h1 class="doc-title">' + e(title) + "</h1>"
-            '<div class="doc-body">' + answer + intro + "".join(tables)
+            '<div class="doc-body sheet-page">' + answer + intro + "".join(tables)
             + ("<h2 id=\"faq\">Questions</h2>" + _faq_html(faq) if faq else "")
             + "<h2>Every " + e(lang) + " entry</h2><ul>" + every + "</ul>"
             + ('<h2>Other languages</h2><p>' + " · ".join(
@@ -3117,7 +3216,10 @@ def _fw_index_page(entries, lang_pages=(), updated="", compare_langs=()):
                    + (' · <a href="%s">head to head</a>' % _compare_url(lang)
                       if lang in compare_langs else "")
                    + "</p>" if lang in lang_pages else "")
-        sections.append("<h2>" + heading + "</h2>" + compare + "<ul>" + items + "</ul>")
+        sections.append('<section class="cab" style="--vc:%s"><h2 data-n="%d">%s</h2>'
+                        % (_html.escape((_LANG_COLORS.get(lang) or {}).get("accent", "#94a3b8")),
+                           n, heading)
+                        + compare + "<ul>" + items + "</ul></section>")
     graph = [
         {"@type": "CollectionPage", "@id": url + "#page", "name": title, "description": desc,
          "url": url, "inLanguage": "en", "isPartOf": {"@id": SITE + "/#website"},
@@ -3141,19 +3243,15 @@ def _fw_index_page(entries, lang_pages=(), updated="", compare_langs=()):
             + '<meta property="og:description" content="' + e(desc) + '">'
             + '<meta property="og:url" content="' + url + '">'
             + _jsonld({"@context": "https://schema.org", "@graph": graph})
-            + '<link rel="stylesheet" href="/docs/docs.css">'
+            + _CSS_LINK
             + "</head>")
-    header = ('<body><header class="top">'
-              '<div class="brand">' + _CHROME[0] + '</div>'
-              '<a class="brand-sub" href="/frameworks/">Frameworks</a>'
-              '<div class="top-links">' + _CHROME[1] + '</div>'
-              '</header>')
-    body = ('<div class="docs-layout one-col"><main class="doc-main">'
+    header = _header("frameworks")
+    body = ('<div class="docs-layout one-col"><main class="doc-main wide">'
             '<article class="doc-wrap"><h1 class="doc-title">' + e(title) + "</h1>"
-            '<div class="doc-body"><p>' + e(desc) + " Ranks and every per-profile number live on "
+            '<div class="doc-body floor-page"><p class="floor-lead">' + e(desc) + " Ranks and every per-profile number live on "
             'the page of each entry; the <a href="/">leaderboard</a> compares them, and '
             '<a href="/compare/">the comparisons</a> put any two of one language side by side.</p>'
-            + "".join(sections)
+            '<div class="floor">' + "".join(sections) + "</div>"
             + _updated_line(updated) + "</div></article></main></div>")
     return head + header + body + _THEME_TOGGLE + "</body></html>"
 
@@ -3587,17 +3685,21 @@ def _compare_page(lang, ranked, members, profiles, results, round_name, updated,
             + '<meta property="og:url" content="' + url + '">'
             + _og_meta(og_url)
             + _jsonld({"@context": "https://schema.org", "@graph": graph})
-            + '<link rel="stylesheet" href="/docs/docs.css">'
+            + _CSS_LINK
             + "</head>")
-    header = ('<body><header class="top">'
-              '<div class="brand">' + _CHROME[0] + '</div>'
-              '<a class="brand-sub" href="/compare/">Comparisons</a>'
-              '<div class="top-links">' + _CHROME[1] + '</div>'
-              '</header>')
-    picker = ('<div class="cmp-pick"><label for="cmpA">Compare</label>'
-              '<select id="cmpA">' + opts(a) + "</select>"
-              '<label for="cmpB">with</label>'
-              '<select id="cmpB">' + opts(b) + "</select></div>")
+    header = _header("compare")
+    # The picker on the bench: two units, each holding the label and the select
+    # of its side - the live page's "Compare <a> with <b>" and nothing more. The
+    # "vs" between them is drawn by CSS.
+    def station(side, sel_id, label, cur):
+        return ('<div class="unit u-st st-%s"><div class="ear l"></div><div class="face">'
+                '<span class="plate"><label class="vend" for="%s">%s</label>'
+                '<select id="%s">%s</select></span>%s'
+                '</div><div class="ear r"></div></div>'
+                % (side, sel_id, label, sel_id, opts(cur), _LEDS))
+    picker = ('<div class="cmp-pick vs-bench" data-live>'
+              + station("a", "cmpA", "Compare", a) + '<div class="vs-mid" aria-hidden="true"></div>'
+              + station("b", "cmpB", "with", b) + '</div>')
     how = ("Requests per second is the best of three runs and the delta is the first column "
            "against the second; every row is the same profile at the same connection count, on "
            "the same machine. The fixed-rate profiles offer every entry the same request rate, "
@@ -3607,9 +3709,9 @@ def _compare_page(lang, ranked, members, profiles, results, round_name, updated,
              if lang else
              "<p>Pick any two of the %d entries, in any language - the picker is grouped by "
              "language, and the two sides do not have to match. %s</p>" % (len(entries), how))
-    body = ('<div class="docs-layout one-col"><main class="doc-main">'
+    body = ('<div class="docs-layout one-col"><main class="doc-main wide">'
             '<article class="doc-wrap"><h1 class="doc-title">' + e(title) + "</h1>"
-            '<div class="doc-body">'
+            '<div class="doc-body sheet-page">'
             '<p class="lead-answer" id="cmpLead">' + _cmp_verdict(data, views, scores, a, b)
             + "</p>" + intro + picker
             + '<div id="cmpOut">' + _cmp_table(data, views, a, b) + "</div>"
@@ -3684,16 +3786,12 @@ def _compare_index_page(langs, updated, og_url=""):
             + '<meta property="og:url" content="' + url + '">'
             + _og_meta(og_url)
             + _jsonld({"@context": "https://schema.org", "@graph": graph})
-            + '<link rel="stylesheet" href="/docs/docs.css">'
+            + _CSS_LINK
             + "</head>")
-    header = ('<body><header class="top">'
-              '<div class="brand">' + _CHROME[0] + '</div>'
-              '<a class="brand-sub" href="/compare/">Comparisons</a>'
-              '<div class="top-links">' + _CHROME[1] + '</div>'
-              '</header>')
+    header = _header("compare")
     body = ('<div class="docs-layout one-col"><main class="doc-main">'
-            '<article class="doc-wrap"><h1 class="doc-title">' + e(title) + "</h1>"
-            '<div class="doc-body"><p>' + e(desc) + " Every entry runs the same profiles on the "
+            '<article class="doc-wrap sheet-page"><h1 class="doc-title">' + e(title) + "</h1>"
+            '<div class="doc-body cmp-index"><p>' + e(desc) + " Every entry runs the same profiles on the "
             "same machine, so two entries in different languages are measured the same way and "
             "the numbers line up.</p>"
             + ('<p><a href="%s"><b>Compare any two entries, in any language</b></a> - all %d of '
@@ -3853,6 +3951,7 @@ def build_fw_pages(profiles, results, meta, fw_lang, badge_index, achievements,
     compare_langs = _compare_langs(profiles, results, members_by_lang)
 
     entries, cards = [], 0
+    sources = 0     # implementation bundles (source.json)
     for fw in named:
         m = meta[fw]
         kind = m.get("type", "emerging")
@@ -3863,6 +3962,11 @@ def build_fw_pages(profiles, results, meta, fw_lang, badge_index, achievements,
         og_url = (_fw_url(fw) + "og.png") if with_og else ""
         dest = FW_OUT / _slug(fw)
         dest.mkdir(parents=True, exist_ok=True)
+        bundle = _source_bundle(fw, m.get("dir") or fw)
+        if bundle:
+            (dest / "source.json").write_text(json.dumps(bundle, ensure_ascii=False, separators=(",", ":")),
+                                              encoding="utf-8")
+            sources += 1
         (dest / "index.html").write_text(
             _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url,
                      achievements.get(fw, ()), lang_scopes.get(lang), updated,
@@ -3889,6 +3993,7 @@ def build_fw_pages(profiles, results, meta, fw_lang, badge_index, achievements,
 
     (FW_OUT / "index.html").write_text(
         _fw_index_page(entries, lang_pages, updated, compare_langs), encoding="utf-8")
+    print(f"wrote {sources} implementation bundles (frameworks/<slug>/source.json)")
     return entries, cards, siblings, lang_scopes, members_by_lang, compare_langs
 
 
@@ -4187,9 +4292,11 @@ def build_profiles(index, docs_content=None):
 
 def main():
     global RESULTS
+    check_404_header()
     RESULTS = load_results()
     frameworks = load("frameworks.json") or {}
     langcolors = load("langcolors.json") or {}
+    _LANG_COLORS.update(langcolors)
     current = load("current.json") or {}
 
     # tls_check verdicts, written by validate.sh when an entry opts in. Keyed by directory name, which is what validate.sh is given;

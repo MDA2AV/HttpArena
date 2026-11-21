@@ -10,6 +10,9 @@
 # across entries and across rounds, so a generator that drifts under it
 # invalidates every comparison it was measured against, including old ones.
 # Bumping the version is a deliberate act that re-baselines the profile.
+#
+# connections-1m builds this file a second time as zrk:3.0.2, passing
+# ZRK_VERSION and ZRK_SHA256 (tools/zrk.sh), and leaves zrk:local as it is.
 FROM ubuntu:24.04 AS build
 ARG ZRK_VERSION=2.3.0
 ARG ZRK_SHA256=ab6f1c1ce34ce73f52afd106419d15e5c494bd1cedd475afa56babb85b09a816

@@ -7,8 +7,11 @@
   "repo": "https://github.com/boazsegev/iodine",
   "enabled": true,
   "tests": [
-    "baseline", "latency-1m", "latency-10k",
+    "baseline",
+    "latency-1m",
+    "latency-10k",
     "pipelined",
+    "8gbit",
     "limited-conn"
   ],
   "maintainers": ["p8"]
