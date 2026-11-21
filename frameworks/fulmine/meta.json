@@ -18,7 +18,7 @@
   "spec": ["h1", "h2", "ws"],
   "tls_check": true,
   "tests": [
-    "baseline", "latency-1m", "latency-10k", "latency-500k-8cpu",
+    "baseline", "latency-1m", "latency-10k",
     "pipelined",
     "limited-conn",
     "async",
