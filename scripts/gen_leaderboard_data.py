@@ -17,6 +17,7 @@ Run after scripts/rebuild_site_data.py (or any time site/data changes):
 from __future__ import annotations
 import functools
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -2327,6 +2328,167 @@ def build_index_page(rows, fw_lang, current, round_name, n_profiles, n_entries,
 
 FW_OUT = GEN / "frameworks"
 
+# ── implementation bundles: /frameworks/<slug>/source.json ──────────────────────
+# The 3D aisle plugs a monitor into a unit and shows its implementation: the
+# readable files of frameworks/<dir>, entry point first. Lockfiles, binaries and
+# very large files are listed as omitted, not shipped. Read from the work tree,
+# or from git when the checkout is sparse (the preview worktrees have no
+# frameworks/ on disk).
+SRC_REPO = "https://github.com/MDA2AV/HttpArena/tree/main/frameworks/"
+SRC_MAX_FILE = 120_000
+SRC_MAX_TOTAL = 600_000
+SRC_LOCKS = {"Cargo.lock", "package-lock.json", "yarn.lock", "go.sum", "composer.lock", "Gemfile.lock",
+             "poetry.lock", "pnpm-lock.yaml", "bun.lockb", "bun.lock", "mix.lock", "Package.resolved",
+             "packages.lock.json", "uv.lock", "deno.lock", "pubspec.lock", "stack.yaml.lock", "flake.lock",
+             "cabal.project.freeze", "Manifest.toml", "gradle-wrapper.jar", "shard.lock", "nimble.lock"}
+SRC_SKIP_DIRS = {"node_modules", "target", "vendor", ".git", "build", "dist", "bin", "obj", "__pycache__",
+                 ".gradle", "_build", "deps", ".zig-cache", "zig-out", ".venv", "venv", ".idea", ".vscode"}
+SRC_LANG = {".rs": "rust", ".go": "go", ".cs": "csharp", ".fs": "fsharp", ".fsx": "fsharp", ".java": "java",
+            ".kt": "kotlin", ".kts": "kotlin", ".scala": "scala", ".sc": "scala", ".js": "js", ".mjs": "js",
+            ".cjs": "js", ".jsx": "js", ".ts": "ts", ".tsx": "ts", ".py": "python", ".rb": "ruby", ".php": "php",
+            ".ex": "elixir", ".exs": "elixir", ".erl": "erlang", ".hrl": "erlang", ".zig": "zig", ".c": "c",
+            ".h": "c", ".cc": "cpp", ".cpp": "cpp", ".cxx": "cpp", ".hpp": "cpp", ".hh": "cpp", ".swift": "swift",
+            ".dart": "dart", ".hs": "haskell", ".ml": "ocaml", ".mli": "ocaml", ".clj": "clojure", ".cljs": "clojure",
+            ".edn": "clojure", ".cr": "crystal", ".nim": "nim", ".d": "d", ".jl": "julia", ".lua": "lua",
+            ".pl": "perl", ".pm": "perl", ".v": "v", ".mojo": "mojo", ".toml": "toml", ".yml": "yaml",
+            ".yaml": "yaml", ".json": "json", ".xml": "xml", ".csproj": "xml", ".fsproj": "xml", ".props": "xml",
+            ".sln": "text", ".html": "html", ".htm": "html", ".mustache": "html", ".hbs": "html", ".jinja": "html",
+            ".j2": "html", ".erb": "html", ".eex": "html", ".heex": "html", ".tmpl": "html", ".tpl": "html",
+            ".sh": "shell", ".bash": "shell", ".md": "markdown", ".gradle": "gradle", ".cmake": "cmake",
+            ".sql": "text", ".txt": "text", ".conf": "text", ".ini": "text", ".cfg": "text", ".properties": "text"}
+SRC_CODE = {"rust", "go", "csharp", "fsharp", "java", "kotlin", "scala", "js", "ts", "python", "ruby", "php",
+            "elixir", "erlang", "zig", "c", "cpp", "swift", "dart", "haskell", "ocaml", "clojure", "crystal",
+            "nim", "d", "julia", "lua", "perl", "v", "mojo"}
+SRC_ENTRY = {"main", "app", "server", "program", "index", "startup", "application", "handler", "handlers",
+             "routes", "router", "lib", "mod", "http", "bench", "benchmark", "web", "api"}
+
+
+def _src_lang(path):
+    base = path.rsplit("/", 1)[-1]
+    low = base.lower()
+    if low.startswith("dockerfile") or low.endswith(".dockerfile"):
+        return "docker"
+    if low in ("makefile", "gnumakefile"):
+        return "make"
+    if low == "cmakelists.txt":
+        return "cmake"
+    if low in ("gemfile", "rakefile", "config.ru"):
+        return "ruby"
+    if low.startswith("build.gradle") or low.startswith("settings.gradle"):
+        return "gradle"
+    dot = low.rfind(".")
+    return SRC_LANG.get(low[dot:], "text") if dot > 0 else "text"
+
+
+def _src_order(path, lang):
+    base = path.rsplit("/", 1)[-1].lower()
+    stem = base.rsplit(".", 1)[0]
+    depth = path.count("/")
+    if lang in SRC_CODE:
+        return (0 if stem in SRC_ENTRY else 1, depth, path.lower())
+    if lang == "docker":
+        return (2, depth, path.lower())
+    if base == "meta.json":
+        return (6, 0, path.lower())
+    if lang == "markdown":
+        return (7, 0, path.lower())
+    if lang == "html":
+        return (4, depth, path.lower())
+    return (3, depth, path.lower())
+
+
+def _src_files_worktree(dir_name):
+    base = ROOT / "frameworks" / dir_name
+    for dp, dns, fns in os.walk(base):
+        dns[:] = sorted(d for d in dns if d not in SRC_SKIP_DIRS)
+        for fn in sorted(fns):
+            fp = Path(dp) / fn
+            try:
+                yield fp.relative_to(base).as_posix(), fp.stat().st_size, (lambda fp=fp: fp.read_bytes())
+            except OSError:
+                continue
+
+
+_GIT_SRC = None
+
+
+def _src_files_git(dir_name):
+    """The same, from HEAD - one ls-tree for every framework, one cat-file process."""
+    global _GIT_SRC
+    if _GIT_SRC is None:
+        _GIT_SRC = {}
+        try:
+            out = subprocess.run(["git", "-C", str(ROOT), "ls-tree", "-r", "-l", "-z", "HEAD", "--", "frameworks/"],
+                                 capture_output=True, check=True).stdout.decode("utf-8", "replace")
+        except Exception:
+            out = ""
+        for rec in out.split("\0"):
+            if not rec or "\t" not in rec:
+                continue
+            head, path = rec.split("\t", 1)
+            parts = head.split()
+            if len(parts) < 4 or parts[1] != "blob":
+                continue
+            segs = path.split("/")
+            if len(segs) < 3 or any(x in SRC_SKIP_DIRS for x in segs[2:-1]):
+                continue
+            size = int(parts[3]) if parts[3].isdigit() else 0
+            _GIT_SRC.setdefault(segs[1], []).append(("/".join(segs[2:]), size, parts[2]))
+    entries = sorted(_GIT_SRC.get(dir_name, []))
+    if not entries:
+        return
+    shas = [sha for _, size, sha in entries if size <= SRC_MAX_FILE]
+    blobs = {}
+    if shas:
+        proc = subprocess.run(["git", "-C", str(ROOT), "cat-file", "--batch"], input=("\n".join(shas) + "\n").encode(),
+                              capture_output=True)
+        buf, i = proc.stdout, 0
+        while i < len(buf):
+            nl = buf.index(b"\n", i)
+            hdr = buf[i:nl].split()
+            if len(hdr) < 3:
+                break
+            n = int(hdr[2])
+            blobs[hdr[0].decode()] = buf[nl + 1:nl + 1 + n]
+            i = nl + 1 + n + 1
+    for rel, size, sha in entries:
+        yield rel, size, (lambda sha=sha: blobs.get(sha, b""))
+
+
+def _source_bundle(fw, dir_name):
+    have_tree = (ROOT / "frameworks" / dir_name).is_dir()
+    files, omitted, total = [], [], 0
+    found = list(_src_files_worktree(dir_name) if have_tree else _src_files_git(dir_name))
+    if not found:
+        return None
+    for rel, size, read in found:
+        name = rel.rsplit("/", 1)[-1]
+        if name in SRC_LOCKS:
+            omitted.append({"path": rel, "why": "lockfile", "bytes": size})
+            continue
+        if size > SRC_MAX_FILE:
+            omitted.append({"path": rel, "why": "large", "bytes": size})
+            continue
+        data = read()
+        if b"\0" in data:
+            omitted.append({"path": rel, "why": "binary", "bytes": size})
+            continue
+        try:
+            text = data.decode("utf-8")
+        except UnicodeDecodeError:
+            omitted.append({"path": rel, "why": "binary", "bytes": size})
+            continue
+        files.append({"path": rel, "lang": _src_lang(rel), "bytes": size, "text": text})
+    files.sort(key=lambda f: _src_order(f["path"], f["lang"]))
+    kept = []
+    for f in files:
+        if total + f["bytes"] > SRC_MAX_TOTAL:
+            omitted.append({"path": f["path"], "why": "size budget", "bytes": f["bytes"]})
+            continue
+        total += f["bytes"]
+        kept.append(f)
+    return {"fw": fw, "dir": dir_name, "repo": SRC_REPO + dir_name, "files": kept, "omitted": omitted}
+
 TYPE_LABEL = {"flagship": "Flagship", "emerging": "Emerging",
               "experimental": "Experimental", "engine": "Engine",
               "infrastructure": "Infrastructure"}
@@ -3761,6 +3923,7 @@ def build_fw_pages(profiles, results, meta, fw_lang, badge_index, achievements,
     compare_langs = _compare_langs(profiles, results, members_by_lang)
 
     entries, cards = [], 0
+    sources = 0     # implementation bundles (source.json)
     for fw in named:
         m = meta[fw]
         kind = m.get("type", "emerging")
@@ -3771,6 +3934,11 @@ def build_fw_pages(profiles, results, meta, fw_lang, badge_index, achievements,
         og_url = (_fw_url(fw) + "og.png") if with_og else ""
         dest = FW_OUT / _slug(fw)
         dest.mkdir(parents=True, exist_ok=True)
+        bundle = _source_bundle(fw, m.get("dir") or fw)
+        if bundle:
+            (dest / "source.json").write_text(json.dumps(bundle, ensure_ascii=False, separators=(",", ":")),
+                                              encoding="utf-8")
+            sources += 1
         (dest / "index.html").write_text(
             _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url,
                      achievements.get(fw, ()), lang_scopes.get(lang), updated,
@@ -3797,6 +3965,7 @@ def build_fw_pages(profiles, results, meta, fw_lang, badge_index, achievements,
 
     (FW_OUT / "index.html").write_text(
         _fw_index_page(entries, lang_pages, updated, compare_langs), encoding="utf-8")
+    print(f"wrote {sources} implementation bundles (frameworks/<slug>/source.json)")
     return entries, cards, siblings, lang_scopes, members_by_lang, compare_langs
 
 
