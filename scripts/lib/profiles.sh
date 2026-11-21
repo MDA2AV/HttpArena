@@ -9,6 +9,17 @@
 #
 # Adding a profile: add a line to PROFILES and append to PROFILE_ORDER.
 
+# The database profiles split the box three ways instead of two, because Postgres
+# does real work on them and needs CPUs of its own: 32 logical CPUs for the server,
+# 32 for the load generator and the rest for Postgres. Each is a run of cores plus
+# their SMT siblings (N and N+64 on the bench host), the way every other profile
+# pairs them. The other profiles give the server and the generator 64 each, which
+# leaves Postgres nowhere to run but on top of them.
+DB_SERVER_CPUS="${DB_SERVER_CPUS:-0-15,64-79}"
+DB_LOADGEN_CPUS="${DB_LOADGEN_CPUS:-16-31,80-95}"
+DB_POSTGRES_CPUS="${DB_POSTGRES_CPUS:-32-63,96-127}"
+DB_THREADS="${DB_THREADS:-32}"
+
 declare -A PROFILES=(
     [baseline]="1|0|0-31,64-95|4096|"
     [pipelined]="16|0|0-31,64-95|4096|pipeline"
@@ -92,8 +103,8 @@ declare -A PROFILES=(
     # reporting a lower number that reads like a like-for-like result.
     [8gbit]="1|0|0-31,64-95|512|8gbit"
     [static-tls]="1|200|0-31,64-95|1024|static-tls"
-    [async-db]="1|0|0-31,64-95|1024|async-db"
-    [fortunes]="1|0|0-31,64-95|1024|fortunes"
+    [async-db]="1|0|$DB_SERVER_CPUS|1024|async-db"
+    [fortunes]="1|0|$DB_SERVER_CPUS|1024|fortunes"
     [baseline-h2]="1|0|0-31,64-95|256,1024|h2"
     [static-h2]="1|0|0-31,64-95|256,1024|static-h2"
     [baseline-h2c]="1|0|0-31,64-95|256,1024,4096|h2c"
@@ -142,6 +153,15 @@ parse_profile() {
         fail "profile spec '$spec' must have exactly 4 '|' separators, got $n_pipes"
     fi
     IFS='|' read -r PROF_PIPELINE PROF_REQ PROF_CPU PROF_CONNS PROF_ENDPOINT <<< "$spec"
+}
+
+# Does every CPU the database split names exist on this box? On one that is too
+# small, run_one() leaves the generator and Postgres where they are, the same way
+# framework_start() falls back when a profile's cpuset does not fit.
+db_split_fits() {
+    local highest
+    highest=$(grep -oE '[0-9]+' <<< "$DB_SERVER_CPUS,$DB_LOADGEN_CPUS,$DB_POSTGRES_CPUS" | sort -n | tail -1)
+    [ "$highest" -lt "$(nproc 2>/dev/null || echo 1)" ]
 }
 
 # Map an endpoint to the tool name that handles it.

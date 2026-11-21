@@ -21,26 +21,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "rage",
-      "language": "Ruby",
-      "rps": 109057,
-      "avg_latency": "8.69ms",
-      "p99_latency": "65.40ms",
-      "cpu": "6382.4%",
-      "memory": "10.2GiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "447.15MB/s",
-      "input_bw": "7.28MB/s",
-      "reconnects": 43324,
-      "status_2xx": 1090578,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 9
-    },
     "baseline-4096": {
       "framework": "rage",
       "language": "Ruby",

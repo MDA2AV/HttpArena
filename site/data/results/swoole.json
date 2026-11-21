@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "swoole",
-      "language": "PHP",
-      "rps": 249837,
-      "avg_latency": "3.51ms",
-      "p99_latency": "25.70ms",
-      "cpu": "4565.9%",
-      "memory": "256MiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "965.76MB/s",
-      "input_bw": "16.68MB/s",
-      "reconnects": 99881,
-      "status_2xx": 2498373,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "swoole",
       "language": "PHP",

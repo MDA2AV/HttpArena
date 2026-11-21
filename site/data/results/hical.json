@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "hical",
-      "language": "C++",
-      "rps": 137011,
-      "avg_latency": "6.94ms",
-      "p99_latency": "64.00ms",
-      "cpu": "2929.6%",
-      "memory": "117MiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "522.59MB/s",
-      "input_bw": "9.15MB/s",
-      "reconnects": 54603,
-      "status_2xx": 1370110,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "hical",
       "language": "C++",

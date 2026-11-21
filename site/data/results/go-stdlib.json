@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "go-stdlib",
-      "language": "Go",
-      "rps": 89302,
-      "avg_latency": "11.27ms",
-      "p99_latency": "27.00ms",
-      "cpu": "4058.9%",
-      "memory": "176MiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "340.59MB/s",
-      "input_bw": "5.96MB/s",
-      "reconnects": 35413,
-      "status_2xx": 893029,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "go-stdlib",
       "language": "Go",

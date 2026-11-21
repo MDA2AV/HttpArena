@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "hyperf",
-      "language": "PHP",
-      "rps": 63281,
-      "avg_latency": "15.62ms",
-      "p99_latency": "34.90ms",
-      "cpu": "6369.7%",
-      "memory": "2.0GiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "244.89MB/s",
-      "input_bw": "4.22MB/s",
-      "reconnects": 25012,
-      "status_2xx": 632810,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "hyperf",
       "language": "PHP",

@@ -248,6 +248,11 @@ run_one() {
         h2load_check_version || return 1
     fi
 
+    # Local so the adapters and save_result() see the database split below, and
+    # the next profile does not. ${..-}: run_one is also run on its own (the tests),
+    # under set -u and without the two set.
+    local GCANNON_CPUS="${GCANNON_CPUS-}" THREADS="${THREADS-}"
+
     # Reset Postgres before each DB profile so it sees the same clean,
     # freshly-seeded server a standalone `benchmark.sh <fw> <profile>` run gets.
     # Postgres is started once and shared across the whole run, so otherwise the
@@ -261,6 +266,17 @@ run_one() {
                 postgres_start
             fi
             PG_DIRTY=true
+            if db_split_fits; then
+                GCANNON_CPUS="$DB_LOADGEN_CPUS"
+                THREADS="$DB_THREADS"
+                postgres_pin "$DB_POSTGRES_CPUS"
+                info "cpus: server $PROF_CPU | generator $GCANNON_CPUS ($THREADS threads) | postgres $DB_POSTGRES_CPUS"
+            fi
+            ;;
+        gateway-64|gateway-h3|production-stack)
+            # A database profile leaves it pinned, on what are this profile's
+            # generator CPUs.
+            postgres_pin
             ;;
     esac
 

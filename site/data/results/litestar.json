@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "litestar",
-      "language": "Python",
-      "rps": 96581,
-      "avg_latency": "10.15ms",
-      "p99_latency": "69.10ms",
-      "cpu": "6570.9%",
-      "memory": "4.6GiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "370.19MB/s",
-      "input_bw": "6.45MB/s",
-      "reconnects": 38367,
-      "status_2xx": 965810,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "litestar",
       "language": "Python",

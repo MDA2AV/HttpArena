@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "fastify",
-      "language": "JS",
-      "rps": 179169,
-      "avg_latency": "5.07ms",
-      "p99_latency": "16.10ms",
-      "cpu": "6489.5%",
-      "memory": "4.6GiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "697.41MB/s",
-      "input_bw": "11.96MB/s",
-      "reconnects": 71251,
-      "status_2xx": 1791697,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "fastify",
       "language": "JS",

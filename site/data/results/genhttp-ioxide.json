@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "genhttp-ioxide",
-      "language": "C#",
-      "rps": 305792,
-      "avg_latency": "2.75ms",
-      "p99_latency": "9.23ms",
-      "cpu": "3388.1%",
-      "memory": "2.1GiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "1.15GB/s",
-      "input_bw": "20.41MB/s",
-      "reconnects": 122301,
-      "status_2xx": 3057922,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "genhttp-ioxide",
       "language": "C#",

@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "phoenix-bandit",
-      "language": "Elixir",
-      "rps": 9627,
-      "avg_latency": "106.08ms",
-      "p99_latency": "129.30ms",
-      "cpu": "1042.8%",
-      "memory": "534MiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "35.77MB/s",
-      "input_bw": "658.10KB/s",
-      "reconnects": 3072,
-      "status_2xx": 96274,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "phoenix-bandit",
       "language": "Elixir",
