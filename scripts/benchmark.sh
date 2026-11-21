@@ -48,6 +48,11 @@ PROFILE_FILTER="${POSITIONAL[1]:-}"
 
 [ -n "$FRAMEWORK_ARG" ] || fail "usage: benchmark.sh <framework> [profile[,profile...]] [--save]"
 
+run_status_dir="${HTTPARENA_RUN_STATUS_DIR:-$RESULTS_DIR/run-status}"
+mkdir -p "$run_status_dir"
+run_status_file="$run_status_dir/$FRAMEWORK_ARG.exit"
+printf 'running\n' > "$run_status_file"
+
 # The profile filter is one profile or a comma-separated list (`-t a,b` from a
 # PR comment lands here as "a,b"), run in the order given, duplicates dropped.
 # A name that is not a profile fails now, before any image is built or the
@@ -90,11 +95,14 @@ cleanup_all() {
     docker volume prune -f >/dev/null 2>&1 || true
     docker image prune  -f >/dev/null 2>&1 || true
 }
-if [ "${SKIP_TUNE:-}" != "true" ]; then
-    trap 'cleanup_all; system_restore' EXIT
-else
-    trap 'cleanup_all' EXIT
-fi
+finish_run() {
+    local status=$?
+    cleanup_all || status=1
+    if [ "${SKIP_TUNE:-}" != "true" ]; then system_restore || status=1; fi
+    printf '%s\n' "$status" > "$run_status_file"
+    exit "$status"
+}
+trap finish_run EXIT
 
 # Clean slate: stop any leftover benchmark containers from a previous
 # crashed run, AND prune any leftover dangling volumes/images from the
@@ -159,6 +167,16 @@ fi
 framework_load_meta "$FRAMEWORK_ARG"
 FRAMEWORK="$FRAMEWORK_ARG"
 
+# Client setup may build an image, so it must precede Docker's tuning restart.
+for profile in "${profiles_to_run[@]}"; do
+    framework_subscribes_to "$profile" || continue
+    parse_profile "${PROFILES[$profile]}"
+    if [ "$(endpoint_tool "$PROF_ENDPOINT")" = h2load ]; then
+        h2load_prepare || fail "HTTP/2 load generator setup failed"
+        break
+    fi
+done
+
 # Framework-level image build — skipped for compose-only entries because
 # their compose files build the server image from the repo root context,
 # not from frameworks/<fw>/. Covers gateway-64, gateway-h3, production-stack,
@@ -217,7 +235,7 @@ if $need_pg; then postgres_start; fi
 # the builds and tuning above.
 
 # run_one — single (profile, conns) iteration. Returns non-zero if the
-# server failed to start; main loop skips to the next profile in that case.
+# server failed to start or no valid measurement completed.
 run_one() {
     local profile="$1" CONNS="$2"
     parse_profile "${PROFILES[$profile]}"
@@ -226,6 +244,9 @@ run_one() {
     tool=$(endpoint_tool "$endpoint")
 
     banner "$FRAMEWORK / $profile / ${CONNS}c (tool=$tool)"
+    if [ "$tool" = h2load ]; then
+        h2load_check_version || return 1
+    fi
 
     # Reset Postgres before each DB profile so it sees the same clean,
     # freshly-seeded server a standalone `benchmark.sh <fw> <profile>` run gets.
@@ -258,11 +279,8 @@ run_one() {
 
     if ! framework_wait_ready "$endpoint"; then
         warn "$FRAMEWORK did not come up for $profile; skipping"
-        if $is_gateway; then
-            dump_compose_logs "$GATEWAY_PROJECT"
-        else
-            dump_container_logs "$CONTAINER_NAME" "$FRAMEWORK"
-        fi
+        dump_benchmark_logs
+        if [ "$SAVE_RESULTS" = true ]; then save_benchmark_logs "$profile" "$CONNS"; fi
         framework_stop
         $is_gateway && gateway_down
         return 1
@@ -302,12 +320,12 @@ run_one() {
             stats_start "$CONTAINER_NAME"
         fi
 
-        local output
+        local output run_exit=0 metrics
         # Exact cgroup CPU across exactly the window the load is applied in.
         # Cheap enough to take on every profile — two file reads — and it is
         # the measurement on the fixed-rate profiles rather than context.
         cpu_acct_start "$CONTAINER_NAME"
-        output=$("${tool//-/_}_run" "${gc_args[@]}")
+        output=$("${tool//-/_}_run" "${gc_args[@]}") || run_exit=$?
         cpu_acct_stop
         stats_stop
 
@@ -316,12 +334,23 @@ run_one() {
         info "CPU $STATS_AVG_CPU | Mem $STATS_PEAK_MEM"
         [ -n "$STATS_BREAKDOWN" ] && info "  $STATS_BREAKDOWN"
 
+        if [ "$run_exit" -ne 0 ]; then
+            warn "run $run failed: load generator exited with status $run_exit"
+            dump_benchmark_logs
+            continue
+        fi
+        if ! metrics=$("${tool//-/_}_parse" "$endpoint" "$output"); then
+            warn "run $run failed: invalid load-generator output"
+            dump_benchmark_logs
+            continue
+        fi
+
         # Parse into an associative array.
         declare -A m=()
         local line
         while IFS= read -r line; do
             [[ "$line" == *=* ]] && m["${line%%=*}"]="${line#*=}"
-        done < <("${tool//-/_}_parse" "$endpoint" "$output")
+        done <<< "$metrics"
 
         local rps_int=${m[rps]:-0}
 
@@ -340,7 +369,7 @@ run_one() {
         fi
 
         if [ -n "$_mdir" ]; then
-            "${tool//-/_}_parse" "$endpoint" "$output" > "$_mdir/$run.kv"
+            printf '%s\n' "$metrics" > "$_mdir/$run.kv"
             printf '%s' "$output" > "$_mdir/$run.out"
             {
                 printf 'cpu_usec=%s\n' "${CPU_ACCT_USEC:-}"
@@ -371,6 +400,19 @@ run_one() {
         # measured window. Two seconds is plenty below that.
         if [ "$CONNS" -ge 32768 ]; then sleep 15; else sleep 2; fi
     done
+
+    if [ "$best_rps" -lt 0 ]; then
+        warn "$profile/$CONNS: no valid measurements; no result saved"
+        if [ "$endpoint" = production-stack ]; then
+            h2load_diagnose "${gc_args[@]}" || true
+            h2load_diagnose --fixed-requests "${gc_args[@]}" || true
+            dump_benchmark_logs
+        fi
+        if [ "$SAVE_RESULTS" = true ]; then save_benchmark_logs "$profile" "$CONNS"; fi
+        [ -z "$_mdir" ] || rm -rf "$_mdir"
+        if $is_gateway; then gateway_down; else framework_stop; fi
+        return 1
+    fi
 
     # ── Latency-1M: pick the run by score, not by any single metric ─────
     #
@@ -584,6 +626,7 @@ save_result() {
   "rps": $best_rps,
   "avg_latency": "${BEST_M[avg_lat]:-}",
   "p99_latency": "${BEST_M[p99_lat]:-}",
+  "max_latency": "${BEST_M[max_lat]:-}",
   "cpu": "$best_cpu",
   "memory": "$best_mem",
   "connections": $CONNS,
@@ -600,36 +643,12 @@ save_result() {
 EOF
     info "saved results/$profile/$CONNS/${FRAMEWORK}.json"
 
-    # Persist container logs alongside results for post-mortem.
-    local log_dir="$ROOT_DIR/site/static/logs/$profile/$CONNS"
-    mkdir -p "$log_dir"
-    # Cap what a noisy container can write. A framework that logs per request
-    # produces a log proportional to throughput: sanic's static run emitted a
-    # traceback on every request and reached 240MB, which GitHub then refused to
-    # accept - the push is rejected over the 100MB file limit, after the whole
-    # benchmark has already run. Keep the tail, which is where a post-mortem
-    # looks anyway, and say so in the file when it was cut.
-    local log_max=${HTTPARENA_MAX_LOG_BYTES:-8000000}
-    local log_file="$log_dir/${FRAMEWORK}.log"
-    docker logs "$CONTAINER_NAME" >"$log_file" 2>&1 || true
-    local log_size
-    log_size=$(stat -c %s "$log_file" 2>/dev/null || echo 0)
-    if [ "$log_size" -gt "$log_max" ] 2>/dev/null; then
-        tail -c "$log_max" "$log_file" >"$log_file.tail" 2>/dev/null || true
-        {
-            echo "[httparena] container log was ${log_size} bytes and has been"
-            echo "[httparena] truncated to the last ${log_max}; a framework that"
-            echo "[httparena] logs per request is usually the cause."
-            echo
-            cat "$log_file.tail"
-        } >"$log_file"
-        rm -f "$log_file.tail"
-        warn "$FRAMEWORK $profile/$CONNS: container log was ${log_size} bytes, truncated to ${log_max}"
-    fi
+    save_benchmark_logs "$profile" "$CONNS"
 }
 
 # Iterate profiles × conns.
 declare -A BEST_M
+failed_profiles=0
 for profile in "${profiles_to_run[@]}"; do
     if [ -z "${PROFILES[$profile]+x}" ]; then
         warn "unknown profile: $profile"
@@ -640,7 +659,7 @@ for profile in "${profiles_to_run[@]}"; do
     parse_profile "${PROFILES[$profile]}"
     IFS=',' read -ra CONN_COUNTS <<< "$PROF_CONNS"
     for CONNS in "${CONN_COUNTS[@]}"; do
-        run_one "$profile" "$CONNS" || continue
+        run_one "$profile" "$CONNS" || failed_profiles=$((failed_profiles + 1))
     done
 done
 
@@ -651,4 +670,8 @@ if [ "$SAVE_RESULTS" = "true" ]; then
     python3 "$SCRIPT_DIR/rebuild_site_data.py" --root "$ROOT_DIR"
 fi
 
+if [ "$failed_profiles" -gt 0 ]; then
+    warn "$failed_profiles profile/connection measurements failed"
+    exit 1
+fi
 info "done"
