@@ -128,11 +128,11 @@ The tables below show whether a profile counts for framework entries. Engines an
 | Profile | Scored | Workload |
 |---|---|---|
 | Async DB | Yes | Async Postgres query with connection pooling |
-| Fortunes | No (*) | DB query + HTML template render. Reference-only - engine-comparison test, not part of the composite ranking |
+| Fortunes | Yes | DB query + HTML template render |
 
-Async DB ranks on its own board and counts toward no other composite. The database and its driver dominate it far more than the framework does: a framework's `async-db` number mostly reports which Postgres driver its language has, which rules it out of a ranking of HTTP paths and is what this board ranks instead.
+Async DB and Fortunes rank on their own board and count toward no other composite. The database and its driver dominate them far more than the framework does: a framework's `async-db` number mostly reports which Postgres driver its language has, which rules them out of a ranking of HTTP paths and is what this board ranks instead.
 
-Pipelined, Latency-500K/8, Static TLS and Fortunes are the reference-only profiles for framework entries - shown on the board as faded columns for comparison, but not counted in the composite score.
+Pipelined, Latency-500K/8 and Static TLS are the reference-only profiles for framework entries - shown on the board as faded columns for comparison, but not counted in the composite score.
 
 ## Memory efficiency bonus
 
@@ -187,7 +187,7 @@ B actually wins the memory term despite A's 5× throughput advantage, because `s
 Types are scored **separately** - each has its own composite ranking and normalization pool. The scored profiles differ by type:
 
 - **Frameworks** (Flagship, Emerging and Experimental, in either Standard or Tuned mode) are scored on every profile marked *Yes* above, across H/1.1, H/2, H/3, Gateway, gRPC, WebSocket and Database.
-- **Engines** are scored on the same set minus JSON Compressed and JSON h2c, since most engines don't implement compression negotiation or a JSON pipeline over h2c: Baseline, Short-lived, Async Delay, Latency-10K, Latency-1M, JSON TLS, 8Gbit, H/2 Baseline, Static and Baseline h2c, H/3 (both), gRPC (both), the gateway profiles, and WebSocket.
+- **Engines** are scored on the same set minus JSON Compressed and JSON h2c, since most engines don't implement compression negotiation or a JSON pipeline over h2c: Baseline, Short-lived, Async Delay, Latency-10K, Latency-1M, JSON TLS, 8Gbit, H/2 Baseline, Static and Baseline h2c, H/3 (both), gRPC (both), the gateway profiles, WebSocket, and Async DB and Fortunes.
 - **Infrastructure** (nginx, Caddy, h2o and similar proxies / static-file servers) is scored on the nine profiles a server can answer without an application framework behind it: Baseline, Pipelined, Short-lived, JSON TLS, Static TLS, and Baseline and Static over both H/2 and H/3. Everything else may be displayed as reference data but does not count.
 
 Note that the infrastructure set is not a subset of the framework set. Pipelined is reference-only for frameworks and engines - it measures batching more than framework throughput - but for a proxy that behaviour is exactly what is being compared, so it counts there and only there. Static TLS works the same way: serving files is the job of a static-file server, so it counts for infrastructure only.

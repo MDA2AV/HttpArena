@@ -20,6 +20,6 @@ Every HTTP/1.1 profile measures one thing at a time, so a number can be attribut
   {{< card link="async-database" title="Async Database (Postgres)" subtitle="Async Postgres range query over 100K rows, connection pooling, and JSON serialization. Ranked on the Database board, with its own CPU split." icon="database" >}}
   {{< card link="static-tls" title="Static Files over TLS" subtitle="20 static files served over HTTP/1.1 + TLS on port 8081. Reference-only for frameworks and engines, scored for infrastructure." icon="lock-closed" >}}
   {{< card link="pipelined" title="Pipelined (16x) *" subtitle="16 requests sent back-to-back per connection, testing raw I/O and pipeline batching. Reference-only - not part of the composite score." icon="fast-forward" >}}
-  {{< card link="fortunes" title="Fortunes (Templates) *" subtitle="DB query + HTML template rendering with auto-escape. Shown on the Database board for reference - not part of any composite score." icon="document-text" >}}
+  {{< card link="fortunes" title="Fortunes (Templates)" subtitle="DB query + HTML template rendering with auto-escape. Ranked on the Database board, with its own CPU split." icon="document-text" >}}
   {{< card link="tls" title="TLS Hardening (opt-in)" subtitle="Not a benchmark: certificate rotation, SNI, resumption and a vulnerability scan on a dedicated TLS listener. Passing earns the gold TLS badge." icon="shield-check" >}}
 {{< /cards >}}

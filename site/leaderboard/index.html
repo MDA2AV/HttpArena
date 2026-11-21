@@ -1364,7 +1364,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     // avg rps/mem/bw over each profile's scored conns.
     var avg={},amem={},abw={};
     D.profiles.forEach(function(p){
-      // Reference-only profiles (scored:false — pipelined, fortunes) aggregate
+      // Reference-only profiles (scored:false — pipelined, for one) aggregate
       // too: they render as faded columns in the matrix, they just never enter
       // the framework composite sum (#1058). Load-bearing for infrastructure,
       // whose composite does count Pipelined — scoredForType() can only pick a

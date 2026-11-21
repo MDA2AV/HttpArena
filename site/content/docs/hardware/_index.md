@@ -102,7 +102,9 @@ Most profiles use a 64-thread server cpuset: `0-31,64-95`. That's **32 physical 
 
 Some profiles deviate from that split:
 
-**Profiles with a Postgres sidecar** (`async-db`, `fortunes`, and the gateway stacks): the Postgres container is left unpinned. The kernel schedules it, and it typically lands on the server's CCXs, which keeps the request path's data in a shared L3.
+**The database profiles** (`async-db`, `fortunes`): the box is split three ways - the server on `0-15,64-79`, the load generator on `16-31,80-95` with 32 threads, and Postgres on `32-63,96-127`. See [Database](../test-profiles/database/#cpu-layout).
+
+**The gateway stacks** also use the Postgres sidecar, and leave it unpinned: the kernel schedules it, and it typically lands on the server's CCXs, which keeps the request path's data in a shared L3.
 
 **Multi-service stacks** (`gateway-64`, `gateway-h3`, `production-stack`): the entry's compose file splits the same 64 logical CPUs (`0-31,64-95`) across its services. The split is the entry's choice. The reference production-stack entry uses:
 
