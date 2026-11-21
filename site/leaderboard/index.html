@@ -210,6 +210,17 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   var SCOPES = [{k:'all',label:'Overall'},{k:'h1',label:'H/1.1'},{k:'h2',label:'H/2'},{k:'h3',label:'H/3'},{k:'gw',label:'Gateway'},{k:'grpc',label:'gRPC'},{k:'ws',label:'WebSocket'},{k:'db',label:'Database'}];
   function scopeLabel(k){ for(var i=0;i<SCOPES.length;i++) if(SCOPES[i].k===k) return SCOPES[i].label; return k; }
   function familyOf(p){ return {'Gateway':'gw','HTTP/2':'h2','HTTP/3':'h3','gRPC':'grpc','WebSocket':'ws','Database':'db'}[p.category]||'h1'; }
+  // A board with no results at all says so instead of blaming the filter. The Database board
+  // started over when its tests got CPUs of their own for Postgres (#1715).
+  function emptyMsg(){
+    if(state.view==='composite' && state.scope!=='all' && !D.profiles.some(function(p){ return familyOf(p)===state.scope; }))
+      return state.scope==='db'
+        ? 'No results yet. The database tests were reset for their new CPU split; entries appear as they are re-run.'
+        : 'No results on this board yet.';
+    return 'No frameworks match this filter.';
+  }
+  // a detailed view with no results yet opens its family's board (the database tests after the reset)
+  var EMPTY_PROF_FAMILY={'async-db':'db','fortunes':'db'};
   // cats must list every CATALOG category that belongs to the family. This is
   // the nav's only source of profiles, so a category missing here disappears
   // from Detailed Views entirely while still ranking on the composite --
@@ -1650,7 +1661,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       expanded.add('detailed'); expanded.add(familyOf(PROF[p.p]));
     } else {
       state.view='composite';
-      state.scope=(p.scope && SCOPES.some(function(s){return s.k===p.scope;}))?p.scope:'h1';
+      state.scope=(p.scope && SCOPES.some(function(s){return s.k===p.scope;}))?p.scope:(p.p && EMPTY_PROF_FAMILY[p.p])||'h1';
       state.useMem = p.mem==='1';
       // On by default. A rank badge's link spells out its leagues (type=) and the
       // tuned filter, never rescale=, and its rank was taken with rescale off:
@@ -1899,7 +1910,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       return tr+'</tr>';
     }).join('');
     var colspan=pids.length+4+(specSuite()?1:0)+(resilCol()?1:0);
-    document.getElementById('rows').innerHTML='<div class="cscroll-row endonly" id="cscrollRowTop"><button class="cscroll-end" id="cscrollEndTop" type="button"></button></div><div class="cwrap" id="cwrap"><table class="cm'+(state.compactFw?' compact':'')+(state.heat?' heat':'')+'"><thead><tr>'+th+'</tr></thead><tbody>'+(body||'<tr><td colspan="'+colspan+'" class="empty">No frameworks match this filter.</td></tr>')+'</tbody></table></div><div class="cscroll-row" id="cscrollRow"><div class="cscroll" id="cscrollTop"><div></div></div><button class="cscroll-end" id="cscrollEnd" type="button"></button></div>';
+    document.getElementById('rows').innerHTML='<div class="cscroll-row endonly" id="cscrollRowTop"><button class="cscroll-end" id="cscrollEndTop" type="button"></button></div><div class="cwrap" id="cwrap"><table class="cm'+(state.compactFw?' compact':'')+(state.heat?' heat':'')+'"><thead><tr>'+th+'</tr></thead><tbody>'+(body||'<tr><td colspan="'+colspan+'" class="empty">'+esc(emptyMsg())+'</td></tr>')+'</tbody></table></div><div class="cscroll-row" id="cscrollRow"><div class="cscroll" id="cscrollTop"><div></div></div><button class="cscroll-end" id="cscrollEnd" type="button"></button></div>';
     // The ? in the Composite header is a link out to the docs, not a sort
     // target - a click there must not also reorder the table behind the
     // navigation.
@@ -2091,7 +2102,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       var x={ lc:lc(r.lang), rank:rankMap[r.fw], t:typeOf(r.fw), repo:repoOf(r.fw), dark:dark, maxRps:maxRps };
       return '<div class="row'+(favs.has(r.fw)?' fav':'')+'" data-fw-row="'+esc(r.fw)+'">'+COLS.map(function(col){return profileCell(col.k, r, x);}).join('')+'</div>';
     }).join('');
-    document.getElementById('rows').innerHTML=html||'<div class="empty">No frameworks match this filter.</div>';
+    document.getElementById('rows').innerHTML=html||'<div class="empty">'+esc(emptyMsg())+'</div>';
   }
 
   // ── the rack ─────────────────────────────────────────────
@@ -2709,7 +2720,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       els[u.fw]=el; order.push(el);
     });
     Object.keys(old).forEach(function(fw){ if(!els[fw]){ if(rackIO) rackIO.unobserve(old[fw]); } });
-    RACK.tail.innerHTML=(units.length?'':'<div class="unit blank msg"><div class="ear l"></div><div class="face"><span>No frameworks match this filter.</span></div><div class="ear r"></div></div>')
+    RACK.tail.innerHTML=(units.length?'':'<div class="unit blank msg"><div class="ear l"></div><div class="face"><span>'+esc(emptyMsg())+'</span></div><div class="ear r"></div></div>')
       + '<div class="unit blank"><div class="ear l"></div><div class="face"></div><div class="ear r"></div></div>'
       + '<div class="unit blank cm"><div class="ear l"></div><div class="face"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="ear r"></div></div>'
       + '<div class="rack-foot"><i></i><i></i></div>';
