@@ -1,0 +1,14 @@
+{
+  "name": "httparena-nifra-uws",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@nifrajs/core": "5.16.0",
+    "@nifrajs/middleware": "5.16.0",
+    "@nifrajs/node": "5.16.0",
+    "@nifrajs/node-uws": "5.16.0",
+    "handlebars": "4.7.10",
+    "pg": "8.23.1",
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.71.0"
+  }
+}
