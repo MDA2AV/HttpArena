@@ -1,26 +1,6 @@
 {
   "framework": "cweb",
   "results": {
-    "async-db-1024": {
-      "framework": "cweb",
-      "language": "C",
-      "rps": 314466,
-      "avg_latency": "2.79ms",
-      "p99_latency": "20.90ms",
-      "cpu": "2962.3%",
-      "memory": "386MiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "1.17GB/s",
-      "input_bw": "20.99MB/s",
-      "reconnects": 125880,
-      "status_2xx": 3144664,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "cweb",
       "language": "C",

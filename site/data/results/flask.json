@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "flask",
-      "language": "Python",
-      "rps": 42384,
-      "avg_latency": "23.88ms",
-      "p99_latency": "25.70ms",
-      "cpu": "5346.6%",
-      "memory": "3.3GiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "163.19MB/s",
-      "input_bw": "2.83MB/s",
-      "reconnects": 423841,
-      "status_2xx": 423842,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "flask",
       "language": "Python",

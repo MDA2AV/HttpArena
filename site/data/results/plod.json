@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "plod",
-      "language": "Goose",
-      "rps": 352767,
-      "avg_latency": "2.26ms",
-      "p99_latency": "16.70ms",
-      "cpu": "3315.6%",
-      "memory": "186MiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "1.32GB/s",
-      "input_bw": "23.55MB/s",
-      "reconnects": 140888,
-      "status_2xx": 3527670,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "plod",
       "language": "Goose",

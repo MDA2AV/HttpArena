@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "starlette",
-      "language": "Python",
-      "rps": 88740,
-      "avg_latency": "11.20ms",
-      "p99_latency": "79.90ms",
-      "cpu": "6476.7%",
-      "memory": "3.7GiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "341.49MB/s",
-      "input_bw": "5.92MB/s",
-      "reconnects": 35178,
-      "status_2xx": 887407,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "starlette",
       "language": "Python",

@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "aiohttp",
-      "language": "Python",
-      "rps": 102119,
-      "avg_latency": "9.54ms",
-      "p99_latency": "52.20ms",
-      "cpu": "6127.2%",
-      "memory": "668MiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "443.09MB/s",
-      "input_bw": "6.82MB/s",
-      "reconnects": 40523,
-      "status_2xx": 1021198,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "aiohttp",
       "language": "Python",

@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "fib",
-      "language": "Go",
-      "rps": 267170,
-      "avg_latency": "3.20ms",
-      "p99_latency": "11.70ms",
-      "cpu": "5380.6%",
-      "memory": "288MiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "1.00GB/s",
-      "input_bw": "17.84MB/s",
-      "reconnects": 106953,
-      "status_2xx": 2671701,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "fib",
       "language": "Go",

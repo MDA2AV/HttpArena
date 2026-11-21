@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "genhttp-kt-netty",
-      "language": "Kotlin",
-      "rps": 42247,
-      "avg_latency": "24.06ms",
-      "p99_latency": "77.70ms",
-      "cpu": "5690.0%",
-      "memory": "1.4GiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "163.22MB/s",
-      "input_bw": "2.82MB/s",
-      "reconnects": 16416,
-      "status_2xx": 422477,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "genhttp-kt-netty",
       "language": "Kotlin",

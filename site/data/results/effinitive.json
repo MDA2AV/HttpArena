@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "effinitive",
-      "language": "C#",
-      "rps": 158279,
-      "avg_latency": "6.02ms",
-      "p99_latency": "14.30ms",
-      "cpu": "3165.8%",
-      "memory": "508MiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "621.63MB/s",
-      "input_bw": "10.57MB/s",
-      "reconnects": 63095,
-      "status_2xx": 1582793,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "effinitive",
       "language": "C#",

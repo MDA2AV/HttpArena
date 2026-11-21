@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "nilo",
-      "language": "Zig",
-      "rps": 68515,
-      "avg_latency": "14.47ms",
-      "p99_latency": "59.80ms",
-      "cpu": "769.1%",
-      "memory": "150MiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "262.88MB/s",
-      "input_bw": "4.57MB/s",
-      "reconnects": 27129,
-      "status_2xx": 685157,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "nilo",
       "language": "Zig",

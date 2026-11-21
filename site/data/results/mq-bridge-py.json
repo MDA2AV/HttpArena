@@ -26,26 +26,6 @@
       "rate_ratio": 0.9874,
       "p99_9_latency": "5942.0us"
     },
-    "async-db-1024": {
-      "framework": "mq-bridge-py",
-      "language": "Python",
-      "rps": 77506,
-      "avg_latency": "12.73ms",
-      "p99_latency": "59.80ms",
-      "cpu": "5400.8%",
-      "memory": "5.2GiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "301.15MB/s",
-      "input_bw": "5.17MB/s",
-      "reconnects": 30735,
-      "status_2xx": 775069,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "mq-bridge-py",
       "language": "Python",

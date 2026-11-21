@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "humming-bird",
-      "language": "Swift",
-      "rps": 17135,
-      "avg_latency": "55.38ms",
-      "p99_latency": "68.90ms",
-      "cpu": "6878.5%",
-      "memory": "91.8MiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "65.71MB/s",
-      "input_bw": "1.14MB/s",
-      "reconnects": 6376,
-      "status_2xx": 171352,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "humming-bird",
       "language": "Swift",

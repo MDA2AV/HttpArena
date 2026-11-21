@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "sinatra",
-      "language": "Ruby",
-      "rps": 114472,
-      "avg_latency": "8.27ms",
-      "p99_latency": "28.30ms",
-      "cpu": "6344.2%",
-      "memory": "4.9GiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "462.57MB/s",
-      "input_bw": "7.64MB/s",
-      "reconnects": 45528,
-      "status_2xx": 1144728,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "sinatra",
       "language": "Ruby",

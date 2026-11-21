@@ -1078,6 +1078,9 @@ html.maint .sortctl{display:none !important}
 .unit.blank>.face{cursor:default; height:26px; background:
   radial-gradient(circle, var(--hole) 1.3px, transparent 1.6px) 0 0/9px 9px, var(--face); opacity:.92}
 .unit.blank.msg>.face{height:var(--u); background:var(--face); align-items:center; justify-content:center; font:600 .9rem var(--label); letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+/* a longer message (an empty board saying why) wraps onto a second line instead of running off the rack */
+.unit.blank.msg>.face{height:auto; min-height:var(--u); padding:.45rem 1.2rem; line-height:1.45}
+.unit.blank.msg>.face>span{white-space:normal; text-align:center; flex:0 1 auto; min-width:0}
 .unit.blank.cm>.face{height:34px; background:var(--patch); justify-content:space-around; align-items:center; padding:0 8%}
 .unit.blank.cm>.face i{width:44px; height:16px; border:2px solid var(--edge-lo); border-top:0; border-radius:0 0 10px 10px; background:var(--rack-in)}
 .rack-foot{height:18px; background:var(--post); border-radius:0 0 5px 5px; position:relative}

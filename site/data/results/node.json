@@ -1,26 +1,6 @@
 {
   "framework": "node",
   "results": {
-    "async-db-1024": {
-      "framework": "node",
-      "language": "JS",
-      "rps": 183581,
-      "avg_latency": "5.10ms",
-      "p99_latency": "47.90ms",
-      "cpu": "5449.4%",
-      "memory": "4.2GiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "710.90MB/s",
-      "input_bw": "12.26MB/s",
-      "reconnects": 73386,
-      "status_2xx": 1835810,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "node",
       "language": "JS",
@@ -65,25 +45,6 @@
       "target_rate": 50000,
       "rate_ratio": 0.9867,
       "p99_9_latency": "8260.0us"
-    },
-    "fortunes-1024": {
-      "framework": "node",
-      "language": "JS",
-      "rps": 76462,
-      "avg_latency": "12.24ms",
-      "p99_latency": "22.10ms",
-      "cpu": "6489.2%",
-      "memory": "4.3GiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "1.77GB/s",
-      "reconnects": 0,
-      "status_2xx": 382310,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     },
     "json-comp-16384": {
       "framework": "node",

@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "zinc",
-      "language": "Go",
-      "rps": 96667,
-      "avg_latency": "10.46ms",
-      "p99_latency": "24.20ms",
-      "cpu": "4131.9%",
-      "memory": "184MiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "373.47MB/s",
-      "input_bw": "6.45MB/s",
-      "reconnects": 38360,
-      "status_2xx": 966675,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "zinc",
       "language": "Go",

@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "libuvcpp",
-      "language": "C++",
-      "rps": 95435,
-      "avg_latency": "10.21ms",
-      "p99_latency": "39.70ms",
-      "cpu": "2796.2%",
-      "memory": "185MiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "369.07MB/s",
-      "input_bw": "6.37MB/s",
-      "reconnects": 37933,
-      "status_2xx": 954355,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "libuvcpp",
       "language": "C++",

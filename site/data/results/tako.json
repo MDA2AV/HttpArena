@@ -48,27 +48,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "tako",
-      "language": "Rust",
-      "rps": 235674,
-      "avg_latency": "3.83ms",
-      "p99_latency": "6.10ms",
-      "max_latency": "",
-      "cpu": "3547.8%",
-      "memory": "97MiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "899.14MB/s",
-      "input_bw": "15.73MB/s",
-      "reconnects": 93945,
-      "status_2xx": 2356749,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "tako",
       "language": "Rust",

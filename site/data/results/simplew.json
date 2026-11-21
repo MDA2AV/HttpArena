@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "simplew",
-      "language": "C#",
-      "rps": 175497,
-      "avg_latency": "5.36ms",
-      "p99_latency": "13.00ms",
-      "cpu": "3247.0%",
-      "memory": "340MiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "676.24MB/s",
-      "input_bw": "11.72MB/s",
-      "reconnects": 70136,
-      "status_2xx": 1754974,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "simplew",
       "language": "C#",

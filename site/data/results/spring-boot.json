@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "spring-boot",
-      "language": "Java",
-      "rps": 18569,
-      "avg_latency": "51.18ms",
-      "p99_latency": "80.40ms",
-      "cpu": "991.7%",
-      "memory": "1.7GiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "71.04MB/s",
-      "input_bw": "1.24MB/s",
-      "reconnects": 6939,
-      "status_2xx": 185697,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "spring-boot",
       "language": "Java",

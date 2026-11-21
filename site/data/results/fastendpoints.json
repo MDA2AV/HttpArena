@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "fastendpoints",
-      "language": "C#",
-      "rps": 164289,
-      "avg_latency": "5.55ms",
-      "p99_latency": "19.40ms",
-      "cpu": "3668.9%",
-      "memory": "399MiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "636.15MB/s",
-      "input_bw": "10.97MB/s",
-      "reconnects": 65488,
-      "status_2xx": 1642894,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "fastendpoints",
       "language": "C#",

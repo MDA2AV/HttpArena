@@ -46,26 +46,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "async-db-1024": {
-      "framework": "helidon-production",
-      "language": "Java",
-      "rps": 221050,
-      "avg_latency": "4.22ms",
-      "p99_latency": "39.60ms",
-      "cpu": "4783.8%",
-      "memory": "8.5GiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "847.68MB/s",
-      "input_bw": "14.76MB/s",
-      "reconnects": 87967,
-      "status_2xx": 2210506,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "baseline-4096": {
       "framework": "helidon-production",
       "language": "Java",
