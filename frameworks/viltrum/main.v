@@ -83,6 +83,21 @@ fn main() {
 	app.post('/echo', fn (mut c viltrum.Ctx) {
 		c.bytes(200, 'application/octet-stream', c.body())
 	})
+	// /spec: the route the compliance suites (Http11Probe, h2spec) run against. HEAD
+	// falls back to GET and the engine drops the body.
+	app.get('/spec', fn (mut c viltrum.Ctx) {
+		c.text(200, 'spec ok')
+	})
+	app.post('/spec', fn (mut c viltrum.Ctx) {
+		c.bytes(200, 'application/octet-stream', c.body())
+	})
+	app.options('/spec', fn (mut c viltrum.Ctx) {
+		_ = c.body()
+		c.set_header('Allow', 'GET, HEAD, POST, OPTIONS')
+		c.text(200, '')
+	})
+	app.get('/spec/headers', spec_headers)
+	app.post('/spec/headers', spec_headers)
 	// echo-ws: each message comes back as it came, text or binary, from the worker
 	// that owns the connection.
 	app.ws('/ws', viltrum.WsHandler{
@@ -134,6 +149,20 @@ fn first(a []Item, n int) []Item {
 
 fn delay_done(mut c viltrum.Ctx, ms u64) {
 	c.text_int(200, i64(ms))
+}
+
+// spec_headers lists the request's fields as the parser stored them, one `Name: Value` a line.
+fn spec_headers(mut c viltrum.Ctx) {
+	_ = c.body()
+	mut out := []u8{cap: 1024}
+	for k in 0 .. c.head.nfields {
+		f := c.head.fields[k]
+		out << c.buf[f.name.start..f.name.start + f.name.len]
+		out << ': '.bytes()
+		out << c.buf[f.value.start..f.value.start + f.value.len]
+		out << `\n`
+	}
+	c.bytes(200, 'text/plain', out)
 }
 
 fn baseline(mut c viltrum.Ctx) {
