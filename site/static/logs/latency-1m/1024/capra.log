@@ -19,7 +19,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -41,7 +41,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -63,7 +63,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -85,7 +85,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -107,7 +107,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -129,7 +129,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -151,7 +151,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -173,7 +173,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -195,7 +195,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -217,7 +217,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -239,7 +239,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -261,7 +261,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -283,7 +283,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -305,7 +305,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -327,7 +327,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -349,7 +349,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -371,7 +371,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -393,7 +393,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -415,7 +415,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -437,7 +437,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -459,7 +459,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -481,7 +481,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -503,7 +503,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -525,7 +525,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -547,7 +547,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -569,7 +569,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -591,7 +591,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -613,7 +613,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -635,7 +635,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -657,7 +657,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -679,7 +679,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -701,7 +701,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -723,7 +723,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -745,7 +745,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -767,7 +767,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -789,7 +789,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -811,7 +811,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -833,7 +833,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -855,7 +855,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -877,7 +877,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -899,7 +899,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -921,7 +921,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -943,7 +943,7 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
 #error {
  :cause "Connection reset"
  :via
@@ -965,4 +965,1148 @@
   [teensyp.server$server_loop invoke "server.clj" 385]
   [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
   [clojure.lang.AFn run "AFn.java" 22]
-  [java.lang.Thread run "Thread.java" 1516]]}
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}
+#error {
+ :cause "Connection reset"
+ :via
+ [{:type java.net.SocketException
+   :message "Connection reset"
+   :at [sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]}]
+ :trace
+ [[sun.nio.ch.SocketChannelImpl throwConnectionReset "SocketChannelImpl.java" 398]
+  [sun.nio.ch.SocketChannelImpl implRead "SocketChannelImpl.java" 430]
+  [sun.nio.ch.SocketChannelImpl read "SocketChannelImpl.java" 488]
+  [teensyp.server$handle_read invokeStatic "server.clj" 288]
+  [teensyp.server$handle_read invoke "server.clj" 278]
+  [teensyp.server$handle_key invokeStatic "server.clj" 322]
+  [teensyp.server$handle_key invoke "server.clj" 318]
+  [teensyp.server$server_loop$fn__730 invoke "server.clj" 394]
+  [teensyp.server$drain invokeStatic "server.clj" 30]
+  [teensyp.server$drain invoke "server.clj" 25]
+  [teensyp.server$server_loop invokeStatic "server.clj" 394]
+  [teensyp.server$server_loop invoke "server.clj" 385]
+  [teensyp.server$run_server$fn__766 invoke "server.clj" 455]
+  [clojure.lang.AFn run "AFn.java" 22]
+  [java.lang.Thread run "Thread.java" 1527]]}

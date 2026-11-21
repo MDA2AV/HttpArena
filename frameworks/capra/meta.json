@@ -11,5 +11,5 @@
     "pipelined", "limited-conn", "json-comp",
     "echo-ws", "echo-ws-pipeline", "echo-ws-limited"
   ],
-  "maintainers": []
+  "maintainers": ["Ramblurr"]
 }

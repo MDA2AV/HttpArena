@@ -1637,7 +1637,7 @@
   },
   "morojs": {
     "dir": "morojs",
-    "description": "MoroJS 1.8 on its native HTTP engine (@morojs/engine), default configuration, clustered by the framework itself with one worker thread per core sharing the port through SO_REUSEPORT. Routing, path and query parameters and body parsing through the Moro request, JSON through res.json, compression (brotli quality 3 or gzip level 3 as the client accepts, one reused encoder per setting per worker, handed to the engine's own response path by the route middleware), static files from the built-in middleware's in-memory cache and the cache-aside through the built-in cache adapters, WebSockets through the engine's own RFC 6455 support, upgrades included, HTTP/2 through Moro's HTTP/2 server on Node's http2 module.",
+    "description": "MoroJS 1.8 on its native HTTP engine (@morojs/engine), clustered by the framework itself with one worker thread per core sharing the port through SO_REUSEPORT. Routing, path and query parameters and body parsing through the Moro request, JSON through res.json, compression (brotli quality 3 or gzip level 3 as the client accepts, one reused encoder per setting per worker, handed to the engine's own response path by the route middleware), static files from the built-in middleware's in-memory cache and the cache-aside through the built-in cache adapters, WebSockets through the engine's own RFC 6455 support, upgrades included, HTTP/2 through the engine's own implementation (ALPN h2 on TLS, prior knowledge on cleartext), TLS through the BoringSSL bundled with the engine.",
     "repo": "https://github.com/Moro-JS/moro",
     "type": "emerging",
     "engine": "@morojs/engine",
@@ -1988,6 +1988,21 @@
       "response": true
     }
   },
+  "Proa": {
+    "dir": "proa",
+    "description": "Compiled Proa HTML components served over thread-per-core Axum/Hyper workers with mimalloc v2, sonic-rs JSON serialization, thread-local libdeflater gzip compression, TLS 1.3 (AES-128-GCM via aws-lc-rs) on :8081, and per-worker deadpool-postgres pools.",
+    "repo": "https://github.com/Proa-Labs/proa",
+    "type": "emerging",
+    "engine": "hyper",
+    "mode": "tuned",
+    "website": "https://proa.so",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "proxygen-coro": {
     "dir": "proxygen-coro",
     "description": "Meta's Proxygen native coroutine HTTPServer and HTTPSource APIs across HTTP/1.1, HTTP/1.1 TLS, h2c, HTTP/2 TLS, HTTP/3 QUIC, and RFC 6455 WebSockets.",
@@ -2326,6 +2341,20 @@
       "response": true
     }
   },
+  "Sharaf": {
+    "dir": "sharaf",
+    "description": "Sharaf with one virtual thread per persistent connection, Squery-backed PostgreSQL, compression, and the supported HTTP/1 profiles.",
+    "repo": "https://github.com/sake92/sharaf",
+    "type": "experimental",
+    "engine": "Potateh",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "simplew-tuned": {
     "dir": "simplew-tuned",
     "description": "SimpleW is Modern Web Server for .NET. Designed for Simplicity. Built for Speed.",
@@ -2578,7 +2607,7 @@
   },
   "tako": {
     "dir": "tako",
-    "description": "Tako 2.4.2 on hyper and Tokio, default configuration. Plain HTTP/1.1 and WebSocket on :8080 run tako's per-thread server (one current-thread runtime per CPU, SO_REUSEPORT listeners, PerThreadConfig::default()); h2c (:8082), HTTP/1.1 and h2 over rustls (:8081, :8443) and HTTP/3 over quinn (:8443/udp) run tako's multi-thread Server. Routing, Path/Query/State/body extractors and the Json responder through the tako API, the compression plugin with default settings on the JSON routes, ServeDir with precompressed .br/.gz sidecars read from disk per request, TakoWs for /ws, and deadpool-postgres for async-db.",
+    "description": "Tako 2.7.1 on hyper and Tokio, default configuration. Plain HTTP/1.1 and WebSocket on :8080 run tako's per-thread server (one current-thread runtime per CPU, SO_REUSEPORT listeners, PerThreadConfig::default()); h2c (:8082), HTTP/1.1 and h2 over rustls (:8081, :8443) and HTTP/3 over quinn (:8443/udp) run tako's multi-thread Server. Routing, Path/Query/State/body extractors and the Json responder through the tako API, the compression plugin with default settings on the JSON routes, ServeDir with precompressed .br/.gz sidecars read from disk per request, WebSocketUpgrade for /ws, and deadpool-postgres for async-db.",
     "repo": "https://github.com/rust-dd/tako",
     "type": "emerging",
     "engine": "hyper",
@@ -2608,7 +2637,7 @@
       },
       {
         "dir": "tako-grpc",
-        "description": "Tako 2.4.1 gRPC: benchmark.BenchmarkService/GetSum as a plain tako route with the GrpcRequest extractor and GrpcResponse responder, prost messages. h2c on :8080 and h2 over rustls on :8443, both on tako's multi-thread Server with default configuration.",
+        "description": "Tako 2.7.1 gRPC: benchmark.BenchmarkService/GetSum as a plain tako route with the GrpcRequest extractor and GrpcResponse responder, prost messages. h2c on :8080 and h2 over rustls on :8443, both on tako's multi-thread Server with default configuration.",
         "repo": "https://github.com/rust-dd/tako",
         "type": "emerging",
         "engine": "hyper",

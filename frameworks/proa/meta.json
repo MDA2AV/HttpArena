@@ -1,0 +1,32 @@
+{
+  "display_name": "Proa",
+  "language": "Rust",
+  "engine": "hyper",
+  "type": "emerging",
+  "mode": "tuned",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "description": "Compiled Proa HTML components served over thread-per-core Axum/Hyper workers with mimalloc v2, sonic-rs JSON serialization, thread-local libdeflater gzip compression, TLS 1.3 (AES-128-GCM via aws-lc-rs) on :8081, and per-worker deadpool-postgres pools.",
+  "repo": "https://github.com/Proa-Labs/proa",
+  "website": "https://proa.so",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "async",
+    "latency-10k",
+    "latency-1m",
+    "latency-500k-8cpu",
+    "json-comp",
+    "json-tls",
+    "8gbit",
+    "async-db",
+    "fortunes"
+  ],
+  "maintainers": ["hariria"]
+}
