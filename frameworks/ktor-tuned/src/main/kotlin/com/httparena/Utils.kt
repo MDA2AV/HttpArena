@@ -3,6 +3,8 @@ package com.httparena
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.utils.io.core.discard
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.io.Buffer
 import kotlinx.io.RawSink
 import kotlinx.serialization.json.Json
@@ -80,6 +82,7 @@ object ArenaApplicationDepsFactory {
         val dataset: List<DatasetItem> = datasetFile.takeIf { it.exists() }?.let {
             json.decodeFromString(it.readText())
         } ?: emptyList()
+        val ioDispatcher = Dispatchers.IO.limitedParallelism(minOf(64, cpuCores * 2))
 
         val postgres: Database? = System.getenv("DATABASE_URL")?.let { dbUrl ->
             runCatching {
@@ -139,7 +142,8 @@ object ArenaApplicationDepsFactory {
             crudCache,
             dataset,
             postgres,
-            keystore
+            keystore,
+            ioDispatcher,
         )
     }
 }
@@ -157,4 +161,5 @@ class ArenaApplicationDeps(
     val dataset: List<DatasetItem>,
     val postgres: Database?,
     val keyStore: KeyStore?,
+    val ioDispatcher: CoroutineDispatcher,
 )

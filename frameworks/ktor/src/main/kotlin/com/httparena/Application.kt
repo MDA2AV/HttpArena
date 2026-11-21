@@ -18,8 +18,10 @@ import io.ktor.server.websocket.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlinx.html.*
+import kotlinx.serialization.json.JsonElement
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.between
 import org.jetbrains.exposed.v1.core.eq
@@ -199,7 +201,7 @@ private fun Application.configureRouting(appData: ArenaApplicationDeps) {
                 val max = call.request.queryParameters["max"]?.toIntOrNull() ?: 50
                 val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 50).coerceIn(1, 50)
                 try {
-                    val items = withContext(Dispatchers.IO) {
+                    val items = withContext(appData.ioDispatcher) {
                         transaction(appData.postgres, readOnly = true) {
                             with(ItemTable) {
                                 selectAll()
@@ -258,7 +260,7 @@ private fun Application.configureRouting(appData: ArenaApplicationDeps) {
         get("/fortunes") {
             val fortunes = mutableListOf<Fortune>()
             try {
-                withContext(Dispatchers.IO) {
+                withContext(appData.ioDispatcher) {
                     transaction(appData.postgres, readOnly = true) {
                         FortuneTable.selectAll()
                             .map(FortuneTable::toFortune)
@@ -302,6 +304,62 @@ private fun Application.configureRouting(appData: ArenaApplicationDeps) {
             call.respond(TextContent(delayParam, ContentType.Text.Plain))
         }
 
+        /**
+         * Parses the JSON body and responds with 200.
+         * https://http-arena.com/docs/test-profiles/resilience/
+         *
+         * Ghost doesn't have a generic element so we use `kotlinx.serialization` instead here.
+         */
+        route("/parse") {
+            install(ContentNegotiation) {
+                json(appData.json)
+            }
+            post {
+                try {
+                    call.receive<JsonElement>() // parses the payload
+                    call.respond(HttpStatusCode.OK)
+                } catch (_: Exception) {
+                    ensureActive()
+                    call.respond(HttpStatusCode.BadRequest)
+                }
+            }
+        }
+
+        /**
+         * Endpoints used in the compliance testing.
+         * https://http-arena.com/docs/test-profiles/compliance/implementation/
+         */
+        route("/spec") {
+            val specBody = ByteArrayContent("spec ok".toByteArray(), ContentType.Text.Plain)
+
+            get { call.respond(specBody) }
+            head { call.respond(specBody) }
+            options {
+                call.receiveChannel().discard()
+                call.response.headers.append(HttpHeaders.Allow, "GET, HEAD, POST, OPTIONS")
+                call.respond(HttpStatusCode.OK)
+            }
+            post {
+                val body = call.receive<ByteArray>()
+                call.respond(ByteArrayContent(body, ContentType.Application.OctetStream))
+            }
+
+            suspend fun ApplicationCall.respondHeaders() {
+                receiveChannel().discard()
+                val text = buildString {
+                    request.headers.forEach { name, values ->
+                        values.forEach { append(name).append(": ").append(it).append('\n') }
+                    }
+                }
+                respond(TextContent(text, ContentType.Text.Plain))
+            }
+
+            route("/headers") {
+                get { call.respondHeaders() }
+                post { call.respondHeaders() }
+            }
+        }
+
     }
 }
 
@@ -317,7 +375,7 @@ fun Route.crudEndpoints(appData: ArenaApplicationDeps, log: Logger = LoggerFacto
             val offset = (page - 1).toLong() * limit
 
             try {
-                val items = withContext(Dispatchers.IO) {
+                val items = withContext(appData.ioDispatcher) {
                     transaction(appData.postgres, readOnly = true) {
                         ItemTable.selectAll()
                             .where { ItemTable.category eq categoryParam }
@@ -347,7 +405,7 @@ fun Route.crudEndpoints(appData: ArenaApplicationDeps, log: Logger = LoggerFacto
             }
 
             try {
-                val row = withContext(Dispatchers.IO) {
+                val row = withContext(appData.ioDispatcher) {
                     transaction(appData.postgres, readOnly = true) {
                         ItemTable.selectAll()
                             .where { ItemTable.id eq id }
@@ -378,7 +436,7 @@ fun Route.crudEndpoints(appData: ArenaApplicationDeps, log: Logger = LoggerFacto
                 return@post
             }
             try {
-                withContext(Dispatchers.IO) {
+                withContext(appData.ioDispatcher) {
                     transaction(appData.postgres) {
                         ItemTable.upsert(
                             keys = arrayOf(ItemTable.id),
@@ -421,7 +479,7 @@ fun Route.crudEndpoints(appData: ArenaApplicationDeps, log: Logger = LoggerFacto
                 return@put
             }
             try {
-                val updated = withContext(Dispatchers.IO) {
+                val updated = withContext(appData.ioDispatcher) {
                     transaction(appData.postgres) {
                         val rows = ItemTable.update({ ItemTable.id eq id }) { stmt ->
                             req.name?.let { v -> stmt[ItemTable.name] = v }
