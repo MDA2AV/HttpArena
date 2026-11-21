@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Scoring for the fixed-rate profiles: `latency-1m`, `latency-10k` and `8gbit`.
+"""Scoring for the fixed-rate profiles: `latency-1m`, `latency-10k`, `8gbit`, and
+the held-connection profiles `connections-1m`, `connections-1m-tls` and
+`connections-5m` (CON-1M, CON-1M-TLS, CON-5M).
 
 Every other profile here ranks on one number, requests per second. This one
 cannot: the rate is pinned, so every entry that finishes serves the same load
@@ -41,6 +43,26 @@ For the same reason nothing is rescaled to make the leader exactly 100: the top
 entry scores in the low-to-mid 90s because no single entry is simultaneously
 best on cost and on both tails, and that gap is information.
 
+The held-connection profiles score what holding the fleet costs instead:
+
+    rateFactor = min(1, achieved_rps / FULL_RATE[profile])
+    quality    = 0.25*cpuScore + 0.25*memScore + 0.25*p50Score + 0.25*p99Score
+    score      = 100 * rateFactor * quality
+
+    cpuScore   = bestCpu / cpu                       (linear, CPU per request)
+    memScore   = bestMem / mem                       (linear, the server's peak memory)
+    p50Score   = 1 - log10(p50 / bestP50) / 3        (clamped to 0..1)
+    p99Score   = 1 - log10(p99 / bestP99) / 3        (clamped to 0..1)
+
+A million connections held at one request every four seconds is mostly
+waiting, so what separates servers is what the waiting costs: the memory each
+connection keeps, the CPU a request carries while the rest of the fleet sits
+in the poll set, and how long a request takes when it finally comes - typically
+(p50) and in the tail (p99). Memory and CPU spread over a few times, so they
+are plain ratios; both latencies get the three-decade scale the p99 has above.
+The rate factor still applies: a connection that never opened sends nothing, so
+a fleet only partly held shows up as a shortfall in the rate.
+
 Two modes:
 
     latency_score.py --pick <dir> [--profile P]   best of N runs (benchmark.sh)
@@ -65,11 +87,27 @@ FULL_RATE = {
     # Keep in step with LAT_FULL in site/leaderboard/index.html - check_badge_parity.js
     # compares the two and fails the deploy when they disagree.
     "8gbit":     47_500.0,
+    # Five million held connections at 1.25M req/s, measured on the window
+    # after the fleet is connected: 95% of the target, like the others. A
+    # connection that never opened sends nothing, so a fleet only partly held
+    # lands here as a rate shortfall.
+    "connections-5m":     1_187_500.0,
+    # A million held connections at 250K req/s, over TLS or on zrk, scored the
+    # same way.
+    "connections-1m-tls": 237_500.0,
+    "connections-1m": 237_500.0,
 }
 DEFAULT_PROFILE = "latency-1m"
 W_CPU, W_P99, W_MEAN = 0.50, 0.25, 0.25
 DECADES = 3.0        # p99: a third of the term per decade above the best
 MEAN_DECADES = 1.0   # mean: ten times the best is zero
+
+# The held-connection profiles: four equal terms. Keep in step with LAT_HELD
+# and latBuild() in site/leaderboard/index.html - check_badge_parity.js runs the
+# board's scoring against this one and fails the deploy when ranks disagree.
+HELD = frozenset({"connections-1m", "connections-1m-tls", "connections-5m"})
+H_CPU, H_MEM, H_P50, H_P99 = 0.25, 0.25, 0.25, 0.25
+HELD_DECADES = 3.0   # p50 and p99: a third of the term per decade above the best
 
 
 def to_us(value) -> float | None:
@@ -83,6 +121,20 @@ def to_us(value) -> float | None:
         return None
     v = float(m.group(1))
     return v * {"us": 1.0, "ms": 1e3, "s": 1e6, None: 1.0}[m.group(2)]
+
+
+def to_mib(value) -> float | None:
+    """'336MiB' / '71.2GiB' / '512KiB' -> MiB, the way mem() in index.html reads
+    the memory column. None when unparseable."""
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    m = re.search(r"([\d.]+)\s*([KMG]i?B)", str(value), re.IGNORECASE)
+    if not m:
+        return None
+    v, u = float(m.group(1)), m.group(2).upper()[0]
+    return v * 1024 if u == "G" else v if u == "M" else v / 1024
 
 
 def _clamp(v: float) -> float:
@@ -108,7 +160,8 @@ def linear_score(value: float | None, best: float | None) -> float:
 
 
 def score_rows(rows: list[dict], profile: str = DEFAULT_PROFILE) -> list[dict]:
-    """Annotate rows with their score. Each row needs rps, cpu, p99, mean.
+    """Annotate rows with their score. Each row needs rps, cpu, p99, mean - and
+    mem and p50 on the held-connection profiles.
 
     Bests are taken over the rows given, so a caller scoring one framework's
     three runs gets them normalised against each other, and a caller scoring the
@@ -117,6 +170,21 @@ def score_rows(rows: list[dict], profile: str = DEFAULT_PROFILE) -> list[dict]:
     def best_of(key):
         vals = [r[key] for r in rows if r.get(key)]
         return min(vals) if vals else None
+
+    if profile in HELD:
+        b_cpu, b_mem = best_of("cpu"), best_of("mem")
+        b_p50, b_p99 = best_of("p50"), best_of("p99")
+        for r in rows:
+            rf = rate_factor(r.get("rps") or 0, FULL_RATE[profile])
+            cpu_s = linear_score(r.get("cpu"), b_cpu)
+            mem_s = linear_score(r.get("mem"), b_mem)
+            p50_s = decade_score(r.get("p50"), b_p50, HELD_DECADES)
+            p99_s = decade_score(r.get("p99"), b_p99, HELD_DECADES)
+            r["rateFactor"] = rf
+            r["cpuScore"], r["memScore"] = cpu_s, mem_s
+            r["p50Score"], r["p99Score"] = p50_s, p99_s
+            r["score"] = 100.0 * rf * (H_CPU * cpu_s + H_MEM * mem_s + H_P50 * p50_s + H_P99 * p99_s)
+        return rows
 
     b_cpu, b_p99, b_mean = best_of("cpu"), best_of("p99"), best_of("mean")
     for r in rows:
@@ -163,6 +231,10 @@ def pick(dirpath: str, profile: str = DEFAULT_PROFILE) -> int | None:
             "cpu": (cpu_usec / reqs) if (reqs > 0 and cpu_usec > 0) else None,
             "p99": to_us(kv.get("p99_lat")),
             "mean": to_us(kv.get("avg_lat")),
+            # The held-connection profiles also weigh the typical request and
+            # the run's peak memory (benchmark.sh writes stats_mem per run).
+            "p50": to_us(kv.get("p50_lat")),
+            "mem": to_mib(meta.get("stats_mem")),
         })
     if not rows:
         return None
@@ -178,7 +250,9 @@ def table(results_dir: Path, profile: str = DEFAULT_PROFILE) -> None:
         except Exception:
             continue
         for key, r in (d.get("results") or {}).items():
-            if not key.startswith(profile + "-"):
+            # The exact profile: "connections-1m-" also starts every
+            # "connections-1m-tls-..." key.
+            if not (key.startswith(profile + "-") and key[len(profile) + 1:].isdigit()):
                 continue
             rows.append({
                 "fw": d.get("framework", f.stem),
@@ -186,12 +260,25 @@ def table(results_dir: Path, profile: str = DEFAULT_PROFILE) -> None:
                 "cpu": r.get("cpu_per_req_us"),
                 "p99": to_us(r.get("p99_latency")),
                 "mean": to_us(r.get("avg_latency")),
+                "p50": to_us(r.get("p50_latency")),
+                "mem": to_mib(r.get("memory")),
             })
     if not rows:
         print(f"no {profile} results found", file=sys.stderr)
         return
     score_rows(rows, profile)
     rows.sort(key=lambda r: -r["score"])
+    if profile in HELD:
+        print("%-24s %7s %7s %9s %10s %11s %11s" %
+              ("framework", "score", "rate", "us/req", "mem MiB", "p50", "p99"))
+        for r in rows:
+            print("%-24s %7.1f %7.3f %9s %10s %11s %11s" % (
+                r["fw"], r["score"], r["rateFactor"],
+                "-" if r["cpu"] is None else f"{r['cpu']:.1f}",
+                "-" if r["mem"] is None else f"{r['mem']:.0f}",
+                "-" if r["p50"] is None else f"{r['p50']:.0f}",
+                "-" if r["p99"] is None else f"{r['p99']:.0f}"))
+        return
     print("%-24s %7s %7s %9s %11s %11s" %
           ("framework", "score", "rate", "us/req", "mean", "p99"))
     for r in rows:

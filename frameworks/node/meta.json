@@ -8,6 +8,9 @@
   "enabled": true,
   "tests": [
     "baseline", "latency-1m", "latency-10k",
+    "connections-5m",
+    "connections-1m-tls",
+    "connections-1m",
     "pipelined",
     "limited-conn",
     "json-comp",

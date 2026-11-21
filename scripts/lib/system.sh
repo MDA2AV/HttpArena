@@ -90,6 +90,112 @@ system_tune() {
     sync
 }
 
+# Raise a sysctl to at least `want`; never lowers one that is already higher.
+_raise_sysctl() {
+    local key="$1" want="$2" have
+    have=$(sysctl -n "$key" 2>/dev/null) || { warn "sysctl $key is not available"; return 0; }
+    [ "$have" -ge "$want" ] 2>/dev/null && return 0
+    sudo sysctl -w "$key=$want" >/dev/null 2>&1 || warn "could not raise $key ($have < $want)"
+}
+
+# The limits millions of held connections run into, raised only when the run
+# includes a held-connection profile (connections-5m, connections-1m-tls,
+# connections-1m). Each one is a ceiling rather than a setting, so a host
+# left with them raised measures every other profile exactly as before; like
+# the governor, they are not put back.
+#
+#   fs.nr_open                  the most fds a process may be given, and the
+#                               ceiling on RLIMIT_NOFILE. Five million sockets
+#                               in one server, and five million more in one
+#                               gcannon, need 8M (CONN5M_NOFILE) to be allowed
+#   vm.max_map_count            zrk (connections-1m) maps a stack plus a
+#                               guard per coroutine: ~4 maps a connection,
+#                               ~125K for one process's 31,250, against a
+#                               65,530 default
+#   net.netfilter.nf_conntrack_max
+#                               docker's rules switch conntrack on for the
+#                               host, loopback included, and a full table drops
+#                               SYNs. Five million live entries plus the last
+#                               run's five million in TIME_WAIT (120s) need
+#                               room for both
+#   nf_conntrack hashsize       so those entries are not chained deep in a
+#                               table sized for a quarter of a million
+system_tune_held_connections() {
+    info "raising host limits for the held-connection profiles"
+    _raise_sysctl fs.nr_open 16777216
+    _raise_sysctl vm.max_map_count 4194304
+    if [ -e /proc/sys/net/netfilter/nf_conntrack_max ]; then
+        _raise_sysctl net.netfilter.nf_conntrack_max 16777216
+        local hs=/sys/module/nf_conntrack/parameters/hashsize
+        if [ -r "$hs" ] && [ "$(cat "$hs" 2>/dev/null || echo 0)" -lt 4194304 ] 2>/dev/null; then
+            sudo sh -c "echo 4194304 > $hs" 2>/dev/null || warn "could not raise the conntrack hash size"
+        fi
+    fi
+}
+
+# ── Held connections: wait out the last fleet ───────────────────────────────
+#
+# A held-connection run ends with millions of sockets to close, and a process
+# exiting does not close them by itself: gcannon before 0.8.3 leaves its whole
+# fleet to one kernel worker after it exits, and a server stopped while still
+# holding its side hands that to the kernel the same way. On the bench host a
+# 60 s cool-down was shorter than that: runs 2 and 3 of connections-5m
+# connected in 178 s and 300 s against run 1's 63 s, with 28-31 GiB less memory
+# available, and measured p50 6.0 / 7.5 ms against 0.35 ms. So the harness
+# waits for the socket count to come back down rather than for a fixed time.
+
+# TCP sockets the kernel holds in any state but TIME_WAIT (kept apart, capped by
+# tcp_max_tw_buckets): "alloc" in /proc/net/sockstat. A socket counts until it
+# is freed, so a fleet still being closed after its process exited counts too.
+host_tcp_sockets() {
+    awk '$1 == "TCP:" { for (i = 2; i < NF; i += 2) if ($i == "alloc") { print $(i + 1); exit } }' \
+        /proc/net/sockstat 2>/dev/null || true
+}
+
+# What a drain waits to get under: the host's count with nothing of ours
+# running, plus HELD_CONN_DRAIN_SLACK. Taken once, before the first profile; a
+# host still closing someone else's fleet counts as holding 20,000 at most.
+HELD_CONN_DRAIN_TARGET=""
+held_conn_baseline() {
+    local base
+    base=$(host_tcp_sockets)
+    [ -n "$base" ] || return 0
+    if [ "$base" -gt 20000 ]; then
+        warn "the host already holds $base TCP sockets; held-connection runs wait for it to get under $((20000 + HELD_CONN_DRAIN_SLACK))"
+        base=20000
+    fi
+    HELD_CONN_DRAIN_TARGET=$((base + HELD_CONN_DRAIN_SLACK))
+}
+
+# held_conn_drain <when>: wait until the host is back under
+# HELD_CONN_DRAIN_TARGET. Gives up, and says so, when the count has not fallen
+# by a thousand in HELD_CONN_DRAIN_STALL seconds (a server that never closes its
+# side: stopping it hands the rest to the kernel, and the next drain waits for
+# that) or after HELD_CONN_DRAIN_TIMEOUT seconds in all.
+held_conn_drain() {
+    local when="$1" cur
+    [ -n "$HELD_CONN_DRAIN_TARGET" ] || return 0
+    cur=$(host_tcp_sockets)
+    [ -n "$cur" ] || return 0
+    [ "$cur" -le "$HELD_CONN_DRAIN_TARGET" ] && return 0
+    local from=$cur start=$SECONDS best=$cur best_at=$SECONDS
+    while [ "$cur" -gt "$HELD_CONN_DRAIN_TARGET" ]; do
+        if [ $((SECONDS - start)) -ge "$HELD_CONN_DRAIN_TIMEOUT" ]; then
+            warn "teardown $when: $cur TCP sockets still open after ${HELD_CONN_DRAIN_TIMEOUT}s (from $from); going on"
+            return 0
+        fi
+        if [ $((SECONDS - best_at)) -ge "$HELD_CONN_DRAIN_STALL" ]; then
+            warn "teardown $when: stuck at $cur TCP sockets for ${HELD_CONN_DRAIN_STALL}s (from $from); going on"
+            return 0
+        fi
+        sleep 1
+        cur=$(host_tcp_sockets)
+        [ -n "$cur" ] || return 0
+        if [ "$cur" -lt $((best - 1000)) ]; then best=$cur; best_at=$SECONDS; fi
+    done
+    info "teardown $when: $from -> $cur TCP sockets in $((SECONDS - start))s"
+}
+
 # Revert everything we touched. Call from EXIT trap.
 system_restore() {
     info "restoring loopback MTU to 65536"

@@ -5,8 +5,10 @@ ARG GCANNON_REF=main
 # stale git-clone layer. Without this, edits pushed to the gcannon repo
 # are invisible until the user manually runs --no-cache.
 ARG CACHE_BUST=0
+# libssl-dev: gcannon 0.7.0 and later do the TLS handshake with OpenSSL (the
+# runtime image's libssl3 serves the binary), and fail to build without it.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        gcc libc6-dev make git ca-certificates && rm -rf /var/lib/apt/lists/*
+        gcc libc6-dev make git ca-certificates libssl-dev && rm -rf /var/lib/apt/lists/*
 WORKDIR /deps
 RUN git clone --branch liburing-2.9 --depth 1 https://github.com/axboe/liburing.git && \
     cd liburing && ./configure --prefix=/usr && make -j"$(nproc)" -C src && make install -C src

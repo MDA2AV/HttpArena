@@ -136,6 +136,9 @@ pipeline | req_per_conn | cpu_limit | connections | endpoint
 | `async` | 1 | ∞ | `0-31,64-95` | 32000 | gcannon | `GET /delay/10`, 10s runs |
 | `latency-1m` | 1 | ∞ | `0-31,64-95` | 1024 | zrk | `/baseline11` paced at 1M req/s, 20s runs |
 | `latency-10k` | 1 | ∞ | `0-31,64-95` | 1024 | zrk | `/baseline11` paced at 10K req/s, 20s runs |
+| `connections-5m` | 1 | ∞ | `0-31,64-95` | 5000000 | gcannon `--rate` (≥ 0.8.2) | `/baseline11` paced at 1.25M req/s over 5M held connections on 127.0.0.1-.160, 20s window |
+| `connections-1m-tls` | 1 | ∞ | `0-31,64-95` | 1000000 | gcannon `--rate` (≥ 0.8.4) | `/baseline11` over TLS 1.3 on `H1TLS_PORT`, paced at 250K req/s over 1M held connections on 127.0.0.1-.32 |
+| `connections-1m` | 1 | ∞ | `0-31,64-95` | 1000000 | zrk 3.0.2, one per address | `/baseline11` paced at 250K req/s over 1M held connections on 127.0.0.1-.32 |
 | `json-comp` | 1 | ∞ | `0-31,64-95` | 4096, 16384 | gcannon | `/json/{count}` + `Accept-Encoding: gzip, br` |
 | `json-tls` | 1 | ∞ | `0-31,64-95` | 4096 | wrk | `/json/{count}` over TLS on `H1TLS_PORT` |
 | `8gbit` | 1 | ∞ | `0-31,64-95` | 512 | zrk | `POST /echo` on TLS `:8081` - 10 KB echoed, paced at 50k req/s |

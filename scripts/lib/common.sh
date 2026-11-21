@@ -76,6 +76,42 @@ HARD_NOFILE=$(ulimit -Hn 2>/dev/null || echo 1048576)
 [[ "$HARD_NOFILE" =~ ^[0-9]+$ ]] || HARD_NOFILE=1048576
 ulimit -n "$HARD_NOFILE" 2>/dev/null || true
 
+# The held-connection profiles' server container. HARD_NOFILE is whatever the
+# shell running the harness was given, which can be below the fleet; these
+# profiles need a socket per connection plus the server's own, so the container
+# gets these instead (capped at fs.nr_open, which system_tune_held_connections
+# raises). The memory cap keeps an entry from taking the host down with it: it
+# is OOM-killed and the run reports what it held.
+#
+# The 5M caps are what the 251 GiB bench host has left after the fleet itself:
+# ~4 KiB of gcannon and ~8 KiB of kernel (both sockets and a conntrack entry)
+# per connection is ~57 GiB at five million; a server spending ~25 KiB per
+# connection fits in 128g. The million-connection profiles (connections-1m-tls,
+# connections-1m) get the 1M caps. Over TLS the kernel adds ~4 KiB of TLS
+# state per socket on each side that uses it, so the fleet costs ~20 KiB a
+# connection, ~19 GiB at a million, besides the server.
+CONN1M_NOFILE="${CONN1M_NOFILE:-2097152}"
+CONN1M_MEM_LIMIT="${CONN1M_MEM_LIMIT:-96g}"
+CONN5M_NOFILE="${CONN5M_NOFILE:-8388608}"
+CONN5M_MEM_LIMIT="${CONN5M_MEM_LIMIT:-128g}"
+
+# Between held-connection runs the harness waits for the host's TCP socket
+# count to come back down (system.sh, held_conn_drain) instead of sleeping: to
+# within HELD_CONN_DRAIN_SLACK of what it held before the first profile, giving
+# up after HELD_CONN_DRAIN_STALL seconds without progress or
+# HELD_CONN_DRAIN_TIMEOUT seconds in all.
+HELD_CONN_DRAIN_SLACK="${HELD_CONN_DRAIN_SLACK:-50000}"
+HELD_CONN_DRAIN_STALL="${HELD_CONN_DRAIN_STALL:-30}"
+HELD_CONN_DRAIN_TIMEOUT="${HELD_CONN_DRAIN_TIMEOUT:-600}"
+
+# "<nofile> <memory cap>" for a held-connection profile's server container.
+held_conn_limits() {
+    case "$1" in
+        connections-5m)     echo "$CONN5M_NOFILE $CONN5M_MEM_LIMIT" ;;
+        *)                  echo "$CONN1M_NOFILE $CONN1M_MEM_LIMIT" ;;
+    esac
+}
+
 # Postgres sidecar.
 PG_CONTAINER="httparena-postgres"
 DATABASE_URL="postgres://bench:bench@localhost:5432/benchmark"
