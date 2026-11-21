@@ -26,6 +26,8 @@ type DatabaseItem = Omit<Item, "rating"> & {
 
 type Fortune = { id: number; message: string }
 
+const bodyText = new TextDecoder()
+
 function cpuCount(): number {
   try {
     const [quota, period] = readFileSync("/sys/fs/cgroup/cpu.max", "utf8").trim().split(" ")
@@ -97,7 +99,6 @@ function buildApp() {
   const renderFortunes = Handlebars.compile(fortunesSource)
 
   const app = server()
-    .use(compression())
     .get("/pipeline", (c) => c.text("ok"))
     .get("/delay/:ms", async (c) => {
       const ms = Math.max(0, integer(c.params.ms, 0))
@@ -106,24 +107,27 @@ function buildApp() {
     })
     .get("/baseline11", (c) => c.text(String(sumQuery(c.query))))
     .post("/baseline11", async (c) => {
-      const body = Number.parseInt((await c.req.text()).trim(), 10)
+      const body = Number.parseInt(bodyText.decode(await c.boundedBody()).trim(), 10)
       const total = sumQuery(c.query) + (Number.isFinite(body) ? body : 0)
       return c.text(String(total))
     })
     .get("/baseline2", (c) => c.text(String(sumQuery(c.query))))
-    .get("/json/:count", (c) => {
-      const count = Math.min(Math.max(0, integer(c.params.count, 0)), dataset.length)
-      const multiplier = integer(c.query.get("m"), 1) || 1
-      const items = new Array<Item & { total: number }>(count)
-      for (let i = 0; i < count; i++) {
-        const item = dataset[i]!
-        items[i] = {
-          ...item,
-          total: item.price * item.quantity * multiplier,
+    // Compression runs for /json only, the one route the profiles ask to be compressed.
+    .group("/json", (g) =>
+      g.use(compression()).get("/:count", (c) => {
+        const count = Math.min(Math.max(0, integer(c.params.count, 0)), dataset.length)
+        const multiplier = integer(c.query.get("m"), 1) || 1
+        const items = new Array<Item & { total: number }>(count)
+        for (let i = 0; i < count; i++) {
+          const item = dataset[i]!
+          items[i] = {
+            ...item,
+            total: item.price * item.quantity * multiplier,
+          }
         }
-      }
-      return c.json({ items, count })
-    })
+        return c.json({ items, count })
+      }),
+    )
     .post("/echo", async (c) =>
       new Response(await c.req.arrayBuffer(), {
         headers: { "content-type": "application/octet-stream" },
