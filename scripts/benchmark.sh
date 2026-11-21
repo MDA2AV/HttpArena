@@ -249,8 +249,9 @@ run_one() {
     fi
 
     # Local so the adapters and save_result() see the database split below, and
-    # the next profile does not.
-    local GCANNON_CPUS="$GCANNON_CPUS" THREADS="$THREADS"
+    # the next profile does not. ${..-}: run_one is also run on its own (the tests),
+    # under set -u and without the two set.
+    local GCANNON_CPUS="${GCANNON_CPUS-}" THREADS="${THREADS-}"
 
     # Reset Postgres before each DB profile so it sees the same clean,
     # freshly-seeded server a standalone `benchmark.sh <fw> <profile>` run gets.
