@@ -105,9 +105,13 @@ public class ServerVerticle extends VerticleBase {
                 .handler(this::crudUpdate);
         router.post("/echo").handler(this::echo);
 
+        // SO_REUSEPORT on every port: Main runs one Vertx per core, each deploying this
+        // verticle once, so each core has its own listening socket on each port and accepts
+        // its own connections.
         HttpServerOptions options = new HttpServerOptions()
                 .setHost("0.0.0.0")
                 .setPort(8080)
+                .setReusePort(true)
                 .setCompressionSupported(true);
 
         Future<?> plain = vertx.createHttpServer(options).requestHandler(router).listen();
@@ -115,12 +119,11 @@ public class ServerVerticle extends VerticleBase {
         HttpServerOptions h2c = new HttpServerOptions()
                 .setHost("0.0.0.0")
                 .setPort(8082)
+                .setReusePort(true)
                 .setHttp2ClearTextEnabled(true);
         Future<?> cleartext = vertx.createHttpServer(h2c).requestHandler(router).listen();
 
-        // json-tls and static-tls on 8081, the same router behind TLS. This verticle is
-        // deployed once per core, so every instance binds both ports and the listener is
-        // spread across all the event loops rather than parked on one. ALPN is off: the
+        // json-tls and static-tls on 8081, the same router behind TLS. ALPN is off: the
         // two profiles want HTTP/1.1 negotiated and no h2 offered. The harness only mounts
         // /certs for the TLS profiles. OpenSSL (BoringSSL through netty-tcnative) rather than
         // the JDK's SSLEngine, which Vert.x falls back to when no engine is set.
@@ -128,6 +131,7 @@ public class ServerVerticle extends VerticleBase {
             HttpServerOptions tls = new HttpServerOptions()
                     .setHost("0.0.0.0")
                     .setPort(8081)
+                    .setReusePort(true)
                     .setCompressionSupported(true)
                     .setSsl(true)
                     .setUseAlpn(false)
