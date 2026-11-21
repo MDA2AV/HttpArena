@@ -34,9 +34,16 @@
    draws only while something moves; with Motion on it runs the room's ambient
    motion at a capped rate while the tab is visible. Far from the camera a
    panel is a slot in one atlas; near it, it gets its own texture, a few a
-   frame, from a pool. */
+   frame, from a pool.
+
+   The picture: on a desktop the room is drawn into a multisampled HDR target,
+   then ambient occlusion and bloom, tone mapped once on the way to the screen
+   (makePost); a slow machine gives up the occlusion, then the bloom, then
+   pixels. On a phone it is drawn straight to the screen. The light fittings
+   overhead light the room as two long lights in every lit material. */
 import * as THREE from '../vendor/three/three.module.min.js';
 import { OrbitControls } from '../vendor/three/OrbitControls.js';
+import { GTAOShader, generateMagicSquareNoise } from '../vendor/three/GTAOShader.js';
 
 /* ── dimensions, in metres ─────────────────────────────────────────────── */
 const U = 0.04445;                 // one rack unit, 1.75"
@@ -79,11 +86,12 @@ const PULL = [['off', 'Off'], ['score', 'Score'], ['cpu', 'CPU'], ['mem', 'Memor
 
 /* ── the two rooms: the hall at night, and the clean room ──────────────── */
 const DARK = {
-  exposure: 1.0, envK: 0.6, bg: 0x07090c, fogD: 0.06,
-  hemi: [0x9fb6cf, 0x040506, 0.55], dir: [0xdde9f6, 0.75], spot: [0xd8e9ff, 26], spots: 4,
-  floor: '#1a1f24', speck: ['#232930', '#101417'], seam: '#030405', seamHi: '#2f373f', perfHole: '#020304', perfRing: '#343c45', floorRough: 0.36,
+  exposure: 1.0, envK: 1.0, bg: 0x07090c, fogD: 0.06,
+  ao: { k: 0.9, radius: 0.85, thickness: 0.6, scale: 1.8 }, bloom: { k: 0.22, threshold: 0.85, knee: 0.5, scatter: 0.85 },
+  hemi: [0x9fb6cf, 0x040506, 0.36], dir: [0xdde9f6, 0.6], spot: [0xd8e9ff, 26], spots: 4, lineK: 2.4,
+  floor: '#353c45', speck: ['#424a54', '#262b32'], seam: '#08090b', perfHole: '#030405', perfRing: '#4b545e', floorRough: 0.86,
   wall: 0x0b0e11, ceil: 0x090b0e, wallWash: 0x1b2836,
-  frame: 0x15181c, frameRough: 0.46, frameMetal: 0.5, inner: 0x07080a, plinth: 0x08090b,
+  frame: 0x1e2329, frameRough: 0.4, frameMetal: 0.8, inner: 0x07080a, plinth: 0x0b0c0e,
   post: 0x1b1f24, postFace: '#1d2126', postHole: '#020303', postSilk: '#7f8a96', postTick: '#2e353c',
   face: ['#2e3339', '#24282d', '#1a1d21'], faceHi: '#454c55', faceLo: '#060708', grain: ['#ffffff', '#000000'], grainK: 0.05,
   ear: '#1f2328', earSeam: '#0b0d0f', screw: ['#7a838d', '#2d3238', '#0c0e10'],
@@ -95,9 +103,9 @@ const DARK = {
   body: 0x30353b, rail: 0x7a838c,
   plate: '#0b0e11', plateLine: '#2b3138', plateText: '#eef1f4', plateMuted: '#8e99a4', plateLit: true,
   faceEm: 0.34, faceEmHot: 0.62, ledBoost: 1.0, glowK: 1.0, eqGlowK: 0.2, decorGlowK: 0.75,
-  lamp: 0xe9f3ff, lampK: 2.6, fixture: 0x1a1d21, tray: 0x2a2f35,
+  lamp: 0xe9f3ff, lampK: 2.6, fixture: 0x2a2f36, tray: 0x3b424a, cable: [0x1f5fae, 0xb8901c],
   door: '#111418', doorFrame: '#191c21', doorBack: '#040506', doorKit: ['#262b31', '#2f353c', '#1d2126'], rear: '#0c0e11', rearHole: '#2a3a4c', rearLit: 0.55,
-  favAdd: true, favK: 0.42, favPipeK: 3.6, mirrorK: 1.0,
+  favAdd: true, favK: 0.42, favPipeK: 3.6,
   sticker: '#e6e9ec', stickerText: '#14181d', lid: ['#3a4047', '#2c3137'],
   sign: '#0b0e12', signText: '#f2f4f6', signMuted: '#9da7b2', signLine: '#62c4ff', signLit: true,
   fan: ['#2c3238', '#59626c', '#06080a'],
@@ -115,8 +123,9 @@ const DARK = {
 };
 const LIGHT = {
   exposure: 1.0, envK: 0.42, bg: 0xdde2e7, fogD: 0.035,
-  hemi: [0xffffff, 0xb9c1c9, 0.95], dir: [0xffffff, 1.25], spot: [0xffffff, 5], spots: 2,
-  floor: '#dfe3e7', speck: ['#eceff2', '#c9d0d6'], seam: '#9aa3ac', seamHi: '#f6f7f8', perfHole: '#6f7a85', perfRing: '#f2f4f6', floorRough: 0.55,
+  ao: { k: 0.9, radius: 0.85, thickness: 0.5, scale: 1.7 }, bloom: { k: 0.06, threshold: 1.6, knee: 0.6, scatter: 0.7 },
+  hemi: [0xffffff, 0xb9c1c9, 0.8], dir: [0xffffff, 1.0], spot: [0xffffff, 5], spots: 2, lineK: 2.4,
+  floor: '#dfe3e7', speck: ['#eceff2', '#c9d0d6'], seam: '#8d97a1', perfHole: '#6f7a85', perfRing: '#f2f4f6', floorRough: 0.88,
   wall: 0xe6eaee, ceil: 0xf1f3f5, wallWash: 0x000000,
   frame: 0x353b42, frameRough: 0.52, frameMetal: 0.3, inner: 0x1c2025, plinth: 0x23282d,
   post: 0x444c54, postFace: '#4d555e', postHole: '#16191d', postSilk: '#dfe4e9', postTick: '#646d76',
@@ -130,9 +139,9 @@ const LIGHT = {
   body: 0xbfc6cd, rail: 0x8e979f,
   plate: '#f6f7f8', plateLine: '#c7ced5', plateText: '#0f1318', plateMuted: '#47525e', plateLit: false,
   faceEm: 0.03, faceEmHot: 0.16, ledBoost: 1.1, glowK: 0.55, eqGlowK: 0.35, decorGlowK: 0.6,
-  lamp: 0xffffff, lampK: 1.6, fixture: 0xc9cfd5, tray: 0x9aa3ac,
+  lamp: 0xffffff, lampK: 1.6, fixture: 0xc9cfd5, tray: 0x9aa3ac, cable: [0x2f7fd6, 0xf2c230],
   door: '#363c43', doorFrame: '#30363c', doorBack: '#0d0f12', doorKit: ['#4a525b', '#58616a', '#3f464e'], rear: '#2a3036', rearHole: '#aab4be', rearLit: 0.25,
-  favAdd: false, favK: 0.2, favPipeK: 1.6, mirrorK: 0.3,
+  favAdd: false, favK: 0.2, favPipeK: 1.6,
   sticker: '#ffffff', stickerText: '#14181d', lid: ['#c9d0d6', '#b7bfc6'],
   sign: '#ffffff', signText: '#0f1318', signMuted: '#47525e', signLine: '#0a5cc0', signLit: false,
   fan: ['#8a949e', '#55606b', '#20252b'],
@@ -772,9 +781,7 @@ function tileTexture(P, perf) {
       ctx.fillStyle = P.perfHole; circle(ctx, x, y, 4.6); ctx.fill();
     }
   }
-  // the seams between tiles, with a bevel
-  ctx.fillStyle = P.seam; ctx.fillRect(0, 0, S, 2); ctx.fillRect(0, S - 2, S, 2); ctx.fillRect(0, 0, 2, S); ctx.fillRect(S - 2, 0, 2, S);
-  ctx.fillStyle = P.seamHi; ctx.fillRect(2, 2, S - 4, 1.2); ctx.fillRect(2, 2, 1.2, S - 4);
+  // the seams are cut by the floor's shader, sharp at any distance
   return cv;
 }
 
@@ -797,10 +804,13 @@ function postTexture(P, n, inner) {
   return cv;
 }
 
-function doorTexture(P, seed, dark) {
-  // a perforated door; the equipment behind shows through the mesh, and its LEDs
-  const W = 512, H = 1700, cv = canvas(W, H), ctx = cv.getContext('2d');
-  const r = rng(seed);
+function doorTexture(P, seed, dark, glass) {
+  // A closed cabinet's door, in two layers: the equipment behind it with its lights (drawn at
+  // half size, seen through the door with a little parallax), and the door itself, perforated
+  // steel or smoked glass in a solid frame, its openings transparent.
+  const W = 512, H = 1700, r = rng(seed);
+  const inner = canvas(W / 2, H / 2), ctx = inner.getContext('2d');
+  ctx.setTransform(0.5, 0, 0, 0.5, 0, 0);
   const glows = [], dots = [];
   const pxU = 37.6, x0 = 45, x1 = W - 45;
   ctx.fillStyle = P.doorBack; ctx.fillRect(0, 0, W, H);
@@ -847,27 +857,26 @@ function doorTexture(P, seed, dark) {
     }
     y += h;
   }
-  // the door's sheet, holes punched through it
+  for (const d of dots) { ctx.globalAlpha = 0.45 + 0.55 * d.lv; ctx.fillStyle = d.c; circle(ctx, d.x, d.y, 3); ctx.fill(); }
+  ctx.globalAlpha = 1;
+  // the door: its openings cut out of the sheet, then the frame, the handle and a small label
   const sheet = canvas(W, H), sc = sheet.getContext('2d');
   sc.fillStyle = P.door; sc.fillRect(0, 0, W, H);
   sc.globalCompositeOperation = 'destination-out';
-  const pitch = 7.2, hr = 2.7;
-  for (let j = 0, yy = 60; yy < H - 60; j++, yy += pitch * 0.866) {
-    for (let xx = 34 + (j % 2) * pitch / 2; xx < W - 34; xx += pitch) { circle(sc, xx, yy, hr); sc.fill(); }
+  if (glass) { sc.fillStyle = '#000'; sc.fillRect(32, 32, W - 64, H - 64); }
+  else {
+    const pitch = 7.2, hr = 2.7;
+    for (let j = 0, yy = 60; yy < H - 60; j++, yy += pitch * 0.866) {
+      for (let xx = 34 + (j % 2) * pitch / 2; xx < W - 34; xx += pitch) { circle(sc, xx, yy, hr); sc.fill(); }
+    }
   }
   sc.globalCompositeOperation = 'source-over';
-  ctx.drawImage(sheet, 0, 0);
-  sheet.width = sheet.height = 0;
-  // LEDs read through the mesh as points of light
-  for (const d of dots) { ctx.globalAlpha = 0.45 + 0.55 * d.lv; ctx.fillStyle = d.c; circle(ctx, d.x, d.y, 2.3); ctx.fill(); }
-  ctx.globalAlpha = 1;
-  // the frame, the handle and a small label
-  ctx.strokeStyle = P.doorFrame; ctx.lineWidth = 56; ctx.strokeRect(0, 0, W, H);
-  ctx.strokeStyle = dark ? 'rgba(255,255,255,.07)' : 'rgba(255,255,255,.16)'; ctx.lineWidth = 2; ctx.strokeRect(29, 29, W - 58, H - 58);
-  ctx.fillStyle = dark ? '#2a3036' : '#59626b'; rrect(ctx, W - 22, H * 0.44, 12, 190, 5); ctx.fill();
-  ctx.fillStyle = dark ? '#0a0c0e' : '#1d2126'; circle(ctx, W - 16, H * 0.44 + 210, 6); ctx.fill();
-  ctx.fillStyle = dark ? '#1c2025' : '#e9edf0'; rrect(ctx, W / 2 - 70, 8, 140, 18, 3); ctx.fill();
-  return { cv, leds: glows.map(l => ({ x: (l.x / W - 0.5), y: (0.5 - l.y / H), color: l.color, level: l.level })) };
+  sc.strokeStyle = P.doorFrame; sc.lineWidth = 56; sc.strokeRect(0, 0, W, H);
+  sc.strokeStyle = dark ? 'rgba(255,255,255,.07)' : 'rgba(255,255,255,.16)'; sc.lineWidth = 2; sc.strokeRect(29, 29, W - 58, H - 58);
+  sc.fillStyle = dark ? '#2a3036' : '#59626b'; rrect(sc, W - 22, H * 0.44, 12, 190, 5); sc.fill();
+  sc.fillStyle = dark ? '#0a0c0e' : '#1d2126'; circle(sc, W - 16, H * 0.44 + 210, 6); sc.fill();
+  sc.fillStyle = dark ? '#1c2025' : '#e9edf0'; rrect(sc, W / 2 - 70, 8, 140, 18, 3); sc.fill();
+  return { inner, sheet, leds: glows.map(l => ({ x: (l.x / W - 0.5), y: (0.5 - l.y / H), color: l.color, level: l.level })) };
 }
 
 function rearTexture(P) {
@@ -965,6 +974,244 @@ function mergeParts(list) {
   g.setIndex(new THREE.BufferAttribute(idx, 1));
   g.computeBoundingSphere();
   return g;
+}
+
+/* ── the picture: the room drawn into a multisampled HDR target, then ambient
+   occlusion from its depth (half size), a bloom pyramid for whatever is
+   brighter than white, and one last pass to the screen that applies them,
+   tone maps once and dithers. A display (a screen, a lit sign) marks itself
+   with alpha 0: it is already in screen values, so it is neither darkened
+   nor tone mapped. ─────────────────────────────────────────────────────── */
+const POST_VS = `
+varying vec2 vUv;
+void main() { vUv = position.xy * 0.5 + 0.5; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
+// bloom: the bright part, at half size; four taps weighted so a lone bright pixel does not flicker
+const BLOOM_PRE_FS = `
+uniform sampler2D tSrc;
+uniform vec2 uTexel;
+uniform vec4 uCurve;   // threshold - knee, 2 knee, 0.25 / knee, threshold
+varying vec2 vUv;
+vec3 tap(vec2 o) { return texture2D(tSrc, vUv + o * uTexel).rgb; }
+float kw(vec3 c) { return 1.0 / (1.0 + max(c.r, max(c.g, c.b))); }
+void main() {
+  vec3 a = tap(vec2(-1.0, -1.0)), b = tap(vec2(1.0, -1.0)), c = tap(vec2(-1.0, 1.0)), d = tap(vec2(1.0, 1.0));
+  float wa = kw(a), wb = kw(b), wc = kw(c), wd = kw(d);
+  vec3 col = (a * wa + b * wb + c * wc + d * wd) / (wa + wb + wc + wd);
+  float br = max(col.r, max(col.g, col.b));
+  float rq = clamp(br - uCurve.x, 0.0, uCurve.y);
+  rq = uCurve.z * rq * rq;
+  col *= max(rq, br - uCurve.w) / max(br, 1e-4);
+  gl_FragColor = vec4(col, 1.0);
+}`;
+const BLOOM_DOWN_FS = `
+uniform sampler2D tSrc;
+uniform vec2 uTexel;
+varying vec2 vUv;
+void main() {
+  vec3 s = texture2D(tSrc, vUv).rgb * 4.0;
+  s += texture2D(tSrc, vUv - uTexel).rgb + texture2D(tSrc, vUv + uTexel).rgb;
+  s += texture2D(tSrc, vUv + vec2(uTexel.x, -uTexel.y)).rgb + texture2D(tSrc, vUv - vec2(uTexel.x, -uTexel.y)).rgb;
+  gl_FragColor = vec4(s * 0.125, 1.0);
+}`;
+// added onto the level above: each level carries the wider glow of all those under it
+const BLOOM_UP_FS = `
+uniform sampler2D tSrc;
+uniform vec2 uTexel;
+uniform float uK;
+varying vec2 vUv;
+void main() {
+  vec2 h = uTexel * 0.5;
+  vec3 s = texture2D(tSrc, vUv + vec2(-2.0 * h.x, 0.0)).rgb + texture2D(tSrc, vUv + vec2(2.0 * h.x, 0.0)).rgb;
+  s += texture2D(tSrc, vUv + vec2(0.0, 2.0 * h.y)).rgb + texture2D(tSrc, vUv + vec2(0.0, -2.0 * h.y)).rgb;
+  s += 2.0 * (texture2D(tSrc, vUv + h).rgb + texture2D(tSrc, vUv - h).rgb + texture2D(tSrc, vUv + vec2(h.x, -h.y)).rgb + texture2D(tSrc, vUv + vec2(-h.x, h.y)).rgb);
+  gl_FragColor = vec4(s * (uK / 12.0), 1.0);
+}`;
+// the depth at half size, the nearest of each 2 x 2: a slit a pixel wide (the gap between two
+// units, as the multisampled depth catches it here and there) is not a crevice to darken
+const DEPTH_DOWN_FS = `
+uniform highp sampler2D tDepth;
+void main() {
+  ivec2 p = ivec2(gl_FragCoord.xy) * 2, mx = textureSize(tDepth, 0) - 1;
+  float a = texelFetch(tDepth, min(p, mx), 0).x, b = texelFetch(tDepth, min(p + ivec2(1, 0), mx), 0).x;
+  float c = texelFetch(tDepth, min(p + ivec2(0, 1), mx), 0).x, d = texelFetch(tDepth, min(p + ivec2(1, 1), mx), 0).x;
+  gl_FragColor = vec4(min(min(a, b), min(c, d)), 0.0, 0.0, 1.0);
+}`;
+// the occlusion, smoothed over its 5 x 5 noise, only across surfaces at about the same depth
+const AO_BLUR_FS = `
+#include <packing>
+uniform sampler2D tAO;
+uniform highp sampler2D tDepth;
+uniform vec2 uTexel;
+uniform float cameraNear;
+uniform float cameraFar;
+varying vec2 vUv;
+float vz(vec2 uv) { return perspectiveDepthToViewZ(texture2D(tDepth, uv).x, cameraNear, cameraFar); }
+void main() {
+  float z0 = vz(vUv), tol = 0.03 * abs(z0) + 0.015;
+  float s = 0.0, w = 0.0;
+  for (int j = -2; j <= 2; j++) for (int i = -2; i <= 2; i++) {
+    vec2 uv = vUv + vec2(float(i), float(j)) * uTexel;
+    float k = max(0.0, 1.0 - abs(vz(uv) - z0) / tol);
+    s += texture2D(tAO, uv).r * k; w += k;
+  }
+  gl_FragColor = vec4(w > 0.001 ? s / w : 1.0, 0.0, 0.0, 1.0);
+}`;
+const OUT_FS = `
+#include <packing>
+uniform sampler2D tScene;
+uniform sampler2D tAO;
+uniform sampler2D tBloom;
+uniform highp sampler2D tDepth;
+uniform float uAO;
+uniform float uBloom;
+uniform float uExposure;
+uniform float uFog;
+uniform float cameraNear;
+uniform float cameraFar;
+varying vec2 vUv;
+// Khronos PBR Neutral, as three's NeutralToneMapping
+vec3 neutral(vec3 color) {
+  color *= uExposure;
+  float x = min(color.r, min(color.g, color.b));
+  color -= x < 0.08 ? x - 6.25 * x * x : 0.04;
+  float peak = max(color.r, max(color.g, color.b));
+  if (peak < 0.76) return color;
+  float np = 1.0 - 0.0576 / (peak - 0.52);
+  color *= np / peak;
+  return mix(color, vec3(np), 1.0 - 1.0 / (0.15 * (peak - np) + 1.0));
+}
+vec3 srgb(vec3 c) { return mix(c * 12.92, 1.055 * pow(c, vec3(0.4166667)) - 0.055, step(0.0031308, c)); }
+void main() {
+  vec4 s = texture2D(tScene, vUv);
+  float m = clamp(s.a, 0.0, 1.0);
+  vec3 c = s.rgb;
+  #ifdef USE_AO
+    float z = -perspectiveDepthToViewZ(texture2D(tDepth, vUv).x, cameraNear, cameraFar);
+    c *= mix(1.0, texture2D(tAO, vUv).r, uAO * m * exp(-uFog * uFog * z * z));
+  #endif
+  #ifdef USE_BLOOM
+    c += texture2D(tBloom, vUv).rgb * uBloom;
+  #endif
+  c = srgb(clamp(mix(c, neutral(c), m), 0.0, 1.0));
+  // a triangular wobble of about one step, so slow gradients do not band
+  vec2 p = gl_FragCoord.xy;
+  float n = fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715)))) + fract(52.9829189 * fract(dot(p.yx + 31.7, vec2(0.06711056, 0.00583715))));
+  gl_FragColor = vec4(c + (n - 1.0) / 255.0, 1.0);
+}`;
+
+// cfg: samples, ao: { k, radius, thickness, scale } | null, bloom: { k, threshold, knee, scatter } | null, exposure, fog
+// -> { render(scene, camera), setSize(), setAO(on), setBloom(on), warm(scene, camera), bytes(), dispose() }
+function makePost(renderer, cfg) {
+  const ext = renderer.extensions, fullFloat = ext.has('EXT_color_buffer_float');
+  if (!(fullFloat || ext.has('EXT_color_buffer_half_float'))) return null;
+  const canAO = fullFloat;   // the occlusion reads a float depth
+  const HF = THREE.HalfFloatType, LIN = THREE.LinearFilter;
+  const target = (w, h, o) => new THREE.WebGLRenderTarget(w, h, Object.assign({ type: HF, minFilter: LIN, magFilter: LIN, generateMipmaps: false, depthBuffer: false }, o));
+  const depthTex = new THREE.DepthTexture(2, 2, THREE.UnsignedIntType);
+  const sceneRT = target(2, 2, { samples: cfg.samples, depthBuffer: true, depthTexture: depthTex });
+  const aoA = target(2, 2, { format: THREE.RedFormat, type: THREE.UnsignedByteType });
+  const aoB = aoA.clone();
+  const zHalf = target(2, 2, { format: THREE.RedFormat, type: THREE.FloatType, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });
+  const mips = [];
+  for (let i = 0; i < 6; i++) mips.push(target(2, 2));
+  const mat = (fs, uniforms, extra) => new THREE.ShaderMaterial(Object.assign({ vertexShader: POST_VS, fragmentShader: fs, uniforms, depthTest: false, depthWrite: false, blending: THREE.NoBlending, toneMapped: false }, extra || {}));
+  const noise = generateMagicSquareNoise();
+  // a sliver a pixel or two across (a wire, a light) has no surface to read its normal from: it faces the camera
+  const gtaoFS = GTAOShader.fragmentShader.replace('return normalize(cross(dpdx, dpdy));', [
+    'float zc = getViewZ(c0), tl = 0.02 * abs(zc) + 0.004;',
+    'if ((abs(getViewZ(l1) - zc) > tl && abs(getViewZ(r1) - zc) > tl) || (abs(getViewZ(b1) - zc) > tl && abs(getViewZ(t1) - zc) > tl)) return vec3(0.0, 0.0, 1.0);',
+    'return normalize(cross(dpdx, dpdy));'].join('\n'));
+  const aoMat = mat(gtaoFS, THREE.UniformsUtils.clone(GTAOShader.uniforms), { defines: Object.assign({}, GTAOShader.defines, { NORMAL_VECTOR_TYPE: 0, DEPTH_SWIZZLING: 'x', SAMPLES: 16, PERSPECTIVE_CAMERA: 1 }) });
+  const AU = aoMat.uniforms;
+  AU.tNoise.value = noise; AU.tDepth.value = zHalf.texture;
+  const zMat = mat(DEPTH_DOWN_FS, { tDepth: { value: depthTex } });
+  const ao = cfg.ao || { k: 0, radius: 0.3, thickness: 0.6 };
+  AU.radius.value = ao.radius; AU.thickness.value = ao.thickness; AU.distanceExponent.value = 1.5; AU.distanceFallOff.value = 1; AU.scale.value = ao.scale || 1;
+  const blurMat = mat(AO_BLUR_FS, { tAO: { value: aoA.texture }, tDepth: { value: zHalf.texture }, uTexel: { value: new THREE.Vector2() }, cameraNear: { value: 0.1 }, cameraFar: { value: 100 } });
+  const bl = cfg.bloom || { k: 0, threshold: 1, knee: 0.5, scatter: 0.8 };
+  const knee = Math.max(1e-3, bl.knee);
+  const preMat = mat(BLOOM_PRE_FS, { tSrc: { value: sceneRT.texture }, uTexel: { value: new THREE.Vector2() }, uCurve: { value: new THREE.Vector4(bl.threshold - knee, 2 * knee, 0.25 / knee, bl.threshold) } });
+  const downMat = mat(BLOOM_DOWN_FS, { tSrc: { value: null }, uTexel: { value: new THREE.Vector2() } });
+  const upMat = mat(BLOOM_UP_FS, { tSrc: { value: null }, uTexel: { value: new THREE.Vector2() }, uK: { value: bl.scatter } },
+    { blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor, blendSrcAlpha: THREE.ZeroFactor, blendDstAlpha: THREE.OneFactor });
+  const outMat = mat(OUT_FS, { tScene: { value: sceneRT.texture }, tAO: { value: aoB.texture }, tBloom: { value: mips[0].texture }, tDepth: { value: depthTex },
+    uAO: { value: ao.k }, uBloom: { value: bl.k }, uExposure: { value: cfg.exposure || 1 }, uFog: { value: cfg.fog || 0 }, cameraNear: { value: 0.1 }, cameraFar: { value: 100 } });
+  const tri = new THREE.BufferGeometry();
+  tri.setAttribute('position', new THREE.BufferAttribute(new Float32Array([-1, -1, 0, 3, -1, 0, -1, 3, 0]), 3));
+  const quad = new THREE.Mesh(tri, outMat); quad.frustumCulled = false;
+  const qCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const pass = (m, rt) => { quad.material = m; renderer.setRenderTarget(rt); renderer.render(quad, qCam); };
+  const _cc = new THREE.Color();
+  const self = {
+    ao: !!cfg.ao && ao.k > 0, bloom: !!cfg.bloom && bl.k > 0, samples: cfg.samples, w: 2, h: 2, calls: 0, triangles: 0,
+    setAO(on) { self.ao = !!on && canAO; sceneRT.resolveDepthBuffer = self.ao; if (self.ao) outMat.defines.USE_AO = 1; else delete outMat.defines.USE_AO; outMat.needsUpdate = true; },
+    setBloom(on) { self.bloom = !!on; if (self.bloom) outMat.defines.USE_BLOOM = 1; else delete outMat.defines.USE_BLOOM; outMat.needsUpdate = true; },
+    setSize() {
+      const v = renderer.getDrawingBufferSize(new THREE.Vector2()), w = Math.max(2, v.x), h = Math.max(2, v.y);
+      self.w = w; self.h = h;
+      sceneRT.setSize(w, h);
+      const w2 = Math.max(2, Math.ceil(w / 2)), h2 = Math.max(2, Math.ceil(h / 2));
+      aoA.setSize(w2, h2); aoB.setSize(w2, h2); zHalf.setSize(w2, h2);
+      AU.resolution.value.set(w2, h2);
+      blurMat.uniforms.uTexel.value.set(1 / w2, 1 / h2);
+      preMat.uniforms.uTexel.value.set(1 / w, 1 / h);
+      mips.forEach((m, i) => m.setSize(Math.max(2, Math.ceil(w / (2 << i))), Math.max(2, Math.ceil(h / (2 << i)))));
+    },
+    render(scene, camera) {
+      const ac = renderer.autoClear;
+      renderer.autoClear = true;
+      renderer.setRenderTarget(sceneRT);
+      renderer.render(scene, camera);
+      self.calls = renderer.info.render.calls; self.triangles = renderer.info.render.triangles;
+      renderer.autoClear = false;
+      for (const m of [AU, blurMat.uniforms, outMat.uniforms]) { m.cameraNear.value = camera.near; m.cameraFar.value = camera.far; }
+      if (self.ao) {
+        AU.cameraProjectionMatrix.value.copy(camera.projectionMatrix);
+        AU.cameraProjectionMatrixInverse.value.copy(camera.projectionMatrixInverse);
+        AU.cameraWorldMatrix.value.copy(camera.matrixWorld);
+        pass(zMat, zHalf);
+        renderer.getClearColor(_cc); const ca = renderer.getClearAlpha();
+        renderer.setRenderTarget(aoA); renderer.setClearColor(0xffffff, 1); renderer.clear(true, false, false); renderer.setClearColor(_cc, ca);
+        pass(aoMat, aoA);
+        pass(blurMat, aoB);
+      }
+      if (self.bloom) {
+        pass(preMat, mips[0]);
+        for (let i = 1; i < mips.length; i++) {
+          downMat.uniforms.tSrc.value = mips[i - 1].texture; downMat.uniforms.uTexel.value.set(1 / mips[i - 1].width, 1 / mips[i - 1].height);
+          pass(downMat, mips[i]);
+        }
+        for (let i = mips.length - 2; i >= 0; i--) {
+          upMat.uniforms.tSrc.value = mips[i + 1].texture; upMat.uniforms.uTexel.value.set(1 / mips[i + 1].width, 1 / mips[i + 1].height);
+          pass(upMat, mips[i]);
+        }
+      }
+      pass(outMat, null);
+      renderer.autoClear = ac;
+    },
+    // the programs the first real frame would otherwise build in the middle of a move
+    warm(scene, camera) {
+      renderer.setRenderTarget(sceneRT); renderer.compile(scene, camera);
+      for (const m of [zMat, aoMat, blurMat, preMat, downMat, upMat]) { quad.material = m; renderer.compile(quad, qCam); }
+      renderer.setRenderTarget(null);
+      quad.material = outMat; renderer.compile(quad, qCam);
+    },
+    bytes() {
+      const px = self.w * self.h, s = Math.max(0, Math.min(self.samples, renderer.capabilities.maxSamples));
+      let b = px * 8 + px * 4 + (s ? px * s * (8 + 4) : 0);
+      b += 6 * aoA.width * aoA.height;
+      for (const m of mips) b += m.width * m.height * 8;
+      return b;
+    },
+    dispose() {
+      for (const t of [sceneRT, aoA, aoB, zHalf, ...mips]) t.dispose();
+      depthTex.dispose(); noise.dispose(); tri.dispose();
+      for (const m of [zMat, aoMat, blurMat, preMat, downMat, upMat, outMat]) m.dispose();
+    },
+  };
+  self.setAO(self.ao); self.setBloom(self.bloom);
+  self.setSize();
+  return self;
 }
 
 
@@ -2236,7 +2483,8 @@ export async function open(opts) {
   if (!hadRole) { host.setAttribute('role', 'dialog'); host.setAttribute('aria-modal', 'true'); host.setAttribute('aria-label', o.title || '3D aisle'); }
   host.appendChild(root);
   const $ = s => root.querySelector(s);
-  const cv = $('.a3d-cv'), tipEl = $('.a3d-tip:not(.a3d-ledtip)'), ledTipEl = $('.a3d-ledtip'), panel = $('.a3d-panel');
+  let cv = $('.a3d-cv');
+  const tipEl = $('.a3d-tip:not(.a3d-ledtip)'), ledTipEl = $('.a3d-ledtip'), panel = $('.a3d-panel');
   const pbody = $('.a3d-pbody'), locBtn = $('.a3d-loc'), msgEl = $('.a3d-msg'), live = $('.a3d-live'), keysEl = $('.a3d-keys');
   const findIn = $('.a3d-find input'), findRes = $('.a3d-res'), capEl = $('.a3d-cap'), litBtn = $('[data-act="unlit"]');
   const motionBtn = $('[data-act="motion"]'), keysBtn = $('[data-act="keys"]'), segEl = $('.a3d-seg');
@@ -2276,19 +2524,43 @@ export async function open(opts) {
     if (!hadRole) { host.removeAttribute('role'); host.removeAttribute('aria-modal'); host.removeAttribute('aria-label'); }
   }
 
-  /* the renderer */
-  let renderer;
+  /* the renderer. On a desktop the room goes into a multisampled HDR target and a last pass
+     brings it to the screen (occlusion, bloom, tone mapping); on a phone, or without float
+     targets, it is drawn straight to a multisampled screen as before. Two samples: four would
+     cost another 50 MB at 1080p for edges the bloom mostly softens anyway. */
+  let renderer, post = null;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const startRenderer = direct => {
+    const r = new THREE.WebGLRenderer({ canvas: cv, antialias: direct, depth: direct, powerPreference: 'high-performance' });
+    r.setPixelRatio(dpr);
+    r.setSize(vw(), vh(), false);
+    r.toneMapping = THREE.NeutralToneMapping;
+    r.toneMappingExposure = P.exposure;
+    r.outputColorSpace = THREE.SRGBColorSpace;
+    return r;
+  };
   try {
-    renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance' });
+    renderer = startRenderer(small);
+    if (!small) {
+      try { post = makePost(renderer, { samples: 2, exposure: P.exposure, fog: corridor ? P.fogD * 0.62 : P.fogD, ao: P.ao, bloom: P.bloom }); } catch (e) { post = null; }
+      if (!post) {
+        // no float targets here: a fresh canvas, multisampled, straight to the screen
+        renderer.dispose(); try { renderer.forceContextLoss(); } catch (e) { /* fine */ }
+        const fresh = cv.cloneNode(false); cv.replaceWith(fresh); cv = fresh;
+        renderer = startRenderer(true);
+      }
+    }
   } catch (e) {
     return fail('This browser could not start WebGL, so the 3D aisle cannot open here.');
   }
-  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
-  renderer.setSize(vw(), vh(), false);
-  renderer.toneMapping = THREE.NeutralToneMapping;
-  renderer.toneMappingExposure = P.exposure;
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
   const aniso = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  // a screen or a lit sign shows its own colours: with the HDR pass it says so in its alpha
+  const display = m => {
+    if (!post) return m;
+    m.onBeforeCompile = sh => { sh.fragmentShader = sh.fragmentShader.replace('#include <opaque_fragment>', '#include <opaque_fragment>\n  gl_FragColor.a = 0.0;'); };
+    m.customProgramCacheKey = () => 'a3d-display';
+    return m;
+  };
 
   // the fonts the panels are printed in; a missing one falls back, a slow one does not hold the room up
   try {
@@ -2298,7 +2570,7 @@ export async function open(opts) {
       new Promise(r => setTimeout(r, 2500)),
     ]);
   } catch (e) { /* no FontFaceSet: system fonts */ }
-  if (disposed) { renderer.dispose(); return { close() {}, setFav() {}, focus() {} }; }
+  if (disposed) { if (post) post.dispose(); renderer.dispose(); return { close() {}, setFav() {}, focus() {} }; }
 
   // A canvas is let go once its texture is on the GPU (a redraw paints a fresh one),
   // so a hundred panels do not keep a hundred canvases alive.
@@ -2329,20 +2601,29 @@ export async function open(opts) {
   scene.fog = new THREE.FogExp2(P.bg, corridor ? P.fogD * 0.62 : P.fogD);
   const camera = new THREE.PerspectiveCamera(FOV, vw() / vh(), 0.02, corridor ? 90 : 60);
 
-  // a small room of lamps, prefiltered, for the metal to reflect
+  // what the metal reflects: the aisle itself, prefiltered. Two lines of fixtures overhead, the
+  // rows of racks on both sides speckled with their lights, the floor, the ceiling.
   let envRT = null;
   try {
-    const es = new THREE.Scene();
-    const bx = new THREE.BoxGeometry(1, 1, 1);
-    const roomM = new THREE.MeshBasicMaterial({ color: dark ? 0x0c0f13 : 0xb4bcc4, side: THREE.BackSide });
-    const room = new THREE.Mesh(bx, roomM); room.scale.set(14, 5, 10); room.position.y = 1.6; es.add(room);
-    const lampM = new THREE.MeshBasicMaterial({ color: new THREE.Color(dark ? 0xc6dcff : 0xffffff).multiplyScalar(dark ? 6 : 3.5) });
-    for (let i = -2; i <= 2; i++) { const m = new THREE.Mesh(bx, lampM); m.scale.set(11, 0.05, 0.28); m.position.set(0, 3.9, i * 1.9); es.add(m); }
-    const floorM = new THREE.MeshBasicMaterial({ color: dark ? 0x101317 : 0xdde2e7 });
-    const fl = new THREE.Mesh(bx, floorM); fl.scale.set(14, 0.02, 10); fl.position.y = -0.85; es.add(fl);
+    const es = new THREE.Scene(), bx = new THREE.BoxGeometry(1, 1, 1), tmp = [bx];
+    const em = (color, k, extra) => { const m = new THREE.MeshBasicMaterial(Object.assign({ color: new THREE.Color(color).multiplyScalar(k || 1) }, extra || {})); tmp.push(m); return m; };
+    const put = (m, sx, sy, sz, x, y, z) => { const o = new THREE.Mesh(bx, m); o.scale.set(sx, sy, sz); o.position.set(x, y, z); es.add(o); return o; };
+    put(em(dark ? 0x0b0d11 : 0xc9d0d7, 1, { side: THREE.BackSide }), 44, 3.3, 6.2, 0, 0.45, 0);                 // the hall
+    put(em(dark ? 0x12161b : 0xd9dee3), 44, 0.02, 6.2, 0, -1.2, 0);                                           // the floor
+    put(em(dark ? 0x07090c : 0xeef1f4), 44, 0.02, 6.2, 0, 2.05, 0);                                           // the ceiling
+    // the racks: dark fronts, and on them their lights
+    const led = canvas(256, 128), lx = led.getContext('2d'), lr = rng(5);
+    lx.fillStyle = dark ? '#06080a' : '#1b2026'; lx.fillRect(0, 0, 256, 128);
+    for (let i = 0; i < 260; i++) { lx.fillStyle = ['#3dff8f', '#3dff8f', '#3dff8f', '#3aa0ff', '#ffb020'][Math.floor(lr() * 5)]; lx.globalAlpha = 0.5 + lr() * 0.5; lx.fillRect(Math.floor(lr() * 64) * 4, Math.floor(lr() * 64) * 2, 2, 1); }
+    const ledT = new THREE.CanvasTexture(led); ledT.colorSpace = THREE.SRGBColorSpace; ledT.wrapS = ledT.wrapT = THREE.RepeatWrapping; ledT.repeat.set(10, 1); tmp.push(ledT);
+    const rackM = em(0xffffff, dark ? 2.2 : 1.2, { map: ledT });
+    for (const z of [-2.1, 2.1]) put(rackM, 44, 2.15, 0.05, 0, -0.12, z);
+    // the fixtures, in lengths, as they hang
+    const lampM = em(dark ? 0xd6e6ff : 0xffffff, dark ? 7 : 4.5);
+    for (const z of [-1.05, 1.05]) for (let x = -21; x < 21; x += 1.8) put(lampM, 1.2, 0.03, 0.1, x, 1.72, z);
     const pm = new THREE.PMREMGenerator(renderer);
-    envRT = pm.fromScene(es, 0.04);
-    pm.dispose(); bx.dispose(); roomM.dispose(); lampM.dispose(); floorM.dispose();
+    envRT = pm.fromScene(es, 0.035);
+    pm.dispose(); for (const t of tmp) t.dispose(); led.width = led.height = 1;
     scene.environment = envRT.texture;
     scene.environmentIntensity = P.envK;
   } catch (e) { envRT = null; }
@@ -2380,16 +2661,69 @@ export async function open(opts) {
     spotAt(BENCH.x, BENCH.z + 1.6, BENCH.x, BENCH.z, 0.8, 0.7);
   }
 
+  /* the fittings overhead light the room: two long lights down the aisle, added to every lit
+     material (diffuse only; the metal sees them in the environment). A material with its own
+     shader patch runs this one first. */
+  const LINE = { uA3dLine: { value: new THREE.Vector3(2.9, 1.05, OPP_Z - 1.05) }, uA3dLineC: { value: new THREE.Color(P.lamp).multiplyScalar(P.lineK) }, uA3dLamp: { value: new THREE.Color(P.lamp).multiplyScalar(P.lampK) }, uA3dExt: { value: new THREE.Vector2(-1e4, 1e4) } };
+  const lineLit = sh => {
+    Object.assign(sh.uniforms, LINE);
+    sh.vertexShader = 'varying vec3 vA3dW;\n' + sh.vertexShader.replace('#include <project_vertex>', [
+      '#include <project_vertex>',
+      '{ vec4 a3dW = vec4(transformed, 1.0);',
+      '#ifdef USE_INSTANCING',
+      '  a3dW = instanceMatrix * a3dW;',
+      '#endif',
+      '  vA3dW = (modelMatrix * a3dW).xyz; }'].join('\n'));
+    sh.fragmentShader = 'uniform vec3 uA3dLine;\nuniform vec3 uA3dLineC;\nuniform vec3 uA3dLamp;\nuniform vec2 uA3dExt;\nvarying vec3 vA3dW;\n' + sh.fragmentShader.replace('#include <lights_fragment_begin>', [
+      '#include <lights_fragment_begin>',
+      '{',
+      '  vec3 a3dN = inverseTransformDirection(normal, viewMatrix), a3dR = reflect(normalize(vA3dW - cameraPosition), a3dN);',
+      '  float a3dEx = smoothstep(uA3dExt.x - 1.5, uA3dExt.x + 0.5, vA3dW.x) * (1.0 - smoothstep(uA3dExt.y - 0.5, uA3dExt.y + 1.5, vA3dW.x));',
+      '  PhysicalMaterial a3dM = material;',
+      // a reflection is never brighter than the fitting it shows
+      '  vec3 a3dCap = uA3dLamp * F_Schlick(material.specularColor, material.specularF90, saturate(dot(geometryNormal, geometryViewDir)));',
+      '  #ifdef A3D_MATTE',
+      '    a3dCap *= 0.25;',
+      '  #endif',
+      '  for (int i = 0; i < 2; i++) {',
+      '    vec3 q0 = vec3(0.0, uA3dLine.x, i == 0 ? uA3dLine.y : uA3dLine.z);',
+      '    vec2 d = q0.yz - vA3dW.yz;',
+      '    float rr = sqrt(dot(d, d) + 0.02);',
+      '    vec2 l = d / rr;',
+      '    float k = max(l.x, 0.0) * a3dEx / rr;',   // a fitting faces down; a long light falls off as the distance
+      '    reflectedLight.directDiffuse += uA3dLineC * (max(a3dN.y * l.x + a3dN.z * l.y, 0.0) * k) * BRDF_Lambert(material.diffuseColor);',
+      // the highlight comes from the point of the line nearest the reflected ray, its width widening it
+      '    vec3 w0 = q0 - vA3dW;',
+      '    float t = clamp((a3dR.x * dot(a3dR, w0) - w0.x) / max(1.0 - a3dR.x * a3dR.x, 1e-3), uA3dExt.x, uA3dExt.y);',
+      '    vec3 ls = vec3(t, q0.yz) - vA3dW;',
+      '    float ld = length(ls);',
+      '    ls /= ld;',
+      '    a3dM.roughness = min(1.0, material.roughness + 0.07 / ld);',
+      '    reflectedLight.directSpecular += min(uA3dLineC * (max(dot(a3dN, ls), 0.0) * k) * BRDF_GGX(normalize((viewMatrix * vec4(ls, 0.0)).xyz), geometryViewDir, geometryNormal, a3dM), a3dCap);',
+      '  }',
+      '}'].join('\n'));
+  };
+  const patch = (m, fn, key) => { const base = m.onBeforeCompile; m.onBeforeCompile = (sh, r) => { base.call(m, sh, r); fn(sh, r); }; m.customProgramCacheKey = () => key; return m; };
+
   // materials
-  const std = (color, rough, metal, extra) => own(new THREE.MeshStandardMaterial(Object.assign({ color, roughness: rough, metalness: metal }, extra || {})));
+  const std = (color, rough, metal, extra) => { const m = own(new THREE.MeshStandardMaterial(Object.assign({ color, roughness: rough, metalness: metal }, extra || {}))); m.onBeforeCompile = lineLit; m.customProgramCacheKey = () => 'a3d-std'; return m; };
   const basic = (color, extra) => own(new THREE.MeshBasicMaterial(Object.assign({ color }, extra || {})));
+  // a bundle of cables: many runs side by side, each a little lighter or darker
+  const cableT = tex(keepCv((() => {
+    const c = canvas(64, 4), x = c.getContext('2d'), r = rng(9);
+    for (let i = 0; i < 64; i += 2) { const v = Math.round(150 + r() * 105); x.fillStyle = 'rgb(' + v + ',' + v + ',' + v + ')'; x.fillRect(i, 0, 2, 4); x.fillStyle = 'rgba(0,0,0,.35)'; x.fillRect(i + 1.6, 0, 0.4, 4); }
+    return c;
+  })()));
   const M = {
     frame: std(P.frame, P.frameRough, P.frameMetal),
     inner: std(P.inner, 0.8, 0.2),
     plinth: std(P.plinth, 0.7, 0.3),
-    post: std(P.post, 0.5, 0.55),
-    fixture: std(P.fixture, 0.6, 0.4),
-    tray: std(P.tray, 0.5, 0.35),
+    post: std(P.post, 0.42, 0.75),
+    fixture: std(P.fixture, 0.36, 0.85),
+    tray: std(P.tray, 0.4, 0.85),
+    rod: std(P.tray, 0.5, 0.7),
+    cableB: std(0xffffff, 0.62, 0, { color: P.cable[0], map: cableT }),
+    cableY: std(0xffffff, 0.62, 0, { color: P.cable[1], map: cableT }),
     wall: std(P.wall, 0.95, 0, { emissive: P.wallWash, emissiveMap: own(new THREE.CanvasTexture((() => {
       // light from the ceiling washing down the walls
       const c = canvas(4, 256), x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 0, 256);
@@ -2397,12 +2731,12 @@ export async function open(opts) {
       x.fillStyle = g; x.fillRect(0, 0, 4, 256); return keepCv(c);
     })())) }),
     ceil: std(P.ceil, 0.95, 0),
-    body: std(P.body, 0.42, 0.65),
+    body: std(P.body, 0.36, 0.8),
     plateEdge: std(P.face[1], 0.55, 0.4),
     rail: std(P.rail, 0.3, 0.85),
     lamp: basic(new THREE.Color(P.lamp).multiplyScalar(P.lampK)),
     wire: basic(dark ? 0x2a2f35 : 0x8e979f),
-    bezel: std(dark ? 0x0b0d10 : 0x2a3036, 0.6, 0.4),
+    bezel: std(dark ? 0x171a1f : 0x2a3036, 0.38, 0.8),   // anodised: the fittings show in it
     cart: std(P.cart[0], 0.45, 0.6),
     cartDark: std(P.cart[1], 0.6, 0.35),
     rubber: std(P.cart[2], 0.9, 0),
@@ -2420,20 +2754,49 @@ export async function open(opts) {
   const ROOM = Math.ceil(Math.max(36, endR - endL + 10) / 1.2) * 1.2;
   const shiftX = (((rowX0 % 0.6) + 0.6) % 0.6);
   const floorT = tex(keepCv(tileTexture(P, false)), { repeat: [ROOM / 0.6, ROOM / 0.6] });
-  // in the corridor two lights face each other across the aisle: a duller floor, so neither glares off it
-  const floorRough = corridor ? Math.max(P.floorRough, 0.66) : P.floorRough;
-  const floor = new THREE.Mesh(own(new THREE.PlaneGeometry(ROOM, ROOM)), std(0xffffff, floorRough, 0, { map: floorT }));
+  /* The raised floor, matte: the seams between its tiles cut by the shader and box-filtered over
+     each pixel (sharp near, a faint grid far off, never shimmering), each tile's edges bevelled to
+     catch the light, and no two tiles quite alike: a shade lighter or darker, a little more or
+     less worn, their speckle turned. The texture coordinates count tiles. */
+  const tileFloor = (m, seed) => patch(m, sh => {
+      sh.uniforms.uSeam = { value: new THREE.Color(P.seam) };
+      sh.fragmentShader = '#define A3D_MATTE\n' + sh.fragmentShader
+        .replace('#include <common>', '#include <common>\nuniform vec3 uSeam;\nfloat a3dHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7)) + ' + seed.toFixed(1) + ') * 43758.5453); }')
+        .replace('#include <map_fragment>', [
+          'vec2 tc = vMapUv, tid = floor(tc), tf = tc - tid;',
+          'float th = a3dHash(tid);',
+          'vec2 tflip = step(0.5, vec2(fract(th * 7.31), fract(th * 3.17)));',
+          'diffuseColor *= textureGrad(map, tid + mix(tf, 1.0 - tf, tflip), dFdx(tc), dFdy(tc));',
+          'diffuseColor.rgb *= 0.96 + 0.08 * th;',
+          'const float SEAM_N = 150.0;',
+          'vec2 tw = max(fwidth(tc), vec2(1e-5));',
+          'vec2 ta = tc + 0.5 / SEAM_N + 0.5 * tw, tb = tc + 0.5 / SEAM_N - 0.5 * tw;',
+          'vec2 ti = clamp((floor(ta) + min(fract(ta) * SEAM_N, 1.0) - floor(tb) - min(fract(tb) * SEAM_N, 1.0)) / (SEAM_N * tw), 0.0, 1.0);',
+          'diffuseColor.rgb = mix(uSeam, diffuseColor.rgb, (1.0 - ti.x) * (1.0 - ti.y));'].join('\n'))
+        .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n  roughnessFactor = clamp(roughnessFactor + (th - 0.5) * 0.06, 0.0, 1.0);')
+        .replace('#include <normal_fragment_maps>', [
+          '#include <normal_fragment_maps>',
+          '{',
+          '  vec2 ed = min(tf, 1.0 - tf) * 0.6, sg = sign(tf - 0.5);',
+          '  vec2 bev = (1.0 - smoothstep(0.002, 0.009, ed)) * step(0.002, ed);',
+          '  float near = 1.0 - smoothstep(0.003, 0.012, max(tw.x, tw.y) * 0.6);',
+          '  vec3 tx = normalize((viewMatrix * vec4(1.0, 0.0, 0.0, 0.0)).xyz), tz = normalize((viewMatrix * vec4(0.0, 0.0, -1.0, 0.0)).xyz);',
+          '  normal = normalize(normal + 0.8 * near * (bev.x * sg.x * tx + bev.y * sg.y * tz));',
+          '}'].join('\n'));
+  }, 'a3d-floor-' + seed);
+  const floorRough = P.floorRough;
+  const floor = new THREE.Mesh(own(new THREE.PlaneGeometry(ROOM, ROOM)), tileFloor(std(0xffffff, floorRough, 0, { map: floorT }), 1));
   floor.rotation.x = -Math.PI / 2; floor.position.set(Math.round((midX - shiftX) / 0.6) * 0.6 + shiftX, 0, 0);
   scene.add(floor);
-  const strips = [];
+  // a row of perforated tiles in front of each row of racks: the cold air comes up through them
   const stripLen = corridor ? rowX1 - rowX0 : (SECS[0].nR + 4) * PITCH;
   const stripX = corridor ? (rowX0 + rowX1) / 2 : midX;
   const perfT = tex(keepCv(tileTexture(P, true)), { repeat: [Math.round(stripLen / PITCH), 1] });
-  const perfM = std(0xffffff, floorRough, 0, { map: perfT, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
+  const perfM = tileFloor(std(0xffffff, floorRough, 0.15, { map: perfT, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }), 2);
   for (const z of [0.3, OPP_Z - 0.3]) {
     const strip = new THREE.Mesh(own(new THREE.PlaneGeometry(Math.round(stripLen / PITCH) * PITCH, 0.6)), perfM);
     strip.rotation.x = -Math.PI / 2; strip.position.set(stripX, 0.0005, z);
-    scene.add(strip); strips.push(strip);
+    scene.add(strip);
   }
 
   const parts = new Map();
@@ -2451,21 +2814,42 @@ export async function open(opts) {
   plane('wall', I4, OPP_Z + 3.5, CEIL, endL, CEIL / 2, OPP_Z / 2, Math.PI / 2);
   plane('wall', I4, OPP_Z + 3.5, CEIL, endR, CEIL / 2, OPP_Z / 2, -Math.PI / 2);
   plane('ceil', I4, endR - endL, OPP_Z + 3.5, midX, CEIL, OPP_Z / 2, 0, Math.PI / 2);
-  // two lines of light over the aisle, hung from the ceiling
+  // two lines of light over the aisle: fittings 1.2 m long on a 1.8 m pitch, each hung on two wires
   const lampLen = corridor ? endR - endL - 0.8 : rowX1 - rowX0 + 4 * PITCH;
-  for (const z of [1.05, OPP_Z - 1.05]) {
-    box('fixture', I4, lampLen, 0.05, 0.1, midX, 2.92, z);
-    plane('lamp', I4, lampLen - 0.02, 0.07, midX, 2.894, z, 0, Math.PI / 2);
-    for (let x = midX - lampLen / 2 + 0.3; x < midX + lampLen / 2; x += 1.5) box('wire', I4, 0.004, CEIL - 2.94, 0.004, x, (CEIL + 2.94) / 2, z);
+  const FIT = 1.2, FIT_P = 1.8, nFit = Math.max(1, Math.floor((lampLen - FIT) / FIT_P) + 1);
+  const fit0 = midX - (nFit - 1) * FIT_P / 2;
+  LINE.uA3dExt.value.set(fit0 - FIT / 2, fit0 + (nFit - 1) * FIT_P + FIT / 2);
+  for (const z of [1.05, OPP_Z - 1.05]) for (let i = 0; i < nFit; i++) {
+    const x = fit0 + i * FIT_P;
+    box('fixture', I4, FIT, 0.05, 0.12, x, 2.925, z);
+    box('fixture', I4, FIT + 0.01, 0.012, 0.128, x, 2.906, z);   // the frame round the diffuser
+    plane('lamp', I4, FIT - 0.04, 0.09, x, 2.8995, z, 0, Math.PI / 2);
+    for (const dx of [-FIT * 0.4, FIT * 0.4]) box('wire', I4, 0.004, CEIL - 2.95, 0.004, x + dx, (CEIL + 2.95) / 2, z);
   }
-  // the fibre runner over each row
+  // the cable ladders over each row: two channel rails, a rung every 0.3 m, the cables laid in them,
+  // hung on rods; a drop of cable into each cabinet's roof
   const trayLen = corridor ? rowX1 - rowX0 + 1.2 : lampLen, trayX = corridor ? (rowX0 + rowX1) / 2 : midX;
+  const TRAY_Y = 2.62;
+  const lenX = (key, r, len, x, y, z, seg) => add(key, new THREE.CylinderGeometry(r, r, len, seg || 10, 1, true), new THREE.Matrix4().compose(_p.set(x, y, z), _q.setFromEuler(_e.set(0, 0, Math.PI / 2)), _s));
   for (const z of [-0.55, OPP_Z + 0.55]) {
-    box('tray', I4, trayLen, 0.008, 0.24, trayX, 2.62, z);
-    box('tray', I4, trayLen, 0.09, 0.008, trayX, 2.665, z - 0.116);
-    box('tray', I4, trayLen, 0.09, 0.008, trayX, 2.665, z + 0.116);
-    for (let x = trayX - trayLen / 2 + 0.4; x < trayX + trayLen / 2; x += 1.2) box('wire', I4, 0.008, CEIL - 2.62, 0.008, x, (CEIL + 2.62) / 2, z);
+    for (const sz of [-1, 1]) {
+      box('tray', I4, trayLen, 0.064, 0.006, trayX, TRAY_Y + 0.032, z + sz * 0.118);
+      for (const y of [TRAY_Y + 0.003, TRAY_Y + 0.061]) box('tray', I4, trayLen, 0.006, 0.024, trayX, y, z + sz * 0.106);
+    }
+    for (let x = trayX - trayLen / 2 + 0.12; x < trayX + trayLen / 2; x += 0.3) box('tray', I4, 0.024, 0.012, 0.226, x, TRAY_Y + 0.008, z);
+    for (let x = trayX - trayLen / 2 + 0.4; x < trayX + trayLen / 2; x += 1.2) {
+      for (const sz of [-1, 1]) box('rod', I4, 0.008, CEIL - TRAY_Y + 0.02, 0.008, x, (CEIL + TRAY_Y - 0.02) / 2, z + sz * 0.135);
+      box('tray', I4, 0.032, 0.02, 0.3, x, TRAY_Y - 0.012, z);
+    }
+    lenX('cableB', 0.034, trayLen, trayX, TRAY_Y + 0.048, z - 0.045);
+    lenX('cableB', 0.022, trayLen, trayX, TRAY_Y + 0.036, z + 0.04);
+    lenX('cableY', 0.018, trayLen, trayX, TRAY_Y + 0.032, z + 0.085);
   }
+  const drops = (x, z, dir) => {
+    const top = TRAY_Y + 0.02, bot = RACK_H - 0.01, zz = z - dir * 0.47;
+    add('cableB', new THREE.CylinderGeometry(0.02, 0.02, top - bot, 8, 1, true), mat4(x - 0.13, (top + bot) / 2, zz));
+    add('cableY', new THREE.CylinderGeometry(0.011, 0.011, top - bot, 8, 1, true), mat4(x + 0.12, (top + bot) / 2, zz - dir * 0.05));
+  };
 
   // a cabinet: its frame, sides, roof, back, plinth; open fronts get posts, the rest a door
   function cabinet(base, isOpen) {
@@ -2499,13 +2883,33 @@ export async function open(opts) {
     }
   }
   const rackMat = R => mat4(R.x, 0, R.z, R.dir < 0 ? Math.PI : 0);
-  for (const R of racks) cabinet(rackMat(R), true);
+  for (const R of racks) { cabinet(rackMat(R), true); drops(R.x, R.z, R.dir); }
   // the neighbours: closed cabinets at the ends of each run, and across the aisle in the one aisle
   const doors = [];
-  const doorSpots = closed.map(([x, z, dir]) => { const m = mat4(x, 0, z, dir < 0 ? Math.PI : 0); cabinet(m, false); return m; });
-  const doorKinds = [doorTexture(P, 11, dark), doorTexture(P, 29, dark), doorTexture(P, 47, dark)];
+  const doorSpots = closed.map(([x, z, dir]) => { const m = mat4(x, 0, z, dir < 0 ? Math.PI : 0); cabinet(m, false); drops(x, z, dir); return m; });
+  // the doors: perforated steel, or (one kind in three) smoked glass. The equipment behind sits a few
+  // centimetres back and shifts behind the door as you walk past; its lights glow (with the bloom; on
+  // a phone, flat and with their halos, as before)
+  const doorKinds = [doorTexture(P, 11, dark, false), doorTexture(P, 29, dark, false), doorTexture(P, 47, dark, true)];
   const doorW = RACK_W - 0.012, doorH = RACK_H - PLINTH_H - 0.012;
-  doorKinds.forEach((d, i) => { M['door' + i] = std(0xffffff, 0.55, 0.35, { map: tex(keepCv(d.cv)) }); });
+  doorKinds.forEach((d, i) => {
+    const glass = i === 2, inT = tex(keepCv(d.inner));
+    M['door' + i] = patch(std(0xffffff, 0.55, 0.35, { map: tex(keepCv(d.sheet)) }), sh => {
+      sh.uniforms.tInner = { value: inT };
+      sh.uniforms.uDoor = { value: new THREE.Vector4(doorW, doorH, post ? 0.035 : 0, glass ? 0.6 : 0.9) };
+      sh.fragmentShader = 'uniform sampler2D tInner;\nuniform vec4 uDoor;\n' + sh.fragmentShader
+        .replace('#include <map_fragment>', [
+          'vec4 dSheet = texture2D(map, vMapUv);',
+          'vec3 dV = normalize(cameraPosition - vA3dW), dN = normalize(inverseTransformDirection(vNormal, viewMatrix));',
+          'vec2 dOff = -vec2(dot(dV, vec3(dN.z, 0.0, -dN.x)), dV.y) / max(dot(dV, dN), 0.2) * uDoor.z / uDoor.xy;',
+          'vec3 dIn = texture2D(tInner, clamp(vMapUv + dOff, 0.0, 1.0)).rgb;',
+          'diffuseColor.rgb *= dSheet.rgb * dSheet.a;',
+          'vec3 dGlow = dIn * (1.0 - dSheet.a) * uDoor.w * (1.0 + smoothstep(0.35, 0.75, max(dIn.r, max(dIn.g, dIn.b))) * ' + (post ? '2.5' : '0.3') + ');'].join('\n'))
+        .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n  totalEmissiveRadiance += dGlow;')
+        .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n  metalnessFactor *= dSheet.a;')
+        .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n  roughnessFactor = mix(' + (glass ? '0.06' : '0.8') + ', roughnessFactor, dSheet.a);');
+    }, 'a3d-door-' + (glass ? 'glass' : 'mesh'));
+  });
   doorSpots.forEach((m, i) => {
     const kind = (i * 7 + 3) % 3;
     plane('door' + kind, m, doorW, doorH, 0, PLINTH_H + 0.006 + doorH / 2, 0.006);
@@ -2542,7 +2946,7 @@ export async function open(opts) {
   for (const R of racks) {
     const k = R.k, S = R.sec;
     const t = tex(keepCv(labelTexture(P, k, R.from, R.to)));
-    const pm = new THREE.Mesh(plateGeo, P.plateLit ? basic(0xffffff, { map: t }) : std(0xffffff, 0.45, 0.2, { map: t }));
+    const pm = new THREE.Mesh(plateGeo, P.plateLit ? basic(0xffffff, { map: t }) : std(0xffffff, 0.72, 0.1, { map: t }));
     scene.add(onRack(pm, R, 0, unitsTop + TOP_H - 0.037, 0.0008));
     const top3 = R.langs.slice(0, 4).map(l => l.name + ' ' + l.n).join(', ') + (R.langs.length > 4 ? ' +' + (R.langs.length - 4) : '');
     const msg = [rname(R) + '  #' + R.from + (R.to > R.from ? '–' + R.to : ''),
@@ -2601,7 +3005,7 @@ export async function open(opts) {
   if (!corridor) {
     const sw = Math.min(1.7, Math.max(1.1, rowX1 - rowX0 + 0.2)), sh = sw * 200 / 1280;
     const t = tex(keepCv(signTexture(P, o.title, o.subtitle)));
-    const sign = new THREE.Mesh(own(new THREE.PlaneGeometry(sw, sh)), P.signLit ? basic(0xffffff, { map: t }) : std(0xffffff, 0.5, 0.05, { map: t }));
+    const sign = new THREE.Mesh(own(new THREE.PlaneGeometry(sw, sh)), P.signLit ? basic(0xffffff, { map: t }) : std(0xffffff, 0.8, 0, { map: t }));
     sign.position.set(midX, 2.6, 1.07);
     const back = new THREE.Mesh(own(new THREE.BoxGeometry(sw + 0.03, sh + 0.03, 0.03)), M.fixture);
     back.position.set(midX, 2.6, 1.05);
@@ -2614,7 +3018,7 @@ export async function open(opts) {
   } else {
     /* each section's bay: a lit sign hung across the aisle, read from both ways; a kiosk with
        its summary; its lane down the middle of the floor, in its colour, its name at the start */
-    const lit = (t, k) => (P.signLit ? basic(new THREE.Color(1, 1, 1).multiplyScalar(k || 1), { map: t, toneMapped: false }) : std(0xffffff, 0.5, 0.05, { map: t, emissiveMap: t, emissive: 0xffffff, emissiveIntensity: 0.18 }));
+    const lit = (t, k) => (P.signLit ? display(basic(new THREE.Color(1, 1, 1).multiplyScalar(k || 1), { map: t, toneMapped: false })) : std(0xffffff, 0.8, 0, { map: t, emissiveMap: t, emissive: 0xffffff, emissiveIntensity: 0.42 }));
     const SW = 1.75, SH = SW * 288 / 1280, TK = small ? 0.6 : 0.8;
     const laneGlowT = tex(keepCv((() => { const c = canvas(4, 64), x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 0, 64); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.5, '#fff'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 4, 64); return c; })()), { linear: true });
     for (const S of SECS) {
@@ -2649,7 +3053,7 @@ export async function open(opts) {
       const post = new THREE.Mesh(own(new THREE.BoxGeometry(0.1, 0.7, 0.1)), M.bezel); post.position.y = 0.35;
       const foot = new THREE.Mesh(own(new THREE.BoxGeometry(0.46, 0.03, 0.34)), M.bezel); foot.position.y = 0.015;
       const shell = new THREE.Mesh(own(new THREE.BoxGeometry(KW + 0.05, KH + 0.05, 0.06)), M.bezel); shell.position.set(0, 0.7 + KH / 2, -0.03);
-      const scr = new THREE.Mesh(own(new THREE.PlaneGeometry(KW, KH)), basic(0xffffff, { map: kt, toneMapped: false }));
+      const scr = new THREE.Mesh(own(new THREE.PlaneGeometry(KW, KH)), display(basic(0xffffff, { map: kt, toneMapped: false })));
       scr.position.set(0, 0.7 + KH / 2, 0.0015);
       const band = new THREE.Mesh(own(new THREE.BoxGeometry(KW + 0.056, 0.012, 0.064)), basic(new THREE.Color(S.color).multiplyScalar(dark ? 1.6 : 1)));
       band.position.set(0, 0.7 + KH + 0.03, -0.03);
@@ -2664,7 +3068,7 @@ export async function open(opts) {
     const mt = tex(keepCv(machineTexture(P, machine, SECS, world, BK)));
     for (const [z, ry, map, part] of [[OPP_Z / 2 - 1.4, -Math.PI / 2 + 0.42, ot, 'overall'], [OPP_Z / 2 + 1.4, -Math.PI / 2 - 0.42, mt, 'machine']]) {
       const g = new THREE.Group(); g.position.set(-2.9, 0, z); g.rotation.y = ry;
-      const scr = new THREE.Mesh(own(new THREE.PlaneGeometry(BW, BH)), basic(0xffffff, { map, toneMapped: false }));
+      const scr = new THREE.Mesh(own(new THREE.PlaneGeometry(BW, BH)), display(basic(0xffffff, { map, toneMapped: false })));
       scr.position.set(0, 0.98 + BH / 2, 0.002);
       const shell = new THREE.Mesh(own(new THREE.BoxGeometry(BW + 0.06, BH + 0.06, 0.07)), M.bezel); shell.position.set(0, 0.98 + BH / 2, -0.034);
       for (const dx of [-BW * 0.32, BW * 0.32]) { const leg = new THREE.Mesh(own(new THREE.BoxGeometry(0.06, 0.98, 0.06)), M.bezel); leg.position.set(dx, 0.49, -0.04); g.add(leg); }
@@ -2679,7 +3083,7 @@ export async function open(opts) {
   // the bench's placard
   {
     const bt = tex(keepCv(benchSignTexture(P)));
-    const bs = new THREE.Mesh(own(new THREE.PlaneGeometry(1.2, 1.2 * 256 / 768)), P.signLit ? basic(0xffffff, { map: bt, toneMapped: false }) : std(0xffffff, 0.5, 0.05, { map: bt }));
+    const bs = new THREE.Mesh(own(new THREE.PlaneGeometry(1.2, 1.2 * 256 / 768)), P.signLit ? display(basic(0xffffff, { map: bt, toneMapped: false })) : std(0xffffff, 0.8, 0, { map: bt }));
     bs.position.set(0, BENCH_Y + 0.5 + 0.22, -BENCH.D / 2 + 0.03);
     bs.position.applyMatrix4(BENCH.m); bs.rotation.y = BENCH.yaw;
     scene.add(bs);
@@ -2697,7 +3101,7 @@ export async function open(opts) {
     const c = canvas(NOC_W, NOC_H);
     const t = tex(c, { keep: true });
     t.anisotropy = aniso;
-    const m = new THREE.Mesh(nocGeo, basic(0xffffff, { map: t, toneMapped: false }));
+    const m = new THREE.Mesh(nocGeo, display(basic(0xffffff, { map: t, toneMapped: false })));
     const side = col - 1, y = 2.0 + (row ? -0.38 : 0.38);
     m.rotation.y = -Math.PI / 2 - side * CURVE;
     if (!side) m.position.set(WALL_X - 0.03, y, OPP_Z / 2);
@@ -2788,29 +3192,29 @@ export async function open(opts) {
   const atlasT = tex(atlasCv, { keep: true });
   const farMat = std(0xffffff, 0.6, 0.25, { map: atlasT, emissiveMap: atlasT, emissive: 0xffffff, emissiveIntensity: 1 });
   const lcdK = P.lcdLit ? 0.9 / Math.max(0.05, P.faceEm) : 1;
-  farMat.onBeforeCompile = sh => {
+  patch(farMat, sh => {
     sh.uniforms.uLcdK = { value: lcdK };
     sh.vertexShader = 'attribute vec4 aUv;\nattribute vec4 aEm;\nattribute vec2 aFx;\nvarying vec4 vEm;\nvarying vec2 vLoc;\nvarying float vLcd;\n' + sh.vertexShader
       .replace('#include <uv_vertex>', '#include <uv_vertex>\n  vMapUv = aUv.xy + uv * aUv.zw;\n  vEmissiveMapUv = vMapUv;\n  vEm = aEm; vLoc = uv; vLcd = aFx.y;')
       .replace('#include <project_vertex>', '#include <project_vertex>\n  if (aFx.x > 0.5) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);');
     sh.fragmentShader = 'uniform float uLcdK;\nvarying vec4 vEm;\nvarying vec2 vLoc;\nvarying float vLcd;\n' + sh.fragmentShader
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n  totalEmissiveRadiance *= vEm.rgb * vEm.a;\n  if (vLoc.x > vLcd && vLoc.x < 0.9512 && vLoc.y > 0.1739 && vLoc.y < 0.8261) totalEmissiveRadiance *= uLcdK;');
-  };
-  farMat.customProgramCacheKey = () => 'a3d-far';
+  }, 'a3d-far');
   for (const [name, size] of [['aUv', 4], ['aEm', 4], ['aFx', 2]]) farGeo.setAttribute(name, new THREE.InstancedBufferAttribute(new Float32Array(Math.max(1, all.length) * size), size));
   const farFaces = new THREE.InstancedMesh(farGeo, farMat, Math.max(1, all.length));
   farFaces.count = all.length; farFaces.frustumCulled = false; farFaces.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   farFaces.userData = { part: 'far' };
   scene.add(farFaces);
 
-  /* the lights, the equalisers and the fans: one instanced draw each */
+  /* the lights, the equalisers and the fans: one instanced draw each. They are paint on a
+     panel, so they leave the depth alone (the occlusion would read them as bumps). */
   function instanced(count, vs, fs, uniforms, attrs, opt) {
     const geo = own(new THREE.PlaneGeometry(1, 1));
     for (const [name, size] of attrs) geo.setAttribute(name, new THREE.InstancedBufferAttribute(new Float32Array(Math.max(1, count) * size), size));
     const mat = own(new THREE.ShaderMaterial({
       uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, uniforms]),
       vertexShader: vs, fragmentShader: fs, fog: true, transparent: true,
-      depthWrite: !opt.additive, blending: opt.additive ? THREE.AdditiveBlending : THREE.NormalBlending,
+      depthWrite: false, blending: opt.additive ? THREE.AdditiveBlending : THREE.NormalBlending,
       side: THREE.DoubleSide,
     }));
     if ('uTime' in mat.uniforms) mat.uniforms.uTime = T;
@@ -2825,7 +3229,7 @@ export async function open(opts) {
   const per = 7;
   const decorLeds = [];
   doors.forEach(d => { for (const l of doorKinds[d.kind].leds) decorLeds.push({ m: d.m, l }); });
-  const nLens = all.length * per, nGlow = nLens + (P.decorGlowK > 0 ? decorLeds.length : 0);
+  const nLens = all.length * per, nGlow = nLens + (P.decorGlowK > 0 && !post ? decorLeds.length : 0);
   const LED_ATTRS = [['aColor', 3], ['aLevel', 1], ['aHot', 1], ['aBlink', 2], ['aDim', 1]];
   const EQ_ATTRS = [['aColor', 3], ['aLevel', 1], ['aHot', 1], ['aDim', 1]];
   const lens = instanced(nLens, LED_VS, LENS_FS, { uTime: { value: 0 }, uOff: { value: new THREE.Color(P.ledOff) }, uBoost: { value: P.ledBoost } }, LED_ATTRS, { order: 2 });
@@ -2989,7 +3393,7 @@ export async function open(opts) {
   // fav: the locator lit, the whole front washed blue, light pipes along its edges
   function favFx(u) {
     if (u.fav && !u.fx) {
-      const ov = new THREE.Mesh(favGeo, favMat); ov.position.z = 0.0005; ov.renderOrder = 4;
+      const ov = new THREE.Mesh(favGeo, favMat); ov.position.z = 0.0005; ov.renderOrder = 1;   // under the lights, which draw over it
       const top = new THREE.Mesh(pipeGeo, pipeMat); top.position.set(0, UNIT_H / 2 - 0.0007, 0.0006);
       const bot = new THREE.Mesh(pipeGeo, pipeMat); bot.position.set(0, -UNIT_H / 2 + 0.0007, 0.0006);
       u.fx = [ov, top, bot]; u.group.add(ov, top, bot);
@@ -3001,7 +3405,7 @@ export async function open(opts) {
   all.forEach(favFx);
 
   // the drawer chart: a coloured body for each drawer that is out, in one draw
-  const selfLit = (mat, k) => { mat.onBeforeCompile = sh => { sh.fragmentShader = sh.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n  totalEmissiveRadiance += diffuseColor.rgb * ' + k.toFixed(2) + ';'); }; mat.customProgramCacheKey = () => 'a3d-lit-' + k.toFixed(2); return mat; };
+  const selfLit = (mat, k) => patch(mat, sh => { sh.fragmentShader = sh.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n  totalEmissiveRadiance += diffuseColor.rgb * ' + k.toFixed(2) + ';'); }, 'a3d-lit-' + k.toFixed(2));
   const chartBodies = new THREE.InstancedMesh(bodyGeo, selfLit(std(0xffffff, 0.45, 0.3), dark ? 0.55 : 0.18), Math.max(1, all.length));
   chartBodies.count = all.length; chartBodies.frustumCulled = false; chartBodies.visible = false;
   chartBodies.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -3215,61 +3619,6 @@ export async function open(opts) {
   const shadow = new THREE.Mesh(own(new THREE.PlaneGeometry(PANEL_W, 0.075)), basic(0x000000, { alphaMap: shT, transparent: true, opacity: 0, depthWrite: false }));
   shadow.visible = false; shadow.renderOrder = 1;
   scene.add(shadow);
-
-  /* A polished floor: the room mirrored in it, soft. A second, half-size pass from a
-     camera under the floor; the floor reads it back where it is. Not on a phone. */
-  let mirror = null;
-  if (P.mirrorK > 0 && !small) {
-    try {
-      const ext = renderer.extensions;
-      const hdr = ext.has('EXT_color_buffer_float') || ext.has('EXT_color_buffer_half_float');
-      const rt = own(new THREE.WebGLRenderTarget(2, 2, { type: hdr ? THREE.HalfFloatType : THREE.UnsignedByteType, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter }));
-      mirror = { rt, cam: new THREE.PerspectiveCamera(), mat: new THREE.Matrix4(), look: new THREE.Vector3(), up: new THREE.Vector3(), ks: [] };
-      const polish = (mat, k) => {
-        mat.onBeforeCompile = sh => {
-          sh.uniforms.tMirror = { value: rt.texture };
-          sh.uniforms.uMirror = { value: mirror.mat };
-          sh.uniforms.uMirrorK = { value: k };
-          mirror.ks.push(sh.uniforms.uMirrorK);
-          sh.vertexShader = 'uniform mat4 uMirror;\nvarying vec4 vMirror;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n  vMirror = uMirror * modelMatrix * vec4(position, 1.0);');
-          sh.fragmentShader = 'uniform sampler2D tMirror;\nuniform float uMirrorK;\nvarying vec4 vMirror;\n' + sh.fragmentShader.replace('#include <opaque_fragment>', [
-            '{',
-            '  vec2 muv = vMirror.xy / vMirror.w;',
-            '  vec3 m = textureLod(tMirror, muv, 0.6).rgb * 0.6 + textureLod(tMirror, muv, 2.0).rgb * 0.4;',
-            '  float fr = mix(0.35, 1.0, pow(1.0 - clamp(dot(geometryViewDir, normal), 0.0, 1.0), 3.0));',
-            '  outgoingLight += m * uMirrorK * fr;',
-            '}',
-            '#include <opaque_fragment>'].join('\n'));
-        };
-        mat.customProgramCacheKey = () => 'a3d-mirror';
-      };
-      polish(floor.material, P.mirrorK);
-      polish(perfM, P.mirrorK * 0.6);
-    } catch (e) { mirror = null; }
-  }
-  function sizeMirror() {
-    if (!mirror) return;
-    const v = renderer.getDrawingBufferSize(new THREE.Vector2());
-    mirror.rt.setSize(Math.max(2, Math.round(v.x / 2)), Math.max(2, Math.round(v.y / 2)));
-  }
-  sizeMirror();
-  function renderMirror() {
-    const m = mirror, c = camera;
-    m.cam.position.set(c.position.x, -c.position.y, c.position.z);
-    m.look.set(0, 0, -1).applyQuaternion(c.quaternion).add(c.position); m.look.y = -m.look.y;
-    m.up.set(0, 1, 0).applyQuaternion(c.quaternion); m.up.y = -m.up.y;
-    m.cam.up.copy(m.up); m.cam.lookAt(m.look);
-    m.cam.updateMatrixWorld();
-    m.cam.projectionMatrix.copy(c.projectionMatrix);
-    m.cam.projectionMatrixInverse.copy(c.projectionMatrixInverse);
-    m.mat.set(0.5, 0, 0, 0.5, 0, 0.5, 0, 0.5, 0, 0, 0.5, 0.5, 0, 0, 0, 1);
-    m.mat.multiply(m.cam.projectionMatrix).multiply(m.cam.matrixWorldInverse);
-    floor.visible = false; for (const st of strips) st.visible = false;
-    renderer.setRenderTarget(m.rt);
-    renderer.render(scene, m.cam);
-    renderer.setRenderTarget(null);
-    floor.visible = true; for (const st of strips) st.visible = true;
-  }
 
   /* camera and controls */
   const controls = new OrbitControls(camera, cv);
@@ -3844,7 +4193,7 @@ export async function open(opts) {
   scrHouse.position.z = -0.016; scrHouse.userData = { cart: true };
   const scrCv = canvas(1024, 640);
   const scrT = tex(scrCv, { keep: true });
-  const scrMesh = new THREE.Mesh(own(new THREE.PlaneGeometry(SCR_W, SCR_H)), basic(0xffffff, { map: scrT, toneMapped: false }));
+  const scrMesh = new THREE.Mesh(own(new THREE.PlaneGeometry(SCR_W, SCR_H)), display(basic(0xffffff, { map: scrT, toneMapped: false })));
   scrMesh.userData = { cart: true, screen: true };
   const scrLed = new THREE.Mesh(own(new THREE.PlaneGeometry(0.008, 0.004)), basic(new THREE.Color(P.ledG).multiplyScalar(1.4)));
   scrLed.position.set(SCR_W / 2 - 0.01, -SCR_H / 2 - 0.009, 0.0005);
@@ -4573,6 +4922,8 @@ export async function open(opts) {
   const keys = new Set();
   const MOVE = { ArrowLeft: 'l', KeyA: 'l', ArrowRight: 'r', KeyD: 'r', ArrowUp: 'f', KeyW: 'f', ArrowDown: 'b', KeyS: 'b', KeyQ: 'd', KeyE: 'u' };
   const fwd = new THREE.Vector3(), side = new THREE.Vector3(), mv = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0);
+  // a brisk walk (a sprint on Shift), eased in over a fraction of a second so a tap still nudges
+  let walkHeld = 0;
   function walk(dt, fast) {
     camera.getWorldDirection(fwd); fwd.y = 0;
     if (fwd.lengthSq() < 1e-6) fwd.set(0, 0, -1);
@@ -4583,8 +4934,10 @@ export async function open(opts) {
       if (a === 'l') mv.sub(side); else if (a === 'r') mv.add(side); else if (a === 'f') mv.add(fwd);
       else if (a === 'b') mv.sub(fwd); else if (a === 'u') mv.y += 1; else if (a === 'd') mv.y -= 1;
     }
-    if (mv.lengthSq() === 0) return false;
-    mv.normalize().multiplyScalar((fast ? 2.6 : corridor ? 1.35 : 1.05) * dt);
+    if (mv.lengthSq() === 0) { walkHeld = 0; return false; }
+    walkHeld += dt;
+    mv.normalize().multiplyScalar((fast ? 7.5 : corridor ? 3.6 : 2.6) * Math.min(1, 0.3 + walkHeld * 2.4) * dt);
+    mv.y *= 0.45;   // up and down at an easier pace: the ceiling is close
     camera.position.add(mv); controls.target.add(mv);
     return true;
   }
@@ -4704,12 +5057,17 @@ export async function open(opts) {
   }
 
   /* the loop: on demand while still; with motion on, the room's own motion at ~30 fps */
-  // a slow machine finds out in the first second of motion: fewer pixels, no mirror
-  const probe = { n: 0, slow: 0, done: reduced };
+  // a slow machine finds out in the first seconds of motion: first no occlusion, then no bloom, then fewer pixels
+  const probe = { n: 0, slow: 0, done: reduced, steps: 0 };
   function lighten() {
-    if (mirror) { for (const k of mirror.ks) k.value = 0; mirror.rt.dispose(); bin.delete(mirror.rt); mirror = null; }
-    renderer.setPixelRatio(Math.max(1, renderer.getPixelRatio() * 0.7));
-    renderer.setSize(vw(), vh(), false);
+    if (post && post.ao) post.setAO(false);
+    else if (post && post.bloom) post.setBloom(false);
+    else {
+      renderer.setPixelRatio(Math.max(1, renderer.getPixelRatio() * 0.7));
+      renderer.setSize(vw(), vh(), false);
+      if (post) post.setSize();
+    }
+    probe.steps++;
   }
   function invalidate() { dirty = true; if (!raf && !disposed) raf = requestAnimationFrame(frame); }
   function frame(now) {
@@ -4718,12 +5076,17 @@ export async function open(opts) {
     const dt = lastT ? Math.min(0.05, (now - lastT) / 1000) : 1 / 60;
     if (!probe.done && lastT && ++probe.n > 10) {
       if (now - lastT > 26) probe.slow++;
-      if (probe.n >= 70) { probe.done = true; if (probe.slow > 36) lighten(); }
+      if (probe.n >= 70) {
+        if (probe.slow > 36) lighten();
+        // after a step down, look again; past three steps there is nothing left to give
+        if (probe.slow > 36 && post && probe.steps < 3) { probe.n = 0; probe.slow = 0; } else probe.done = true;
+      }
     }
     lastT = now;
     const ambient = motion && !document.hidden;
     if (ambient) T.value += dt;
     let more = runTweens(now);
+    if (!keys.size) walkHeld = 0;
     if (keys.size) { if (walk(dt, shiftKey)) { stopCam(); aligned = -1; atOverview = false; } more = true; }
     if (controls.update()) more = true;
     clampView();
@@ -4734,8 +5097,7 @@ export async function open(opts) {
     updateHud();
     if (lodTick()) more = true;
     if (tick(now)) more = true;
-    if (mirror) renderMirror();
-    renderer.render(scene, camera);
+    if (post) post.render(scene, camera); else renderer.render(scene, camera);
     placeMon();
     renders++; lastDraw = now;
     if (more || ambient) { if (!raf) raf = requestAnimationFrame(frame); } else lastT = 0;
@@ -4799,6 +5161,7 @@ export async function open(opts) {
   function onWheel() { hideTips(); }
   function onKey(e) {
     if (disposed) return;
+    shiftKey = e.shiftKey;   // Shift pressed mid-walk breaks into a sprint at once
     const tg = e.target;
     if (mon && tg !== findIn && !(e.ctrlKey || e.metaKey || e.altKey) && !(tg instanceof Node && panel.contains(tg))) {
       if (monKey(e)) { e.preventDefault(); e.stopImmediatePropagation(); return; }
@@ -4911,7 +5274,7 @@ export async function open(opts) {
   const ro = new ResizeObserver(() => {
     if (disposed) return;
     renderer.setSize(vw(), vh(), false);
-    sizeMirror();
+    if (post) post.setSize();
     if (cardMode) { const S = reserve(); if (!shiftTw) { shift.x = S.x; shift.y = S.y; } }
     applyView();
     lodDirty = true;
@@ -4955,6 +5318,7 @@ export async function open(opts) {
     for (const x of bin) { try { x.dispose(); } catch (e) { /* already gone */ } }
     bin.clear();
     if (envRT) envRT.dispose();
+    if (post) { post.dispose(); post = null; }
     scene.environment = null;
     renderer.renderLists.dispose();
     renderer.dispose();
@@ -4992,7 +5356,7 @@ export async function open(opts) {
     kit0.g.visible = true; cartG.visible = true; benchHolo.visible = true; cbG.visible = true;
     const cg = cartG.position.y; cartG.position.y = -5;
     scene.add(wg);
-    renderer.compile(scene, camera);
+    if (post) post.warm(scene, camera); else renderer.compile(scene, camera);
     scene.remove(wg); wg.remove(kit0.g); kit0.g.visible = false; cartG.visible = false; cartG.position.y = cg; benchHolo.visible = false; cbG.visible = false;
     nearPool.push(warm);
   }
@@ -5014,10 +5378,9 @@ export async function open(opts) {
     const seen = new Set();
     const addT = t => { if (!t || seen.has(t)) return; seen.add(t); n++; const px = t.userData && t.userData.px ? t.userData.px : (t.image && t.image.width ? t.image.width * t.image.height : 0); b += px * 4 * (t.generateMipmaps === false ? 1 : 4 / 3); };
     for (const x of bin) if (x.isTexture) addT(x);
-    let rt = 0;
-    if (mirror) { const s = mirror.rt.width * mirror.rt.height; rt += s * (mirror.rt.texture.type === THREE.HalfFloatType ? 8 : 4) * 4 / 3; }
-    const v = renderer.getDrawingBufferSize(new THREE.Vector2());
-    const fb = v.x * v.y * (4 + 4) * (renderer.getContext().getContextAttributes().antialias ? 4 : 1);
+    const rt = post ? post.bytes() : 0;
+    const v = renderer.getDrawingBufferSize(new THREE.Vector2()), ca = renderer.getContext().getContextAttributes();
+    const fb = v.x * v.y * (4 + (ca.depth ? 4 : 0)) * (ca.antialias ? 4 : 1);
     let geo = 0;
     const gs = new Set();
     scene.traverse(ob => { if (ob.geometry && !gs.has(ob.geometry)) { gs.add(ob.geometry); for (const k in ob.geometry.attributes) geo += ob.geometry.attributes[k].array.byteLength; if (ob.geometry.index) geo += ob.geometry.index.array.byteLength; } if (ob.isInstancedMesh) { geo += ob.instanceMatrix.array.byteLength; if (ob.instanceColor) geo += ob.instanceColor.array.byteLength; } });
@@ -5070,7 +5433,15 @@ export async function open(opts) {
         const hits = ray.intersectObjects(scene.children, true).slice(0, 4);
         return hits.map(h => { const m = h.object.material, mm = Array.isArray(m) ? m[0] : m; return { type: h.object.type, mat: mm && mm.type, color: mm && mm.color && mm.color.getHexString(), map: !!(mm && mm.map), em: mm && mm.emissive && mm.emissive.getHexString(), d: +h.distance.toFixed(2), p: h.point.toArray().map(v => +v.toFixed(2)), geo: h.object.geometry && h.object.geometry.type, ud: Object.keys(h.object.userData || {}).join(',') }; });
       },
-      stats() { return { renders, popped: popped && popped.fw, hovered: hovered && hovered.fw, aligned, tweens: tweens.size, chart: chart && chart.kind, filter: filter && (filter.name || filter.i), motion, sec: cur.id, card: cardMode, info: renderer.info.render.calls, triangles: renderer.info.render.triangles, textures: renderer.info.memory.textures, geometries: renderer.info.memory.geometries, near: nearPool.filter(e => e.u).length, lodPaints, pending: lodWant.length }; },
+      fx(set) {
+        if (set && post) {
+          if ('ao' in set) post.setAO(set.ao);
+          if ('bloom' in set) post.setBloom(set.bloom);
+        }
+        if (set && set.lighten) lighten();
+        if (set) invalidate();
+        return { post: !!post, ao: !!(post && post.ao), bloom: !!(post && post.bloom), samples: post ? post.samples : 0, pixelRatio: renderer.getPixelRatio(), lightened: probe.steps }; },
+      stats() { return { renders, popped: popped && popped.fw, hovered: hovered && hovered.fw, aligned, tweens: tweens.size, chart: chart && chart.kind, filter: filter && (filter.name || filter.i), motion, sec: cur.id, card: cardMode, info: post ? post.calls : renderer.info.render.calls, triangles: post ? post.triangles : renderer.info.render.triangles, textures: renderer.info.memory.textures, geometries: renderer.info.memory.geometries, near: nearPool.filter(e => e.u).length, lodPaints, pending: lodWant.length }; },
     },
   });
   return handle;
