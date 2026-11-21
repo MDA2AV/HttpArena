@@ -27,6 +27,8 @@ type DatabaseItem = Omit<Item, "rating"> & {
 
 type Fortune = { id: number; message: string }
 
+const bodyText = new TextDecoder()
+
 function cpuCount(): number {
   try {
     const [quota, period] = readFileSync("/sys/fs/cgroup/cpu.max", "utf8").trim().split(" ")
@@ -106,7 +108,7 @@ function buildApp() {
     })
     .get("/baseline11", (c) => c.text(String(sumQuery(c.query))))
     .post("/baseline11", async (c) => {
-      const body = Number.parseInt((await c.req.text()).trim(), 10)
+      const body = Number.parseInt(bodyText.decode(await c.boundedBody()).trim(), 10)
       const total = sumQuery(c.query) + (Number.isFinite(body) ? body : 0)
       return c.text(String(total))
     })
