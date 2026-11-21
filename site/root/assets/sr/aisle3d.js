@@ -13,9 +13,10 @@
 
    With opts.sections the room is a corridor: a lobby (the overall board, the
    test machine, the comparison bench), then a stretch of racks for each
-   section in order, racks on both sides of a cold aisle, each section with a
-   lit sign, a lane on the floor and a kiosk; the podium and the wall at the far
-   end speak for the section you are in. A crash cart rolls up to a unit and
+   section in order, all on the left of a cold aisle with closed cabinets
+   facing them, each section with a lit sign, a lane on the floor and a
+   kiosk; the podium and the wall at the far end speak for the section you
+   are in. A crash cart rolls up to a unit and
    shows its implementation (opts.sourceUrl); up to four units go to the bench
    to be compared. Without sections it is the one aisle, as before.
 
@@ -1608,7 +1609,7 @@ function kioskTexture(P, S, world, k = 1) {
     x.fillStyle = N.muted; x.textAlign = 'right'; x.fillText(String(l.n), W - 38, ly + 21); x.textAlign = 'left';
   });
   x.fillStyle = N.muted; x.font = '500 22px ' + FONT_SANS;
-  x.fillText(fit(x, 'Racks R1' + (S.nR > 1 ? '–R' + S.nR : '') + ' on both sides, rank 1 at the top of R1', '500', FONT_SANS, 22, 16, W - 76).text, 38, H - 34);
+  x.fillText(fit(x, (S.nR > 1 ? 'Racks R1–R' + S.nR + ' in a row on the left' : 'Rack R1 on the left') + ', rank 1 at the top of R1', '500', FONT_SANS, 22, 16, W - 76).text, 38, H - 34);
   return c;
 }
 function boardHead(x, N, W, title, sub, right) {
@@ -2121,7 +2122,8 @@ export async function open(opts) {
 
   /* where everything stands. The racks face each other across the aisle: the row at z = 0
      faces +z, the row at z = OPP_Z faces -z. In the corridor each section has a bay for its
-     sign and kiosk, a closed cabinet at each end, and its racks in order, R1 left, R2 right. */
+     sign and kiosk, a closed cabinet at each end, and its racks in order in one row on the
+     left (z = 0), R1 first, closed cabinets facing them across the aisle. */
   const unitsTop = BASE_Y + perRack * U, RACK_H = unitsTop + TOP_H;
   const racks = [], closed = [];
   let endL, endR, rowX0, rowX1;
@@ -2137,10 +2139,8 @@ export async function open(opts) {
     for (const S of SECS) {
       S.x0 = x; x += SEC_LEAD;
       closed.push([x + PITCH / 2, 0, 1], [x + PITCH / 2, OPP_Z, -1]); x += PITCH;
-      const cols = Math.ceil(S.nR / 2);
-      S.racks.forEach((R, j) => Object.assign(R, { x: x + Math.floor(j / 2) * PITCH + PITCH / 2, z: j % 2 ? OPP_Z : 0, dir: j % 2 ? -1 : 1 }));
-      if (S.nR % 2) closed.push([x + (cols - 1) * PITCH + PITCH / 2, OPP_Z, -1]);
-      S.rx0 = x; x += cols * PITCH; S.rx1 = x;
+      S.racks.forEach((R, j) => { Object.assign(R, { x: x + j * PITCH + PITCH / 2, z: 0, dir: 1 }); closed.push([R.x, OPP_Z, -1]); });
+      S.rx0 = x; x += S.nR * PITCH; S.rx1 = x;
       closed.push([x + PITCH / 2, 0, 1], [x + PITCH / 2, OPP_Z, -1]); x += PITCH;
       S.x1 = x;
     }
@@ -2641,9 +2641,10 @@ export async function open(opts) {
       const lab = new THREE.Mesh(own(new THREE.PlaneGeometry(1.5, 1.5 * 256 / 1024)), basic(0xffffff, { map: lt, transparent: true, depthWrite: false, opacity: dark ? 0.92 : 1 }));
       lab.rotation.x = -Math.PI / 2; lab.rotation.z = -Math.PI / 2; lab.position.set(S.x0 + 0.62, 0.0022, zc); lab.renderOrder = 1;
       scene.add(lane, lg, lab);
-      // the kiosk at the bay's near corner, turned to whoever walks in
+      // the kiosk at the bay's near corner across from the racks, so it hides none of them,
+      // turned to whoever walks in
       const kt = tex(keepCv(kioskTexture(P, S, world, TK)));
-      const kg = new THREE.Group(); kg.position.set(S.x0 + 0.7, 0, 0.85); kg.rotation.y = -Math.PI / 2 + 0.5;
+      const kg = new THREE.Group(); kg.position.set(S.x0 + 0.7, 0, OPP_Z - 0.85); kg.rotation.y = -Math.PI / 2 - 0.5;
       const KW = 0.62, KH = KW * 1080 / 640;
       const post = new THREE.Mesh(own(new THREE.BoxGeometry(0.1, 0.7, 0.1)), M.bezel); post.position.y = 0.35;
       const foot = new THREE.Mesh(own(new THREE.BoxGeometry(0.46, 0.03, 0.34)), M.bezel); foot.position.y = 0.015;
@@ -3364,10 +3365,10 @@ export async function open(opts) {
       if (a < 1.05) return { target: V(rx0 + 0.1, 1.0, 0.15), pos: V(rx0 - 1.2, 1.7, 2.6) };
       return { target: V(midX + 0.15, 0.95, 0.12), pos: V(rowX0 - 1.4, 1.9, Math.min(OPP_Z - 0.4, 2.0 + 0.13 * nR)) };
     }
-    // the near row's drawers along their length, as in the one aisle; the far row is a turn away
+    // the section's row of drawers along its length, as in the one aisle
     const S = cur, mx = (S.rx0 + S.rx1) / 2;
     if (S.nR === 1 || a < 1.05) return { target: V(S.rx0 + 0.35, 0.98, 0.15), pos: V(S.rx0 - 1.0, 1.75, 2.6) };
-    return { target: V(mx + 0.15, 0.95, 0.12), pos: V(S.rx0 - 1.4, 1.9, Math.min(OPP_Z - 0.4, 2.0 + 0.13 * Math.ceil(S.nR / 2))) };
+    return { target: V(mx + 0.15, 0.95, 0.12), pos: V(S.rx0 - 1.4, 1.9, Math.min(OPP_Z - 0.4, 2.0 + 0.13 * S.nR)) };
   }
   function reserve() {
     const W = vw(), H = vh();
