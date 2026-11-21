@@ -119,6 +119,7 @@ const DARK = {
   secs: ['#4aa8ff', '#3ddc84', '#b58cff', '#ffb020', '#2fd3c8', '#ff6fae', '#ff8a5b', '#c4e05a'],
   cmp: ['#4aa8ff', '#ffb020', '#ff5fa2', '#3ddc84'],
   laneK: 1.25, signK: 1, cart: [0x2b3138, 0x15181c, 0x0b0d10], bench: [0x2a3038, 0x6b5a45],
+  haze: 0x111925, hazeD: 0.026, deck: 0x07090c, steel: 0x2c333b, sprink: 0x8f1f18, duct: 0x3e464f, mull: 0x161a1f, glass: [0x9fc3e8, 0.1], crah: [0x262c33, '#1c2228', '#0b0e12'], desk: [0x14171b, 0x2b3036], ground: 0x07090d, night: true,
   noc: { bg: '#090d12', card: '#0e141b', line: '#1f2a36', text: '#eef3f7', muted: '#8c99a7', accent: '#62c4ff', grid: 'rgba(98,196,255,0.06)', bar: '#3dff8f', sel: 'rgba(98,196,255,0.16)' },
 };
 const LIGHT = {
@@ -155,6 +156,7 @@ const LIGHT = {
   secs: ['#1c6fe0', '#139a52', '#7a4fd6', '#c27400', '#0f9488', '#d0306f', '#d2561f', '#6f8f12'],
   cmp: ['#1c6fe0', '#c27400', '#d0306f', '#139a52'],
   laneK: 0.85, signK: 1, cart: [0x59626c, 0x2a3036, 0x1a1e23], bench: [0xb9c1c9, 0x8a7258],
+  haze: 0xdce3ea, hazeD: 0.013, deck: 0xe9edf0, steel: 0xd0d6dc, sprink: 0xc0302a, duct: 0xa9b2ba, mull: 0xaeb8c2, glass: [0xd6e9f7, 0.1], crah: [0xd9dee2, '#c9d0d6', '#8a949e'], desk: [0xf2f4f6, 0x9b7b5a], ground: 0x93a08f, night: false,
   noc: { bg: '#f5f7f9', card: '#ffffff', line: '#d5dbe1', text: '#0f1318', muted: '#47525e', accent: '#0a5cc0', grid: 'rgba(10,92,192,0.05)', bar: '#16b75c', sel: 'rgba(10,92,192,0.12)' },
 };
 
@@ -249,6 +251,9 @@ const CSS = `
 .a3d-cap .a3d-row{display:flex;align-items:center;gap:8px;margin-top:10px}
 .a3d-cap .a3d-row span{flex:1;font-size:12px;color:var(--a3-muted);font-variant-numeric:tabular-nums}
 .a3d-cap .a3d-btn{height:30px;font-size:12.5px}
+.a3d-bubble{position:absolute;left:0;top:0;z-index:4;max-width:280px;padding:9px 13px 10px;font-size:14px;line-height:1.45;color:var(--a3-text);pointer-events:none;opacity:0;visibility:hidden;transition:opacity .15s ease}
+.a3d-bubble.on{opacity:1;visibility:visible}
+.a3d-bubble b{display:block;font-size:12.5px;font-weight:650;color:var(--a3-muted);margin-bottom:2px}
 .a3d-msg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;font-size:14px;color:var(--a3-muted);z-index:7;pointer-events:none;transition:opacity .3s ease}
 .a3d-msg.off{opacity:0}
 .a3d-msg.err{pointer-events:auto;background:var(--a3-bg)}
@@ -898,6 +903,108 @@ function rearPduTexture(P, dark) {
     ctx.fillStyle = '#050607'; rrect(ctx, 7, y, 18, 26, 3); ctx.fill();
     ctx.fillStyle = dark ? '#2c3238' : '#525b64'; ctx.fillRect(11, y + 8, 3, 7); ctx.fillRect(18, y + 8, 3, 7);
   }
+  return cv;
+}
+
+/* the outside, painted: a sky down to a far horizon, and a nearer layer that slides against it
+   as you move. Both wrap twice round, so their patterns repeat with whole cycles. */
+function skyTexture(P, W, H) {
+  const cv = canvas(W, H), x = cv.getContext('2d'), r = rng(21), hz = Math.round(H * 0.73), k = W / 2048;
+  const g = x.createLinearGradient(0, 0, 0, H), h = hz / H;
+  for (const [t, c] of P.night ? [[0, '#02050b'], [0.45, '#08101d'], [h, '#1c2534'], [h + 0.02, '#0a0e15'], [1, '#06080c']] : [[0, '#4f8fd0'], [0.5, '#9cc2e6'], [h, '#e2ebf3'], [h + 0.02, '#b7c2b6'], [1, '#a3ae9f']]) g.addColorStop(t, c);
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  const ridge = (col, amp, base, ns) => {
+    x.fillStyle = col; x.beginPath(); x.moveTo(0, hz + 2);
+    for (let i = 0; i <= W; i += 4) { const t = i / W * Math.PI * 2; x.lineTo(i, hz - k * (base + amp * (0.55 + ns.reduce((s, [n, a, ph]) => s + a * Math.sin(t * n + ph), 0)))); }
+    x.lineTo(W, hz + 2); x.closePath(); x.fill();
+  };
+  if (P.night) {
+    for (let i = 0; i < 700 * k; i++) { const s = (0.7 + r() * 1.1) * Math.max(1, k * 1.4); x.globalAlpha = 0.25 + r() * 0.75; x.fillStyle = r() < 0.2 ? '#ffe9c4' : r() < 0.4 ? '#cfe0ff' : '#ffffff'; x.fillRect(r() * W, Math.pow(r(), 1.6) * hz * 0.85, s, s); }
+    x.globalAlpha = 1;
+    const mx = W * 0.31, my = hz * 0.3, mg = x.createRadialGradient(mx, my, 0, mx, my, 120 * k);
+    mg.addColorStop(0, 'rgba(215,228,255,.6)'); mg.addColorStop(0.14, 'rgba(170,195,240,.2)'); mg.addColorStop(1, 'rgba(120,150,210,0)');
+    x.fillStyle = mg; x.fillRect(mx - 120 * k, my - 120 * k, 240 * k, 240 * k);
+    x.fillStyle = '#f4f6ff'; circle(x, mx, my, 9 * k); x.fill();
+    const cg = x.createLinearGradient(0, hz - 90 * k, 0, hz);
+    cg.addColorStop(0, 'rgba(255,170,100,0)'); cg.addColorStop(1, 'rgba(255,170,100,.18)');
+    x.fillStyle = cg; x.fillRect(0, hz - 90 * k, W, 90 * k);
+    // a distant city, its windows lit
+    for (let bx = 0; bx < W;) {
+      const bw = (10 + r() * 34) * k, bh = (6 + Math.pow(r(), 2.2) * 72) * k;
+      x.fillStyle = '#0d131d'; x.fillRect(bx, hz - bh, bw, bh + 2);
+      for (let wy = hz - bh + 3 * k; wy < hz - 2 * k; wy += 3 * k) for (let wx = bx + 2 * k; wx < bx + bw - 2 * k; wx += 3 * k) if (r() < 0.22) { x.globalAlpha = 0.5 + r() * 0.5; x.fillStyle = r() < 0.6 ? '#ffd9a0' : '#fff3d6'; x.fillRect(wx, wy, 1.5 * k, 1.5 * k); }
+      x.globalAlpha = 1;
+      if (bh > 52 * k && r() < 0.7) { x.fillStyle = '#ff3b30'; x.fillRect(bx + bw / 2 - k, hz - bh - 2 * k, 2.4 * k, 2.4 * k); }
+      bx += bw + r() * 6 * k;
+    }
+  } else {
+    x.filter = 'blur(' + Math.max(2, Math.round(6 * k)) + 'px)';
+    for (let i = 0; i < 26; i++) {
+      const cx = r() * W, cy = (0.1 + r() * 0.42) * hz, w = (60 + r() * 170) * k;
+      x.fillStyle = 'rgba(255,255,255,' + (0.35 + r() * 0.4).toFixed(2) + ')';
+      for (let j = 0; j < 5; j++) { x.beginPath(); x.ellipse(cx + (r() - 0.5) * w, cy + (r() - 0.5) * w * 0.14, w * (0.24 + r() * 0.26), w * (0.09 + r() * 0.08), 0, 0, Math.PI * 2); x.fill(); }
+    }
+    x.filter = 'none';
+    ridge('#a8bccb', 44, 10, [[3, 0.3, 0.4], [7, 0.15, 2.1], [11, 0.08, 1]]);
+    ridge('#92a89d', 26, 2, [[5, 0.3, 1.3], [13, 0.12, 0.2], [2, 0.2, 2.6]]);
+  }
+  return cv;
+}
+function nearTexture(P, W, H) {
+  const cv = canvas(W, H), x = cv.getContext('2d'), r = rng(33), hz = Math.round(H * 0.9), k = W / 2048;
+  x.fillStyle = P.night ? '#080b11' : '#9caa98'; x.fillRect(0, hz, W, H - hz);
+  for (let bx = 0; bx < W;) {
+    const bw = (34 + r() * 100) * k, kind = r();
+    if (P.night) {
+      const bh = (20 + r() * 110) * k;
+      if (kind < 0.75) {
+        x.fillStyle = '#0a0f17'; x.fillRect(bx, hz - bh, bw, bh + 1);
+        for (let wy = hz - bh + 6 * k; wy < hz - 4 * k; wy += 7 * k) for (let wx = bx + 4 * k; wx < bx + bw - 4 * k; wx += 7 * k) if (r() < 0.16) { x.globalAlpha = 0.6 + r() * 0.4; x.fillStyle = r() < 0.7 ? '#ffd28a' : '#cfe6ff'; x.fillRect(wx, wy, 3 * k, 3 * k); }
+        x.globalAlpha = 1;
+      }
+    } else if (kind < 0.45) {   // a low building, its chillers on the roof
+      const bh = (14 + r() * 40) * k;
+      x.fillStyle = '#c6ccd0'; x.fillRect(bx, hz - bh, bw, bh); x.fillStyle = '#a9b1b7'; x.fillRect(bx, hz - bh, bw, 3 * k);
+      x.fillStyle = '#8b959c'; for (let c = bx + 6 * k; c < bx + bw - 14 * k; c += 18 * k) x.fillRect(c, hz - bh - 8 * k, 14 * k, 8 * k);
+    } else if (kind < 0.7) {   // generator sets in their containers
+      for (let gi = 0; gi < 3; gi++) { x.fillStyle = gi % 2 ? '#5d6b63' : '#6a786f'; x.fillRect(bx + gi * 26 * k, hz - 12 * k, 24 * k, 12 * k); }
+    } else for (let t = 0; t < 5; t++) { const th = (6 + r() * 5) * k; x.fillStyle = r() < 0.5 ? '#587256' : '#64805f'; x.beginPath(); x.ellipse(bx + t * 9 * k, hz - th, th * 0.55, th, 0, 0, Math.PI * 2); x.fill(); }
+    bx += bw + (14 + r() * 70) * k;
+  }
+  if (P.night) for (let i = 0; i < 46; i++) {   // the street lights
+    const sx = r() * W, sg = x.createRadialGradient(sx, hz - 5 * k, 0, sx, hz - 5 * k, 3.5 * k);
+    sg.addColorStop(0, 'rgba(255,196,120,.85)'); sg.addColorStop(1, 'rgba(255,196,120,0)');
+    x.fillStyle = sg; x.fillRect(sx - 4 * k, hz - 9 * k, 8 * k, 8 * k);
+  }
+  return cv;
+}
+// an emergency exit: a figure running out of a door, white on green
+function exitTexture() {
+  const cv = canvas(128, 64), x = cv.getContext('2d');
+  x.fillStyle = '#0a8f45'; x.fillRect(0, 0, 128, 64);
+  x.strokeStyle = '#fff'; x.fillStyle = '#fff'; x.lineWidth = 5; x.lineCap = 'round'; x.lineJoin = 'round';
+  x.strokeRect(84, 10, 30, 44);
+  circle(x, 50, 15, 6); x.fill();
+  x.beginPath(); x.moveTo(46, 24); x.lineTo(40, 40); x.lineTo(30, 52); x.moveTo(40, 40); x.lineTo(54, 46); x.lineTo(58, 56); x.moveTo(45, 27); x.lineTo(34, 31); x.moveTo(45, 27); x.lineTo(58, 34); x.stroke();
+  x.beginPath(); x.moveTo(10, 32); x.lineTo(24, 32); x.moveTo(17, 25); x.lineTo(10, 32); x.lineTo(17, 39); x.stroke();
+  return cv;
+}
+function hazardTexture() {
+  const cv = canvas(64, 16), x = cv.getContext('2d');
+  x.fillStyle = '#f2c200'; x.fillRect(0, 0, 64, 16); x.fillStyle = '#1a1a1a';
+  for (let i = -16; i < 64; i += 16) { x.beginPath(); x.moveTo(i, 16); x.lineTo(i + 8, 16); x.lineTo(i + 24, 0); x.lineTo(i + 16, 0); x.closePath(); x.fill(); }
+  return cv;
+}
+// a cooling unit's front: louvres, a panel, a small display
+function crahTexture(P) {
+  const cv = canvas(256, 256), x = cv.getContext('2d');
+  x.fillStyle = P.crah[1]; x.fillRect(0, 0, 256, 256);
+  x.fillStyle = P.crah[2];
+  for (let y = 18; y < 150; y += 9) x.fillRect(14, y, 228, 4);
+  x.fillRect(14, 170, 110, 72); x.fillRect(132, 170, 110, 72);
+  x.fillStyle = P.night ? '#0d2e4a' : '#163c5c'; x.fillRect(150, 182, 74, 26);
+  x.fillStyle = '#7dd3ff'; x.fillRect(156, 188, 40, 4); x.fillRect(156, 197, 26, 4);
+  x.fillStyle = '#3dff8f'; x.fillRect(212, 189, 6, 6);
   return cv;
 }
 
@@ -2401,15 +2508,53 @@ export async function open(opts) {
   const BENCH = corridor ? { x: -5.35, z: -1.0, yaw: 0, L: 2.7, D: 1.0 } : { x: endL + 0.6, z: OPP_Z / 2, yaw: Math.PI / 2, L: 2.7, D: 1.0 };
   BENCH.m = new THREE.Matrix4().makeRotationY(BENCH.yaw).setPosition(BENCH.x, 0, BENCH.z);
 
+  /* the hall round the corridor: more rows of cabinets on both sides, back to back across hot
+     aisles and face to face across cold ones, cut where the corridor's bays cut it (the cross
+     aisles); a high roof on steel and glass walls to the outside. In the corridor the lobby is a
+     glass foyer at the near end. Row fronts sit on the floor tiles' grid. */
+  const vw = () => host.clientWidth || window.innerWidth || 1;
+  const vh = () => host.clientHeight || window.innerHeight || 1;
+  const small = vw() <= 760;
+  const HH = 7.2, FH = corridor ? 3.6 : HH, HOT = 1.46, COLD = 1.8, nHall = small ? 2 : 4;
+  const HANG = HH - 0.75;   // the underside of the strut grid everything overhead hangs from
+  const blocks = [];        // runs of cabinets along x, [first centre, last centre]
+  for (const [x] of closed.filter(c => c[1] === OPP_Z).sort((a, b) => a[0] - b[0])) {
+    const b = blocks[blocks.length - 1];
+    if (b && x - b[1] < PITCH * 1.5) b[1] = x; else blocks.push([x, x]);
+  }
+  const rowsZ = [{ z: 0, dir: 1 }, { z: OPP_Z, dir: -1 }];   // the corridor's own two first
+  for (const side of [-1, 1]) {
+    let e = side < 0 ? -RACK_D : OPP_Z + RACK_D;
+    for (let i = 0; i < nHall; i++) {
+      if (i % 2 === 0) { e += side * (HOT + RACK_D); rowsZ.push({ z: e, dir: side, hall: true, near: i === 0, n: i }); }
+      else { e += side * COLD; rowsZ.push({ z: e, dir: -side, hall: true, n: i }); e += side * RACK_D; }
+    }
+  }
+  const rspan = r => (r.dir > 0 ? [r.z - RACK_D, r.z] : [r.z, r.z + RACK_D]);
+  let HZ0 = 0, HZ1 = 0;
+  for (const r of rowsZ) { const s = rspan(r); HZ0 = Math.min(HZ0, s[0]); HZ1 = Math.max(HZ1, s[1]); }
+  HZ0 = Math.floor((HZ0 - 2.3) / 0.6) * 0.6; HZ1 = Math.ceil((HZ1 + 2.3) / 0.6) * 0.6;   // a service aisle along each glass wall
+  const HX0 = corridor ? -1.2 : endL, HX1 = endR, FZ0 = -1.75, FZ1 = OPP_Z + 1.75;
+  const bx0 = blocks[0][0] - PITCH / 2, bx1 = blocks[blocks.length - 1][1] + PITCH / 2;
+  // the aisles, each lit by a line of fittings down its middle (the corridor by two): [z, aisle z0, z1, hall?]
+  const lines = [], aisles = [];
+  {
+    const sp = rowsZ.map(rspan).sort((a, b) => a[0] - b[0]);
+    let prev = HZ0;
+    const aisle = (a, b) => {
+      aisles.push([a, b]);
+      if (Math.abs(a) < 0.01 && Math.abs(b - OPP_Z) < 0.01) lines.push([1.05, a, b, 0], [OPP_Z - 1.05, a, b, 0]);
+      else lines.push([(a + b) / 2, a, b, 1]);
+    };
+    for (const s of sp) { if (s[0] - prev > 0.4) aisle(prev, s[0]); prev = s[1]; }
+    aisle(prev, HZ1);
+  }
+
   const bin = new Set();
   const own = x => { bin.add(x); return x; };
   const canvases = [];
   const keepCv = c => { canvases.push(c); return c; };
   let disposed = false;
-
-  const vw = () => host.clientWidth || window.innerWidth || 1;
-  const vh = () => host.clientHeight || window.innerHeight || 1;
-  const small = vw() <= 760;
 
   /* the HUD */
   const root = document.createElement('div');
@@ -2542,7 +2687,7 @@ export async function open(opts) {
   try {
     renderer = startRenderer(small);
     if (!small) {
-      try { post = makePost(renderer, { samples: 2, exposure: P.exposure, fog: corridor ? P.fogD * 0.62 : P.fogD, ao: P.ao, bloom: P.bloom }); } catch (e) { post = null; }
+      try { post = makePost(renderer, { samples: 2, exposure: P.exposure, fog: P.hazeD, ao: P.ao, bloom: P.bloom }); } catch (e) { post = null; }
       if (!post) {
         // no float targets here: a fresh canvas, multisampled, straight to the screen
         renderer.dispose(); try { renderer.forceContextLoss(); } catch (e) { /* fine */ }
@@ -2597,9 +2742,9 @@ export async function open(opts) {
 
   /* the scene */
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(P.bg);
-  scene.fog = new THREE.FogExp2(P.bg, corridor ? P.fogD * 0.62 : P.fogD);
-  const camera = new THREE.PerspectiveCamera(FOV, vw() / vh(), 0.02, corridor ? 90 : 60);
+  scene.background = new THREE.Color(P.haze);
+  scene.fog = new THREE.FogExp2(P.haze, P.hazeD);   // a lit haze: the far rows fade into it, not into black
+  const camera = new THREE.PerspectiveCamera(FOV, vw() / vh(), 0.02, 120);
 
   // what the metal reflects: the aisle itself, prefiltered. Two lines of fixtures overhead, the
   // rows of racks on both sides speckled with their lights, the floor, the ceiling.
@@ -2608,19 +2753,20 @@ export async function open(opts) {
     const es = new THREE.Scene(), bx = new THREE.BoxGeometry(1, 1, 1), tmp = [bx];
     const em = (color, k, extra) => { const m = new THREE.MeshBasicMaterial(Object.assign({ color: new THREE.Color(color).multiplyScalar(k || 1) }, extra || {})); tmp.push(m); return m; };
     const put = (m, sx, sy, sz, x, y, z) => { const o = new THREE.Mesh(bx, m); o.scale.set(sx, sy, sz); o.position.set(x, y, z); es.add(o); return o; };
-    put(em(dark ? 0x0b0d11 : 0xc9d0d7, 1, { side: THREE.BackSide }), 44, 3.3, 6.2, 0, 0.45, 0);                 // the hall
-    put(em(dark ? 0x12161b : 0xd9dee3), 44, 0.02, 6.2, 0, -1.2, 0);                                           // the floor
-    put(em(dark ? 0x07090c : 0xeef1f4), 44, 0.02, 6.2, 0, 2.05, 0);                                           // the ceiling
+    put(em(dark ? 0x0b0d11 : 0xc9d0d7, 1, { side: THREE.BackSide }), 44, 7.4, 34, 0, 2.4, 0);                   // the hall
+    put(em(dark ? 0x12161b : 0xd9dee3), 44, 0.02, 34, 0, -1.2, 0);                                            // the floor
+    put(em(dark ? 0x07090c : 0xeef1f4), 44, 0.02, 34, 0, 5.9, 0);                                             // the roof
+    for (const z of [-16.4, 16.4]) put(em(dark ? 0x1b2a44 : 0xe3eef8, dark ? 0.7 : 1.5), 44, 5.4, 0.05, 0, 2.6, z);   // the glass walls
     // the racks: dark fronts, and on them their lights
     const led = canvas(256, 128), lx = led.getContext('2d'), lr = rng(5);
     lx.fillStyle = dark ? '#06080a' : '#1b2026'; lx.fillRect(0, 0, 256, 128);
     for (let i = 0; i < 260; i++) { lx.fillStyle = ['#3dff8f', '#3dff8f', '#3dff8f', '#3aa0ff', '#ffb020'][Math.floor(lr() * 5)]; lx.globalAlpha = 0.5 + lr() * 0.5; lx.fillRect(Math.floor(lr() * 64) * 4, Math.floor(lr() * 64) * 2, 2, 1); }
     const ledT = new THREE.CanvasTexture(led); ledT.colorSpace = THREE.SRGBColorSpace; ledT.wrapS = ledT.wrapT = THREE.RepeatWrapping; ledT.repeat.set(10, 1); tmp.push(ledT);
     const rackM = em(0xffffff, dark ? 2.2 : 1.2, { map: ledT });
-    for (const z of [-2.1, 2.1]) put(rackM, 44, 2.15, 0.05, 0, -0.12, z);
+    for (const z of [-2.1, 2.1, -5.2, 5.2, -8.4, 8.4]) put(rackM, 44, 2.15, 0.05, 0, -0.12, z);
     // the fixtures, in lengths, as they hang
     const lampM = em(dark ? 0xd6e6ff : 0xffffff, dark ? 7 : 4.5);
-    for (const z of [-1.05, 1.05]) for (let x = -21; x < 21; x += 1.8) put(lampM, 1.2, 0.03, 0.1, x, 1.72, z);
+    for (const z of [-1.05, 1.05, -3.7, 3.7, -6.8, 6.8, -9.9, 9.9]) for (let x = -21; x < 21; x += 1.8) put(lampM, 1.2, 0.03, 0.1, x, 1.72, z);
     const pm = new THREE.PMREMGenerator(renderer);
     envRT = pm.fromScene(es, 0.035);
     pm.dispose(); for (const t of tmp) t.dispose(); led.width = led.height = 1;
@@ -2661,10 +2807,18 @@ export async function open(opts) {
     spotAt(BENCH.x, BENCH.z + 1.6, BENCH.x, BENCH.z, 0.8, 0.7);
   }
 
-  /* the fittings overhead light the room: two long lights down the aisle, added to every lit
-     material (diffuse only; the metal sees them in the environment). A material with its own
-     shader patch runs this one first. */
-  const LINE = { uA3dLine: { value: new THREE.Vector3(2.9, 1.05, OPP_Z - 1.05) }, uA3dLineC: { value: new THREE.Color(P.lamp).multiplyScalar(P.lineK) }, uA3dLamp: { value: new THREE.Color(P.lamp).multiplyScalar(P.lampK) }, uA3dExt: { value: new THREE.Vector2(-1e4, 1e4) } };
+  /* the fittings overhead light the hall: a long light down each aisle (two down the corridor),
+     added to every lit material (diffuse, and a highlight no brighter than the fitting it shows).
+     The rows of cabinets keep an aisle's light in its aisle: a surface sees the lines of other
+     aisles only above the cabinets' tops (in the foyer, there are no rows). A material with its
+     own shader patch runs this one first. */
+  const NL = 14;
+  const LINE = {
+    uA3dLine: { value: new THREE.Vector4(2.9, HX0, RACK_H, Math.min(NL, lines.length)) },   // height, the foyer's end, the cabinets' top, count
+    uA3dL: { value: Array.from({ length: NL }, (_, i) => (lines[i] ? new THREE.Vector4(...lines[i]) : new THREE.Vector4(1e4, 0, 0, 0))) },
+    uA3dLineC: { value: new THREE.Color(P.lamp).multiplyScalar(P.lineK) }, uA3dLamp: { value: new THREE.Color(P.lamp).multiplyScalar(P.lampK) },
+    uA3dExt: { value: new THREE.Vector2(-1e4, 1e4) }, uA3dExtH: { value: new THREE.Vector2(bx0 - 0.9, bx1 + 0.9) },
+  };
   const lineLit = sh => {
     Object.assign(sh.uniforms, LINE);
     sh.vertexShader = 'varying vec3 vA3dW;\n' + sh.vertexShader.replace('#include <project_vertex>', [
@@ -2674,33 +2828,47 @@ export async function open(opts) {
       '  a3dW = instanceMatrix * a3dW;',
       '#endif',
       '  vA3dW = (modelMatrix * a3dW).xyz; }'].join('\n'));
-    sh.fragmentShader = 'uniform vec3 uA3dLine;\nuniform vec3 uA3dLineC;\nuniform vec3 uA3dLamp;\nuniform vec2 uA3dExt;\nvarying vec3 vA3dW;\n' + sh.fragmentShader.replace('#include <lights_fragment_begin>', [
+    sh.fragmentShader = 'uniform vec4 uA3dLine;\nuniform vec4 uA3dL[' + NL + '];\nuniform vec3 uA3dLineC;\nuniform vec3 uA3dLamp;\nuniform vec2 uA3dExt;\nuniform vec2 uA3dExtH;\nvarying vec3 vA3dW;\n'
+      + 'float a3dX(vec2 e, float x) { return smoothstep(e.x - 1.5, e.x + 0.5, x) * (1.0 - smoothstep(e.y - 0.5, e.y + 1.5, x)); }\n'
+      + sh.fragmentShader.replace('#include <lights_fragment_begin>', [
       '#include <lights_fragment_begin>',
-      '{',
+      'if (vA3dW.y < uA3dLine.x + 0.05) {',
       '  vec3 a3dN = inverseTransformDirection(normal, viewMatrix), a3dR = reflect(normalize(vA3dW - cameraPosition), a3dN);',
-      '  float a3dEx = smoothstep(uA3dExt.x - 1.5, uA3dExt.x + 0.5, vA3dW.x) * (1.0 - smoothstep(uA3dExt.y - 0.5, uA3dExt.y + 1.5, vA3dW.x));',
+      '  float a3dExC = a3dX(uA3dExt, vA3dW.x), a3dExH = a3dX(uA3dExtH, vA3dW.x);',
+      '  float a3dTop = smoothstep(uA3dLine.z - 0.3, uA3dLine.z + 0.35, vA3dW.y), a3dFoyer = step(vA3dW.x, uA3dLine.y);',
       '  PhysicalMaterial a3dM = material;',
+      '  vec3 a3dSpec = vec3(0.0);',
       // a reflection is never brighter than the fitting it shows
       '  vec3 a3dCap = uA3dLamp * F_Schlick(material.specularColor, material.specularF90, saturate(dot(geometryNormal, geometryViewDir)));',
       '  #ifdef A3D_MATTE',
       '    a3dCap *= 0.25;',
       '  #endif',
-      '  for (int i = 0; i < 2; i++) {',
-      '    vec3 q0 = vec3(0.0, uA3dLine.x, i == 0 ? uA3dLine.y : uA3dLine.z);',
+      '  for (int i = 0; i < ' + NL + '; i++) {',
+      '    if (float(i) >= uA3dLine.w) break;',
+      '    vec4 L = uA3dL[i];',
+      '    float dz = abs(L.x - vA3dW.z);',
+      '    if (dz > 6.5) continue;',
+      '    float own = step(L.y - 0.06, vA3dW.z) * step(vA3dW.z, L.z + 0.06);',
+      '    if (L.w < 0.5) own = max(own, a3dFoyer);',
+      '    float vis = max(own, a3dTop) * (L.w > 0.5 ? a3dExH : a3dExC) * (1.0 - smoothstep(5.0, 6.5, dz));',
+      '    if (vis <= 0.0) continue;',
+      '    vec3 q0 = vec3(0.0, uA3dLine.x, L.x);',
       '    vec2 d = q0.yz - vA3dW.yz;',
       '    float rr = sqrt(dot(d, d) + 0.02);',
       '    vec2 l = d / rr;',
-      '    float k = max(l.x, 0.0) * a3dEx / rr;',   // a fitting faces down; a long light falls off as the distance
+      '    float k = max(l.x, 0.0) * vis / rr;',   // a fitting faces down; a long light falls off as the distance
       '    reflectedLight.directDiffuse += uA3dLineC * (max(a3dN.y * l.x + a3dN.z * l.y, 0.0) * k) * BRDF_Lambert(material.diffuseColor);',
       // the highlight comes from the point of the line nearest the reflected ray, its width widening it
       '    vec3 w0 = q0 - vA3dW;',
-      '    float t = clamp((a3dR.x * dot(a3dR, w0) - w0.x) / max(1.0 - a3dR.x * a3dR.x, 1e-3), uA3dExt.x, uA3dExt.y);',
+      '    vec2 ex = L.w > 0.5 ? uA3dExtH : uA3dExt;',
+      '    float t = clamp((a3dR.x * dot(a3dR, w0) - w0.x) / max(1.0 - a3dR.x * a3dR.x, 1e-3), ex.x, ex.y);',
       '    vec3 ls = vec3(t, q0.yz) - vA3dW;',
       '    float ld = length(ls);',
       '    ls /= ld;',
       '    a3dM.roughness = min(1.0, material.roughness + 0.07 / ld);',
-      '    reflectedLight.directSpecular += min(uA3dLineC * (max(dot(a3dN, ls), 0.0) * k) * BRDF_GGX(normalize((viewMatrix * vec4(ls, 0.0)).xyz), geometryViewDir, geometryNormal, a3dM), a3dCap);',
+      '    a3dSpec += uA3dLineC * (max(dot(a3dN, ls), 0.0) * k) * BRDF_GGX(normalize((viewMatrix * vec4(ls, 0.0)).xyz), geometryViewDir, geometryNormal, a3dM);',
       '  }',
+      '  reflectedLight.directSpecular += min(a3dSpec, a3dCap);',
       '}'].join('\n'));
   };
   const patch = (m, fn, key) => { const base = m.onBeforeCompile; m.onBeforeCompile = (sh, r) => { base.call(m, sh, r); fn(sh, r); }; m.customProgramCacheKey = () => key; return m; };
@@ -2716,6 +2884,7 @@ export async function open(opts) {
   })()));
   const M = {
     frame: std(P.frame, P.frameRough, P.frameMetal),
+    roof: std(P.frame, 0.78, 0.25),   // a cabinet's roof: painted, matte
     inner: std(P.inner, 0.8, 0.2),
     plinth: std(P.plinth, 0.7, 0.3),
     post: std(P.post, 0.42, 0.75),
@@ -2750,10 +2919,9 @@ export async function open(opts) {
   M.rear = std(0xffffff, 0.75, 0.2, { map: rearT, emissiveMap: rearT, emissive: 0xffffff, emissiveIntensity: P.rearLit });
   M.pdu = std(0xffffff, 0.6, 0.3, { map: tex(keepCv(rearPduTexture(P, dark))) });
 
-  /* the room: floor, tiles, walls, ceiling, the lights and the fibre runner */
-  const ROOM = Math.ceil(Math.max(36, endR - endL + 10) / 1.2) * 1.2;
+  /* the hall: its floor, walls and roof, what hangs from the roof, the lights and the cable ladders */
   const shiftX = (((rowX0 % 0.6) + 0.6) % 0.6);
-  const floorT = tex(keepCv(tileTexture(P, false)), { repeat: [ROOM / 0.6, ROOM / 0.6] });
+  const floorT = tex(keepCv(tileTexture(P, false)), { repeat: [1, 1] });
   /* The raised floor, matte: the seams between its tiles cut by the shader and box-filtered over
      each pixel (sharp near, a faint grid far off, never shimmering), each tile's edges bevelled to
      catch the light, and no two tiles quite alike: a shade lighter or darker, a little more or
@@ -2785,19 +2953,32 @@ export async function open(opts) {
           '}'].join('\n'));
   }, 'a3d-floor-' + seed);
   const floorRough = P.floorRough;
-  const floor = new THREE.Mesh(own(new THREE.PlaneGeometry(ROOM, ROOM)), tileFloor(std(0xffffff, floorRough, 0, { map: floorT }), 1));
-  floor.rotation.x = -Math.PI / 2; floor.position.set(Math.round((midX - shiftX) / 0.6) * 0.6 + shiftX, 0, 0);
-  scene.add(floor);
-  // a row of perforated tiles in front of each row of racks: the cold air comes up through them
-  const stripLen = corridor ? rowX1 - rowX0 : (SECS[0].nR + 4) * PITCH;
-  const stripX = corridor ? (rowX0 + rowX1) / 2 : midX;
-  const perfT = tex(keepCv(tileTexture(P, true)), { repeat: [Math.round(stripLen / PITCH), 1] });
+  // floor in tile units: u along x, v along -z, one tile a unit, the seams on the grid the rows stand on
+  const tileGeo = rects => {
+    const pos = [], uv = [], idx = [];
+    for (const [x0, x1, z0, z1] of rects) {
+      const b = pos.length / 3;
+      for (const [x, z] of [[x0, z0], [x0, z1], [x1, z1], [x1, z0]]) { pos.push(x, 0, z); uv.push((x - shiftX) / 0.6, -z / 0.6); }
+      idx.push(b, b + 1, b + 2, b, b + 2, b + 3);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(pos.map((v, i) => (i % 3 === 1 ? 1 : 0)), 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    g.setIndex(idx); g.computeBoundingSphere();
+    return own(g);
+  };
+  scene.add(new THREE.Mesh(tileGeo(corridor ? [[HX0, HX1, HZ0, HZ1], [endL, HX0, FZ0, FZ1]] : [[HX0, HX1, HZ0, HZ1]]), tileFloor(std(0xffffff, floorRough, 0, { map: floorT }), 1)));
+  // a row of perforated tiles in front of every row: the cold air comes up through them
+  const perfT = tex(keepCv(tileTexture(P, true)), { repeat: [1, 1] });
   const perfM = tileFloor(std(0xffffff, floorRough, 0.15, { map: perfT, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }), 2);
-  for (const z of [0.3, OPP_Z - 0.3]) {
-    const strip = new THREE.Mesh(own(new THREE.PlaneGeometry(Math.round(stripLen / PITCH) * PITCH, 0.6)), perfM);
-    strip.rotation.x = -Math.PI / 2; strip.position.set(stripX, 0.0005, z);
-    scene.add(strip);
+  const perfR = [], sx0 = corridor ? rowX0 : rowX0 - 2 * PITCH, sx1 = corridor ? rowX1 : rowX1 + 2 * PITCH;
+  for (const r of rowsZ) {
+    const z0 = r.dir > 0 ? r.z : r.z - 0.6;
+    if (!r.hall) perfR.push([sx0, sx1, z0, z0 + 0.6]); else for (const b of blocks) perfR.push([b[0] - PITCH / 2, b[1] + PITCH / 2, z0, z0 + 0.6]);
   }
+  const strips = new THREE.Mesh(tileGeo(perfR), perfM); strips.position.y = 0.0005;
+  scene.add(strips);
 
   const parts = new Map();
   const add = (key, g, m) => { if (!parts.has(key)) parts.set(key, []); parts.get(key).push({ g, m }); };
@@ -2807,14 +2988,56 @@ export async function open(opts) {
   const plane = (key, base, w, h, x, y, z, ry = 0, rx = 0) => add(key, new THREE.PlaneGeometry(w, h), base.clone().multiply(mat4(x, y, z, ry, rx)));
   const cyl = (key, base, r0, r1, h, x, y, z, seg = 14) => add(key, new THREE.CylinderGeometry(r0, r1, h, seg), base.clone().multiply(mat4(x, y, z)));
 
-  // walls and ceiling
   const I4 = new THREE.Matrix4();
-  plane('wall', I4, endR - endL, CEIL, midX, CEIL / 2, -1.75);
-  plane('wall', I4, endR - endL, CEIL, midX, CEIL / 2, OPP_Z + 1.75, Math.PI);
-  plane('wall', I4, OPP_Z + 3.5, CEIL, endL, CEIL / 2, OPP_Z / 2, Math.PI / 2);
-  plane('wall', I4, OPP_Z + 3.5, CEIL, endR, CEIL / 2, OPP_Z / 2, -Math.PI / 2);
-  plane('ceil', I4, endR - endL, OPP_Z + 3.5, midX, CEIL, OPP_Z / 2, 0, Math.PI / 2);
-  // two lines of light over the aisle: fittings 1.2 m long on a 1.8 m pitch, each hung on two wires
+  // what hangs from the roof hangs from a strut: one runs the hall's length wherever something hangs
+  const strutZ = new Set();
+  const hangTop = x => (corridor && x < HX0 ? FH : HANG);
+  const hang = (x, y0, z, t, key) => {
+    const top = hangTop(x);
+    box(key || 'wire', I4, t || 0.004, top - y0, t || 0.004, x, (top + y0) / 2, z);
+    if (top === HANG) strutZ.add(Math.round(z * 100) / 100);
+  };
+  /* the building: glass on the long sides down to a sill, the operations wall solid at the far end;
+     in the corridor a glass foyer at the near end, the doors in its front */
+  const glassParts = [], OBS = [];   // OBS: what stands on the floor, [x0, z0, x1, z1] (for the visitor)
+  const curtain = (cx, cz, len, ry, h, door) => {
+    const B = mat4(cx, 0, cz, ry), gh = h - 0.5;
+    const sill = (a, b) => plane('sill', B, b - a, 0.9, (a + b) / 2, 0.45, 0);
+    if (door) { sill(-len / 2, door[0]); sill(door[1], len / 2); } else sill(-len / 2, len / 2);
+    plane('sill', B, len, 0.5, 0, h - 0.25, 0);
+    glassParts.push({ g: new THREE.PlaneGeometry(len, gh), m: B.clone().multiply(mat4(0, gh / 2, -0.012)) });
+    const n = Math.max(1, Math.round(len / 1.8));
+    for (let i = 0; i <= n; i++) box('mull', B, 0.07, gh, 0.1, -len / 2 + i * len / n, gh / 2, -0.03);
+    for (const y of h > 5 ? [0.9, 3.4, 5.9] : [0.9, h - 0.5]) {
+      if (door && y < 2) { box('mull', B, door[0] + len / 2, 0.06, 0.1, (door[0] - len / 2) / 2, y, -0.03); box('mull', B, len / 2 - door[1], 0.06, 0.1, (door[1] + len / 2) / 2, y, -0.03); }
+      else box('mull', B, len, 0.06, 0.1, 0, y, -0.03);
+    }
+  };
+  const hx = (HX0 + HX1) / 2, hl = HX1 - HX0, hz = (HZ0 + HZ1) / 2, hw = HZ1 - HZ0;
+  curtain(hx, HZ0, hl, 0, HH);
+  curtain(hx, HZ1, hl, Math.PI, HH);
+  plane('wall', I4, hw, HH, HX1, HH / 2, hz, -Math.PI / 2);
+  plane('deck', I4, hl, hw, hx, HH, hz, 0, Math.PI / 2);
+  if (corridor) {
+    curtain(HX0, (HZ0 + FZ0) / 2, FZ0 - HZ0, Math.PI / 2, HH);
+    curtain(HX0, (FZ1 + HZ1) / 2, HZ1 - FZ1, Math.PI / 2, HH);
+    plane('wall', I4, FZ1 - FZ0, HH - FH, HX0, (HH + FH) / 2, OPP_Z / 2, Math.PI / 2);   // over the foyer's opening
+    const fl = HX0 - endL, fx = (HX0 + endL) / 2;
+    curtain(fx, FZ0, fl, 0, FH);
+    curtain(fx, FZ1, fl, Math.PI, FH);
+    curtain(endL, OPP_Z / 2, FZ1 - FZ0, Math.PI / 2, FH, [-1.0, 1.0]);
+    plane('ceil', I4, fl, FZ1 - FZ0, fx, FH, OPP_Z / 2, 0, Math.PI / 2);
+    // the doors: their frame, where the two glass leaves meet, the pull handles
+    const DB = mat4(endL, 0, OPP_Z / 2, Math.PI / 2);
+    for (const sd of [-1, 1]) { box('mull', DB, 0.1, 2.3, 0.12, sd * 1.0, 1.15, -0.03); box('rail', DB, 0.025, 0.8, 0.035, sd * 0.1, 1.05, 0.02); }
+    box('mull', DB, 2.1, 0.1, 0.12, 0, 2.3, -0.03);
+    box('mull', DB, 0.035, 2.25, 0.06, 0, 1.12, -0.02);
+    // the reception desk by the glass, a screen on it
+    box('desk', I4, 2.0, 1.04, 0.6, -5.1, 0.52, FZ1 - 0.5); box('deskTop', I4, 2.1, 0.04, 0.72, -5.1, 1.06, FZ1 - 0.5);
+    box('monitor', I4, 0.5, 0.32, 0.03, -5.5, 1.32, FZ1 - 0.62); box('monitor', I4, 0.06, 0.14, 0.06, -5.5, 1.13, FZ1 - 0.6);
+    OBS.push([-6.15, FZ1 - 0.86, -4.05, FZ1]);
+  } else plane('wall', I4, hw, HH, endL, HH / 2, hz, Math.PI / 2);
+  // two lines of light over the corridor: fittings 1.2 m long on a 1.8 m pitch, each hung on two wires
   const lampLen = corridor ? endR - endL - 0.8 : rowX1 - rowX0 + 4 * PITCH;
   const FIT = 1.2, FIT_P = 1.8, nFit = Math.max(1, Math.floor((lampLen - FIT) / FIT_P) + 1);
   const fit0 = midX - (nFit - 1) * FIT_P / 2;
@@ -2824,27 +3047,48 @@ export async function open(opts) {
     box('fixture', I4, FIT, 0.05, 0.12, x, 2.925, z);
     box('fixture', I4, FIT + 0.01, 0.012, 0.128, x, 2.906, z);   // the frame round the diffuser
     plane('lamp', I4, FIT - 0.04, 0.09, x, 2.8995, z, 0, Math.PI / 2);
-    for (const dx of [-FIT * 0.4, FIT * 0.4]) box('wire', I4, 0.004, CEIL - 2.95, 0.004, x + dx, (CEIL + 2.95) / 2, z);
+    for (const dx of [-FIT * 0.4, FIT * 0.4]) hang(x + dx, 2.95, z);
   }
-  // the cable ladders over each row: two channel rails, a rung every 0.3 m, the cables laid in them,
-  // hung on rods; a drop of cable into each cabinet's roof
+  // the cable ladders over each row: two channel rails, rungs, the cables laid in them, hung on rods;
+  // over the corridor's rows a drop of cable into each cabinet's roof
   const trayLen = corridor ? rowX1 - rowX0 + 1.2 : lampLen, trayX = corridor ? (rowX0 + rowX1) / 2 : midX;
   const TRAY_Y = 2.62;
   const lenX = (key, r, len, x, y, z, seg) => add(key, new THREE.CylinderGeometry(r, r, len, seg || 10, 1, true), new THREE.Matrix4().compose(_p.set(x, y, z), _q.setFromEuler(_e.set(0, 0, Math.PI / 2)), _s));
-  for (const z of [-0.55, OPP_Z + 0.55]) {
+  const ladder = (z, len, cx, step) => {
     for (const sz of [-1, 1]) {
-      box('tray', I4, trayLen, 0.064, 0.006, trayX, TRAY_Y + 0.032, z + sz * 0.118);
-      for (const y of [TRAY_Y + 0.003, TRAY_Y + 0.061]) box('tray', I4, trayLen, 0.006, 0.024, trayX, y, z + sz * 0.106);
+      box('tray', I4, len, 0.064, 0.006, cx, TRAY_Y + 0.032, z + sz * 0.118);
+      for (const y of [TRAY_Y + 0.003, TRAY_Y + 0.061]) box('tray', I4, len, 0.006, 0.024, cx, y, z + sz * 0.106);
     }
-    for (let x = trayX - trayLen / 2 + 0.12; x < trayX + trayLen / 2; x += 0.3) box('tray', I4, 0.024, 0.012, 0.226, x, TRAY_Y + 0.008, z);
-    for (let x = trayX - trayLen / 2 + 0.4; x < trayX + trayLen / 2; x += 1.2) {
-      for (const sz of [-1, 1]) box('rod', I4, 0.008, CEIL - TRAY_Y + 0.02, 0.008, x, (CEIL + TRAY_Y - 0.02) / 2, z + sz * 0.135);
+    for (let x = cx - len / 2 + 0.12; x < cx + len / 2; x += step) box('tray', I4, 0.024, 0.012, 0.226, x, TRAY_Y + 0.008, z);
+    for (let x = cx - len / 2 + 0.4; x < cx + len / 2; x += 1.2) {
+      for (const sz of [-1, 1]) hang(x, TRAY_Y - 0.02, z + sz * 0.135, 0.008, 'rod');
       box('tray', I4, 0.032, 0.02, 0.3, x, TRAY_Y - 0.012, z);
     }
-    lenX('cableB', 0.034, trayLen, trayX, TRAY_Y + 0.048, z - 0.045);
-    lenX('cableB', 0.022, trayLen, trayX, TRAY_Y + 0.036, z + 0.04);
-    lenX('cableY', 0.018, trayLen, trayX, TRAY_Y + 0.032, z + 0.085);
+    lenX('cableB', 0.034, len, cx, TRAY_Y + 0.048, z - 0.045);
+    lenX('cableB', 0.022, len, cx, TRAY_Y + 0.036, z + 0.04);
+    lenX('cableY', 0.018, len, cx, TRAY_Y + 0.032, z + 0.085);
+  };
+  for (const z of [-0.55, OPP_Z + 0.55]) ladder(z, trayLen, trayX, 0.3);
+  for (const r of rowsZ) if (r.hall) ladder(r.z - r.dir * RACK_D / 2, bx1 - bx0 + 1.2, (bx0 + bx1) / 2, 0.6);
+  /* the roof's steel: a beam across the hall over each column, columns in the hot aisles (never in a
+     cross aisle), the struts; red sprinkler mains, two ducts */
+  for (const b of blocks) {
+    const x = (b[0] + b[1]) / 2;
+    for (const a of aisles) if (Math.abs(a[1] - a[0] - HOT) < 0.05) {
+      const z = (a[0] + a[1]) / 2;
+      box('steel', I4, 0.34, HH - 0.7, 0.34, x, (HH - 0.7) / 2, z); box('steel', I4, 0.5, 0.03, 0.5, x, 0.015, z);
+      OBS.push([x - 0.25, z - 0.25, x + 0.25, z + 0.25]);
+    }
+    box('steel', I4, 0.014, 0.46, hw, x, HH - 0.47, hz);
+    for (const y of [HH - 0.24, HH - 0.7]) box('steel', I4, 0.2, 0.024, hw, x, y, hz);
   }
+  const mains = [OPP_Z / 2, ...lines.filter(l => l[3] && l[2] - l[1] > 1.7).map(l => l[0])];
+  for (const z of mains) {
+    lenX('sprink', 0.045, hl, hx, HANG - 0.12, z, 12); strutZ.add(Math.round(z * 100) / 100);
+    for (let x = HX0 + 1.5; x < HX1; x += 3) { box('sprink', I4, 0.024, 0.26, 0.024, x, HANG - 0.29, z); box('rail', I4, 0.05, 0.03, 0.05, x, HANG - 0.43, z); }
+  }
+  const hots = aisles.filter(a => Math.abs(a[1] - a[0] - HOT) < 0.05).map(a => (a[0] + a[1]) / 2);
+  for (const z of [Math.min(...hots), Math.max(...hots)]) { box('duct', I4, hl - 1, 0.55, 0.9, hx, HANG - 0.75, z); for (let x = HX0 + 1.2; x < HX1 - 1; x += 2.4) for (const sz of [-1, 1]) hang(x, HANG - 0.48, z + sz * 0.47, 0.01, 'rod'); }
   const drops = (x, z, dir) => {
     const top = TRAY_Y + 0.02, bot = RACK_H - 0.01, zz = z - dir * 0.47;
     add('cableB', new THREE.CylinderGeometry(0.02, 0.02, top - bot, 8, 1, true), mat4(x - 0.13, (top + bot) / 2, zz));
@@ -2856,7 +3100,7 @@ export async function open(opts) {
     const hw = RACK_W / 2;
     box('frame', base, SIDE_T, RACK_H, RACK_D, -hw + SIDE_T / 2, RACK_H / 2, -RACK_D / 2);
     box('frame', base, SIDE_T, RACK_H, RACK_D, hw - SIDE_T / 2, RACK_H / 2, -RACK_D / 2);
-    box('frame', base, RACK_W, 0.014, RACK_D, 0, RACK_H - 0.007, -RACK_D / 2);
+    box('roof', base, RACK_W, 0.014, RACK_D, 0, RACK_H - 0.007, -RACK_D / 2);
     box('plinth', base, RACK_W - 0.03, PLINTH_H, RACK_D - 0.06, 0, PLINTH_H / 2, -RACK_D / 2 - 0.005);
     if (!isOpen) return;
     const uh = perRack * U, cy = BASE_Y + uh / 2, bw = hw - (OPEN_HALF + POST_W);
@@ -2926,8 +3170,154 @@ export async function open(opts) {
     box('benchLeg', B, L, 0.5, 0.025, 0, BENCH_Y + 0.25, -D / 2 + 0.0125);
     box('fixture', B, L * 0.9, 0.05, 0.12, 0, 2.55, 0.12);
     plane('lamp', B, L * 0.9 - 0.02, 0.08, 0, 2.524, 0.12, 0, Math.PI / 2);
-    for (const sx of [-1, 1]) box('wire', B, 0.004, CEIL - 2.58, 0.004, sx * L * 0.4, (CEIL + 2.58) / 2, 0.12);
+    const top = hangTop(BENCH.x);
+    for (const sx of [-1, 1]) { box('wire', B, 0.004, top - 2.58, 0.004, sx * L * 0.4, (top + 2.58) / 2, 0.12); if (top === HANG) strutZ.add(Math.round(new THREE.Vector3(sx * L * 0.4, 0, 0.12).applyMatrix4(B).z * 100) / 100); }
+    OBS.push(corridor ? [BENCH.x - L / 2, BENCH.z - D / 2, BENCH.x + L / 2, BENCH.z + D / 2] : [BENCH.x - D / 2, BENCH.z - L / 2, BENCH.x + D / 2, BENCH.z + L / 2]);
   }
+
+  /* the hall's rows: a shell and a door per cabinet, instanced. The first row out on each side wears
+     the corridor's doors (the equipment behind them in parallax); further out, one flat door. The
+     far rows and the near ring outside are the first things a slow machine gives up. */
+  const hallG = new THREE.Group(), hallFar = new THREE.Group();
+  scene.add(hallG, hallFar);
+  const inst = (geo, mat, list, group) => {
+    if (!list.length) return null;
+    const im = new THREE.InstancedMesh(geo, mat, list.length);
+    list.forEach((m, i) => im.setMatrixAt(i, m));
+    im.computeBoundingSphere();
+    group.add(im);
+    return im;
+  };
+  {
+    const far = canvas(256, 850), fc = far.getContext('2d');
+    fc.drawImage(doorKinds[0].inner, 0, 0, 256, 850); fc.drawImage(doorKinds[0].sheet, 0, 0, 256, 850);
+    const farT = tex(keepCv(far));
+    M.doorFar = std(0xffffff, 0.6, 0.3, { map: farT, emissiveMap: farT, emissive: 0xffffff, emissiveIntensity: dark ? 0.6 : 0.12 });
+    const shellGeo = own(new THREE.BoxGeometry(RACK_W - 0.004, RACK_H, RACK_D).translate(0, RACK_H / 2, -RACK_D / 2));
+    shellGeo.clearGroups(); shellGeo.addGroup(0, 12, 0); shellGeo.addGroup(12, 6, 1); shellGeo.addGroup(18, 18, 0);   // the roof (+y) matte
+    const doorGeo = own(new THREE.PlaneGeometry(doorW, doorH).translate(0, PLINTH_H + 0.006 + doorH / 2, 0.006));
+    const near = [[], [], []], farL = [], shN = [], shF = [];
+    let k = 0;
+    for (const r of rowsZ) if (r.hall) for (const b of blocks) {
+      const [z0, z1] = rspan(r);
+      OBS.push([b[0] - PITCH / 2, z0, b[1] + PITCH / 2, z1]);
+      for (let x = b[0]; x <= b[1] + 1e-6; x += PITCH) {
+        const m = mat4(x, 0, r.z, r.dir < 0 ? Math.PI : 0);
+        if (r.near) { shN.push(m); near[(k++ * 7 + 3) % 3].push(m); } else { shF.push(m); farL.push(m); }
+      }
+    }
+    inst(shellGeo, [M.frame, M.roof], shN, hallG); inst(shellGeo, [M.frame, M.roof], shF, hallFar);
+    near.forEach((l, i) => inst(doorGeo, M['door' + i], l, hallG));
+    inst(doorGeo, M.doorFar, farL, hallFar);
+  }
+  // the corridor's own cabinets stand on the floor too
+  for (const [x, z, dir] of closed.concat(racks.map(R => [R.x, R.z, R.dir]))) { const s = rspan({ z, dir }); OBS.push([x - RACK_W / 2, s[0], x + RACK_W / 2, s[1]]); }
+  const coldBand = basic(new THREE.Color(P.ledB).multiplyScalar(dark ? 1.4 : 1));
+  M.coldBand = coldBand; M.ledG = basic(new THREE.Color(P.ledG).multiplyScalar(2)); M.ledR = basic(new THREE.Color(P.ledR).multiplyScalar(2.2));
+  // aisle containment on the outer cold aisles: glass doors at each end, a glass roof; a badge reader
+  const coldA = aisles.filter(a => Math.abs(a[1] - a[0] - COLD) < 0.05);
+  const visitA = coldA.filter(a => a[1] < 0).sort((p, q) => q[1] - p[1])[0];   // the one nearest behind the racks stays open: the visitor walks it
+  if (!small) for (const a of coldA) if (a !== visitA) for (const b of blocks) {
+    const x0 = b[0] - PITCH / 2, x1 = b[1] + PITCH / 2, w = a[1] - a[0], zc = (a[0] + a[1]) / 2;
+    glassParts.push({ g: new THREE.PlaneGeometry(x1 - x0, w), m: mat4((x0 + x1) / 2, RACK_H, zc, 0, Math.PI / 2) });
+    for (const [x, sd] of [[x0, -1], [x1, 1]]) {
+      for (const zz of [a[0] + 0.03, a[1] - 0.03]) box('mull', I4, 0.05, RACK_H, 0.05, x, RACK_H / 2, zz);
+      box('mull', I4, 0.06, 0.14, w, x, RACK_H - 0.07, zc); box('coldBand', I4, 0.064, 0.03, w - 0.12, x, RACK_H - 0.1, zc);
+      glassParts.push({ g: new THREE.PlaneGeometry(w - 0.08, RACK_H - 0.16), m: mat4(x, (RACK_H - 0.16) / 2, zc, Math.PI / 2) });
+      box('mull', I4, 0.03, RACK_H - 0.16, 0.025, x, (RACK_H - 0.16) / 2, zc);
+      box('bezel', I4, 0.03, 0.12, 0.08, x + sd * 0.04, 1.2, a[0] + 0.2); box('ledG', I4, 0.034, 0.012, 0.012, x + sd * 0.04, 1.25, a[0] + 0.2);
+    }
+  }
+  // a sign on each end of every row, its letter (the corridor's own two rows are the sections')
+  {
+    const hr = rowsZ.filter(r => r.hall).sort((p, q) => p.z - q.z), nb = hr.filter(r => r.z < 0).length;
+    const rc = canvas(512, 96 * Math.ceil(hr.length / 2)), rx = rc.getContext('2d');
+    hr.forEach((r, i) => {
+      const cx = (i % 2) * 256, cy = Math.floor(i / 2) * 96;
+      rx.fillStyle = P.plate; rx.fillRect(cx, cy, 256, 96);
+      rx.strokeStyle = P.plateLine; rx.lineWidth = 4; rx.strokeRect(cx + 2, cy + 2, 252, 92);
+      rx.fillStyle = P.ledB; rx.fillRect(cx + 22, cy + 28, 10, 40);
+      rx.fillStyle = P.plateText; rx.font = '650 46px ' + FONT_SANS; rx.textAlign = 'left';
+      const t = 'Row ' + 'ABCDGHJKLM'[i < nb ? 4 - nb + i : 4 + (i - nb)];
+      rx.fillText(t, cx + 50, centreY(rx, t, cy + 48));
+      const u0 = (i % 2) / 2, v1 = 1 - Math.floor(i / 2) * 96 / rc.height, v0 = v1 - 96 / rc.height;
+      for (const [x, ry] of [[bx0 - 0.006, -Math.PI / 2], [bx1 + 0.006, Math.PI / 2]]) {
+        const g = new THREE.PlaneGeometry(0.5, 0.1875), uv = g.attributes.uv;
+        for (let j = 0; j < uv.count; j++) uv.setXY(j, u0 + uv.getX(j) * 0.5, v0 + uv.getY(j) * (v1 - v0));
+        add('rowSign', g, mat4(x, RACK_H + 0.13, r.z - r.dir * RACK_D / 2, ry));
+        box('bezel', I4, 0.03, 0.04, 0.3, x - Math.sign(ry) * 0.012, RACK_H + 0.02, r.z - r.dir * RACK_D / 2);
+      }
+    });
+    const rt = tex(keepCv(rc));
+    M.rowSign = P.plateLit ? basic(0xffffff, { map: rt }) : std(0xffffff, 0.72, 0.1, { map: rt });
+  }
+  // the cooling units along the glass walls, hazard stripes on the floor in front of them, the
+  // walkway's yellow line; exits signed in green; cameras on the roof's struts; extinguishers
+  {
+    const crahs = [], n = Math.max(1, Math.round((bx1 - bx0) / 4.4));
+    for (const [z, ry, sd] of [[HZ0 + 1.0, 0, 1], [HZ1 - 1.0, Math.PI, -1]]) {
+      for (let i = 0; i < n; i++) {
+        const x = bx0 + (i + 0.5) * (bx1 - bx0) / n;
+        crahs.push(mat4(x, 0, z, ry));
+        OBS.push([x - 1.2, Math.min(z, z - sd * 0.9), x + 1.2, Math.max(z, z - sd * 0.9)]);
+        plane('hazard', I4, 2.4, 0.42, x, 0.002, z + sd * 0.24, 0, -Math.PI / 2);
+      }
+      plane('yellow', I4, bx1 - bx0, 0.07, (bx0 + bx1) / 2, 0.002, z + sd * 0.75, 0, -Math.PI / 2);
+    }
+    M.crah = std(P.crah[0], 0.55, 0.3);
+    M.crahFace = std(0xffffff, 0.6, 0.3, { map: tex(keepCv(crahTexture(P))) });
+    inst(own(new THREE.BoxGeometry(2.4, 1.95, 0.9).translate(0, 0.975, -0.45)), M.crah, crahs, hallG);
+    inst(own(new THREE.PlaneGeometry(2.3, 1.85).translate(0, 0.975, 0.004)), M.crahFace, crahs, hallG);
+    M.hazard = std(0xffffff, 0.85, 0, { map: tex(keepCv(hazardTexture()), { repeat: [8, 1] }), polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+    M.yellow = std(0xf2c200, 0.85, 0, { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+    const exitM = basic(new THREE.Color(1, 1, 1).multiplyScalar(1.5), { map: tex(keepCv(exitTexture())) });
+    M.exit = exitM;
+    const exitAt = (x, y, z, ry, hung) => {
+      const B = mat4(x, y, z, ry);
+      box('bezel', B, 0.42, 0.23, 0.04, 0, 0, -0.02); plane('exit', B, 0.38, 0.19, 0, 0, 0.001);
+      if (hung) for (const s of [-0.15, 0.15]) { const p = new THREE.Vector3(s, 0, 0).applyMatrix4(B); hang(p.x, y + 0.11, p.z); }
+    };
+    if (corridor) exitAt(endL + 0.05, 2.55, OPP_Z / 2, Math.PI / 2, false);
+    for (const z of [HZ0 + 1.75, HZ1 - 1.75]) { exitAt(HX0 + 0.9, 2.75, z, Math.PI / 2, true); exitAt(HX1 - 0.9, 2.75, z, -Math.PI / 2, true); }
+    M.dome = std(0x08090b, 0.1, 0.3);
+    const domeG = new THREE.SphereGeometry(0.075, 16, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
+    const cam = (x, y, z, hung) => {
+      add('dome', domeG.clone(), mat4(x, y, z)); cyl('fixture', I4, 0.09, 0.09, 0.03, x, y + 0.015, z, 16); box('ledR', I4, 0.012, 0.012, 0.012, x + 0.05, y - 0.02, z + 0.03);
+      if (hung) hang(x, y + 0.03, z, 0.02, 'rod');
+    };
+    for (const b of blocks) cam((b[0] + b[1]) / 2 + 0.3, 3.4, OPP_Z / 2 + 0.85, true);
+    for (const a of coldA) cam((bx0 + bx1) / 2, 3.4, (a[0] + a[1]) / 2, true);
+    if (corridor) for (const z of [FZ0 + 0.5, FZ1 - 0.5]) cam(endL + 0.6, FH, z, false);
+    domeG.dispose();
+    M.ext = std(0xc4261d, 0.38, 0.15); M.extSign = basic(0xd62f24);
+    const ext = (x, z, ry) => {
+      const B = mat4(x, 0, z, ry);
+      cyl('ext', B, 0.085, 0.085, 0.5, 0, 0.55, 0.1, 16); box('rubber', B, 0.05, 0.08, 0.12, 0, 0.84, 0.12); box('rubber', B, 0.02, 0.36, 0.02, 0.07, 0.62, 0.17);
+      plane('extSign', B, 0.16, 0.16, 0, 1.6, 0.012);
+    };
+    if (corridor) { ext(HX0 - 0.2, FZ0 + 0.012, 0); ext(-6.6, FZ1 - 0.012, Math.PI); }
+    for (const b of blocks) for (const a of aisles) if (Math.abs(a[1] - a[0] - HOT) < 0.05 && Math.abs((a[0] + a[1]) / 2 + RACK_D + HOT / 2) < 0.01) ext((b[0] + b[1]) / 2 + 0.17, (a[0] + a[1]) / 2, Math.PI / 2);
+    if (corridor) { box('bezel', I4, 0.03, 0.12, 0.08, endL + 0.06, 1.2, OPP_Z / 2 + 1.3); box('ledG', I4, 0.034, 0.012, 0.012, endL + 0.06, 1.25, OPP_Z / 2 + 1.3); }
+  }
+  // the struts, now that everything that hangs from them is placed; and over the corridor the signs' wires
+  if (corridor) for (const zs of [OPP_Z / 2 - 0.62, OPP_Z / 2 + 0.62]) for (const dz of [-0.755, 0.755]) strutZ.add(Math.round((zs + dz) * 100) / 100);
+  for (const z of strutZ) box('steel', I4, hl, 0.04, 0.04, hx, HANG + 0.02, z);
+  Object.assign(M, {
+    sill: std(P.wall, 0.9, 0), deck: std(P.deck, 0.9, 0.2), mull: std(P.mull, 0.4, 0.7), steel: std(P.steel, 0.6, 0.35),
+    sprink: std(P.sprink, 0.45, 0.25), duct: std(P.duct, 0.42, 0.85), desk: std(P.desk[0], 0.6, 0.1), deskTop: std(P.desk[1], 0.45, 0.05),
+  });
+  // the glass, all of it one mesh: the walls, the containment
+  hallG.add(new THREE.Mesh(own(mergeParts(glassParts)), own(new THREE.MeshStandardMaterial({ color: P.glass[0], transparent: true, opacity: P.glass[1], roughness: 0.05, metalness: 0, depthWrite: false, side: THREE.DoubleSide }))));
+  // outside: a sky that keeps its distance (it goes where the camera goes), a nearer ring of city
+  // or campus that does not, and the ground out there
+  const skyW = small ? 1024 : 2048;
+  const sky = new THREE.Mesh(own(new THREE.CylinderGeometry(70, 70, 80, 48, 1, true)), basic(0xffffff, { map: tex(keepCv(skyTexture(P, skyW, skyW / 4)), { repeat: [2, 1] }), side: THREE.BackSide, fog: false, depthWrite: false }));
+  sky.position.y = 20; sky.renderOrder = -2;
+  const ring = new THREE.Mesh(own(new THREE.CylinderGeometry(58, 58, 30, 48, 1, true)), basic(0xffffff, { map: tex(keepCv(nearTexture(P, skyW, skyW / 8)), { repeat: [2, 1] }), side: THREE.BackSide, fog: false, transparent: true, depthWrite: false }));
+  ring.position.set(midX, 14, hz);
+  const ground = new THREE.Mesh(own(new THREE.PlaneGeometry(400, 400)), basic(P.ground));
+  ground.rotation.x = -Math.PI / 2; ground.position.set(midX, -0.05, hz);
+  scene.add(sky, ground); hallFar.add(ring);
   for (const [key, list] of parts) {
     const mesh = new THREE.Mesh(own(mergeParts(list)), M[key]);
     mesh.matrixAutoUpdate = false;
@@ -3032,7 +3422,7 @@ export async function open(opts) {
       const edge = new THREE.Mesh(own(new THREE.BoxGeometry(0.056, 0.014, SW + 0.056)), basic(new THREE.Color(S.color).multiplyScalar(dark ? 1.6 : 1)));
       edge.position.y = -SH / 2 - 0.02;
       g.add(f1, f2, bk, edge);
-      for (const dz of [-SW / 2 + 0.12, SW / 2 - 0.12]) { const w = new THREE.Mesh(own(new THREE.BoxGeometry(0.004, 2.894 - 2.38 - SH / 2, 0.004)), M.wire); w.position.set(0, (2.894 - 2.38 + SH / 2) / 2, dz); g.add(w); }
+      for (const dz of [-SW / 2 + 0.12, SW / 2 - 0.12]) { const w = new THREE.Mesh(own(new THREE.BoxGeometry(0.004, HANG - 2.38 - SH / 2, 0.004)), M.wire); w.position.set(0, (HANG - 2.38 + SH / 2) / 2, dz); g.add(w); }
       f1.userData = f2.userData = { sec: S, part: 'sign' };
       scene.add(g); signs.push(f1, f2);
       // the lane: a stripe of light down the aisle's middle, the section's name painted where it starts
@@ -3426,7 +3816,7 @@ export async function open(opts) {
   {
     const PX = WALL_X - 0.8, PZ = OPP_Z / 2, ST = 0.42, hts = [0.34, 0.24, 0.17].map(h => h + ST), dz = [0, -0.44, 0.44];
     const stage = new THREE.Mesh(own(new THREE.BoxGeometry(0.62, ST, 1.48)), std(P.plinth, 0.5, 0.4));
-    stage.position.set(PX, ST / 2, PZ); scene.add(stage);
+    stage.position.set(PX, ST / 2, PZ); scene.add(stage); OBS.push([PX - 0.31, PZ - 0.74, PX + 0.31, PZ + 0.74]);
     const miniBox = own(new THREE.BoxGeometry(0.4, 0.036, 0.26)), miniFace = own(new THREE.PlaneGeometry(0.4, 0.4 * UNIT_H / PANEL_W));
     for (let k = 0; k < 3; k++) {
       const h = hts[k], z = PZ + dz[k];
@@ -3627,7 +4017,7 @@ export async function open(opts) {
   controls.screenSpacePanning = true;
   controls.zoomToCursor = true;
   controls.minDistance = 0.16;
-  controls.maxDistance = corridor ? 9 : 5.6;
+  controls.maxDistance = 22;   // far enough to take in the hall from over the rows
   controls.minPolarAngle = 0.18;
   controls.maxPolarAngle = Math.PI / 2 + 0.34;
   controls.rotateSpeed = 0.6;
@@ -3759,7 +4149,9 @@ export async function open(opts) {
   function stopCam() { if (camTw) { tweens.delete(camTw); camTw = null; } }
   // a long flight goes by the middle of the aisle, above the heads, so it does not cut through racks
   const _arc = new THREE.Vector3();
+  let spyRef = null;   // the visitor, once she is in: she keeps out of the views flown to
   function flyTo(view, dur) {
+    if (spyRef) spyRef.shot = view;
     stopCam();
     hideTips();
     if (hovered && hovered !== popped) setHover(null);   // the pointer no longer means what it meant
@@ -3931,12 +4323,13 @@ export async function open(opts) {
     if (!r.width || !r.height) return null;
     ndc.set(((x - r.left) / r.width) * 2 - 1, -((y - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera);
-    const list = [farFaces].concat(nocMeshes, pickRack, podiumPick, kiosks, signs, extraPick);
+    const list = [farFaces, spy.proxy].concat(nocMeshes, pickRack, podiumPick, kiosks, signs, extraPick);
     for (const u of slid) list.push(u.plate, u.body);
     for (const kt of kits) if (kt.g.visible) { list.push(kt.chips, kt.board); if (kt.full) list.push(kt.lid); }
     const hits = ray.intersectObjects(list, false);
     if (!hits.length) return null;
     const h = hits[0], d = h.object.userData;
+    if (d.npc) return { npc: true, key: 'npc', text: '<div class="a3d-tt-h"><span class="a3d-tt-n">' + SPY + '</span></div><div class="a3d-tt-k">Click to say hello</div>' };
     if (d.noc) {
       const n = noc[d.noc], cx = h.uv.x * 1280, cy = (1 - h.uv.y) * 720;
       const hh = n.hits.find(q => cx >= q.x && cx <= q.x + q.w && cy >= q.y && cy <= q.y + q.h);
@@ -4905,17 +5298,23 @@ export async function open(opts) {
     if (n !== hudNext) { hudNext = n; btn.next.disabled = n; }
   }
   const _t0 = new THREE.Vector3(), _c0 = new THREE.Vector3();
+  // in the hall but not through its glass, its roof or a row of cabinets; in the foyer, under its ceiling
+  const inBlock = x => blocks.some(b => x > b[0] - PITCH / 2 - 0.15 && x < b[1] + PITCH / 2 + 0.15);
+  const CAM_TOP = 4.6;   // up over the rows to see the hall, below the ducts and the roof's steel
   function clampView() {
     const t = controls.target, c = camera.position;
     _t0.copy(t); _c0.copy(c);
-    if (!corridor) {
-      t.x = clamp(t.x, Math.min(rowX0 - 0.35, BENCH.x - 0.3), WALL_X - 0.02); t.y = clamp(t.y, 0.12, RACK_H + 0.6); t.z = clamp(t.z, -0.3, OPP_Z - 0.25);
-      c.x = clamp(c.x, endL + 0.4, WALL_X - 0.3); c.y = clamp(c.y, 0.1, CEIL - 0.22); c.z = clamp(c.z, 0.1, OPP_Z - 0.3);
-    } else {
-      const lobby = c.x < -0.25;
-      t.x = clamp(t.x, endL + 0.3, WALL_X - 0.02); t.y = clamp(t.y, 0.12, RACK_H + 0.9); t.z = clamp(t.z, t.x < -0.25 ? -1.6 : -0.3, t.x < -0.25 ? OPP_Z + 1.6 : OPP_Z + 0.3);
-      c.x = clamp(c.x, endL + 0.25, WALL_X - 0.3); c.y = clamp(c.y, 0.1, CEIL - 0.22); c.z = clamp(c.z, lobby ? -1.5 : 0.1, lobby ? OPP_Z + 1.5 : OPP_Z - 0.1);
+    c.x = clamp(c.x, endL + 0.25, WALL_X - 0.3);
+    if (corridor && c.x < HX0 + 0.25) { c.z = clamp(c.z, FZ0 + 0.25, FZ1 - 0.25); c.y = clamp(c.y, 0.1, FH - 0.22); }
+    else {
+      c.z = clamp(c.z, HZ0 + 0.4, HZ1 - 0.4); c.y = clamp(c.y, 0.1, CAM_TOP);
+      if (corridor && (c.z < FZ0 + 0.25 || c.z > FZ1 - 0.25 || c.y > FH - 0.22)) c.x = Math.max(c.x, HX0 + 0.3);
+      if (c.y < RACK_H + 0.3 && inBlock(c.x)) for (const r of rowsZ) {
+        const [z0, z1] = rspan(r);
+        if (c.z > z0 - 0.15 && c.z < z1 + 0.15) { c.z = c.z - z0 < z1 - c.z ? z0 - 0.15 : z1 + 0.15; break; }
+      }
     }
+    t.x = clamp(t.x, endL + 0.3, WALL_X - 0.02); t.y = clamp(t.y, 0.12, HH - 1.0); t.z = clamp(t.z, HZ0 + 0.3, HZ1 - 0.3);
     if (!t.equals(_t0) || !c.equals(_c0)) camera.lookAt(t);
   }
 
@@ -5027,6 +5426,393 @@ export async function open(opts) {
   function nextStop() { if (!tour) return; tour.i++; if (tour.i >= tour.stops.length) { endTour(); resetView(); return; } showStop(); }
   function endTour() { clearTimeout(tourTimer); tourTimer = 0; if (!tour) return; tour = null; capEl.hidden = true; }
 
+  /* a visitor: a woman in a dark belted trench coat and sunglasses, a visitor's badge on a lanyard.
+     She walks the aisles, photographs a unit, plugs a USB stick into a section's leader, reads a kiosk;
+     come close and she is suddenly very interested in her phone, or elsewhere. She keeps to the aisles
+     and out of the foreground of a view you fly to. With Motion off she waits at the reception desk. */
+  const SPY = 'Chinese spy', SPY_R = 0.26;
+  const SPY_LINES = ['Just checking the air conditioning.', 'Lovely p99. Mind if I take a picture?', 'I’m only here for the source code. Kidding. Mostly.',
+    'Visitor badge, see? Completely authorised.', 'Is that the leader up there? Asking for a friend.', 'Don’t mind me, I’m auditing the cable management.',
+    'These racks run warm. All that throughput, I suppose.', 'I never saw this benchmark, and you never saw me.', 'Does this USB stick look suspicious to you?',
+    'Just counting the requests per second.', 'The memory gauges in here are very informative.'];
+  const spy = (() => {
+    const sm = {
+      coat: std(dark ? 0x2b3039 : 0x2a2f37, 0.68, 0, { side: THREE.DoubleSide }), lapel: std(dark ? 0x323843 : 0x30363f, 0.6, 0), knit: std(0x15171b, 0.85, 0), skin: std(0xd8ab90, 0.55, 0),
+      hair: std(0x18120f, 0.42, 0), lens: std(0x040506, 0.08, 0.3), shoe: std(0x0b0c0e, 0.28, 0.1), lip: std(0xa66a6c, 0.5, 0), strap: std(0xc23a2b, 0.6, 0),
+    };
+    const badgeT = tex(keepCv((() => {
+      const c = canvas(128, 192), x = c.getContext('2d');
+      x.fillStyle = '#fbfbf8'; x.fillRect(0, 0, 128, 192); x.fillStyle = '#c23a2b'; x.fillRect(0, 0, 128, 52);
+      x.fillStyle = '#fff'; x.font = '700 30px ' + FONT_SANS; x.textAlign = 'center'; x.fillText('Visitor', 64, 37);
+      x.fillStyle = '#c9ced3'; x.fillRect(34, 66, 60, 70); x.fillStyle = '#8a929a'; x.fillRect(22, 150, 84, 9); x.fillRect(32, 166, 64, 8);
+      return c;
+    })()));
+    sm.badge = std(0xffffff, 0.5, 0, { map: badgeT }); sm.buckle = M.rail;
+    const root = new THREE.Group(), lists = new Map();
+    // geometry by bone and material, merged into one mesh each
+    const put = (bone, mk, geo, m) => { const k = bone.uuid + mk; if (!lists.has(k)) lists.set(k, { bone, mk, l: [] }); lists.get(k).l.push({ g: geo, m: m || new THREE.Matrix4() }); };
+    const M4 = (x, y, z, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)), new THREE.Vector3(sx, sy, sz));
+    const ell = (bone, mk, rx, ry, rz, x, y, z, a = 0) => put(bone, mk, new THREE.SphereGeometry(1, 18, 12), M4(x, y, z, a, 0, 0, rx, ry, rz));
+    // a limb from its joint down: round at both ends, tapering
+    const limb = (bone, mk, r0, r1, len, sz) => {
+      const pts = [];
+      for (let i = 0; i <= 5; i++) { const a = i / 5 * Math.PI / 2; pts.push(new THREE.Vector2(Math.max(1e-4, r1 * Math.sin(a)), -len - r1 * Math.cos(a))); }
+      for (let i = 0; i <= 5; i++) { const a = i / 5 * Math.PI / 2; pts.push(new THREE.Vector2(Math.max(1e-4, r0 * Math.cos(a)), r0 * Math.sin(a))); }
+      put(bone, mk, new THREE.LatheGeometry(pts, 14), M4(0, 0, 0, 0, 0, 0, 1, 1, sz || 1));
+    };
+    const lathe = (bone, mk, pts, x, y, z, sz, p0, pl) => put(bone, mk, new THREE.LatheGeometry(pts.map(([r, h]) => new THREE.Vector2(r, h)), 20, p0 || 0, pl || Math.PI * 2), M4(x, y, z, 0, 0, 0, 1, 1, sz));
+    const bone = (par, x, y, z) => { const b = new THREE.Group(); b.position.set(x, y, z); par.add(b); return b; };
+    const pelvis = bone(root, 0, 0.95, 0), spine = bone(pelvis, 0, 0.09, 0), neck = bone(spine, 0, 0.4, 0), head = bone(neck, 0, 0.06, 0.005);
+    const leg = [], arm = [];
+    for (const sd of [1, -1]) {   // her left (+x), then her right
+      const hip = bone(pelvis, sd * 0.085, -0.05, 0), knee = bone(hip, 0, -0.41, 0), ankle = bone(knee, 0, -0.415, 0);
+      limb(hip, 'knit', 0.07, 0.05, 0.41, 0.95); limb(knee, 'knit', 0.048, 0.033, 0.415);
+      ell(ankle, 'shoe', 0.04, 0.032, 0.115, 0, -0.04, 0.045); put(ankle, 'shoe', new THREE.BoxGeometry(0.045, 0.05, 0.035), M4(0, -0.05, -0.045));
+      leg.push({ hip, knee, ankle });
+      const sh = bone(spine, sd * 0.163, 0.335, 0), el = bone(sh, 0, -0.275, 0), hand = bone(el, 0, -0.245, 0);
+      limb(sh, 'coat', 0.046, 0.042, 0.275); limb(el, 'coat', 0.042, 0.036, 0.235);
+      ell(hand, 'skin', 0.021, 0.068, 0.034, 0, -0.058, 0.004);
+      arm.push({ sh, el, hand });
+    }
+    // the coat: bodice, skirt to the knee, collar, belt and buckle; the knit at the neck
+    lathe(spine, 'coat', [[0.128, -0.01], [0.137, 0.05], [0.151, 0.12], [0.162, 0.2], [0.163, 0.26], [0.165, 0.31], [0.158, 0.35], [0.13, 0.385], [0.08, 0.405], [0.056, 0.41]], 0, 0, 0, 0.64);
+    lathe(pelvis, 'coat', [[0.214, -0.47], [0.197, -0.32], [0.184, -0.18], [0.172, -0.06], [0.15, 0.03], [0.132, 0.1]], 0, 0, 0, 0.78);
+    lathe(spine, 'coat', [[0.07, 0.36], [0.1, 0.405], [0.092, 0.45]], 0, 0, 0.004, 0.8);
+    put(spine, 'lens', new THREE.CylinderGeometry(0.14, 0.14, 0.04, 24, 1, true), M4(0, 0.005, 0, 0, 0, 0, 1, 1, 0.67));   // the belt
+    put(spine, 'buckle', new THREE.BoxGeometry(0.045, 0.036, 0.01), M4(0, 0.005, 0.096));
+    for (const sd of [-1, 1]) {
+      put(spine, 'lapel', new THREE.BoxGeometry(0.05, 0.2, 0.006), M4(sd * 0.04, 0.27, 0.099, -0.18, 0, sd * 0.32));   // the lapels, a V to the belt
+      for (const y of [0.1, 0.17]) put(spine, 'lens', new THREE.SphereGeometry(0.008, 8, 6), M4(sd * 0.05, y, 0.1));   // buttons, double-breasted
+    }
+    lathe(neck, 'knit', [[0.06, -0.03], [0.056, 0.02], [0.051, 0.06], [0.047, 0.088], [0.04, 0.092]], 0, 0, 0.004, 1.05);   // a high roll neck
+    // the head: a face, sunglasses, a dark bob with a fringe
+    put(head, 'skin', new THREE.LatheGeometry([[0.001, 0], [0.026, 0.006], [0.044, 0.024], [0.057, 0.05], [0.066, 0.08], [0.072, 0.11], [0.074, 0.14], [0.07, 0.17], [0.057, 0.193], [0.034, 0.206], [0.001, 0.211]].map(([r, h]) => new THREE.Vector2(r, h)), 22), M4(0, 0, 0, 0, 0, 0, 0.9, 1, 1.14));
+    ell(head, 'skin', 0.0068, 0.015, 0.009, 0, 0.08, 0.077, -0.3); ell(head, 'lip', 0.0135, 0.0042, 0.005, 0, 0.043, 0.0715);
+    for (const sd of [-1, 1]) { ell(head, 'lens', 0.026, 0.017, 0.006, sd * 0.029, 0.112, 0.085); put(head, 'lens', new THREE.BoxGeometry(0.004, 0.004, 0.09), M4(sd * 0.062, 0.115, 0.04)); }
+    put(head, 'lens', new THREE.BoxGeometry(0.012, 0.004, 0.004), M4(0, 0.115, 0.089));
+    lathe(head, 'hair', [[0.077, -0.012], [0.084, 0.02], [0.088, 0.06], [0.09, 0.11], [0.089, 0.15], [0.081, 0.18], [0.067, 0.203], [0.043, 0.219], [0.002, 0.227]], 0, 0, -0.004, 1.12, 1.02, Math.PI * 2 - 2.04);
+    lathe(head, 'hair', [[0.087, 0.13], [0.086, 0.155], [0.079, 0.18], [0.065, 0.204], [0.041, 0.22], [0.002, 0.227]], 0, 0, -0.004, 1.12, -1.08, 2.16);
+    // the lanyard and its badge
+    for (const sd of [-1, 1]) { const a = new THREE.Vector3(sd * 0.05, 0.38, 0.065), b = new THREE.Vector3(0, 0.19, 0.112), m = a.clone().add(b).multiplyScalar(0.5); put(spine, 'strap', new THREE.BoxGeometry(0.009, a.distanceTo(b), 0.002), M4(m.x, m.y, m.z, -Math.atan2(b.z - a.z, a.y - b.y), 0, Math.atan2(b.x - a.x, a.y - b.y))); }
+    put(spine, 'badge', new THREE.PlaneGeometry(0.052, 0.078), M4(0, 0.145, 0.116, -0.12));
+    for (const { bone: b, mk, l } of lists.values()) { const me = new THREE.Mesh(own(mergeParts(l)), sm[mk]); b.add(me); }
+    // what she holds: a small camera (right hand), a phone (left), a USB stick
+    const camG = bone(arm[1].hand, 0, -0.085, 0.035), phoneG = bone(arm[0].hand, 0, -0.09, 0.03), usbG = bone(arm[1].hand, 0, -0.12, 0.02);
+    camG.add(new THREE.Mesh(own(new THREE.BoxGeometry(0.105, 0.064, 0.05)), M.bezel), new THREE.Mesh(own(new THREE.CylinderGeometry(0.024, 0.024, 0.04, 16).rotateX(Math.PI / 2).translate(0, 0, -0.04)), M.dome));
+    phoneG.add(new THREE.Mesh(own(new THREE.BoxGeometry(0.07, 0.14, 0.008)), M.bezel), new THREE.Mesh(own(new THREE.PlaneGeometry(0.062, 0.128).translate(0, 0, 0.0045)), basic(new THREE.Color(0.55, 0.75, 1).multiplyScalar(1.3))));
+    usbG.add(new THREE.Mesh(own(new THREE.BoxGeometry(0.014, 0.034, 0.007)), M.rail));
+    camG.visible = phoneG.visible = usbG.visible = false;
+    phoneG.rotation.set(-0.3, 0, 0);
+    // a soft shadow under her; a proxy the pointer finds her by; a flash for the camera
+    const shadow = new THREE.Mesh(own(new THREE.PlaneGeometry(0.75, 0.75)), basic(0x000000, { alphaMap: glowT, transparent: true, opacity: dark ? 0.5 : 0.32, depthWrite: false }));
+    shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.004; shadow.renderOrder = 1;
+    const proxy = new THREE.Mesh(own(new THREE.CylinderGeometry(0.27, 0.27, 1.74, 8)), M.wire);
+    proxy.position.y = 0.87; proxy.visible = false; proxy.userData = { npc: true };
+    root.add(shadow, proxy);
+    const flash = new THREE.Sprite(own(new THREE.SpriteMaterial({ map: glowT, color: new THREE.Color(1, 1, 1).multiplyScalar(12), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true })));
+    flash.scale.setScalar(0.08); flash.visible = false;
+    const stick = new THREE.Group(), stickLed = new THREE.Mesh(own(new THREE.BoxGeometry(0.004, 0.004, 0.004)), basic(new THREE.Color(P.ledB).multiplyScalar(4)));
+    stick.add(new THREE.Mesh(own(new THREE.BoxGeometry(0.012, 0.007, 0.03)), M.rail), stickLed); stickLed.position.set(0, 0, 0.016);
+    scene.add(root, flash);
+
+    /* where she may go: a lane down the corridor, the foyer, the cross aisles at the bays and the open
+       cold aisle behind the racks; spots to stop at. Every leg is checked clear of what stands. */
+    // the kiosks and the lobby boards stand in the way too
+    const kio = new Map(), _bb = new THREE.Box3();
+    for (const scr of kiosks) {
+      const g = scr.parent; _bb.setFromObject(g);
+      OBS.push([_bb.min.x, _bb.min.z, _bb.max.x, _bb.max.z]);
+      if (scr.userData.sec) kio.set(scr.userData.sec, g);
+    }
+    const blockedAt = (x, z, r) => OBS.some(b => x > b[0] - r && x < b[2] + r && z > b[1] - r && z < b[3] + r);
+    const clearLeg = (a, b) => { const n = Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / 0.08); for (let i = 0; i <= n; i++) if (blockedAt(a.x + (b.x - a.x) * i / n, a.z + (b.z - a.z) * i / n, SPY_R + 0.03)) return false; return true; };
+    const nodes = [], spots = [];
+    const node = (x, z) => { const nd = { x, z, nb: [], i: nodes.length }; nodes.push(nd); return nd; };
+    const link = (a, b) => { if (a && b && a !== b && clearLeg(a, b)) { a.nb.push(b); b.nb.push(a); } };
+    const LZ = 1.9, lane = [];
+    const xs = new Set([WALL_X - 1.6]);
+    if (corridor) { xs.add(-4.4); xs.add(-2.9); xs.add(-1.2); }
+    else xs.add(Math.max(rowX0 - 0.6, endL + 1.8));
+    // where she reads a kiosk: before its screen, a step back
+    const readAt = new Map();
+    for (const [S, g] of kio) { const ry = g.rotation.y, x = g.position.x + Math.sin(ry) * 0.85, z = g.position.z + Math.cos(ry) * 0.85; readAt.set(S, { x, z, yaw: Math.atan2(-Math.sin(ry), -Math.cos(ry)) }); xs.add(x); }
+    for (const S of SECS) { if (corridor) xs.add(S.x0 + 0.9); for (const R of S.racks) xs.add(R.x); if (S.racks[0]) xs.add(S.racks[0].x + PORT_X - 0.16); }
+    for (const x of [...xs].sort((a, b) => a - b)) lane.push(node(x, LZ));
+    for (let i = 1; i < lane.length; i++) link(lane[i - 1], lane[i]);
+    const laneAt = x => lane.reduce((b, n) => (Math.abs(n.x - x) < Math.abs(b.x - x) ? n : b), lane[0]);
+    const spot = (kind, x, z, yaw, at, extra) => { const nd = node(x, z); link(at, nd); if (nd.nb.length) spots.push(Object.assign({ kind, nd, yaw }, extra || {})); return nd; };
+    let home;
+    if (corridor) {
+      const f2 = node(-4.4, 2.6); link(laneAt(-4.4), f2);
+      home = spot('desk', -5.05, FZ1 - 1.36, 0, f2);
+    } else home = spot('wait', lane[0].x, LZ, Math.PI / 2, lane[0]);
+    for (const S of SECS) {
+      for (const R of S.racks) spot('photo', R.x, 1.02, Math.PI, laneAt(R.x), { R });
+      // the leader's console port, in reach of her right hand
+      if (S.racks[0]) { const ux = S.racks[0].x + PORT_X - 0.16; spot('usb', ux, 0.31, Math.PI, laneAt(ux), { S, R: S.racks[0] }); }
+      const ra = readAt.get(S);
+      if (ra) spot('read', ra.x, ra.z, ra.yaw, laneAt(ra.x));
+      if (!corridor) continue;
+      // through the bay, across the hot aisle, into the open cold aisle and along it
+      if (visitA) {
+        const za = (visitA[0] + visitA[1]) / 2, bay = laneAt(S.x0 + 0.9), h = node(S.x0 + 0.9, -RACK_D - HOT / 2), c = node(S.x0 + 0.9, za);
+        link(bay, h); link(h, c); S.spyC = c;
+        const blk = blocks.find(b => b[0] > S.x0 && b[0] < S.x1);
+        if (blk) for (let x = blk[0] + PITCH; x < blk[1] - 0.01; x += 2 * PITCH) spot('photo', x, za, Math.PI, c);
+      }
+    }
+    if (corridor && visitA) for (let i = 1; i < SECS.length; i++) link(SECS[i - 1].spyC, SECS[i].spyC);
+    const reach = new Set(); { const st = [lane[0]]; while (st.length) { const n = st.pop(); if (reach.has(n)) continue; reach.add(n); st.push(...n.nb); } }
+    const goals = spots.filter(s => reach.has(s.nd));
+    const route = (from, to, avoid) => {
+      const prev = new Map([[from, null]]), q = [from];
+      while (q.length) { const n = q.shift(); if (n === to) break; for (const m of n.nb) if (!prev.has(m) && !(avoid && m !== to && avoid(m))) { prev.set(m, n); q.push(m); } }
+      if (!prev.has(to)) return null;
+      const out = []; for (let n = to; n; n = prev.get(n)) out.unshift(n);
+      return out;
+    };
+    // the node to set off from: the nearest one a straight walk from here reaches
+    const startNode = (x, z) => {
+      const here = { x, z }, ns = nodes.filter(n => reach.has(n)).sort((a, b) => Math.hypot(a.x - x, a.z - z) - Math.hypot(b.x - x, b.z - z));
+      return ns.find(n => clearLeg(here, n)) || ns[0];
+    };
+
+    /* the state: where she is, where she goes, what she does there */
+    const st = { x: home.x, z: home.z, yaw: 0, v: 0, vmax: 1.2, path: [], goal: null, act: 'idle', t: 0, dur: 0, phase: 0, look: 0, lookT: 0, cool: 0, wait: 0, flashT: -1, usb: null, ts: 1, idle: true, fresh: true, shot: null };
+    const rnd = rng((Math.random() * 4294967296) >>> 0);
+    const close = (x, z, d) => camera.position.y < 2.7 && Math.hypot(camera.position.x - x, camera.position.z - z) < d;
+    // in the foreground of a view: in its frame, nearer than what it looks at
+    const _f = new THREE.Vector3(), _d = new THREE.Vector3(), _rgt = new THREE.Vector3();
+    const inShot = (vw0, x, z) => {
+      if (!vw0) return false;
+      _f.copy(vw0.target).sub(vw0.pos); const dist = _f.length(); _f.normalize();
+      _d.set(x - vw0.pos.x, 1.0 - vw0.pos.y, z - vw0.pos.z);
+      const along = _d.dot(_f);
+      if (along < 0.15 || along > dist * 0.95) return false;
+      _rgt.crossVectors(_f, UP).normalize();
+      const tv = Math.tan(FOV * DEG / 2), th = tv * vw() / vh();
+      return Math.abs(_d.dot(_rgt)) < along * th + SPY_R && Math.abs(_d.y) < along * tv + 0.9;
+    };
+    const avoidShot = n => inShot(st.shot, n.x, n.z);
+    const goTo = (target, brisk, then, avoid) => {
+      const from = startNode(st.x, st.z), p = route(from, target.nd || target, avoid);
+      if (!p) return false;
+      st.path = (Math.hypot(from.x - st.x, from.z - st.z) < 0.05 ? p.slice(1) : p).map(n => ({ x: n.x, z: n.z }));
+      st.goal = target.nd ? target : null; st.vmax = brisk ? 1.75 : 1.2; st.act = 'walk'; st.then = then || null; st.t = 0; st.at = null;
+      return true;
+    };
+    const _pv = new THREE.Vector3();
+    const choose = () => {
+      // somewhere to go: not where the camera stands, not in the view it was flown to; rather
+      // somewhere in sight, a little way off
+      const cand = goals.filter(s => !close(s.nd.x, s.nd.z, 2.6) && !inShot(st.shot, s.nd.x, s.nd.z) && Math.hypot(s.nd.x - st.x, s.nd.z - st.z) > 1.5 && okSpot(s));
+      if (!cand.length) return false;
+      const w = cand.map(s => {
+        const k = ({ photo: 3, usb: 1.4, read: 1.6, desk: 0.4, wait: 0.4 })[s.kind] || 1, d = Math.hypot(s.nd.x - camera.position.x, s.nd.z - camera.position.z);
+        _pv.set(s.nd.x, 1.1, s.nd.z).project(camera);
+        return k * (_pv.z < 1 && Math.abs(_pv.x) < 0.9 && Math.abs(_pv.y) < 0.9 && d > 2.6 && d < 16 ? 3 : 1);
+      }), tot = w.reduce((a, b) => a + b, 0);
+      for (let tries = 0; tries < 4; tries++) {
+        let r = rnd() * tot, i = 0;
+        while (r > w[i] && i < w.length - 1) r -= w[i++];
+        if (goTo(cand[i], false, null, avoidShot)) return true;
+      }
+      return false;
+    };
+    // a rack someone is busy at: a unit out, on the bench, the crash cart at it
+    const cartAt = R => cartG.visible && Math.abs(cartG.position.x - R.x) < 1.3 && cartG.position.z < 2.2;
+    const rackBusy = R => cartAt(R) || (mon && mon.u && mon.u.R === R) || R.us.some(v => v === popped || v.cmp || v.slide > 0.04);
+    const okSpot = s => !s.R || (s.kind === 'usb' ? !rackBusy(s.R) && !!s.S.units[0] : !cartAt(s.R));
+    const leave = brisk => {
+      // walk off, away from the camera (not past it) and out of the view
+      const c = camera.position, opts = nodes.filter(n => reach.has(n) && Math.hypot(n.x - c.x, n.z - c.z) > 4.5 && !inShot(st.shot, n.x, n.z) && (n.x - c.x) * (st.x - c.x) + (n.z - c.z) * (st.z - c.z) > 0);
+      opts.sort((a, b) => Math.hypot(a.x - st.x, a.z - st.z) - Math.hypot(b.x - st.x, b.z - st.z));
+      for (const n of opts.slice(0, 6)) if (goTo(n, brisk)) return true;
+      return false;
+    };
+    // a unit pulled out, the monitor plugged in: she drifts over for a look, from a few steps off
+    const peek = u => {
+      const ux = u.x0, uz = u.z0 + u.dir * 0.45, c = camera.position;
+      const opts = lane.filter(n => reach.has(n) && Math.abs(n.x - ux) > 1.3 && Math.abs(n.x - ux) < 3.6 && Math.hypot(n.x - c.x, n.z - c.z) > 2.4 && !inShot(st.shot, n.x, n.z));
+      opts.sort((a, b) => Math.hypot(a.x - st.x, a.z - st.z) - Math.hypot(b.x - st.x, b.z - st.z));
+      for (const n of opts.slice(0, 3)) if (goTo(n, false, () => { begin('peek', 3.5 + rnd() * 2.5); st.yaw0 = Math.atan2(ux - st.x, uz - st.z); }, avoidShot)) return true;
+      return false;
+    };
+    const stopProps = () => {
+      camG.visible = phoneG.visible = usbG.visible = false; flash.visible = false; st.flashT = -1;
+      if (st.usb) { st.usb.group.remove(stick); st.usb = null; }
+    };
+    const begin = (act, dur) => { stopProps(); st.act = act; st.t = 0; st.dur = dur; st.path = []; st.v = 0; st.at = null; };
+    const _pp = new THREE.Vector3();
+    const arrive = () => {
+      const g = st.goal; st.goal = null;
+      if (st.then) { const f = st.then; st.then = null; f(); return; }
+      if (!g) { begin(rnd() < 0.5 ? 'glance' : 'phone', 2.5 + rnd() * 1.5); return; }
+      st.yaw0 = g.yaw;
+      if (g.kind === 'photo' && okSpot(g)) { begin('photo', 3.4); st.at = g; camG.visible = true; }
+      else if (g.kind === 'usb' && okSpot(g)) {
+        begin('usb', 4.8); st.at = g; usbG.visible = true;
+        const u = st.usb = g.S.units[0]; stick.position.set(PORT_X, PORT_Y, 0.017); stick.rotation.set(0, 0, 0);
+        // her right arm to the port: a two-bone reach in the plane she faces
+        u.group.localToWorld(_pp.set(PORT_X, PORT_Y, 0.017));
+        const f = Math.max(0.05, (st.z - _pp.z) * -Math.cos(g.yaw) + (st.x - _pp.x) * -Math.sin(g.yaw)), dy = _pp.y - 1.405;
+        const L1 = 0.275, L2 = 0.33, d = clamp(Math.hypot(f, dy), 0.25, L1 + L2 - 0.002), at = Math.atan2(f, -dy);
+        const a = Math.acos(clamp((L1 * L1 + d * d - L2 * L2) / (2 * L1 * d), -1, 1)), b = Math.PI - Math.acos(clamp((L1 * L1 + L2 * L2 - d * d) / (2 * L1 * L2), -1, 1));
+        st.ik = [-(at - a), -b, clamp(dy, -0.5, 0.6)];
+      } else if (g.kind === 'read') begin('read', 4 + rnd() * 2);
+      else begin('phone', 3 + rnd() * 2);
+    };
+    const wrap = a => ((a + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI, toward = (a, b, k) => a + wrap(b - a) * Math.min(1, k);
+
+    /* one step of her life: dt seconds */
+    function step(dt) {
+      st.idle = false;
+      st.cool = Math.max(0, st.cool - dt);
+      st.lookT -= dt;
+      const c = camera.position;
+      // the camera close by: act casual (once in a while)
+      if (st.cool <= 0 && close(st.x, st.z, 1.9)) { st.cool = 7; stopProps(); if (rnd() < 0.5 || !leave(true)) begin('phone', 3 + rnd() * 1.5); }
+      // flown to a view she stands in the foreground of: out of it
+      if (st.shot && st.cool < 5 && inShot(st.shot, st.x, st.z)) { st.cool = 6; stopProps(); leave(true); }
+      // someone busy at the rack she is at: she steps away
+      if (st.at && !okSpot(st.at)) { stopProps(); st.at = null; st.yaw0 = null; if (!leave(false)) begin('glance', 2); }
+      // a unit out or the monitor in: worth a look
+      const tgt = popped || (mon && mon.u) || null;
+      if (tgt !== st.seen) { st.seen = tgt; if (tgt && !tgt.cmp && st.act !== 'usb' && rnd() < 0.7 && peek(tgt)) st.cool = Math.max(st.cool, 3); }
+      if (st.act === 'walk') {
+        const p = st.path[0];
+        if (!p) { st.v = 0; arrive(); return; }
+        // the camera in the way: wait, glance round; then go another way
+        const ahead = st.path.slice(0, 2);
+        let blocked = false;
+        if (c.y < 2.5) { let ax = st.x, az = st.z; for (const q of ahead) { const lx = q.x - ax, lz = q.z - az, l2 = lx * lx + lz * lz || 1; const t2 = clamp(((c.x - ax) * lx + (c.z - az) * lz) / l2, 0, 1); if (Math.hypot(ax + lx * t2 - c.x, az + lz * t2 - c.z) < 0.75 && Math.hypot(c.x - st.x, c.z - st.z) < 2.2) blocked = true; ax = q.x; az = q.z; } }
+        if (blocked) { st.wait += dt; st.v = Math.max(0, st.v - dt * 4); if (st.wait > 2.2) { st.wait = 0; if (!leave(true)) begin('glance', 2); } }
+        else { st.wait = 0; st.v = Math.min(st.vmax, st.v + dt * 2.2); }
+        const dx = p.x - st.x, dz = p.z - st.z, d = Math.hypot(dx, dz), want = Math.atan2(dx, dz);
+        st.yaw = toward(st.yaw, want, dt * 5);
+        const mv = Math.min(d, st.v * dt * (Math.abs(wrap(want - st.yaw)) > 1.2 ? 0.25 : 1));
+        if (d > 1e-4) { st.x += dx / d * mv; st.z += dz / d * mv; }
+        st.phase += mv / 0.68 * Math.PI;
+        if (d - mv < 0.02) st.path.shift();
+        if (st.lookT < 0) { st.look = rnd() < 0.35 ? (rnd() - 0.5) * 1.6 : 0; st.lookT = 1.2 + rnd() * 3; }
+      } else {
+        st.t += dt;
+        st.v = Math.max(0, st.v - dt * 3);
+        if (st.yaw0 != null) st.yaw = toward(st.yaw, st.yaw0, dt * 4);
+        if (st.act === 'photo') { const f = st.t - 1.2; st.flashT = (f > 0 && f < 0.09) || (f > 0.9 && f < 0.99) ? 1 : -1; }
+        if (st.act === 'usb' && st.t > 0.9 && st.usb && !stick.parent) { st.usb.group.add(stick); usbG.visible = false; }
+        if (st.act === 'usb' && st.t > st.dur - 0.8 && stick.parent) { stick.parent.remove(stick); usbG.visible = true; }
+        if (st.t >= st.dur) { stopProps(); st.yaw0 = null; if (!choose()) begin('glance', 2); }
+      }
+    }
+    // the pose: targets from what she does and her stride, eased into
+    const J = {}, Jt = {};
+    const names = ['py', 'pyaw', 'sx', 'sy', 'hx', 'hy', 'hipL', 'hipR', 'kneeL', 'kneeR', 'ankL', 'ankR', 'shLx', 'shRx', 'shLz', 'shRz', 'elL', 'elR'];
+    for (const n of names) J[n] = Jt[n] = 0;
+    function pose(dt, snap) {
+      const a = clamp(st.v / 1.2, 0, 1.35), s = Math.sin(st.phase), co = Math.cos(st.phase), tm = T.value + st.t;
+      for (const n of names) Jt[n] = 0;
+      Jt.hipL = -0.44 * a * s; Jt.hipR = 0.44 * a * s;
+      Jt.kneeL = 0.06 + 0.72 * a * Math.max(0, co); Jt.kneeR = 0.06 + 0.72 * a * Math.max(0, -co);
+      Jt.ankL = -0.35 * (Jt.hipL + Jt.kneeL) - 0.12 * a * Math.max(0, -co); Jt.ankR = -0.35 * (Jt.hipR + Jt.kneeR) - 0.12 * a * Math.max(0, co);
+      Jt.py = 0.014 * a * Math.cos(2 * st.phase) - 0.01 * a; Jt.pyaw = 0.08 * a * s; Jt.sy = -0.06 * a * s; Jt.sx = 0.05 * a;
+      Jt.shLx = 0.34 * a * s; Jt.shRx = -0.34 * a * s; Jt.shLz = 0.09; Jt.shRz = -0.09; Jt.elL = -0.22 - 0.12 * a; Jt.elR = -0.22 - 0.12 * a;
+      Jt.hy = st.act === 'walk' ? st.look : 0;
+      const act = st.act;
+      if (act === 'photo') { Object.assign(Jt, { shRx: -1.42, shRz: 0.42, elR: -1.75, shLx: -1.25, shLz: -0.5, elL: -1.9, hx: 0.05 }); }
+      else if (act === 'usb') {
+        const up = clamp(st.t / 0.7, 0, 1) * (st.t > st.dur - 0.6 ? clamp((st.dur - st.t) / 0.6, 0, 1) : 1), ik = st.ik || [-2.5, -0.1, 0.5], toe = clamp(ik[2] * 0.9, 0, 0.35);
+        Jt.shRx = ik[0] * up; Jt.elR = ik[1] * up - 0.2 * (1 - up); Jt.shRz = 0.06 * up; Jt.hx = -0.5 * clamp(ik[2] * 2, 0, 1) * up; Jt.sx = -0.04 * up;
+        Jt.shLx = 0.1; Jt.elL = -0.25;
+        st.toe = toe * up;
+      }
+      else if (act === 'peek') { Object.assign(Jt, { sx: 0.1, hx: 0.08, shLz: 0.1, shRz: -0.1, elL: -0.5, elR: -0.5 }); Jt.hy = 0.12 * Math.sin(tm * 0.9); }
+      else if (act === 'phone' || act === 'idle' || act === 'desk') { Object.assign(Jt, { shLx: -0.5, shLz: -0.18, elL: -1.55, hx: 0.42, hy: 0.06 }); phoneG.visible = true; }
+      else if (act === 'read') { Object.assign(Jt, { hx: 0.12, shLz: 0.12, shRz: -0.12, elL: -0.35, elR: -0.35 }); Jt.hy = 0.08 * Math.sin(tm * 0.7); }
+      else if (act === 'glance') { Jt.hy = 0.85 * Math.sin(tm * 1.6); Jt.sy = 0.25 * Math.sin(tm * 1.6); }
+      if (act !== 'walk') { Jt.py += 0.004 * Math.sin(tm * 1.9); Jt.kneeL = 0.06; Jt.kneeR = 0.14; Jt.hipR = 0.06; Jt.ankR = -0.05; }   // her weight on one foot
+      if (act === 'usb') { const k = st.toe || 0; Jt.py += 0.1 * k; Jt.ankL = Jt.ankR = 0.9 * k; Jt.kneeL = Jt.kneeR = 0.02; Jt.hipR = 0; }   // on her toes
+      const k = snap ? 1 : 1 - Math.exp(-dt * 9);
+      for (const n of names) J[n] += (Jt[n] - J[n]) * k;
+      pelvis.position.y = 0.95 + J.py; pelvis.rotation.y = J.pyaw;
+      spine.rotation.set(J.sx, J.sy, 0); neck.rotation.set(0, J.hy * 0.3, 0); head.rotation.set(J.hx, J.hy * 0.7, 0);
+      leg[0].hip.rotation.x = J.hipL; leg[1].hip.rotation.x = J.hipR; leg[0].knee.rotation.x = J.kneeL; leg[1].knee.rotation.x = J.kneeR;
+      leg[0].ankle.rotation.x = J.ankL; leg[1].ankle.rotation.x = J.ankR;
+      arm[0].sh.rotation.set(J.shLx, 0, J.shLz); arm[1].sh.rotation.set(J.shRx, 0, J.shRz); arm[0].el.rotation.x = J.elL; arm[1].el.rotation.x = J.elR;
+      root.position.set(st.x, 0, st.z); root.rotation.y = st.yaw;
+      if (act !== 'phone' && act !== 'idle' && act !== 'desk') phoneG.visible = false;
+      flash.visible = st.flashT > 0;
+      if (flash.visible) camG.localToWorld(flash.position.set(0, 0, -0.07));
+      if (st.usb) stickLed.visible = Math.sin(T.value * 18) > 0;
+    }
+    function idle() {
+      stopProps(); st.path = []; st.goal = null; st.then = null;
+      st.x = home.x; st.z = home.z; st.yaw = st.yaw0 = 0; st.v = 0; st.act = 'idle'; st.idle = true; st.t = 0;
+      pose(0, true);
+    }
+    idle();
+    return {
+      proxy,
+      set shot(v) { st.shot = v; },
+      tick(dt, moving) {
+        if (!moving) { if (!st.idle) idle(); return; }
+        if (st.idle) {
+          st.idle = false; st.act = 'phone'; st.t = 0; st.dur = 0.8;
+          // the room opened with things moving: she is already at work, somewhere in the hall behind the racks
+          if (st.fresh) {
+            const far = goals.filter(g => g.kind === 'photo' && g.nd.z < -1.2), list = far.length ? far : goals.filter(g => g.kind === 'photo' && Math.hypot(g.nd.x - camera.position.x, g.nd.z - camera.position.z) > 8);
+            const g = list.length ? list[Math.floor(rnd() * list.length)] : null;
+            if (g) { st.x = g.nd.x; st.z = g.nd.z; st.yaw = st.yaw0 = g.yaw; st.dur = 0.8 + rnd() * 1.2; }
+          }
+        }
+        st.fresh = false;
+        const all = Math.min(dt, 0.5) * st.ts;
+        for (let left = all; left > 1e-6; left -= 1 / 30) step(Math.min(left, 1 / 30));
+        if (all > 0) pose(all);
+      },
+      simulate(sec, every) {
+        const out = [];
+        let acc = 0;
+        for (let t = 0; t < sec; t += 1 / 30) { step(1 / 30); acc += 1 / 30; if (acc >= every) { acc = 0; out.push([+st.x.toFixed(3), +st.z.toFixed(3)]); } }
+        pose(0, true);
+        return out;
+      },
+      state() { return { name: SPY, x: +st.x.toFixed(3), z: +st.z.toFixed(3), yaw: +st.yaw.toFixed(3), act: st.act, goal: st.goal ? st.goal.kind : null, t: +st.t.toFixed(2), flash: flash.visible, idle: st.idle, moving: st.v > 0.05, speed: +st.v.toFixed(2) }; },
+      head: () => root.localToWorld(new THREE.Vector3(0, 1.84, 0)),
+      setTs(v) { st.ts = Math.max(0, Math.min(20, v)); },
+      focus() { const p = new THREE.Vector3(st.x, 1.2, st.z), f = new THREE.Vector3(Math.sin(st.yaw), 0, Math.cos(st.yaw)); return { target: p, pos: p.clone().addScaledVector(f, 2.4).add(V(0.6, 0.35, 0)) }; },
+    };
+  })();
+  // what she says, when clicked: in a bubble over her head, and to the screen reader
+  const bubble = document.createElement('div');
+  bubble.className = 'a3d-bubble a3d-glass'; bubble.setAttribute('aria-hidden', 'true');
+  root.appendChild(bubble);
+  let bubbleT = 0, lastLine = -1;
+  spyRef = spy;
+  function spySay() {
+    let i = Math.floor(Math.random() * SPY_LINES.length);
+    if (i === lastLine) i = (i + 1) % SPY_LINES.length;
+    lastLine = i;
+    bubble.innerHTML = '<b>' + SPY + '</b>' + esc(SPY_LINES[i]);
+    bubble.classList.add('on'); placeBubble();
+    live.textContent = SPY + ' says: ' + SPY_LINES[i];
+    clearTimeout(bubbleT); bubbleT = setTimeout(() => bubble.classList.remove('on'), 5200);
+    invalidate();
+    return SPY_LINES[i];
+  }
+  const _hb = new THREE.Vector3();
+  function placeBubble() {
+    if (!bubble.classList.contains('on')) return;
+    _hb.copy(spy.head()).project(camera);
+    if (_hb.z > 1 || Math.abs(_hb.x) > 1.1 || Math.abs(_hb.y) > 1.1) { bubble.style.visibility = 'hidden'; return; }
+    bubble.style.visibility = '';
+    const r = cv.getBoundingClientRect(), rr = root.getBoundingClientRect();
+    const x = r.left - rr.left + (_hb.x + 1) / 2 * r.width, y = r.top - rr.top + (1 - _hb.y) / 2 * r.height;
+    const top = topBar.getBoundingClientRect().bottom - rr.top + 8;   // never over the bar at the top
+    bubble.style.transform = 'translate3d(' + Math.round(clamp(x - bubble.offsetWidth / 2, 8, rr.width - bubble.offsetWidth - 8)) + 'px,' + Math.round(Math.max(top, y - bubble.offsetHeight - 12)) + 'px,0)';
+  }
+  let spyT = 0;
+
   /* motion: fans, blinking lights, marquees, the beams - only while the room is open and seen */
   let motion = !reduced && prefs.motion !== false;
   function setMotion(on) {
@@ -5040,6 +5826,8 @@ export async function open(opts) {
   motionBtn.setAttribute('aria-pressed', String(motion));
   const _cw = new THREE.Vector3();
   function tick(now) {
+    sky.position.x = camera.position.x; sky.position.z = camera.position.z;   // the sky keeps its distance
+    spy.tick(Math.max(0, T.value - spyT), motion); spyT = T.value;
     for (const p of podium) {
       p.mini.rotation.y = motion ? -Math.PI / 2 + Math.sin(T.value * 0.45 + p.phase) * 0.9 : -Math.PI / 2;
       p.mini.position.y = p.base + (motion ? Math.sin(T.value * 1.3 + p.phase) * 0.008 : 0);
@@ -5057,10 +5845,11 @@ export async function open(opts) {
   }
 
   /* the loop: on demand while still; with motion on, the room's own motion at ~30 fps */
-  // a slow machine finds out in the first seconds of motion: first no occlusion, then no bloom, then fewer pixels
+  // a slow machine finds out in the first seconds of motion: first no far rows and no occlusion, then no bloom, then fewer pixels
   const probe = { n: 0, slow: 0, done: reduced, steps: 0 };
   function lighten() {
-    if (post && post.ao) post.setAO(false);
+    if (hallFar.visible) { hallFar.visible = false; if (post) post.setAO(false); }
+    else if (post && post.ao) post.setAO(false);
     else if (post && post.bloom) post.setBloom(false);
     else {
       renderer.setPixelRatio(Math.max(1, renderer.getPixelRatio() * 0.7));
@@ -5079,7 +5868,7 @@ export async function open(opts) {
       if (probe.n >= 70) {
         if (probe.slow > 36) lighten();
         // after a step down, look again; past three steps there is nothing left to give
-        if (probe.slow > 36 && post && probe.steps < 3) { probe.n = 0; probe.slow = 0; } else probe.done = true;
+        if (probe.slow > 36 && probe.steps < 3) { probe.n = 0; probe.slow = 0; } else probe.done = true;
       }
     }
     lastT = now;
@@ -5087,7 +5876,7 @@ export async function open(opts) {
     if (ambient) T.value += dt;
     let more = runTweens(now);
     if (!keys.size) walkHeld = 0;
-    if (keys.size) { if (walk(dt, shiftKey)) { stopCam(); aligned = -1; atOverview = false; } more = true; }
+    if (keys.size) { if (walk(dt, shiftKey)) { stopCam(); aligned = -1; atOverview = false; spy.shot = null; } more = true; }
     if (controls.update()) more = true;
     clampView();
     const must = dirty || more;
@@ -5098,12 +5887,12 @@ export async function open(opts) {
     if (lodTick()) more = true;
     if (tick(now)) more = true;
     if (post) post.render(scene, camera); else renderer.render(scene, camera);
-    placeMon();
+    placeMon(); placeBubble();
     renders++; lastDraw = now;
     if (more || ambient) { if (!raf) raf = requestAnimationFrame(frame); } else lastT = 0;
   }
   controls.addEventListener('change', invalidate);
-  controls.addEventListener('start', () => { stopCam(); aligned = -1; atOverview = false; hideTips(); endTour(); });
+  controls.addEventListener('start', () => { stopCam(); aligned = -1; atOverview = false; hideTips(); endTour(); spy.shot = null; });
   const onVis = () => { if (!document.hidden) invalidate(); };
   document.addEventListener('visibilitychange', onVis);
 
@@ -5127,7 +5916,7 @@ export async function open(opts) {
       if (disposed || !pendingMove || down) return;
       const hit = pick(pendingMove.x, pendingMove.y);
       setHover(hit && hit.u ? hit.u : null);
-      cv.classList.toggle('hot', !!(hit && (hit.u || hit.act || hit.cart || hit.bench)));
+      cv.classList.toggle('hot', !!(hit && (hit.u || hit.act || hit.cart || hit.bench || hit.npc)));
       showTips(hit && (hit.u || hit.text) ? hit : null, pendingMove.x, pendingMove.y);
     });
   }
@@ -5138,6 +5927,7 @@ export async function open(opts) {
     if (!d || d.moved || d.b !== 0 || performance.now() - d.t > 700) return;
     const hit = pick(e.clientX, e.clientY);
     if (!hit) return;
+    if (hit.npc) { hideTips(); spySay(); return; }   // she never pulls a unit out
     if (hit.act) {
       endTour();
       if (hit.act.kind === 'lang' || hit.act.kind === 'bin') setFilter(hit.act);
@@ -5294,7 +6084,7 @@ export async function open(opts) {
     if (disposed) return;
     disposed = true;
     cancelAnimationFrame(raf); cancelAnimationFrame(moveRaf); raf = moveRaf = 0;
-    clearTimeout(tourTimer); clearTimeout(bootTimer); clearTimeout(toastTimer);
+    clearTimeout(tourTimer); clearTimeout(bootTimer); clearTimeout(toastTimer); if (spyRef) clearTimeout(bubbleT);
     tweens.clear();
     window.removeEventListener('keydown', onKey, true);
     window.removeEventListener('keyup', onKeyUp, true);
@@ -5428,6 +6218,17 @@ export async function open(opts) {
       putBack() { putAllBack(); },
       compared() { return cmp.map(e => ({ letter: e.letter, fw: e.u.fw, sec: e.u.sec.id, state: e.state })); },
       mem() { return texBytes(); },
+      // the visitor's state; o: timeScale, simulate (seconds, sampled every o.sample), say, focus
+      npc(o) {
+        if (o && o.timeScale != null) spy.setTs(+o.timeScale);
+        if (o && o.simulate) return spy.simulate(+o.simulate, +o.sample || 0.2);
+        if (o && o.say) spySay();
+        if (o && o.focus) flyTo(spy.focus(), 500);
+        const r = cv.getBoundingClientRect(), sp = (v) => { v.project(camera); return { x: Math.round(r.left + (v.x + 1) / 2 * r.width), y: Math.round(r.top + (1 - v.y) / 2 * r.height), on: v.z < 1 && Math.abs(v.x) < 1 && Math.abs(v.y) < 1 }; };
+        const s0 = spy.state();
+        return Object.assign(s0, { motion, bubble: bubble.classList.contains('on') ? bubble.textContent : null, head: sp(spy.head()), body: sp(V(s0.x, 1.1, s0.z)) });
+      },
+      npcObstacles() { return { r: SPY_R, boxes: OBS.map(b => b.map(v => +v.toFixed(3))), hall: [HX0, HZ0, HX1, HZ1], foyer: corridor ? [endL, FZ0, HX0, FZ1] : null }; },
       what(x, y) {
         const r = cv.getBoundingClientRect(); ndc.set(((x - r.left) / r.width) * 2 - 1, -((y - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, camera);
         const hits = ray.intersectObjects(scene.children, true).slice(0, 4);
