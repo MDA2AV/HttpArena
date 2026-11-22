@@ -24,7 +24,9 @@
     "latency-1m",
     "json-comp",
     "json-tls",
-    "8gbit"
+    "8gbit",
+    "connections-1m",
+    "connections-1m-tls"
   ],
   "maintainers": ["nigrosimone"]
 }
