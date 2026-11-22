@@ -5,42 +5,22 @@
 #include <hidi/h2server.hpp>
 
 #include <boost/asio/io_context.hpp>
-#include <glaze/json.hpp>
 
 #include <sched.h>
 
 #include <charconv>
 #include <chrono>
 #include <cstdint>
-#include <cstring>
 #include <deque>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <memory>
 #include <optional>
-#include <span>
 #include <string>
 #include <string_view>
 #include <thread>
 #include <unordered_map>
-#include <vector>
-
-// dataset types are outside the anonymous namespace: glaze cannot reflect
-// types with internal linkage
-struct rating_t {
-  int64_t score, count;
-};
-
-// item of /data/dataset.json
-struct item {
-  int64_t id;
-  std::string name, category;
-  int64_t price, quantity;
-  bool active;
-  std::vector<std::string> tags;
-  rating_t rating;
-};
 
 namespace {
 
@@ -107,87 +87,6 @@ std::string_view content_type(std::string_view name) {
 // `data` stays alive and unchanged while it is written
 hidi::streaming_body_t whole(file_data data) {
   co_yield hidi::chunk(*data, /*stable=*/true, /*end_stream=*/true);
-}
-
-// item of the /json response: all fields but `total` do not depend on the
-// request, so they are serialized once
-struct json_item {
-  // {"id":1,...,"rating":{...},"total":
-  std::string prefix;
-  int64_t price_x_quantity;
-};
-
-// /data/dataset.json, parsed once
-const std::vector<json_item> &json_dataset() {
-  static const std::vector<json_item> items = [] {
-    std::vector<item> src;
-    std::string buf;
-    if (auto ec = glz::read_file_json(src, "/data/dataset.json", buf))
-      throw std::runtime_error(glz::format_error(ec, buf));
-    std::vector<json_item> r;
-    for (const item &i : src) {
-      std::string json;
-      if (glz::write_json(i, json))
-        throw std::runtime_error("cannot serialize a dataset item");
-      json.pop_back(); // '}'
-      json += ",\"total\":";
-      r.push_back({std::move(json), i.price * i.quantity});
-    }
-    return r;
-  }();
-  return items;
-}
-
-// value of query parameter `name`, 0 if missing or not a number
-int64_t query_int(std::string_view query, std::string_view name) {
-  while (!query.empty()) {
-    size_t amp = query.find('&');
-    std::string_view kv = query.substr(0, amp);
-    query = amp == query.npos ? std::string_view{} : query.substr(amp + 1);
-    if (kv.size() > name.size() && kv.starts_with(name) &&
-        kv[name.size()] == '=') {
-      int64_t v = 0;
-      std::from_chars(kv.data() + name.size() + 1, kv.data() + kv.size(), v);
-      return v;
-    }
-  }
-  return 0;
-}
-
-// GET /json/{count}?m=M: the first `count` items with
-// total = price * quantity * m, as {"items": [...], "count": count}
-hidi::http_response json_items(size_t count, int64_t m) {
-  const std::vector<json_item> &items = json_dataset();
-  count = std::min(count, items.size());
-  std::span<const json_item> selected = std::span(items).first(count);
-
-  hidi::http_response rsp;
-  rsp.status = 200;
-  rsp.headers.push_back({"content-type", "application/json"});
-  // an int64 takes at most 20 chars, the rest is punctuation
-  size_t max_size = 64;
-  for (const json_item &i : selected)
-    max_size += i.prefix.size() + 22;
-  rsp.body.resize(max_size, hidi::uninitialized_byte);
-  char *const begin = (char *)rsp.body.data();
-  char *p = begin;
-  auto append = [&p](std::string_view s) {
-    std::memcpy(p, s.data(), s.size());
-    p += s.size();
-  };
-  append("{\"items\":[");
-  for (const json_item &i : selected) {
-    if (&i != selected.data())
-      *p++ = ',';
-    append(i.prefix);
-    p = std::to_chars(p, p + 20, i.price_x_quantity * m).ptr;
-    *p++ = '}';
-  }
-  append("],\"count\":");
-  p = std::to_chars(p, p + 20, count).ptr;
-  *p++ = '}';
-  rsp.body.resize(p - begin);
-  return rsp;
 }
 
 // Event loops shared by the TLS and h2c servers: server i of both runs on loop
@@ -259,11 +158,6 @@ struct arena_server final : hidi::h2server {
     }
     if (path.starts_with("/static/") && r.method == hidi::http_method_e::GET)
       co_return serve_static(path.substr(8), r, ctx);
-    if (path.starts_with("/json/") && r.method == hidi::http_method_e::GET) {
-      size_t count = 0;
-      std::from_chars(path.data() + 6, path.data() + path.size(), count);
-      co_return json_items(count, query_int(query, "m"));
-    }
     if (path != "/baseline2" || r.method != hidi::http_method_e::GET) {
       rsp.status = 404;
       co_return rsp;
@@ -313,7 +207,6 @@ hidi::server_endpoint any_address(unsigned short port) {
 
 int main() try {
   const size_t threads = available_cpus();
-  (void)json_dataset();
 
   arena_loops loops(threads);
   hidi::h2server_mt h2(threads, std::in_place_type<arena_server>,

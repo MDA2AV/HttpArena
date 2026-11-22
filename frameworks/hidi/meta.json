@@ -9,8 +9,7 @@
   "tests": [
     "baseline-h2",
     "static-h2",
-    "baseline-h2c",
-    "json-h2c"
+    "baseline-h2c"
   ],
   "maintainers": [
     "kelbon"
