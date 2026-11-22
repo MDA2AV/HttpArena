@@ -12,6 +12,12 @@ COPY --from=build /app/build/libs/ktor-tuned-httparena.jar .
 EXPOSE 8080 8081 8082 8443
 ENTRYPOINT ["java", \
   "-server", \
+  "-XX:+UseContainerSupport", \
+  "-XX:MaxRAMPercentage=50.0", \
+  "-XX:MaxDirectMemorySize=512m", \
+  "-XX:MaxMetaspaceSize=256m", \
+  "-XX:ReservedCodeCacheSize=128m", \
+  "-Xss512k", \
   "-XX:+UseG1GC", \
   "-XX:+UseNUMA", \
   "-XX:+AlwaysPreTouch", \
