@@ -2,6 +2,6 @@
   "name": "httparena-fulmine-uwslite",
   "private": true,
   "dependencies": {
-    "fulmine.js": "^5.34.1"
+    "fulmine.js": "^5.34.2"
   }
 }
