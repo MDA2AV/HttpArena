@@ -114,19 +114,6 @@ struct arena_loops {
   // h2server_mt constructs its servers one by one, server 0 runs on the
   // calling thread
   boost::asio::io_context &take() { return ctxs[next++ % ctxs.size()]; }
-
-  // Loop i stays on cpus[i]: the scheduler would otherwise move a busy thread
-  // to another core, where its connections, buffers and cached files are cold.
-  // The first handler of each loop runs on its thread and pins it
-  void pin(const std::vector<int> &cpus) {
-    for (size_t i = 0; i < ctxs.size(); ++i)
-      boost::asio::post(ctxs[i], [cpu = cpus[i]] {
-        cpu_set_t set;
-        CPU_ZERO(&set);
-        CPU_SET(cpu, &set);
-        pthread_setaffinity_np(pthread_self(), sizeof(set), &set);
-      });
-  }
 };
 
 struct arena_server final : hidi::h2server {
@@ -244,7 +231,6 @@ int main() try {
   const size_t threads = cpus.size();
 
   arena_loops loops(threads);
-  loops.pin(cpus);
   hidi::h2server_mt h2(threads, std::in_place_type<arena_server>,
                        hidi::make_ssl_context_for_server("/certs/server.crt",
                                                          "/certs/server.key"),
