@@ -5,7 +5,7 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates git make \
  && rm -rf /var/lib/apt/lists/*
 ARG OKENA_REPO=https://github.com/Lu4nScr1pt1ng/okena
-ARG OKENA_COMMIT=d44bfb4c00f6c51c78b33ae70472ac0e8e1f6e18
+ARG OKENA_COMMIT=19a954a0dab33f27840073bca7e6a36b664aaee3
 WORKDIR /src
 RUN git init -q okena \
  && git -C okena fetch -q --depth 1 "$OKENA_REPO" "$OKENA_COMMIT" \
