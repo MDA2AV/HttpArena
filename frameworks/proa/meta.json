@@ -21,6 +21,8 @@
     "async",
     "latency-10k",
     "latency-1m",
+    "connections-1m",
+    "connections-1m-tls",
     "json-comp",
     "json-tls",
     "8gbit",

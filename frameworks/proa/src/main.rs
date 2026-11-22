@@ -274,6 +274,7 @@ fn load_tls_config() -> Option<Arc<ServerConfig>> {
         .ok()?;
     config.ignore_client_order = true;
     config.send_half_rtt_data = true;
+    config.send_tls13_tickets = 0;
     config.alpn_protocols = vec![b"http/1.1".to_vec()];
     Some(Arc::new(config))
 }
@@ -322,10 +323,7 @@ async fn serve_plain(listener: TcpListener, app: Router) -> std::io::Result<()> 
         };
         let _ = stream.set_nodelay(true);
         let service = TowerToHyperService::new(app.clone());
-        let h1 = h1.clone();
-        tokio::spawn(async move {
-            let _ = h1.serve_connection(TokioIo::new(stream), service).await;
-        });
+        tokio::spawn(h1.serve_connection(TokioIo::new(stream), service));
     }
 }
 
@@ -374,6 +372,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 if let (Some(tls_cfg), Some(std_tls)) = (tls_config, std_tls) {
                     let tls_app = Router::new()
+                        .route("/baseline11", get(baseline_get).post(baseline_post))
                         .route("/json/{count}", get(json_items_plain))
                         .route("/echo", post(echo_body));
                     serve_tls(
