@@ -4,7 +4,7 @@ use axum::{
     body::Bytes,
     http::{
         HeaderValue, Response, StatusCode,
-        header::{ACCEPT_ENCODING, CONTENT_ENCODING, CONTENT_TYPE, VARY},
+        header::{ACCEPT_ENCODING, CONTENT_ENCODING, CONTENT_LENGTH, CONTENT_TYPE, VARY},
     },
 };
 use quinn::{
@@ -72,6 +72,10 @@ pub fn spawn_h3_worker(
                         let Ok((req, mut stream)) = resolver.resolve_request().await else {
                             return;
                         };
+                        // Drain the request receive stream to FIN so quinn's RecvStream::drop
+                        // does not emit STOP_SENDING(0), which nghttp3/h2load treats as a stream error.
+                        while let Ok(Some(_)) = stream.recv_data().await {}
+
                         let path = req.uri().path();
                         let (resp, body) = if path == "/baseline2" {
                             match baseline_get_bytes(req.uri()) {
@@ -79,6 +83,7 @@ pub fn spawn_h3_worker(
                                     let resp = Response::builder()
                                         .status(StatusCode::OK)
                                         .header(CONTENT_TYPE, TEXT_PLAIN)
+                                        .header(CONTENT_LENGTH, bytes.len())
                                         .body(())
                                         .unwrap();
                                     (resp, bytes)
@@ -97,7 +102,8 @@ pub fn spawn_h3_worker(
                                 Some(file) => {
                                     let mut builder = Response::builder()
                                         .status(StatusCode::OK)
-                                        .header(CONTENT_TYPE, file.content_type);
+                                        .header(CONTENT_TYPE, file.content_type)
+                                        .header(CONTENT_LENGTH, file.body.len());
                                     if let Some(enc) = file.content_encoding {
                                         builder = builder
                                             .header(CONTENT_ENCODING, enc)
