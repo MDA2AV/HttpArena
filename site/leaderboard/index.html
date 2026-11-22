@@ -96,11 +96,11 @@
           <span class="sortctl" id="sortCtl"></span>
           <div class="tgroup" data-cap="View">
             <div class="kbank viewseg" id="viewSeg" role="group" aria-label="View">
-              <button class="vkey" id="rackBtn" type="button" aria-pressed="true"
+              <button class="vkey" id="rackBtn" type="button" aria-pressed="false"
                       data-tip="Rack view: every entry a server unit - its figures on the front panel, its lights blinking at its throughput. Pull a unit out for the details."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3" width="17" height="5" rx="1"/><rect x="3.5" y="9.5" width="17" height="5" rx="1"/><rect x="3.5" y="16" width="17" height="5" rx="1"/></svg><span>Rack</span></button>
               <button class="vkey aisle-btn" id="aisleBtn" type="button" aria-pressed="false"
                       data-tip="Aisle view: step back and see the whole field at once, a row of cabinets with one slim unit per entry. Press a unit to walk up to it."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="3" width="5" height="18" rx="1"/><rect x="9.5" y="3" width="5" height="18" rx="1"/><rect x="16.5" y="3" width="5" height="18" rx="1"/></svg><span>Aisle</span></button>
-              <button class="vkey maint-btn" id="maintBtn" type="button" aria-pressed="false"
+              <button class="vkey maint-btn" id="maintBtn" type="button" aria-pressed="true"
                       data-tip="Old View: the same ranking as a plain table with every column, sortable, with the collapsible name column and the column scroller."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9.5h18M3 15h18M9 4v16M15 4v16"/></svg><span>Old View</span></button>
             </div>
           </div>
@@ -135,16 +135,25 @@
   </div>
 
 <script>
-/* First paint: rack the pre-rendered ranking straight away, before the 1.2 MB of
-   results arrive. The server-rendered table stays in the page (it is what a
-   no-JS reader and a crawler get, and what the maintenance view starts from). */
+/* First paint, before the 1.2 MB of results arrive. The Old View (the plain
+   table, html.maint) is the default: it starts from the server-rendered table,
+   which is also what a no-JS reader and a crawler get. A reader who chose the
+   Rack or the Aisle (sr-view) gets the pre-rendered ranking racked straight
+   away instead. The address decides first, the way restoreFromHash() does. */
 (function(){
-  var rack=document.getElementById('rack'), tb=document.querySelector('#rows table.sb tbody');
-  var maint=false; try{ maint=localStorage.getItem('sr-maint')==='1'; }catch(e){}
-  if(/[#&]table=1/.test(location.hash)) maint=true;
-  if(/[#&]table=0/.test(location.hash)) maint=false;
+  var rack=document.getElementById('rack'), tb=document.querySelector('#rows table.sb tbody'), hs=location.hash;
+  var maint=true; try{ maint=localStorage.getItem('sr-view')!=='rack'; }catch(e){}
+  if(/[#&]table=1/.test(hs)) maint=true;
+  else if(/[#&](table=0|aisle=1|open=[^&])/.test(hs)) maint=false;
   document.documentElement.classList.toggle('maint', maint);
-  if(!rack||!tb||maint||location.hash.length>1||/[?&]round=/.test(location.search)) return;
+  if(!maint){
+    // the view keys say Old View until the board boots; this is the Rack or the Aisle
+    var aisle=/[#&]aisle=1/.test(hs);
+    [['rackBtn',!aisle],['aisleBtn',aisle],['maintBtn',false]].forEach(function(k){ var b=document.getElementById(k[0]); if(b) b.setAttribute('aria-pressed', k[1]?'true':'false'); });
+  }
+  // the ranking pre-rendered is the default board's, so any address but the Rack's own changes what to rack
+  var rest=hs.replace(/^#/,'').split('&').filter(function(s){ return s && s!=='table=0'; }).length;
+  if(!rack||!tb||maint||rest||/[?&]round=/.test(location.search)) return;
   function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   var h='', rows=tb.rows, n=Math.min(rows.length, 60);
   for(var i=0;i<n;i++){
@@ -232,9 +241,12 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // useless as an addressable filter - q=C matches 73 of 78 entries, q=V matches
   // 33. The language rank badges link here, so the field they claim has to be
   // the field the page shows.
-  var state = { view:'composite', profile:null, conns:null, sortKey:'score', sortDir:-1, types:['flagship','emerging'], q:'', lang:'', useMem:false, scope:'h1', showTuned:true, rescale:true, compactFw:false, heat:false, maint:false, aisle:false, open:'' };
-  // The maintenance view (the plain table) is remembered per reader; the rack is the default.
-  try{ state.maint=localStorage.getItem('sr-maint')==='1'; }catch(e){}
+  var state = { view:'composite', profile:null, conns:null, sortKey:'score', sortDir:-1, types:['flagship','emerging'], q:'', lang:'', useMem:false, scope:'h1', showTuned:true, rescale:true, compactFw:false, heat:false, maint:true, aisle:false, open:'' };
+  // The Old View (the plain table, state.maint) is the default. A reader who
+  // chooses the Rack or the Aisle is remembered (sr-view 'rack') until they
+  // choose the Old View again. sr-maint, kept while the Rack was the default,
+  // is dropped unread: everyone starts on the Old View once.
+  try{ state.maint=localStorage.getItem('sr-view')!=='rack'; localStorage.removeItem('sr-maint'); }catch(e){}
 
   // ── parsing helpers ──────────────────────────────────────
   function lat(s){ if(!s) return Infinity; var m=String(s).match(/([\d.]+)\s*(us|ms|s)/); if(!m) return Infinity; var v=parseFloat(m[1]); return m[2]==='us'?v:m[2]==='ms'?v*1e3:v*1e6; }
@@ -778,8 +790,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     var ts=state.types.slice().sort().join(','); if(ts!=='emerging,flagship') p.push('type='+ts);
     if(!state.showTuned) p.push('tuned=0');
     if(state.compactFw) p.push('fw=compact');
-    if(state.maint) p.push('table=1');
-    if(state.aisle && !state.maint) p.push('aisle=1');
+    if(!state.maint) p.push(state.aisle ? 'aisle=1' : 'table=0');   // the Old View is the default (writeHash)
     return esc(p.length ? '#'+p.join('&') : location.pathname+location.search);
   }
   var RAIL_MORE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 7 5 5-5 5M13 7l5 5-5 5"/></svg>';
@@ -1633,8 +1644,10 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     if(state.compactFw) p.push('fw=compact');
     if(state.lang) p.push('lang='+encodeURIComponent(state.lang));
     if(state.q) p.push('q='+encodeURIComponent(state.q));
-    if(state.maint) p.push('table=1');
-    if(state.aisle && !state.maint) p.push('aisle=1');
+    // The Old View is the default and is not written (table=1 still opens it).
+    // The Rack is table=0; the Aisle is aisle=1, which is on the rack by itself,
+    // and so is a pulled-out unit, open= (restoreFromHash).
+    if(!state.maint) p.push(state.aisle ? 'aisle=1' : 'table=0');
     if(A3D && state.aisle && !state.maint) p.push('3d=1');
     if(state.open && !state.maint) p.push('open='+encodeURIComponent(state.open));
     var nh=p.length?('#'+p.join('&')):'';
@@ -1650,7 +1663,11 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     if(p.hasOwnProperty('fw')) state.compactFw = p.fw==='compact';
     state.lang = p.lang || '';
     state.q = p.q || '';
+    // table=1 is the Old View, table=0 the Rack. Without table=, aisle=1 (the
+    // Aisle's own address) and open= (a pulled-out unit, as linked while the Rack
+    // was the default) are on the rack; any other address keeps the view.
     if(p.hasOwnProperty('table')) state.maint = p.table==='1';
+    else if(p.aisle==='1' || p.open) state.maint = false;
     state.open = p.open || '';
     state.aisle = p.aisle==='1';
     state.a3d = state.aisle && p['3d']==='1';
@@ -2898,7 +2915,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     function setView(maint, aisle){
       if(maint ? state.maint : (!state.maint && !!state.aisle===aisle)) return;
       state.maint=maint; if(!maint) state.aisle=aisle;
-      try{ localStorage.setItem('sr-maint', maint?'1':'0'); }catch(e){}
+      try{ localStorage.setItem('sr-view', maint?'table':'rack'); }catch(e){}
       render();
     }
     var rb=document.getElementById('rackBtn'); if(rb) rb.onclick=function(){ setView(false, false); };
