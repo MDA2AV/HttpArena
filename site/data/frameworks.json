@@ -1089,6 +1089,36 @@
       "response": true
     }
   },
+  "hapi-tuned": {
+    "dir": "hapi-tuned",
+    "description": "The hapi entry with three things changed. Each worker binds its own listener with reusePort, created in the entry and handed to hapi, instead of taking connections from the cluster primary. Brotli runs as one synchronous call at quality 1 inside the encoder hapi's compression calls, instead of a zlib stream at quality 3. Cookie parsing, range support and connection tracking for graceful stop are switched off. Routes, query and payload parsing and JSON serialization are the hapi entry's.",
+    "repo": "https://github.com/hapijs/hapi",
+    "type": "flagship",
+    "engine": "node:http",
+    "mode": "tuned",
+    "website": "https://hapi.dev",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
+  "hapi": {
+    "dir": "hapi",
+    "description": "hapi 21 on the Node http server, default configuration, one cluster worker per core. Routing, query and payload parsing, JSON serialization and compression are all hapi built-ins, with brotli (quality 3) registered through hapi's encoder API - no plugins.",
+    "repo": "https://github.com/hapijs/hapi",
+    "type": "flagship",
+    "engine": "node:http",
+    "mode": "standard",
+    "website": "https://hapi.dev",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "helidon-production": {
     "dir": "helidon-production",
     "description": "Helidon SE 27.0.0 on N\u00edma WebServer with Java 27, config-based static content with precompressed sidecars, HTTP/2, gRPC, and WebSocket support.",
