@@ -1,0 +1,6 @@
+{
+  "description": "connections-5m (CON-5M) runs only for the frameworks listed here. Holding five million connections, a server may grow to 128 GiB, so the field is chosen rather than open: subscribing to connections-5m in meta.json is not enough on its own. scripts/lib/framework.sh reads this file.",
+  "frameworks": [
+    "genhttp-ioxide"
+  ]
+}

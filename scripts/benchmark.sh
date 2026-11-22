@@ -183,7 +183,7 @@ done
 # and any combination thereof.
 _has_isolated_test=false
 for t in baseline pipelined limited-conn json-comp json-tls upload \
-         static-tls async-db async latency-1m latency-10k \
+         static-tls async-db async latency-1m latency-10k connections-5m connections-1m-tls connections-1m \
          baseline-h2 static-h2 baseline-h2c json-h2c \
          baseline-h3 static-h3 \
          unary-grpc unary-grpc-tls \
@@ -214,13 +214,48 @@ if { framework_subscribes_to "latency-1m" || framework_subscribes_to "latency-10
     info "zrk: docker mode ($ZRK_IMAGE)"
 fi
 
+# connections-1m runs its own zrk (ZRK_CONN1M_VERSION, tools/zrk.sh): the
+# same Dockerfile at another version, so the pinned image above is untouched.
+# A failed build is not fatal here: the fan-out asks the image for --version
+# and reports the profile as not run, and the other profiles go ahead.
+if framework_subscribes_to "connections-1m" \
+   && [[ " ${profiles_to_run[*]} " == *" connections-1m "* ]] \
+   && [ -z "${ZRK_CONN1M_CMD:-}" ]; then
+    if _zrk_at_least "$ZRK" "$ZRK_CONN1M_VERSION"; then
+        ZRK_CONN1M_CMD="$ZRK"
+    else
+        if ! docker image inspect "$ZRK_CONN1M_IMAGE" >/dev/null 2>&1; then
+            info "building $ZRK_CONN1M_IMAGE (zrk $ZRK_CONN1M_VERSION) for connections-1m"
+            docker build -t "$ZRK_CONN1M_IMAGE" \
+                --build-arg ZRK_VERSION="$ZRK_CONN1M_VERSION" \
+                --build-arg ZRK_SHA256="$ZRK_CONN1M_SHA256" \
+                -f "$ROOT_DIR/docker/zrk.Dockerfile" "$ROOT_DIR/docker" \
+                || warn "$ZRK_CONN1M_IMAGE build failed - connections-1m will not run"
+        fi
+        ZRK_CONN1M_CMD="docker run --rm --network host --cpuset-cpus=$GCANNON_CPUS --security-opt seccomp=unconfined --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576 $ZRK_CONN1M_IMAGE"
+    fi
+    info "zrk for connections-1m: $ZRK_CONN1M_CMD"
+fi
+
 # ── System tuning — NOW, after all image builds are complete ───────────────
 
 if [ "${SKIP_TUNE:-}" != "true" ]; then
     system_tune
+    # Only when this run will hold a million connections; see system.sh.
+    _held=false
+    for _p in "${profiles_to_run[@]}"; do
+        if held_conn_profile "$_p" && framework_subscribes_to "$_p"; then _held=true; break; fi
+    done
+    if $_held; then
+        system_tune_held_connections
+    fi
 else
     info "skipping system tuning as requested (SKIP_TUNE=true)"
 fi
+
+# The socket count a held-connection run waits to get back to (system.sh,
+# held_conn_drain): taken now, with nothing of ours running.
+held_conn_baseline
 
 # Start the postgres sidecar if any subscribed test needs it.
 need_pg=false
@@ -321,13 +356,35 @@ run_one() {
     # three runs, which is not known until all three have happened. Every run is
     # recorded here and the choice is made below.
     local _mdir=""
-    case "$endpoint" in latency-1m|latency-10k|8gbit) _mdir=$(mktemp -d) ;; esac
+    case "$endpoint" in latency-1m|latency-10k|8gbit|connections-5m|connections-1m-tls|connections-1m) _mdir=$(mktemp -d) ;; esac
 
     BEST_M=()
     local run
 
     for run in $(seq 1 "$RUNS"); do
         echo ""; echo "[run $run/$RUNS]"
+
+        # The held-connection profiles give every run a fresh server. One that
+        # has just held five million connections keeps what it grew to after
+        # they close (a GC heap, allocator arenas: genhttp-ioxide still held
+        # ~71 GiB a minute after its 5M run), so the next run would start from
+        # the last one's peak - in its memory check and in its Mem column.
+        # The previous run's server was stopped once its fleet was closed
+        # (below).
+        if [ "$run" -gt 1 ] && held_conn_profile "$endpoint" && ! $is_gateway; then
+            info "starting a fresh $FRAMEWORK for run $run"
+            framework_start "$endpoint" "$PROF_CPU"
+            if ! framework_wait_ready "$endpoint"; then
+                warn "$FRAMEWORK did not come back up for run $run; keeping the runs so far"
+                dump_container_logs "$CONTAINER_NAME" "$FRAMEWORK"
+                break
+            fi
+        fi
+        # ...and connects only once the host has finished closing whatever came
+        # before it: the last run's fleet, or the last profile's.
+        if held_conn_profile "$endpoint" && ! $is_gateway; then
+            held_conn_drain "before run $run"
+        fi
 
         if $is_gateway; then
             # shellcheck disable=SC2086
@@ -367,6 +424,14 @@ run_one() {
         while IFS= read -r line; do
             [[ "$line" == *=* ]] && m["${line%%=*}"]="${line#*=}"
         done <<< "$metrics"
+
+        # connections-5m(-tls) reports the server's CPU over gcannon's measured
+        # window only (scripts/conn_hold.py), connections-1m over the fan-
+        # out's (scripts/zrk_fanout.py). The reading above spans the whole run,
+        # a million connects and closes included, so the window replaces it.
+        if [ -n "${m[cpu_usec_window]:-}" ]; then
+            CPU_ACCT_USEC="${m[cpu_usec_window]}"
+        fi
 
         local rps_int=${m[rps]:-0}
 
@@ -414,7 +479,19 @@ run_one() {
         # for. tcp_tw_reuse lets those be recycled, but at 48K of a 64.5K-port
         # range the connect path starts scanning and the ramp lands inside the
         # measured window. Two seconds is plenty below that.
-        if [ "$CONNS" -ge 32768 ]; then sleep 15; else sleep 2; fi
+        # A held-connection run waits for its fleet to be closed instead of
+        # sleeping (system.sh, held_conn_drain): seconds when gcannon closes it
+        # itself (>= 0.8.3), over a minute at 5M when the kernel does. The
+        # server stays up meanwhile, so it closes its side as the client's go
+        # rather than being killed holding millions; then it is stopped for a
+        # fresh one. After the last run it is left for the profile's cleanup.
+        if held_conn_profile "$endpoint" && ! $is_gateway; then
+            held_conn_drain "after run $run"
+            if [ "$run" -lt "$RUNS" ]; then
+                framework_stop
+            fi
+        elif [ "$CONNS" -ge 32768 ]; then sleep 15
+        else sleep 2; fi
     done
 
     if [ "$best_rps" -lt 0 ]; then
@@ -463,7 +540,7 @@ run_one() {
     echo ""; echo "=== Best: ${best_rps} req/s (CPU: $best_cpu, Mem: $best_mem) ==="
 
     # The fixed-rate profiles' headline number, and the check that it counts.
-    if [ "$endpoint" = "latency-1m" ] || [ "$endpoint" = "latency-10k" ] || [ "$endpoint" = "8gbit" ]; then
+    if [ "$endpoint" = "latency-1m" ] || [ "$endpoint" = "latency-10k" ] || [ "$endpoint" = "8gbit" ] || held_conn_profile "$endpoint"; then
         # Two different failures that used to print the same line. "No CPU
         # reading" is a cgroup problem; "no requests" is a generator or server
         # problem, and saying the former when it is the latter sent the first
@@ -495,6 +572,23 @@ run_one() {
            && awk -v r="$best_rate_ratio" 'BEGIN{exit !(r+0 < 0.98)}'; then
             warn "offered rate fell short: rate_ratio=$best_rate_ratio (target ${BEST_M[target_rate]:-?}/s)"
             warn "  the CPU number is not comparable with runs that held the rate"
+        fi
+    fi
+
+    # The held-connection profiles: whether the fleet was actually held. The
+    # rate alone cannot say it - a connection that never opened sends nothing,
+    # which reads as a rate shortfall - so gcannon reports the connections
+    # still open at the end of its window, and zrk's fan-out counts the
+    # server's established sockets after it.
+    if held_conn_profile "$endpoint"; then
+        if [ -n "${BEST_M[hold_error]:-}" ]; then
+            warn "$endpoint did not run: ${BEST_M[hold_error]}"
+        else
+            echo "=== Connections: ${BEST_M[connections_open]:-n/a} open of $CONNS | connect errors in the window ${BEST_M[connect_errors]:-n/a} ==="
+            if [ -n "${BEST_M[connections_open]:-}" ] \
+               && [ "${BEST_M[connections_open]}" -lt $(( CONNS * 99 / 100 )) ] 2>/dev/null; then
+                warn "held ${BEST_M[connections_open]} of $CONNS connections through the window"
+            fi
         fi
     fi
 
@@ -590,7 +684,7 @@ save_result() {
     # not the load, so the reason ships with the row rather than being inferred
     # from an rps that looks merely slow.
     local eff_extra=""
-    if [ "$profile" = "latency-1m" ] || [ "$profile" = "latency-10k" ] || [ "$profile" = "8gbit" ]; then
+    if [ "$profile" = "latency-1m" ] || [ "$profile" = "latency-10k" ] || [ "$profile" = "8gbit" ] || held_conn_profile "$profile"; then
         local _eff_reqs=${BEST_M[status_2xx]:-0}
         local _eff_per_req="null"
         if [ -n "$best_cpu_usec" ] && [ "$_eff_reqs" -gt 0 ] 2>/dev/null; then
@@ -602,6 +696,14 @@ save_result() {
   \"target_rate\": ${BEST_M[target_rate]:-0},
   \"rate_ratio\": ${best_rate_ratio:-0},
   \"p99_9_latency\": \"${BEST_M[p999_lat]:-}\""
+        # How much of the fleet was held, next to what it cost to hold it, and
+        # the median the held-connection score weighs with the p99.
+        if held_conn_profile "$profile"; then
+            eff_extra="$eff_extra,
+  \"p50_latency\": \"${BEST_M[p50_lat]:-}\",
+  \"connections_open\": ${BEST_M[connections_open]:-null},
+  \"window_connect_errors\": ${BEST_M[connect_errors]:-null}"
+        fi
     fi
 
     local cpu_extra=""
@@ -668,6 +770,10 @@ failed_profiles=0
 for profile in "${profiles_to_run[@]}"; do
     if [ -z "${PROFILES[$profile]+x}" ]; then
         warn "unknown profile: $profile"
+        continue
+    fi
+    if [ "$profile" = "connections-5m" ] && echo ",$FRAMEWORK_TESTS," | grep -qF ",connections-5m," && ! conn5m_allowed; then
+        info "skip: $FRAMEWORK subscribes to connections-5m but is not on scripts/connections-5m-allowlist.json"
         continue
     fi
     framework_subscribes_to "$profile" || { info "skip: $FRAMEWORK does not subscribe to $profile"; continue; }

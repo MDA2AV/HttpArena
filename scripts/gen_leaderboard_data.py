@@ -60,6 +60,27 @@ CATALOG = [
         # application handler to await in.
         ("async", "Async Delay", "A 10ms wait named in the route, at 32K held connections.",
                                                     [32000],             [32000],         True,True,False),
+        # The held-connection profiles: a fleet of keep-alive connections held
+        # open, with the baseline GET paced across it at one request per
+        # connection every four seconds. They sit here because what they vary is
+        # how many connections are open, which is this group's question. Paced,
+        # so they carry a fixed-rate score (latency_score.HELD): what holding the
+        # fleet costs - CPU per request, memory, p50 and p99 - against the best
+        # in the field, times the share of the rate delivered.
+        #
+        # CON-1M: a million at 250K req/s on zrk 3.0.2, one process per loopback
+        # address (scripts/zrk_fanout.py). CON-1M-TLS: a million TLS 1.3 sessions
+        # at 250K req/s on gcannon. Both scored for frameworks and engines, not
+        # infrastructure, like the other fixed-rate profiles.
+        ("connections-1m", "CON-1M", "Score out of 100: CPU per request, memory, p50 and p99 latency with one million held connections at 250K req/s.",
+                                                    [1000000],           [1000000],       True,True,False),
+        ("connections-1m-tls", "CON-1M-TLS", "Score out of 100: CPU per request, memory, p50 and p99 latency with one million TLS 1.3 sessions held at 250K req/s.",
+                                                    [1000000],           [1000000],       True,True,False),
+        # CON-5M: five million at 1.25M req/s on gcannon. Reference-only, and it
+        # runs only for the entries on scripts/connections-5m-allowlist.json: the
+        # server may grow to 128 GiB, so the field is chosen rather than open.
+        ("connections-5m", "CON-5M", "Score out of 100 (reference): CPU per request, memory, p50 and p99 latency with five million held connections at 1.25M req/s.",
+                                                    [5000000],           [5000000],       False,False,False),
     ]),
     ("Efficiency", [
         # Scored, on the same terms as latency-1m below: the rate is pinned, so
@@ -146,7 +167,7 @@ TPL_FIELDS = ("tpl_baseline", "tpl_json", "tpl_upload", "tpl_static", "tpl_async
 # Efficiency-only. Emitted like TPL_FIELDS - only where present - so the
 # other ~2,300 rows in data.js do not each grow four nulls.
 EFF_FIELDS = ("cpu_usec", "cpu_per_req_us", "rate_ratio", "target_rate",
-              "p99_9_latency")
+              "p99_9_latency", "connections_open", "p50_latency")
 
 # Map each benchmark profile to its Knowledge Base "Implementation Guidelines"
 # page (docs ids differ from profile ids; TLS gRPC variants share one page).
@@ -161,6 +182,9 @@ PROFILE_DOC = {
     "async":            "test-profiles/h1/async/implementation",
     "latency-1m":      "test-profiles/h1/latency-1m/implementation",
     "latency-10k":     "test-profiles/h1/latency-10k/implementation",
+    "connections-1m":     "test-profiles/h1/connections/implementation",
+    "connections-1m-tls": "test-profiles/h1/connections/implementation",
+    "connections-5m":     "test-profiles/h1/connections/implementation",
     # The database profiles rank on their own board but keep their docs under
     # h1/: those pages are linked from outside, so their URLs stay.
     "async-db":         "test-profiles/h1/async-database/implementation",
@@ -1253,12 +1277,18 @@ _LAT_CACHE: dict[str, dict] = {}
 def lat_scores(pid):
     if pid in _LAT_CACHE:
         return _LAT_CACHE[pid]
+    # The exact profile's keys: "connections-1m-" also starts every
+    # "connections-1m-tls-<conns>" key. p50 and mem are read by the
+    # held-connection profiles' score only (latency_score.HELD).
     rows = [{"fw": r.get("framework") or r.get("fw"),
              "rps": r.get("rps") or 0,
              "cpu": r.get("cpu_per_req_us"),
              "p99": _lat.to_us(r.get("p99_latency")),
-             "mean": _lat.to_us(r.get("avg_latency"))}
-            for key, rs in RESULTS.items() if key.startswith(pid + "-")
+             "mean": _lat.to_us(r.get("avg_latency")),
+             "p50": _lat.to_us(r.get("p50_latency")),
+             "mem": _lat.to_mib(r.get("memory"))}
+            for key, rs in RESULTS.items()
+            if key.startswith(pid + "-") and key[len(pid) + 1:].isdigit()
             for r in rs]
     out: dict = {}
     if rows:
