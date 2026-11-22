@@ -207,6 +207,8 @@ fn load_tls_config(
         .with_no_client_auth()
         .with_single_cert(certs, private)
         .expect("bad certificate/key pair");
+    // Load clients never resume sessions, so skip issuing TLS 1.3 tickets.
+    tls.send_tls13_tickets = 0;
     tls.alpn_protocols = alpn.iter().map(|p| p.to_vec()).collect();
     Ok(tls)
 }
