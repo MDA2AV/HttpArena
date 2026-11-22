@@ -280,7 +280,7 @@ pub fn main(init: std.process.Init) !void {
     };
     var server = http.Server(void).init(init.gpa, rt.io(), .{
         .listeners = if (have_certs) &listeners else listeners[0..1],
-        .max_connections = 65_536,
+        .max_connections = null,
     }, {});
     defer server.deinit();
 
