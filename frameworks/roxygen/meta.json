@@ -1,0 +1,17 @@
+{
+  "display_name": "roxygen",
+  "language": "Rust",
+  "type": "engine",
+  "engine": "roxygen",
+  "description": "Meta's Roxygen, an HTTP/1.1 and HTTP/2 library that brings Proxygen's design to Rust. Serves h2c and HTTP/2 over rustls on Roxygen's owned HTTP/2 driver, which polls every stream of a connection from one future instead of running a task per request.",
+  "repo": "https://github.com/facebookincubator/roxygen",
+  "enabled": true,
+  "spec": ["h2"],
+  "tests": [
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c"
+  ],
+  "maintainers": ["mjoras"]
+}
