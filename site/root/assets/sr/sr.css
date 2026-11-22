@@ -1783,6 +1783,16 @@ html:not([data-theme="dark"]) .str-m::after{filter:none}
 #grid .row .meter{flex-direction:row; justify-content:flex-end; align-items:center; gap:0; padding:3px 7px !important}
 #grid .row .meter .bar{position:absolute; left:7px; right:7px; bottom:2px; width:auto; height:2px}
 
+/* ── the Old View: a favourite lights its whole row ──
+   The user: "when selecting a favourite on old view, highlight the whole row".
+   The softer table paints every cell with the panel by id, which outweighed the
+   favourite tint of the rules further up: only the star and the gold edge on
+   the rank were left. Every cell of the row takes it again, the frozen ones
+   too, so the row stays lit end to end when the table scrolls sideways. */
+#grid .cm tbody tr.fav td, #grid .row.fav{background:var(--fav-bg)}
+#grid .cm tbody tr.fav:hover td, #grid .row.fav:hover{background:var(--fav-bg-h)}
+#grid .cm tbody tr.fav .nm, #grid .row.fav .nm{font-weight:700}
+
 /* ── the locator LED: on, the whole unit lights blue, end to end (rack and aisle) ── */
 .unit.fav>.face{background-image:linear-gradient(90deg, color-mix(in srgb, var(--led-b) 22%, transparent), color-mix(in srgb, var(--led-b) 9%, transparent) 40%, color-mix(in srgb, var(--led-b) 9%, transparent) 60%, color-mix(in srgb, var(--led-b) 22%, transparent)), var(--face)}
 .unit.fav:not(.out)>.face{box-shadow:inset 0 0 0 1px var(--led-b), inset 0 0 20px -7px var(--led-b), 0 0 14px -5px var(--led-b)}
