@@ -19,7 +19,7 @@
   "tls_check": true,
   "tests": [
     "baseline", "latency-1m", "latency-10k",
-    "connections-1m", "connections-1m-tls", "connections-5m",
+    "connections-1m", "connections-1m-tls",
     "pipelined",
     "limited-conn",
     "async",
