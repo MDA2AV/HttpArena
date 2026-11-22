@@ -218,7 +218,7 @@ const ALPN_H1: &[&[u8]] = &[b"http/1.1"];
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-#[ntex::main(timer_resolution = 2)]
+#[ntex::main(timer_resolution = 1)]
 async fn main() -> std::io::Result<()> {
     // Leaked once at startup so handlers borrow the items instead of cloning
     // every string into each response.
