@@ -65,9 +65,10 @@ app.get('/pipeline', (req, res) => {
 });
 
 // GET and POST registered apart: each one goes native on uWS, and the GET reads no header.
-app.get('/baseline11', (req, res) => {
+const baseline = (req, res) => {
     res.type('text/plain').send(String(sumQuery(req.query)));
-});
+};
+app.get('/baseline11', baseline);
 
 // the load generator sends no Content-Type, so the parser reads any body
 app.post('/baseline11', readText, (req, res) => {
@@ -254,12 +255,13 @@ app.uwsApp.ws('/ws', {
     message: (ws, message, isBinary) => ws.send(message, isBinary)
 });
 
-// json-tls, static-tls and 8gbit over TLS on 8081, when the harness mounts the certs.
+// json-tls, static-tls, 8gbit and connections-1m-tls over TLS on 8081, when the harness mounts the certs.
 // https://fulmine.sndesign.it/examples/https
 const tlsApp = (dir) => {
     const target = configure(express({
         uwsOptions: { key_file_name: dir + '/server.key', cert_file_name: dir + '/server.crt' }
     }));
+    target.get('/baseline11', baseline);
     registerJsonRoute(target);
     registerStaticRoute(target);
     registerEchoRoute(target);
