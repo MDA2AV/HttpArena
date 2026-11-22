@@ -8,7 +8,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # hidi and its dependencies (Boost, AWS-LC, kelcoro, ...) are fetched by hidi's CMake (CPM)
-ARG HIDI_COMMIT=8687cd183c8ece3ba839678f211847c9838fbaf7
+ARG HIDI_COMMIT=9335f1768c1a2d07e46fb9205c10a53736bfb170
 RUN git clone --filter=blob:none https://github.com/kelbon/hidi.git /src/hidi \
     && git -C /src/hidi checkout ${HIDI_COMMIT}
 
