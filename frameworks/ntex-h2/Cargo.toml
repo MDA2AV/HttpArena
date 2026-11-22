@@ -5,8 +5,8 @@ edition = "2024"
 rust-version = "1.97"
 
 [dependencies]
-mimalloc = { version = "0.1", default-features = false }
-ntex = { version = "4.9", default-features = false, features = ["rustls"] }
+mimalloc = { version = "0.1", default-features = false, features = ["v2"] }
+ntex = { version = "4.10", default-features = false, features = ["rustls"] }
 ntex-files = "4.6"
 rustls = { version = "0.23", default-features = false, features = ["ring", "logging", "std", "tls12"] }
 serde = { version = "1", features = ["derive"] }

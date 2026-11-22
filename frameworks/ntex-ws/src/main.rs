@@ -68,8 +68,13 @@ async fn echo<F: Filter>(io: &Io<F>) {
             // checks the sequence, and the UTF-8 of a text message across it.
             ws::Frame::Continuation(item) => ws::Message::Continuation(item),
             ws::Frame::Ping(msg) => ws::Message::Pong(msg),
+            // Echo the peer's code. A server cannot send every code it can
+            // receive (1010 is client-only), so answer those with 1000.
             ws::Frame::Close(reason) => {
-                let _ = io.encode(ws::Message::Close(reason), &codec);
+                if io.encode(ws::Message::Close(reason), &codec).is_err() {
+                    let normal = ws::CloseCode::Normal.into();
+                    let _ = io.encode(ws::Message::Close(Some(normal)), &codec);
+                }
                 break;
             }
             ws::Frame::Pong(_) => continue,

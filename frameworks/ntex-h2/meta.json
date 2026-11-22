@@ -14,5 +14,5 @@
     "json-h2c",
     "static-h2"
   ],
-  "maintainers": []
+  "maintainers": ["fafhrd91"]
 }

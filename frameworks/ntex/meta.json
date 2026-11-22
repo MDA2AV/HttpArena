@@ -20,6 +20,8 @@
     "async",
     "latency-1m",
     "latency-10k",
+    "connections-1m",
+    "connections-1m-tls",
     "pipelined",
     "limited-conn",
     "json-comp",
@@ -29,5 +31,5 @@
     "async-db",
     "fortunes"
   ],
-  "maintainers": []
+  "maintainers": ["fafhrd91"]
 }
