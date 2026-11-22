@@ -6,11 +6,13 @@
 
 #include <boost/asio/io_context.hpp>
 
+#include <pthread.h>
 #include <sched.h>
 
 #include <charconv>
 #include <chrono>
 #include <cstdint>
+#include <ctime>
 #include <deque>
 #include <filesystem>
 #include <fstream>
@@ -21,10 +23,19 @@
 #include <string_view>
 #include <thread>
 #include <unordered_map>
+#include <vector>
 
 namespace {
 
 using file_data = std::shared_ptr<const std::string>;
+
+// The disk is checked at most every 100 ms, a clock with a few ms resolution is
+// enough for that, and it is several times cheaper than steady_clock
+std::chrono::nanoseconds coarse_now() {
+  timespec t;
+  clock_gettime(CLOCK_MONOTONIC_COARSE, &t);
+  return std::chrono::seconds(t.tv_sec) + std::chrono::nanoseconds(t.tv_nsec);
+}
 
 // Files of /data/static as one thread sees them (h2server_mt creates a server
 // per thread). A file is checked on disk at most every 100 ms
@@ -32,15 +43,15 @@ struct static_files {
   struct file {
     file_data data; // nullptr if there is no file
     std::filesystem::file_time_type mtime;
-    std::chrono::steady_clock::time_point checked;
+    std::chrono::nanoseconds checked;
   };
   std::unordered_map<std::string, file> files;
 
   // nullptr if there is no such file. `remember_missing`: a missing file is
   // checked again only after 100 ms too (only for paths not taken from
   // requests, otherwise any request would grow the table)
-  file_data get(const std::string &path, bool remember_missing) {
-    auto now = std::chrono::steady_clock::now();
+  file_data get(const std::string &path, bool remember_missing,
+                std::chrono::nanoseconds now) {
     auto [it, inserted] = files.try_emplace(path);
     file &f = it->second;
     if (!inserted && now - f.checked < std::chrono::milliseconds(100))
@@ -103,6 +114,19 @@ struct arena_loops {
   // h2server_mt constructs its servers one by one, server 0 runs on the
   // calling thread
   boost::asio::io_context &take() { return ctxs[next++ % ctxs.size()]; }
+
+  // Loop i stays on cpus[i]: the scheduler would otherwise move a busy thread
+  // to another core, where its connections, buffers and cached files are cold.
+  // The first handler of each loop runs on its thread and pins it
+  void pin(const std::vector<int> &cpus) {
+    for (size_t i = 0; i < ctxs.size(); ++i)
+      boost::asio::post(ctxs[i], [cpu = cpus[i]] {
+        cpu_set_t set;
+        CPU_ZERO(&set);
+        CPU_SET(cpu, &set);
+        pthread_setaffinity_np(pthread_self(), sizeof(set), &set);
+      });
+  }
 };
 
 struct arena_server final : hidi::h2server {
@@ -116,8 +140,9 @@ struct arena_server final : hidi::h2server {
                                    const hidi::http_request &r,
                                    hidi::request_context &ctx) {
     std::string path = "/data/static/" + std::string(name);
+    auto now = coarse_now();
     file_data data = name.find('/') == name.npos
-                         ? statics.get(path, /*remember_missing=*/false)
+                         ? statics.get(path, /*remember_missing=*/false, now)
                          : nullptr;
     if (!data) {
       hidi::http_response rsp;
@@ -133,12 +158,14 @@ struct arena_server final : hidi::h2server {
     // pre-compressed copies sit next to the file on disk
     const char *encoding = nullptr;
     if (accept_encoding.find("br") != accept_encoding.npos)
-      if (file_data br = statics.get(path + ".br", /*remember_missing=*/true)) {
+      if (file_data br =
+              statics.get(path + ".br", /*remember_missing=*/true, now)) {
         data = std::move(br);
         encoding = "br";
       }
     if (!encoding && accept_encoding.find("gzip") != accept_encoding.npos)
-      if (file_data gz = statics.get(path + ".gz", /*remember_missing=*/true)) {
+      if (file_data gz =
+              statics.get(path + ".gz", /*remember_missing=*/true, now)) {
         data = std::move(gz);
         encoding = "gzip";
       }
@@ -188,11 +215,18 @@ struct arena_server final : hidi::h2server {
 
 // CPUs this process may run on (respects the container cpuset), not every CPU
 // of the host
-size_t available_cpus() {
+std::vector<int> available_cpus() {
+  std::vector<int> cpus;
   cpu_set_t set;
-  if (sched_getaffinity(0, sizeof(set), &set) == 0 && CPU_COUNT(&set) > 0)
-    return size_t(CPU_COUNT(&set));
-  return std::max(1u, std::thread::hardware_concurrency());
+  if (sched_getaffinity(0, sizeof(set), &set) == 0)
+    for (int cpu = 0; cpu < CPU_SETSIZE; ++cpu)
+      if (CPU_ISSET(cpu, &set))
+        cpus.push_back(cpu);
+  if (cpus.empty())
+    for (int cpu = 0;
+         cpu < int(std::max(1u, std::thread::hardware_concurrency())); ++cpu)
+      cpus.push_back(cpu);
+  return cpus;
 }
 
 hidi::server_endpoint any_address(unsigned short port) {
@@ -206,9 +240,11 @@ hidi::server_endpoint any_address(unsigned short port) {
 } // namespace
 
 int main() try {
-  const size_t threads = available_cpus();
+  const std::vector<int> cpus = available_cpus();
+  const size_t threads = cpus.size();
 
   arena_loops loops(threads);
+  loops.pin(cpus);
   hidi::h2server_mt h2(threads, std::in_place_type<arena_server>,
                        hidi::make_ssl_context_for_server("/certs/server.crt",
                                                          "/certs/server.key"),
