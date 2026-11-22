@@ -1,5 +1,9 @@
 # Proa
 
-Proa compiles the Fortunes HTML component and serves HTTP/1.1 (with TLS 1.3 on `:8081` via `rustls`/`aws-lc-rs`) over thread-per-core Axum/Hyper workers with `mimalloc` v2, `SO_REUSEPORT`, `TCP_NODELAY`, `sonic-rs`, thread-local `libdeflater` gzip compression, and per-worker `deadpool-postgres` pools.
+Proa compiles the Fortunes HTML component and serves HTTP/1.1, HTTP/2 (TLS + h2c), HTTP/3 (QUIC), gRPC, and WebSocket over thread-per-core Axum/Hyper workers with `mimalloc` v2, `SO_REUSEPORT`, `TCP_NODELAY`, `sonic-rs`, thread-local `libdeflater` gzip compression, TLS 1.3 (`TLS_AES_128_GCM_SHA256` via `aws-lc-rs`), `quinn` + `h3`, and per-worker `deadpool-postgres` pools.
 
-On `/fortunes`, each request queries PostgreSQL, borrows row strings, appends the runtime row, sorts in byte order, and renders escaped HTML directly into one owned response buffer. The remaining HTTP/1.1 profiles exercise the same Axum/Hyper server stack (`sonic-rs` + `libdeflater` gzip on `/json/{count}`, zero-copy `/echo` over TLS, `/async-db`, `/baseline11`, `/pipeline`, and `/delay/{ms}`).
+- **`:8080` TCP**: HTTP/1.1 (`/baseline11`, `/pipeline`, `/delay/{ms}`, `/json/{count}`, `/echo`, `/async-db`, `/fortunes`), WebSocket (`/ws`), and cleartext h2c gRPC (`/benchmark.BenchmarkService/GetSum`).
+- **`:8081` TCP (TLS 1.3, ALPN `http/1.1`)**: `/baseline11`, `/json/{count}`, and zero-copy `/echo`.
+- **`:8082` TCP (h2c)**: `/baseline2` and `/json/{count}`.
+- **`:8443` TCP (TLS 1.3, ALPN `h2`)**: `/baseline2`, `/static/*` (read fresh from disk with `.br`/`.gz` precompressed selection), and TLS gRPC (`/benchmark.BenchmarkService/GetSum`).
+- **`:8443` UDP (QUIC / TLS 1.3, ALPN `h3`)**: per-worker `SO_REUSEPORT` `quinn` + `h3` serving `/baseline2` and `/static/*`.

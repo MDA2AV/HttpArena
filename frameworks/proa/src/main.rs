@@ -1,11 +1,15 @@
 mod fortunes;
+mod grpc;
+mod h3_server;
+mod static_files;
+mod ws;
 
 use std::{
     cell::RefCell,
     convert::Infallible,
     env,
     fs::File,
-    io::BufReader,
+    io::{self, BufReader},
     net::SocketAddr,
     pin::Pin,
     sync::{Arc, LazyLock},
@@ -31,14 +35,21 @@ use deadpool_postgres::{
 };
 use http_body::{Body as HttpBody, Frame, SizeHint};
 use http_body_util::BodyExt as _;
-use hyper::server::conn::http1;
-use hyper_util::{rt::TokioIo, service::TowerToHyperService};
+use hyper::server::conn::{http1, http2};
+use hyper_util::{
+    rt::{TokioExecutor, TokioIo},
+    service::TowerToHyperService,
+};
 use libdeflater::{CompressionLvl, Compressor};
 use proa::{WebContext, WebRenderSync};
 use rustls::ServerConfig;
 use serde::{Deserialize, Serialize};
 use socket2::{Domain, Protocol, Socket, Type};
-use tokio::{net::TcpListener, time::sleep};
+use tokio::{
+    io::{AsyncRead, AsyncReadExt, AsyncWrite, ReadBuf},
+    net::{TcpListener, TcpStream},
+    time::sleep,
+};
 use tokio_rustls::TlsAcceptor;
 
 use crate::fortunes::{Fortune, Fortunes};
@@ -248,16 +259,19 @@ impl HttpBody for EchoBody {
     }
 }
 
-fn load_tls_config() -> Option<Arc<ServerConfig>> {
-    let cert_path = env::var("TLS_CERT").unwrap_or_else(|_| "/certs/server.crt".to_string());
-    let key_path = env::var("TLS_KEY").unwrap_or_else(|_| "/certs/server.key".to_string());
-    let cert_file = File::open(cert_path).ok()?;
-    let key_file = File::open(key_path).ok()?;
-    let certs: Vec<_> = rustls_pemfile::certs(&mut BufReader::new(cert_file))
-        .collect::<Result<_, _>>()
-        .ok()?;
-    let key = rustls_pemfile::private_key(&mut BufReader::new(key_file)).ok()??;
+const H2_PREFACE: &[u8; 4] = b"PRI ";
 
+struct TlsBundle {
+    h1: Arc<ServerConfig>,
+    h2: Arc<ServerConfig>,
+    h3: Option<quinn::ServerConfig>,
+}
+
+fn build_tls_config(
+    certs: Vec<rustls::pki_types::CertificateDer<'static>>,
+    key: rustls::pki_types::PrivateKeyDer<'static>,
+    alpn: &[&[u8]],
+) -> Option<Arc<ServerConfig>> {
     // Prefer TLS_AES_128_GCM_SHA256 over AES-256-GCM for faster bulk AES-NI throughput
     // while enforcing TLS 1.3 AEAD-only posture.
     let mut provider = rustls::crypto::aws_lc_rs::default_provider();
@@ -274,11 +288,29 @@ fn load_tls_config() -> Option<Arc<ServerConfig>> {
         .ok()?;
     config.ignore_client_order = true;
     config.send_half_rtt_data = true;
-    config.alpn_protocols = vec![b"http/1.1".to_vec()];
+    config.send_tls13_tickets = 0;
+    config.alpn_protocols = alpn.iter().map(|p| p.to_vec()).collect();
     Some(Arc::new(config))
 }
 
-fn reuseport_listener(addr: SocketAddr) -> std::io::Result<std::net::TcpListener> {
+fn load_tls_bundle() -> Option<TlsBundle> {
+    let cert_path = env::var("TLS_CERT").unwrap_or_else(|_| "/certs/server.crt".to_string());
+    let key_path = env::var("TLS_KEY").unwrap_or_else(|_| "/certs/server.key".to_string());
+    let cert_file = File::open(cert_path).ok()?;
+    let key_file = File::open(key_path).ok()?;
+    let certs: Vec<_> = rustls_pemfile::certs(&mut BufReader::new(cert_file))
+        .collect::<Result<_, _>>()
+        .ok()?;
+    let key = rustls_pemfile::private_key(&mut BufReader::new(key_file)).ok()??;
+
+    let h1 = build_tls_config(certs.clone(), key.clone_key(), &[b"http/1.1"])?;
+    let h2 = build_tls_config(certs.clone(), key.clone_key(), &[b"h2"])?;
+    let h3_tls = build_tls_config(certs, key, &[b"h3"])?;
+    let h3 = h3_server::build_quinn_config(h3_tls);
+    Some(TlsBundle { h1, h2, h3 })
+}
+
+fn reuseport_listener(addr: SocketAddr) -> io::Result<std::net::TcpListener> {
     let sock = Socket::new(Domain::IPV4, Type::STREAM, Some(Protocol::TCP))?;
     sock.set_reuse_address(true)?;
     #[cfg(unix)]
@@ -289,7 +321,109 @@ fn reuseport_listener(addr: SocketAddr) -> std::io::Result<std::net::TcpListener
     Ok(sock.into())
 }
 
-fn serve_tls(listener: TcpListener, acceptor: TlsAcceptor, app: Router) {
+fn build_h2() -> http2::Builder<TokioExecutor> {
+    let mut h2 = http2::Builder::new(TokioExecutor::new());
+    h2.max_concurrent_streams(256)
+        .initial_stream_window_size(1024 * 1024)
+        .initial_connection_window_size(4 * 1024 * 1024)
+        .max_frame_size(65535)
+        .adaptive_window(false);
+    h2
+}
+
+struct PrefixedStream {
+    prefix: [u8; 4],
+    pos: usize,
+    len: usize,
+    inner: TcpStream,
+}
+
+impl AsyncRead for PrefixedStream {
+    fn poll_read(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<io::Result<()>> {
+        if self.pos < self.len {
+            let rem = self.len - self.pos;
+            let take = rem.min(buf.remaining());
+            buf.put_slice(&self.prefix[self.pos..self.pos + take]);
+            self.pos += take;
+            return Poll::Ready(Ok(()));
+        }
+        Pin::new(&mut self.inner).poll_read(cx, buf)
+    }
+}
+
+impl AsyncWrite for PrefixedStream {
+    fn poll_write(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<io::Result<usize>> {
+        Pin::new(&mut self.inner).poll_write(cx, buf)
+    }
+
+    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        Pin::new(&mut self.inner).poll_flush(cx)
+    }
+
+    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        Pin::new(&mut self.inner).poll_shutdown(cx)
+    }
+
+    fn poll_write_vectored(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        bufs: &[io::IoSlice<'_>],
+    ) -> Poll<io::Result<usize>> {
+        Pin::new(&mut self.inner).poll_write_vectored(cx, bufs)
+    }
+
+    fn is_write_vectored(&self) -> bool {
+        self.inner.is_write_vectored()
+    }
+}
+
+async fn serve_ambiguous_prefix(
+    mut stream: TcpStream,
+    h1: http1::Builder,
+    h2: http2::Builder<TokioExecutor>,
+    h1_app: Router,
+    grpc_app: Router,
+) {
+    let mut prefix = [0u8; 4];
+    let mut len = 0usize;
+    while len < 4 {
+        match stream.read(&mut prefix[len..4]).await {
+            Ok(0) | Err(_) => return,
+            Ok(n) => {
+                len += n;
+                if prefix[..len] != H2_PREFACE[..len] {
+                    break;
+                }
+            }
+        }
+    }
+    let io = TokioIo::new(PrefixedStream {
+        prefix,
+        pos: 0,
+        len,
+        inner: stream,
+    });
+    if len == 4 && &prefix == H2_PREFACE {
+        let _ = h2
+            .serve_connection(io, TowerToHyperService::new(grpc_app))
+            .await;
+    } else {
+        let _ = h1
+            .serve_connection(io, TowerToHyperService::new(h1_app))
+            .with_upgrades()
+            .await;
+    }
+}
+
+fn serve_tls_h1(listener: TcpListener, acceptor: TlsAcceptor, app: Router) {
     tokio::spawn(async move {
         let mut h1 = http1::Builder::new();
         h1.keep_alive(true).pipeline_flush(true);
@@ -313,18 +447,82 @@ fn serve_tls(listener: TcpListener, acceptor: TlsAcceptor, app: Router) {
     });
 }
 
-async fn serve_plain(listener: TcpListener, app: Router) -> std::io::Result<()> {
+fn serve_h2c(listener: TcpListener, app: Router) {
+    tokio::spawn(async move {
+        let h2 = build_h2();
+        loop {
+            let Ok((stream, _)) = listener.accept().await else {
+                continue;
+            };
+            let _ = stream.set_nodelay(true);
+            let service = TowerToHyperService::new(app.clone());
+            tokio::spawn(h2.serve_connection(TokioIo::new(stream), service));
+        }
+    });
+}
+
+fn serve_tls_h2(listener: TcpListener, acceptor: TlsAcceptor, app: Router) {
+    tokio::spawn(async move {
+        let h2 = build_h2();
+        loop {
+            let Ok((stream, _)) = listener.accept().await else {
+                continue;
+            };
+            let _ = stream.set_nodelay(true);
+            let acceptor = acceptor.clone();
+            let service = TowerToHyperService::new(app.clone());
+            let h2 = h2.clone();
+            tokio::spawn(async move {
+                let Ok(tls_stream) = acceptor.accept(stream).await else {
+                    return;
+                };
+                let _ = h2
+                    .serve_connection(TokioIo::new(tls_stream), service)
+                    .await;
+            });
+        }
+    });
+}
+
+async fn serve_port_8080(
+    listener: TcpListener,
+    h1_app: Router,
+    grpc_app: Router,
+) -> io::Result<()> {
     let mut h1 = http1::Builder::new();
     h1.keep_alive(true).pipeline_flush(true);
+    let h2 = build_h2();
     loop {
         let Ok((stream, _)) = listener.accept().await else {
             continue;
         };
         let _ = stream.set_nodelay(true);
-        let service = TowerToHyperService::new(app.clone());
         let h1 = h1.clone();
+        let h2 = h2.clone();
+        let h1_app = h1_app.clone();
+        let grpc_app = grpc_app.clone();
         tokio::spawn(async move {
-            let _ = h1.serve_connection(TokioIo::new(stream), service).await;
+            let mut peek = [0u8; 4];
+            let Ok(n) = stream.peek(&mut peek).await else {
+                return;
+            };
+            if n == 0 {
+                return;
+            }
+            if peek[0] == b'P' && (n == 1 || peek[..n] == H2_PREFACE[..n]) {
+                if n == 4 && &peek == H2_PREFACE {
+                    let service = TowerToHyperService::new(grpc_app);
+                    let _ = Box::pin(h2.serve_connection(TokioIo::new(stream), service)).await;
+                } else {
+                    Box::pin(serve_ambiguous_prefix(stream, h1, h2, h1_app, grpc_app)).await;
+                }
+                return;
+            }
+            let service = TowerToHyperService::new(h1_app);
+            let _ = h1
+                .serve_connection(TokioIo::new(stream), service)
+                .with_upgrades()
+                .await;
         });
     }
 }
@@ -345,21 +543,35 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     LazyLock::force(&DATASET);
-    let tls_config = load_tls_config();
+    let tls_bundle = load_tls_bundle();
     let http_addr: SocketAddr = "0.0.0.0:8080".parse()?;
-    let tls_addr: SocketAddr = "0.0.0.0:8081".parse()?;
+    let tls_h1_addr: SocketAddr = "0.0.0.0:8081".parse()?;
+    let h2c_addr: SocketAddr = "0.0.0.0:8082".parse()?;
+    let h2_h3_addr: SocketAddr = "0.0.0.0:8443".parse()?;
 
     let mut handles = Vec::with_capacity(workers);
     for _ in 0..workers {
         let db_config = db_config.clone();
-        let tls_config = tls_config.clone();
+        let tls_h1_cfg = tls_bundle.as_ref().map(|b| b.h1.clone());
+        let tls_h2_cfg = tls_bundle.as_ref().map(|b| b.h2.clone());
+        let quinn_cfg = tls_bundle.as_ref().and_then(|b| b.h3.clone());
+
         let std_http = reuseport_listener(http_addr)?;
-        let std_tls = tls_config
+        let std_h2c = reuseport_listener(h2c_addr)?;
+        let std_tls_h1 = tls_h1_cfg
             .as_ref()
-            .map(|_| reuseport_listener(tls_addr))
+            .map(|_| reuseport_listener(tls_h1_addr))
+            .transpose()?;
+        let std_tls_h2 = tls_h2_cfg
+            .as_ref()
+            .map(|_| reuseport_listener(h2_h3_addr))
+            .transpose()?;
+        let std_h3_udp = quinn_cfg
+            .as_ref()
+            .map(|_| h3_server::reuseport_udp(h2_h3_addr))
             .transpose()?;
 
-        handles.push(std::thread::spawn(move || -> std::io::Result<()> {
+        handles.push(std::thread::spawn(move || -> io::Result<()> {
             let rt = tokio::runtime::Builder::new_current_thread()
                 .enable_all()
                 .build()?;
@@ -372,27 +584,58 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     PG_POOL.with(|slot| *slot.borrow_mut() = Some(pool));
                 }
 
-                if let (Some(tls_cfg), Some(std_tls)) = (tls_config, std_tls) {
+                // Port 8081: HTTP/1.1 + TLS 1.3 (json-tls, 8gbit, connections-1m-tls)
+                if let (Some(tls_cfg), Some(std_tls)) = (tls_h1_cfg, std_tls_h1) {
                     let tls_app = Router::new()
+                        .route("/baseline11", get(baseline_get).post(baseline_post))
                         .route("/json/{count}", get(json_items_plain))
                         .route("/echo", post(echo_body));
-                    serve_tls(
+                    serve_tls_h1(
                         TcpListener::from_std(std_tls)?,
                         TlsAcceptor::from(tls_cfg),
                         tls_app,
                     );
                 }
 
-                let app = Router::new()
+                // Port 8082: cleartext HTTP/2 prior-knowledge (baseline-h2c, json-h2c)
+                let h2c_app = Router::new()
+                    .route("/baseline2", get(baseline_get))
+                    .route("/json/{count}", get(json_items_plain));
+                serve_h2c(TcpListener::from_std(std_h2c)?, h2c_app);
+
+                // Port 8443 TCP: HTTP/2 + TLS 1.3 (baseline-h2, static-h2, unary-grpc-tls)
+                if let (Some(tls_cfg), Some(std_tls)) = (tls_h2_cfg, std_tls_h2) {
+                    let h2_app = Router::new()
+                        .route("/baseline2", get(baseline_get))
+                        .route("/static/{*path}", get(static_files::static_handler))
+                        .route("/benchmark.BenchmarkService/GetSum", post(grpc::get_sum));
+                    serve_tls_h2(
+                        TcpListener::from_std(std_tls)?,
+                        TlsAcceptor::from(tls_cfg),
+                        h2_app,
+                    );
+                }
+
+                // Port 8443 UDP: HTTP/3 + QUIC (baseline-h3, static-h3)
+                if let (Some(q_cfg), Some(std_udp)) = (quinn_cfg, std_h3_udp) {
+                    h3_server::spawn_h3_worker(std_udp, q_cfg)?;
+                }
+
+                // Port 8080: HTTP/1.1 + WebSocket (/ws) + cleartext gRPC (h2c)
+                let h1_app = Router::new()
                     .route("/baseline11", get(baseline_get).post(baseline_post))
                     .route("/pipeline", get(pipeline))
                     .route("/delay/{ms}", get(delay))
                     .route("/json/{count}", get(json_items_comp))
                     .route("/echo", post(echo_body))
                     .route("/async-db", get(async_db))
-                    .route("/fortunes", get(fortunes));
+                    .route("/fortunes", get(fortunes))
+                    .route("/ws", get(ws::ws_handler));
 
-                serve_plain(TcpListener::from_std(std_http)?, app).await
+                let grpc_app = Router::new()
+                    .route("/benchmark.BenchmarkService/GetSum", post(grpc::get_sum));
+
+                serve_port_8080(TcpListener::from_std(std_http)?, h1_app, grpc_app).await
             })
         }));
     }
@@ -445,6 +688,13 @@ fn parse_multiplier(uri: &Uri) -> i64 {
 
 async fn pipeline() -> impl IntoResponse {
     ([(CONTENT_TYPE, TEXT_PLAIN)], Bytes::from_static(b"ok"))
+}
+
+pub(crate) fn baseline_get_bytes(uri: &Uri) -> Result<Bytes, StatusCode> {
+    let query = parse_baseline_query(uri)?;
+    let sum = query.a.checked_add(query.b).ok_or(StatusCode::BAD_REQUEST)?;
+    let mut buffer = itoa::Buffer::new();
+    Ok(Bytes::copy_from_slice(buffer.format(sum).as_bytes()))
 }
 
 async fn baseline_get(uri: Uri) -> Result<impl IntoResponse, StatusCode> {

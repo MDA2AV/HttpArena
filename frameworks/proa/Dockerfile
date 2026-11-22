@@ -9,5 +9,5 @@ RUN cargo build --release --locked
 
 FROM debian:bookworm-slim
 COPY --from=build /work/target/release/httparena-proa /usr/local/bin/httparena-proa
-EXPOSE 8080 8081
+EXPOSE 8080 8081 8082 8443 8443/udp
 ENTRYPOINT ["/usr/local/bin/httparena-proa"]
