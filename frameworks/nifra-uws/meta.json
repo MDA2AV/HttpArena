@@ -1,0 +1,32 @@
+{
+  "display_name": "nifra-uws",
+  "language": "TS",
+  "type": "emerging",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "engine": "uWebSockets.js",
+  "description": "Nifra's typed router and middleware on uWebSockets.js through the @nifrajs/node-uws adapter, with one cluster worker per available core.",
+  "repo": "https://github.com/nifrajs/nifra",
+  "website": "https://nifra.dev",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "pipelined",
+    "limited-conn",
+    "json-comp",
+    "json-tls",
+    "8gbit",
+    "static-tls",
+    "async-db",
+    "fortunes"
+  ],
+  "maintainers": []
+}

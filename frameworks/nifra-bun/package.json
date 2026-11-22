@@ -1,0 +1,11 @@
+{
+  "name": "httparena-nifra-bun",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@nifrajs/core": "5.16.0",
+    "@nifrajs/middleware": "5.16.0",
+    "handlebars": "4.7.10",
+    "pg": "8.23.1"
+  }
+}
