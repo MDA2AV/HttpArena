@@ -1,5 +1,6 @@
 #include "httppeer.h"
 #include "orm_query.h"
+#include "func.h"
 
 #include <algorithm>
 #include <charconv>
@@ -118,35 +119,6 @@ namespace
         out.push_back('"');
     }
 
-    void append_html_escaped(std::string &out, std::string_view value)
-    {
-        if (value.empty())
-        {
-            return;
-        }
-        // Copy the plain runs in bulk; only the five escaped bytes need per-
-        // character work. The seed puts &, ', " and multi-byte UTF-8 in almost
-        // every row, so this is the hot loop of /fortunes.
-        std::size_t plain_begin = 0;
-        for (std::size_t i = 0; i < value.size(); ++i)
-        {
-            const char *escaped = nullptr;
-            switch (value[i])
-            {
-                case '&':  escaped = "&amp;";  break;
-                case '<':  escaped = "&lt;";   break;
-                case '>':  escaped = "&gt;";   break;
-                case '"':  escaped = "&quot;"; break;
-                case '\'': escaped = "&#39;";  break;
-                default:   continue;
-            }
-            out.append(value.data() + plain_begin, i - plain_begin);
-            out += escaped;
-            plain_begin = i + 1;
-        }
-        out.append(value.data() + plain_begin, value.size() - plain_begin);
-    }
-
     std::string render_items(const std::vector<item_row> &rows)
     {
         std::string out;
@@ -209,7 +181,7 @@ namespace
             out += "<tr><td>";
             out += std::to_string(r.id);
             out += "</td><td>";
-            append_html_escaped(out, r.message);
+            http::html_escape(out, r.message);
             out += "</td></tr>";
         }
         out += "</table></body></html>";
@@ -234,19 +206,19 @@ asio::awaitable<std::string> arena_async_db(std::shared_ptr<httppeer> peer)
     if (limit < 1) limit = 1;
     if (limit > 50) limit = 50;
 
-    std::string sql = "SELECT id,name,category,price,quantity,active,tags,rating_score,rating_count FROM items WHERE price BETWEEN ";
-    sql += std::to_string(min_price);
-    sql += " AND ";
-    sql += std::to_string(max_price);
-    sql += " LIMIT ";
-    sql += std::to_string(limit);
+    // 预处理：参数绑定，驱动按连接缓存 statement，池化连接跨请求复用 warm 路径。
+    const std::string sql = "SELECT id,name,category,price,quantity,active,tags,rating_score,rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT ?";
+    std::vector<http::obj_val> params;
+    params.emplace_back(min_price);
+    params.emplace_back(max_price);
+    params.emplace_back(limit);
 
     std::vector<item_row> rows;
     rows.reserve(static_cast<std::size_t>(limit));
     try
     {
         auto link = std::make_unique<orm::db_conn>("pg");
-        co_await link->async_query(sql, rows);
+        co_await link->async_query_prepared(sql, params, rows);
         if (link->iserror || !link->error_msg.empty())
         {
             respond_db_error(peer, "database query failed");
@@ -277,7 +249,7 @@ asio::awaitable<std::string> arena_fortunes(std::shared_ptr<httppeer> peer)
     try
     {
         auto link = std::make_unique<orm::db_conn>("pg");
-        co_await link->async_query("SELECT id,message FROM fortune", rows);
+        co_await link->async_query_prepared("SELECT id,message FROM fortune", {}, rows);
         if (link->iserror || !link->error_msg.empty())
         {
             respond_db_error(peer, "database query failed");
