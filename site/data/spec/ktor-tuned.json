@@ -1,0 +1,697 @@
+{
+  "framework": "ktor-tuned",
+  "dir": "ktor-tuned",
+  "suites": {
+    "h1": {
+      "tool": "http11probe",
+      "version": "d50d818",
+      "passed": 125,
+      "total": 159,
+      "warnings": 21,
+      "failed": [
+        {
+          "id": "RFC9112-5.1-OBS-FOLD",
+          "test": "Obs-fold (line folding) in headers should be rejected",
+          "expected": "400",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a75.1",
+          "level": "Must"
+        },
+        {
+          "id": "RFC9112-7.1-MISSING-HOST",
+          "test": "Request without Host header must be rejected with 400",
+          "expected": "400",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a73.2",
+          "level": "Must"
+        },
+        {
+          "id": "RFC9112-2.3-INVALID-VERSION",
+          "test": "Invalid HTTP version must be rejected",
+          "expected": "400/505, close, or timeout = warn",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a72.3",
+          "level": "Should"
+        },
+        {
+          "id": "COMP-HOST-WITH-USERINFO",
+          "test": "Host header with userinfo (user@host) must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a73.2",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-HOST-WITH-PATH",
+          "test": "Host header with path component must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a73.2",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-ASTERISK-WITH-GET",
+          "test": "Asterisk-form (*) request-target with GET must be rejected",
+          "expected": "400, close, or timeout = warn",
+          "got": "404, connection left open",
+          "rfc": "RFC 9112 \u00a73.2.4",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-OPTIONS-STAR",
+          "test": "OPTIONS * is the only valid asterisk-form request",
+          "expected": "2xx or 405; close/timeout = warn",
+          "got": "404, connection left open",
+          "rfc": "RFC 9112 \u00a73.2.4",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-UNKNOWN-TE-501",
+          "test": "Unknown Transfer-Encoding without CL should be rejected with 501",
+          "expected": "400/501 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a76.1",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-METHOD-CONNECT",
+          "test": "CONNECT to an origin server must be rejected",
+          "expected": "400/405/501 or close",
+          "got": "404, connection left open",
+          "rfc": "RFC 9110 \u00a79.3.6",
+          "level": "Should"
+        },
+        {
+          "id": "COMP-HOST-EMPTY-VALUE",
+          "test": "Empty Host header value must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a73.2",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-REQUEST-LINE-TAB",
+          "test": "Tab as request-line delimiter \u2014 SHOULD reject but MAY parse on whitespace",
+          "expected": "400 or 2xx; close/timeout = warn",
+          "got": "404, connection left open",
+          "rfc": "RFC 9112 \u00a73",
+          "level": "Should"
+        },
+        {
+          "id": "COMP-DATE-HEADER",
+          "test": "Origin server must include Date header in responses",
+          "expected": "2xx with Date header",
+          "got": "200, connection left open",
+          "rfc": "RFC 9110 \u00a76.6.1",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-VERSION-CASE",
+          "test": "HTTP version is case-sensitive \u2014 lowercase 'http' must be rejected",
+          "expected": "400, close, or timeout = warn",
+          "got": "404, connection left open",
+          "rfc": "RFC 9112 \u00a72.3",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-TE-XCHUNKED",
+          "test": "Transfer-Encoding: xchunked must not be treated as chunked",
+          "expected": "400/501 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a76.1",
+          "level": "Must",
+          "note": "Used CL (ignored TE variant)"
+        },
+        {
+          "id": "SMUG-CHUNK-BARE-SEMICOLON",
+          "test": "Chunk size with bare semicolon and no extension name must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-EXT-INVALID-TOKEN",
+          "test": "Chunk extension with invalid token character must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-UNDERSCORE",
+          "test": "Chunk size with underscores (1_0) must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-TE-EMPTY-VALUE",
+          "test": "Transfer-Encoding with empty value must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a76.1",
+          "level": "Must",
+          "note": "Used CL (ignored TE variant)"
+        },
+        {
+          "id": "SMUG-CHUNK-HEX-PREFIX",
+          "test": "Chunk size with 0x prefix must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-SIZE-PLUS",
+          "test": "Chunk size with leading plus sign must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-SIZE-TRAILING-OWS",
+          "test": "Chunk size with trailing whitespace before CRLF must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-LEADING-SP",
+          "test": "Chunk size with leading space must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-MISSING-TRAILING-CRLF",
+          "test": "Chunk data without trailing CRLF must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-SPILL",
+          "test": "Chunk declares size 5 but sends 7 bytes \u2014 oversized chunk data must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-EXT-CTRL",
+          "test": "NUL byte in chunk extension must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-EXT-CR",
+          "test": "Bare CR (not CRLF) in chunk extension \u2014 some parsers treat CR alone as line ending",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-TE-IDENTITY",
+          "test": "Transfer-Encoding: identity (deprecated) with CL must be rejected",
+          "expected": "400/501 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77",
+          "level": "Must",
+          "note": "Used CL (ignored TE variant)"
+        },
+        {
+          "id": "SMUG-CHUNK-NEGATIVE",
+          "test": "Negative chunk size must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-MULTIPLE-HOST-COMMA",
+          "test": "Host header with comma-separated values must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9110 \u00a77.2",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-INVALID-SIZE-DESYNC",
+          "test": "Invalid chunk size (+0) with poison byte \u2014 detects chunk-size parser desync",
+          "expected": "400, or close",
+          "got": "200, timed out",
+          "rfc": "RFC 9112 \u00a77.1",
+          "level": "Must",
+          "note": "Accepted invalid chunk-size request and kept connection open \u2014 follow-up GET returned no response"
+        },
+        {
+          "id": "MAL-NUL-IN-URL",
+          "test": "NUL byte in URL should be rejected",
+          "expected": "400 or close",
+          "got": "404, connection left open",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-NON-ASCII-URL",
+          "test": "Non-ASCII bytes (UTF-8 \u00e9) in URL must be rejected",
+          "expected": "400 or close",
+          "got": "404, connection left open",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-CHUNK-SIZE-OVERFLOW",
+          "test": "Chunk size with integer overflow must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-URL-OVERLONG-UTF8",
+          "test": "Overlong UTF-8 encoding of / (0xC0 0xAF) in URL must be rejected",
+          "expected": "400 or close",
+          "got": "404, connection left open",
+          "level": "Must"
+        }
+      ]
+    },
+    "h2": {
+      "tool": "h2spec",
+      "version": "2.6.0",
+      "passed": 130,
+      "total": 146,
+      "failed": [
+        {
+          "id": "generic/4/4",
+          "test": "Sends a POST request with trailers",
+          "expected": "HEADERS Frame (stream_id:1)",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/5.1/5",
+          "test": "half closed (remote): Sends a DATA frame",
+          "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/5.1/6",
+          "test": "half closed (remote): Sends a HEADERS frame",
+          "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/5.1/12",
+          "test": "closed: Sends a HEADERS frame",
+          "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or Connection closed",
+          "got": "RST_STREAM Frame (length:4, flags:0x00, stream_id:1)"
+        },
+        {
+          "id": "http2/5.1.1/2",
+          "test": "Sends stream identifier that is numerically smaller than previous",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:5)"
+        },
+        {
+          "id": "http2/6.1/2",
+          "test": "Sends a DATA frame on the stream that is not in \"open\" or \"half-closed (local)\" state",
+          "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/6.3/2",
+          "test": "Sends a PRIORITY frame with a length other than 5 octets",
+          "expected": "GOAWAY Frame (Error Code: FRAME_SIZE_ERROR) or RST_STREAM Frame (Error Code: FRAME_SIZE_ERROR) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/6.9/2",
+          "test": "Sends a WINDOW_UPDATE frame with a flow control window increment of 0 on a stream",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/6.9.1/3",
+          "test": "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1 on a stream",
+          "expected": "RST_STREAM Frame (Error Code: FLOW_CONTROL_ERROR)",
+          "got": "RST_STREAM Frame (length:4, flags:0x00, stream_id:1)"
+        },
+        {
+          "id": "http2/8.1/1",
+          "test": "Sends a second HEADERS frame without the END_STREAM flag",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/8.1.2.1/3",
+          "test": "Sends a HEADERS frame that contains a pseudo-header field as trailers",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/8.1.2.3/2",
+          "test": "Sends a HEADERS frame that omits \":method\" pseudo-header field",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/8.1.2.3/3",
+          "test": "Sends a HEADERS frame that omits \":scheme\" pseudo-header field",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+        },
+        {
+          "id": "http2/8.1.2.3/4",
+          "test": "Sends a HEADERS frame that omits \":path\" pseudo-header field",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "HEADERS Frame (length:4, flags:0x05, stream_id:1)"
+        },
+        {
+          "id": "http2/8.1.2.6/1",
+          "test": "Sends a HEADERS frame with the \"content-length\" header field which does not equal the DATA frame payload length",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "Timeout"
+        },
+        {
+          "id": "http2/8.1.2.6/2",
+          "test": "Sends a HEADERS frame with the \"content-length\" header field which does not equal the sum of the multiple DATA frames payload length",
+          "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+          "got": "Timeout"
+        }
+      ],
+      "listeners": {
+        "tls": {
+          "passed": 130,
+          "total": 146,
+          "failed": [
+            {
+              "id": "generic/4/4",
+              "test": "Sends a POST request with trailers",
+              "expected": "HEADERS Frame (stream_id:1)",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/5.1/5",
+              "test": "half closed (remote): Sends a DATA frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/5.1/6",
+              "test": "half closed (remote): Sends a HEADERS frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/5.1/12",
+              "test": "closed: Sends a HEADERS frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "RST_STREAM Frame (length:4, flags:0x00, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1.1/2",
+              "test": "Sends stream identifier that is numerically smaller than previous",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:5)"
+            },
+            {
+              "id": "http2/6.1/2",
+              "test": "Sends a DATA frame on the stream that is not in \"open\" or \"half-closed (local)\" state",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.3/2",
+              "test": "Sends a PRIORITY frame with a length other than 5 octets",
+              "expected": "GOAWAY Frame (Error Code: FRAME_SIZE_ERROR) or RST_STREAM Frame (Error Code: FRAME_SIZE_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.9/2",
+              "test": "Sends a WINDOW_UPDATE frame with a flow control window increment of 0 on a stream",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/6.9.1/3",
+              "test": "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1 on a stream",
+              "expected": "RST_STREAM Frame (Error Code: FLOW_CONTROL_ERROR)",
+              "got": "RST_STREAM Frame (length:4, flags:0x00, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1/1",
+              "test": "Sends a second HEADERS frame without the END_STREAM flag",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/8.1.2.1/3",
+              "test": "Sends a HEADERS frame that contains a pseudo-header field as trailers",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/8.1.2.3/2",
+              "test": "Sends a HEADERS frame that omits \":method\" pseudo-header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.3/3",
+              "test": "Sends a HEADERS frame that omits \":scheme\" pseudo-header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.3/4",
+              "test": "Sends a HEADERS frame that omits \":path\" pseudo-header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "HEADERS Frame (length:4, flags:0x05, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.6/1",
+              "test": "Sends a HEADERS frame with the \"content-length\" header field which does not equal the DATA frame payload length",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/8.1.2.6/2",
+              "test": "Sends a HEADERS frame with the \"content-length\" header field which does not equal the sum of the multiple DATA frames payload length",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            }
+          ]
+        },
+        "h2c": {
+          "passed": 130,
+          "total": 146,
+          "failed": [
+            {
+              "id": "generic/4/4",
+              "test": "Sends a POST request with trailers",
+              "expected": "HEADERS Frame (stream_id:1)",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/3.5/2",
+              "test": "Sends invalid connection preface",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Error: unexpected EOF"
+            },
+            {
+              "id": "http2/5.1/5",
+              "test": "half closed (remote): Sends a DATA frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/5.1/6",
+              "test": "half closed (remote): Sends a HEADERS frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/5.1/12",
+              "test": "closed: Sends a HEADERS frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "RST_STREAM Frame (length:4, flags:0x00, stream_id:1)"
+            },
+            {
+              "id": "http2/5.1.1/2",
+              "test": "Sends stream identifier that is numerically smaller than previous",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:5)"
+            },
+            {
+              "id": "http2/6.1/2",
+              "test": "Sends a DATA frame on the stream that is not in \"open\" or \"half-closed (local)\" state",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.9/2",
+              "test": "Sends a WINDOW_UPDATE frame with a flow control window increment of 0 on a stream",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/6.9.1/3",
+              "test": "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1 on a stream",
+              "expected": "RST_STREAM Frame (Error Code: FLOW_CONTROL_ERROR)",
+              "got": "RST_STREAM Frame (length:4, flags:0x00, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1/1",
+              "test": "Sends a second HEADERS frame without the END_STREAM flag",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/8.1.2.1/3",
+              "test": "Sends a HEADERS frame that contains a pseudo-header field as trailers",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/8.1.2.3/2",
+              "test": "Sends a HEADERS frame that omits \":method\" pseudo-header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.3/3",
+              "test": "Sends a HEADERS frame that omits \":scheme\" pseudo-header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "DATA Frame (length:7, flags:0x01, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.3/4",
+              "test": "Sends a HEADERS frame that omits \":path\" pseudo-header field",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "HEADERS Frame (length:4, flags:0x05, stream_id:1)"
+            },
+            {
+              "id": "http2/8.1.2.6/1",
+              "test": "Sends a HEADERS frame with the \"content-length\" header field which does not equal the DATA frame payload length",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            },
+            {
+              "id": "http2/8.1.2.6/2",
+              "test": "Sends a HEADERS frame with the \"content-length\" header field which does not equal the sum of the multiple DATA frames payload length",
+              "expected": "GOAWAY Frame (Error Code: PROTOCOL_ERROR) or RST_STREAM Frame (Error Code: PROTOCOL_ERROR) or Connection closed",
+              "got": "Timeout"
+            }
+          ]
+        }
+      }
+    },
+    "h3": {
+      "tool": "h3spec",
+      "version": "v0.1.15",
+      "passed": 58,
+      "total": 81,
+      "failed": [
+        {
+          "id": "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if initial_source_connection_id is missing [Transport 7.3]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if original_destination_connection_id is received [Transport 18.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if preferred_address is received [Transport 18.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if retry_source_connection_id is received [Transport 18.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if stateless_reset_token is received [Transport 18.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if a parameter value is malformed [Transport 18]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if max_udp_payload_size < 1200 [Transport 7.4 and 18.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if ack_delay_exponent > 20 [Transport 7.4 and 18.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if max_ack_delay >= 2^14 [Transport 7.4 and 18.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if initial_max_streams_bidi > 2^60 [Transport 18.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if initial_max_streams_uni > 2^60 [Transport 18.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "QUIC servers MUST send FRAME_ENCODING_ERROR if a frame is cut short [Transport 12.4]",
+          "got": "predicate failed on expected exception: QUICException / TransportErrorIsReceived ProtocolViolation \"\""
+        },
+        {
+          "id": "QUIC servers MUST send PROTOCOL_VIOLATION if reserved bits in Handshake are non-zero [Transport 17.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "QUIC servers MUST send PROTOCOL_VIOLATION if reserved bits in Short are non-zero [Transport 17.3.1]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST treat a request with keep-alive as malformed [HTTP/3 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST treat a request with proxy-connection as malformed [HTTP/3 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST treat a request with transfer-encoding as malformed [HTTP/3 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST treat a request with upgrade as malformed [HTTP/3 4.2]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_FRAME_ERROR if a SETTINGS frame stops mid-parameter [HTTP/3 7.1]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers treats a repeated setting identifier as an error whatever its value [HTTP/3 7.2.4]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_FRAME_UNEXPECTED if PUSH_PROMISE is received [HTTP/3 7.2.5]",
+          "got": "predicate failed on expected exception: QUICException / ApplicationProtocolErrorIsReceived (ApplicationProtocolError 512) \"Decompression of header block failed.\""
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_FRAME_ERROR if MAX_PUSH_ID has octets after its push ID [HTTP/3 7.1]",
+          "got": "predicate failed on expected exception: QUICException / ApplicationProtocolErrorIsReceived (ApplicationProtocolError 261) \"Unexpected frame type '0' received\""
+        },
+        {
+          "id": "HTTP/3 servers MUST NOT buffer an over-long frame on a control stream [HTTP/3 7.1]",
+          "got": "predicate failed on expected exception: QUICException / ApplicationProtocolErrorIsReceived (ApplicationProtocolError 262) \"Received an invalid frame len 1073741824 for frame of type 7.\""
+        }
+      ]
+    }
+  }
+}
