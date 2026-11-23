@@ -20,6 +20,8 @@
     "json-comp",
     "json-tls",
     "8gbit",
+    "connections-1m",
+    "connections-1m-tls",
     "baseline-h2",
     "static-h2",
     "static-tls",
