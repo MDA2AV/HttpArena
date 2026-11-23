@@ -1014,15 +1014,16 @@ dependencies = [
 
 [[package]]
 name = "ntex-files"
-version = "4.6.0"
+version = "4.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "248c61b0e720cffe1490be1d8c30eb308cc05f3a1c0f17c905de68c7b34a53e9"
+checksum = "843181da61fdec0f1079a2c913f452170a1778e29143a8a6b56f05699f16e7ac"
 dependencies = [
  "bitflags",
  "futures",
  "http",
  "httpdate",
  "language-tags",
+ "libc",
  "log",
  "mime",
  "mime_guess",
