@@ -257,6 +257,46 @@ function defineRoutes(app) {
         res.send(req.rawBody ?? Buffer.alloc(0));
     });
 
+    // /spec, the compliance route: Http11Probe reads it on :8080, h2spec on
+    // :8443 and :8082. Same listener, parser and routing as everything else
+    // here. HEAD has no route of its own: the framework answers it from the
+    // GET, with the GET's headers and no body. POST is the /echo of the 8gbit
+    // profile on another path; OPTIONS and the header echo read their body
+    // and drop it, which the framework has done by the time a handler runs.
+    app.get('/spec').handler((req, res) => {
+        res.send('spec ok');
+    });
+    app.options('/spec').handler((req, res) => {
+        res.setHeader('Allow', 'GET, HEAD, POST, OPTIONS');
+        res.status(200).end();
+    });
+    app.post('/spec').handler((req, res) => {
+        res.send(req.rawBody ?? Buffer.alloc(0));
+    });
+    const specHeaders = (req, res) => {
+        let out = '';
+        for (const name in req.headers) {
+            const value = req.headers[name];
+            if (Array.isArray(value)) {
+                for (const one of value) out += name + ': ' + one + '\n';
+            } else {
+                out += name + ': ' + value + '\n';
+            }
+        }
+        res.send(out);
+    };
+    app.get('/spec/headers').handler(specHeaders);
+    app.post('/spec/headers').handler(specHeaders);
+
+    // /parse, for the resilience suite: the framework parses a body by its
+    // media type before a handler runs (JSON, urlencoded and multipart into
+    // objects, anything else left as bytes), under its default limits. A body
+    // over them is a 413 and one that does not parse a 400, both answered by
+    // the framework.
+    app.post('/parse').handler((req, res) => {
+        res.send('ok');
+    });
+
     // The driver hands the rows to its callback and the callback answers:
     // the request is one prepared-statement round trip and nothing else. An
     // async handler awaiting the same query added three promise hops per

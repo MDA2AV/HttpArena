@@ -6,7 +6,7 @@ MoroJS on its native HTTP engine, clustered by the framework itself.
 
 - **Language:** JavaScript
 - **Runtime:** Node.js 26
-- **Framework:** [MoroJS 1.8](https://github.com/Moro-JS/moro) on `@morojs/engine` 1.1.18, its own native HTTP engine
+- **Framework:** [MoroJS 1.9](https://github.com/Moro-JS/moro) on `@morojs/engine` 1.2, its own native HTTP engine
 - **Build:** Multi-stage on `node:26.13-trixie-slim` (pinned by minor: the compression middleware's reused
   brotli encoder needs Node 26.11 or later, and the bench host builds against whatever `node:26` it
   has cached); the engine ships prebuilt binaries, so no toolchain
@@ -28,6 +28,9 @@ MoroJS on its native HTTP engine, clustered by the framework itself.
 | `/public/baseline`, `/public/json/:count` | GET | The baseline and JSON routes as the production-stack edge forwards them, no auth |
 | `/api/items/:id` | GET/POST | Cache-aside read with `X-Cache: HIT` or `MISS`, or a JSON-body update that invalidates the entry and answers 204 |
 | `/api/me` | GET | Reads the user named by `X-User-Id` through the same cache-aside |
+| `/spec` | GET/HEAD/OPTIONS/POST | The compliance route: a fixed body, the same headers without it, `Allow`, and the request body echoed |
+| `/spec/headers` | GET/POST | The request headers as the framework holds them, one per line |
+| `/parse` | POST | The body parsed by its media type under the framework's default limits (resilience suite) |
 
 ## Notes
 
@@ -109,6 +112,14 @@ MoroJS on its native HTTP engine, clustered by the framework itself.
   mounted on the TLS listener behind a path check so the JSON route on that port does not pay for
   the lookup; the check calls `next()` synchronously, which keeps that route on the server's
   synchronous dispatch.
+- `connections-1m` and `connections-1m-tls` need nothing of their own: the listeners bind `0.0.0.0`,
+  the engine has no connection cap unless `server.maxConnections` sets one, and idle keep-alive
+  connections stay open for 75 seconds (`server.timeouts.idle`, the default).
+- `/spec` is on every listener, through the same routes as everything else. `HEAD /spec` has no
+  route: the framework answers a HEAD from the GET route, with the GET's headers and no body.
+  `POST /parse` relies on the framework parsing a body by its media type before the handler runs
+  (JSON, urlencoded and multipart into objects); Moro does not decompress request bodies, so a
+  compressed one is read as the bytes it is, under the body size limit.
 - `fortunes` goes through EJS directly: Moro ships no view layer, so the template file is compiled
   once per worker with `ejs.compile` and rendered per request, `<%= %>` escaping every cell.
 - `/async-db` and `/fortunes` answer from the driver's callback rather than from an async handler:
