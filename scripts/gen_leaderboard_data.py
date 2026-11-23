@@ -4060,6 +4060,9 @@ def build_view_pages(profiles, results, meta, families, fw_lang, round_name, upd
             return "<p>No entry has a result here yet.</p>"
         named = ['<a href="%s">%s</a>' % (_fw_url(fw), e(fw)) for fw in names[:3]]
         lang = fw_lang.get(names[0])
+        if len(names) == 1:
+            return "<p><b>%s</b>%s is the only flagship or emerging framework in the %s so far.</p>" % (
+                named[0], " (%s)" % e(lang) if lang else "", e(title))
         return "<p>Among flagship and emerging frameworks, <b>%s</b>%s leads the %s%s, out of %d in the %s.</p>" % (
             named[0], " (%s)" % e(lang) if lang else "", e(title),
             ", ahead of " + " and ".join(named[1:]) if named[1:] else "", len(names), e(round_name))

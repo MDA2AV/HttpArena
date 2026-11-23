@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // a page of its own with its ranking in the HTML (build_view_pages in
   // gen_leaderboard_data.py). The path names the view, the hash how it is shown. A local
   // checkout has no such pages, and keeps the view in the hash as well.
-  var VIEWS=null; try{ VIEWS=JSON.parse(document.body.getAttribute('data-views')); }catch(e){}
+  var VIEWS=null, PAGE=location.pathname; try{ VIEWS=JSON.parse(document.body.getAttribute('data-views')); }catch(e){}
   var ROOT = VIEWS ? '/' : '';
   var ROUND_ID = (location.search.match(/[?&]round=([A-Za-z0-9_-]+)/)||[])[1] || '';
   if(ROUND_ID && !lbBoot.waited){
@@ -808,7 +808,8 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     return h;
   }
   // The view on screen changed without a page load: what else names the page follows, the
-  // canonical above all - it is what a phone shares.
+  // canonical above all - it is what a phone shares. The copy under the board is about the
+  // view the page was loaded with, so it goes while another one is on screen.
   function headTags(){
     if(!VIEWS) return;
     var home=state.view==='composite' && state.scope==='h1', url='https://http-arena.com'+(VIEWS[state.view==='profile' ? state.profile : state.scope]||'/');
@@ -816,6 +817,8 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     var c=document.querySelector('link[rel="canonical"]'), o=document.querySelector('meta[property="og:url"]');
     if(c) c.href=url;
     if(o) o.content=url;
+    var seo=document.getElementById('boardSeo');
+    if(seo) seo.hidden=!!ROUND_ID || url!=='https://http-arena.com'+PAGE;
   }
   // The address a pick leads to, as writeHash would write it after the pick: the
   // view, plus what carries over (types, Tuned, compact names, the room's view),
