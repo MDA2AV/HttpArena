@@ -570,6 +570,56 @@ asio::awaitable<std::string> arena_echo(std::shared_ptr<httppeer> peer)
     co_return "";
 }
 
+// HttpArena protocol-compliance route (h1/h2 suites).
+// GET/HEAD: fixed text body >= 5 bytes (h2spec skips a flow-control test below 5).
+// POST: byte-for-byte raw body echo, through the same parser API as /echo.
+// OPTIONS: 200 with Allow; the core closes the connection if a body was sent
+// rather than leave unread bytes that could be parsed as a second request.
+//@urlpath(null,spec)
+asio::awaitable<std::string> arena_spec(std::shared_ptr<httppeer> peer)
+{
+    peer->status(200);
+    if (peer->method == static_cast<unsigned char>(HEAD_METHOD::HEAD) ||
+        peer->method == static_cast<unsigned char>(HEAD_METHOD::GET))
+    {
+        peer->type("text/plain");
+        peer->output = "spec ok";
+    }
+    else if (peer->method == static_cast<unsigned char>(HEAD_METHOD::POST))
+    {
+        peer->type("application/octet-stream");
+        peer->output = raw_body(peer);
+    }
+    else if (peer->method == static_cast<unsigned char>(HEAD_METHOD::OPTIONS))
+    {
+        peer->set_header("Allow", "GET, HEAD, POST, OPTIONS");
+        peer->type("text/plain");
+        peer->output.clear();
+    }
+    co_return "";
+}
+
+// Header echo: one `Name: Value` line per received header, in any order/case.
+// Read the body even though it is discarded, so POST bodies go through the
+// normal parser path and any >2MB spilled temp file is cleaned up.
+//@urlpath(null,spec/headers)
+asio::awaitable<std::string> arena_spec_headers(std::shared_ptr<httppeer> peer)
+{
+    raw_body(peer);
+    peer->status(200);
+    peer->type("text/plain");
+    std::string out;
+    for (const auto &kv : peer->header)
+    {
+        out += kv.first;
+        out += ": ";
+        out += kv.second;
+        out.push_back('\n');
+    }
+    peer->output = std::move(out);
+    co_return "";
+}
+
 //@urlpath(null,baseline11)
 asio::awaitable<std::string> arena_baseline11(std::shared_ptr<httppeer> peer)
 {

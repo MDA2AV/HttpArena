@@ -1,7 +1,7 @@
 {
   "display_name": "paozhu",
   "language": "C++",
-  "type": "experimental",
+  "type": "flagship",
   "mode": "standard",
   "completeness": {
     "routing": true,
@@ -13,6 +13,8 @@
   "description": "Paozhu C++20 web framework on standalone Asio, built from the upstream mini_project.sh clean scaffold. Annotated controller routes answer /baseline11, /baseline2, /pipeline, /echo, /json/{count}?m={multiplier}, /delay/{ms}, /async-db?min=&max=&limit= and /fortunes; the dataset is parsed once at startup and serialized per request, /echo returns the raw request body byte-for-byte, and the DB routes use paozhu's own async Postgres driver. /static/* is served by the framework's native static path from the mounted /data/static (wwwpath=/data) with an on-disk compression cache pre-warmed at startup. Two server instances share the image: plaintext HTTP/1.1 on :8080 and ALPN h2 on :8443, plus a second instance whose TLS listener on :8081 advertises only http/1.1 for json-tls, 8gbit and static-tls and whose cleartext :8082 listener serves h2c prior-knowledge for baseline-h2c and json-h2c.",
   "repo": "https://github.com/hggq/paozhu",
   "enabled": true,
+  "resilience": true,
+  "spec": ["h1", "h2", "ws"],
   "tests": [
     "baseline","async","latency-1m", "latency-10k",
     "pipelined",
