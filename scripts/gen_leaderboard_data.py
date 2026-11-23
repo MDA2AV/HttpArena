@@ -1771,9 +1771,9 @@ def compute_achievements(agg, profiles, meta, badge_index):
 # to all of them, and so is every framework name in it.
 #
 # Three things fix that and none of them change what a visitor sees:
-#   - the default view (H/1.1 composite, the same one the badges are pinned to)
-#     is written into index.html at build time and overwritten by renderComposite
-#     on boot, so the page has its ranking in the HTML;
+#   - every view of the board (the H/1.1 composite at /, the others at /board/<view>/)
+#     is written into its page at build time and overwritten by the board on boot,
+#     so the page has its ranking in the HTML;
 #   - every page gets an og:image and a JSON-LD node, so a shared link unfurls
 #     and the results are declared as a Dataset;
 #   - /llms.txt and /llms-full.txt carry the same ranking and the Knowledge Base
@@ -1959,13 +1959,12 @@ def _rank_lines(rows, fw_lang, limit=None):
             for i, (fw, score) in enumerate(rows[:limit] if limit else rows)]
 
 
-def write_llms_txt(tree, content, families, fw_lang, current, round_name, fw_entries=(),
+def write_llms_txt(tree, content, families, fw_lang, current, round_name, profiles, fw_entries=(),
                    compare_pages=()):
     """/llms.txt and /llms-full.txt.
 
-    Same reason as the prerender, for the readers the prerender cannot reach:
-    the board has six families and only the default one can be written into the
-    page. Here all six fit, as text, next to a link to every doc."""
+    Same reason as the prerender, for readers that want one file: the composite of
+    every family as text, next to a link to every ranking, entry and doc."""
     trails = _crumb_trails(tree)
     hw = current.get("cpu", "")
     head = [
@@ -1977,8 +1976,9 @@ def write_llms_txt(tree, content, families, fw_lang, current, round_name, fw_ent
         + (f" ({hw}, {current.get('cores', '?')} cores)" if hw else "")
         + ", pinned to dedicated cores, one connection count per run. Round: " + round_name + ".",
         "",
-        "The leaderboard at " + SITE + "/ is rendered client-side, so the ranking below is the "
-        "same data as text. Scores are the composite: each profile is worth 1,000 to the best entry "
+        "The HTTP/1.1 ranking is at " + SITE + "/, and every other ranking and every test profile has "
+        "a page of its own, linked below, with its table in the HTML. The composite rankings are "
+        "repeated here as text. Scores are the composite: each profile is worth 1,000 to the best entry "
         "in the field and a framework's score is the sum over the profiles of that family, scaled "
         "by its completeness factor - the entry loses 2.5% for each of routing, middleware, the "
         "request it hands you and the response it builds that it does not do, so the factor runs "
@@ -1991,10 +1991,16 @@ def write_llms_txt(tree, content, families, fw_lang, current, round_name, fw_ent
         if not rows:
             continue
         title = f"## {SCOPE_NAME[scope]} composite ranking - flagship and emerging, {len(rows)} entries"
+        title += f"\n\nPage: {SITE}{_view_url(scope)}"
         short += [title, "", "```", *_rank_lines(rows, fw_lang, 20), "```", ""]
         if len(rows) > 20:
             short += [f"Full field: {SITE}/llms-full.txt", ""]
         full += [title, "", "```", *_rank_lines(rows, fw_lang), "```", ""]
+
+    rankings = ["## Other rankings", "",
+                f"- [{OVERALL_H1}]({SITE}{_view_url('all')}): the "
+                + ", ".join(SCOPE_NAME[k] for k in OVERALL_SCOPES) + " composites added up.",
+                *(f"- [{_view_name(p)} benchmark]({SITE}{_view_url(p['id'])}): {p['blurb']}" for p in profiles), ""]
 
     frameworks = []
     if fw_entries:
@@ -2034,10 +2040,10 @@ def write_llms_txt(tree, content, families, fw_lang, current, round_name, fw_ent
             "every server implementation, Dockerfile and validation rule.",
             ""]
 
-    short += frameworks + compare + docs + data + ["## Full text", "",
+    short += rankings + frameworks + compare + docs + data + ["## Full text", "",
                                          f"- [llms-full.txt]({SITE}/llms-full.txt): the whole "
                                          "Knowledge Base and the full ranking of every family.", ""]
-    full += frameworks + compare + data + ["## Knowledge Base", ""]
+    full += rankings + frameworks + compare + data + ["## Knowledge Base", ""]
     for did in sorted(content):
         d = content[did]
         text = _html.unescape(re.sub(r"<[^>]+>", " ", d["html"]))
@@ -2080,13 +2086,13 @@ def _static_board(rows, fw_lang, round_name, spec=None):
                 else "%s%%" % ("100" if s["p"] == s["t"] else "%.1f" % (100.0 * s["p"] / s["t"])))
         # red when the server crashed during the suite, as the board's Spec cell
         table.append((i + 1, fw, [("%.0f" % score, ""), (cell, " crash" if s is not None and s.get("c") else "")]))
-    others = ", ".join('<a href="%s">%s</a>' % (_view_url(s), _html.escape(SCOPE_NAME[s]))
-                       for s in SCOPE_NAME if s != DEFAULT_SCOPE)
+    others = ", ".join('<a href="%s">%s</a>' % (_view_url(s), _html.escape(SCOPE_NAME.get(s, "Overall")))
+                       for s in VIEW_SLUG)
     return _static_table(
         ("Composite", "Spec"), table, fw_lang,
         _html.escape(round_name) + ", " + str(len(rows)) +
-        " entries, best first. The interactive board - per-profile numbers, memory efficiency, "
-        "the other families (" + others + ") - needs JavaScript; every entry has "
+        " entries, best first. The other rankings: " + others + ". Filtering, sorting and memory "
+        "efficiency need JavaScript; every entry has "
         'a <a href="/frameworks/">page of its own</a>, and the same rankings are published as '
         'text at <a href="/llms.txt">/llms.txt</a>.')
 
@@ -2292,9 +2298,9 @@ def _board_page(path, title, desc, og_title, og_desc, og_url, graph, cat, h1, bl
 
 
 # ── a page per framework ─────────────────────────────────────────────────────
-# The board is one URL. Every state it can be in is a #hash, and a hash is not a
-# page: "axum benchmark" has nowhere to land, and a framework that is in here has
-# nothing of its own to be found by. These pages are that missing half - one URL
+# The board has a page per ranking and none per entry: "axum benchmark" has nowhere
+# to land on it, and a framework that is in here has nothing of its own to be
+# found by. These pages are that missing half - one URL
 # per entry, carrying its rank in every family it runs and every number behind
 # it, from the same data the board draws.
 
@@ -4519,8 +4525,8 @@ def main():
                                          if (m.get("spec") or {}).get(DEFAULT_SCOPE)},
                                    views=board_views(profiles))
     llms_bytes, llms_full_bytes = write_llms_txt(docs_tree, docs_content, families,
-                                                 fw_lang, current, round_name, fw_entries,
-                                                 compare_pages)
+                                                 fw_lang, current, round_name, profiles,
+                                                 fw_entries, compare_pages)
 
     n_rows = sum(len(v) for v in results.values())
     print(f"wrote {OUT.relative_to(ROOT)} - {len(profiles)} profiles, "
