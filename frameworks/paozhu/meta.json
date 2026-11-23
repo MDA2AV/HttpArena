@@ -14,7 +14,7 @@
   "repo": "https://github.com/hggq/paozhu",
   "enabled": true,
   "resilience": true,
-  "spec": ["h1", "h2"],
+  "spec": ["h1", "h2", "ws"],
   "tests": [
     "baseline","async","latency-1m", "latency-10k",
     "pipelined",
