@@ -1,9 +1,9 @@
 package main
 
 // HttpArena entry for Sober, on std/http/server + std/json + std/tls alone.
-// Plain HTTP/1.1 on 0.0.0.0:8080 and, when /certs/server.{crt,key} (or TLS_CERT / TLS_KEY)
-// can be read, the same routes over TLS 1.3 on 0.0.0.0:8081 (ports overridable by argv).
-// Prints "ready <port>" / "tls-ready <port>" once listening.
+// Plain HTTP/1.1 on 0.0.0.0:8080, HTTP/2 with prior knowledge (h2c) on 0.0.0.0:8082 and, when /certs/server.{crt,key}
+// (or TLS_CERT / TLS_KEY) can be read, the same routes over TLS 1.3 on 0.0.0.0:8081 (ports overridable by argv).
+// Prints "ready <port>" / "h2c-ready <port>" / "tls-ready <port>" once listening.
 // Dataset for /json/{count}?m= comes from DATASET_PATH (default /data/dataset.json).
 // /async-db reads Postgres through std/pg (a pool of DATABASE_MAX_CONN connections at DATABASE_URL, plaintext on the
 // benchmark host's loopback sidecar); without DATABASE_URL, or while the database is unreachable, it answers {"items":[],"count":0}.
@@ -197,6 +197,7 @@ func routes(ds []Item) []http.server.Route {
         http.server.Route{method: "GET", path: "/pipeline", handler: (r) => http.server.Text("ok"), middleware: none},
         http.server.Route{method: "GET", path: "/baseline11", handler: baseline, middleware: none},
         http.server.Route{method: "POST", path: "/baseline11", handler: baseline, middleware: none},
+        http.server.Route{method: "GET", path: "/baseline2", handler: baseline, middleware: none},
         http.server.Route{method: "GET", path: "/delay/:ms", handler: delay, middleware: none},
         http.server.Route{method: "GET", path: "/json/:count", handler: (r) => items(ds, r), middleware: none, cache: http.server.Unstated{}},
         http.server.Route{method: "POST", path: "/echo", handler: echo, middleware: none},
@@ -222,12 +223,14 @@ func certs() tls.Config? {
 
 func serveTls(ds []Item, cfg tls.Config, tport string) int {
     _ = io.WriteStdout(bytes("tls-ready ${tport}\n"))
-    e := tls.Serve("0.0.0.0:${tport}", cfg, (c tls.Conn) => serveTlsConn(routes(ds), c))
+    e := tls.Serve("0.0.0.0:${tport}", cfg, (c net.Conn) => serveTlsConn(ds, c))
     return if e != nil { 1 } else { 0 }
 }
 
-func serveTlsConn(rs []http.server.Route, c tls.Conn) error? {
-    return http.server.ServeWith((k) => tls.Recv(c, k), (b) => tls.Send(c, b), (r http.server.Request) => http.server.Dispatch(rs, r), maxBody: maxBody, put: (b) => tls.Put(c, b))
+// the route table is built per request: a lambda kept as a value (the tls.Handler) cannot capture the table (it holds function values),
+// and a table built per connection would stay in the connection task's region while it waits (one page per waiting connection)
+func serveTlsConn(ds []Item, c net.Conn) error? {
+    return http.server.ServeConn(c, (r http.server.Request) => http.server.Dispatch(routes(ds), r), maxBody: maxBody)
 }
 
 const noRows = "{\"items\":[],\"count\":0}"
@@ -307,7 +310,7 @@ func poolSize() int {
     return if m > 16 { m - 6 } else if m > 1 { m - 1 } else { 1 }
 }
 
-func run(port string, tport string) int {
+func run(port string, tport string, h2port string) int {
     ds := load()
     gzw := task.NewLocal((w mut compress.flate.Work) => compress.flate.NewWork(mut w))
     cfg := certs()
@@ -316,7 +319,7 @@ func run(port string, tport string) int {
         at, pw := splitUrl(u)
         mut rc := -1
         oe := pg.OpenPool(at, (p) => {
-            rc = serveDb(ds, gzw, cfg, port, tport, p)
+            rc = serveDb(ds, gzw, cfg, port, tport, h2port, p)
         }, size: poolSize(), policy: pg.Policy{password: pw, dangerouslyPlaintext: true})
         if oe == nil && rc >= 0 {
             return rc
@@ -326,9 +329,19 @@ func run(port string, tport string) int {
         if cfg != nil {
             _ = task.Spawn(s, () => serveTls(ds, cfg, tport))
         }
+        _ = task.Spawn(s, () => if h2c(routes(ds), gzw, h2port) == nil { 0 } else { 1 })
         plain(routes(ds), gzw, port)
     })
     return if se != nil || pe != nil { 1 } else { 0 }
+}
+
+// HTTP/2 with prior knowledge (h2c) on the third port: the same routes, ServeConn with proto: H2 (the baseline-h2c and json-h2c profiles)
+func h2c(rs []http.server.Route, gzw task.Local, port string) error? {
+    for l <- net.Listen("0.0.0.0:${port}")? {
+        io.WriteStdout(bytes("h2c-ready ${net.Port(l)}\n"))?
+        net.Serve(l, (c net.Conn) => http.server.ServeConn(c, (r http.server.Request) => http.server.Dispatch(rs, r), maxBody: maxBody, compression: http.server.Gzip{}, work: gzw, proto: http.server.H2), conns: 40000)?
+    }
+    return nil
 }
 
 func plain(rs []http.server.Route, gzw task.Local, port string) error? {
@@ -341,11 +354,12 @@ func plain(rs []http.server.Route, gzw task.Local, port string) error? {
 
 // With DATABASE_URL: the plain port answers /async-db from the pool p (a handler kept in the route table or behind
 // tls.Serve cannot capture the pool, so those answer the empty body). Without it the server is run / plain above, unchanged
-func serveDb(ds []Item, gzw task.Local, cfg tls.Config?, port string, tport string, p pg.Pool) int {
+func serveDb(ds []Item, gzw task.Local, cfg tls.Config?, port string, tport string, h2port string, p pg.Pool) int {
     pe, se := task.Run((s task.Scope) => {
         if cfg != nil {
             _ = task.Spawn(s, () => serveTls(ds, cfg, tport))
         }
+        _ = task.Spawn(s, () => if h2c(routes(ds), gzw, h2port) == nil { 0 } else { 1 })
         plainDb(routes(ds), gzw, port, p)
     })
     return if se != nil || pe != nil { 1 } else { 0 }
@@ -361,8 +375,8 @@ func plainDb(rs []http.server.Route, gzw task.Local, port string, p pg.Pool) err
 
 func main() int {
     args := os.Args() catch return 2
-    if len(args) > 3 {
+    if len(args) > 4 {
         return 2
     }
-    return run(if len(args) >= 2 { args[1] } else { "8080" }, if len(args) == 3 { args[2] } else { "8081" })
+    return run(if len(args) >= 2 { args[1] } else { "8080" }, if len(args) >= 3 { args[2] } else { "8081" }, if len(args) == 4 { args[3] } else { "8082" })
 }
