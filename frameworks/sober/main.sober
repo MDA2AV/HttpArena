@@ -339,7 +339,7 @@ func run(port string, tport string, h2port string) int {
 func h2c(rs []http.server.Route, gzw task.Local, port string) error? {
     for l <- net.Listen("0.0.0.0:${port}")? {
         io.WriteStdout(bytes("h2c-ready ${net.Port(l)}\n"))?
-        net.Serve(l, (c net.Conn) => http.server.ServeConn(c, (r http.server.Request) => http.server.Dispatch(rs, r), maxBody: maxBody, compression: http.server.Gzip{}, work: gzw, proto: http.server.H2), conns: 40000)?
+        net.Serve(l, (c net.Conn) => http.server.ServeConn(c, (r http.server.Request) => http.server.Dispatch(rs, r), maxBody: maxBody, compression: http.server.Gzip{}, work: gzw, proto: http.server.H2), conns: 1100000)?
     }
     return nil
 }
@@ -347,7 +347,7 @@ func h2c(rs []http.server.Route, gzw task.Local, port string) error? {
 func plain(rs []http.server.Route, gzw task.Local, port string) error? {
     for l <- net.Listen("0.0.0.0:${port}")? {
         io.WriteStdout(bytes("ready ${net.Port(l)}\n"))?
-        net.Serve(l, (c net.Conn) => http.server.ServeConn(c, (r http.server.Request) => http.server.Dispatch(rs, r), maxBody: maxBody, compression: http.server.Gzip{}, work: gzw), conns: 40000)?
+        net.Serve(l, (c net.Conn) => http.server.ServeConn(c, (r http.server.Request) => http.server.Dispatch(rs, r), maxBody: maxBody, compression: http.server.Gzip{}, work: gzw), conns: 1100000)?
     }
     return nil
 }
@@ -368,7 +368,7 @@ func serveDb(ds []Item, gzw task.Local, cfg tls.Config?, port string, tport stri
 func plainDb(rs []http.server.Route, gzw task.Local, port string, p pg.Pool) error? {
     for l <- net.Listen("0.0.0.0:${port}")? {
         io.WriteStdout(bytes("ready ${net.Port(l)}\n"))?
-        net.Serve(l, (c net.Conn) => http.server.ServeConn(c, (r http.server.Request) => if r.path == "/async-db" && r.method == "GET" { asyncDb(p, r) } else { http.server.Dispatch(rs, r) }, maxBody: maxBody, compression: http.server.Gzip{}, work: gzw), conns: 40000)?
+        net.Serve(l, (c net.Conn) => http.server.ServeConn(c, (r http.server.Request) => if r.path == "/async-db" && r.method == "GET" { asyncDb(p, r) } else { http.server.Dispatch(rs, r) }, maxBody: maxBody, compression: http.server.Gzip{}, work: gzw), conns: 1100000)?
     }
     return nil
 }
