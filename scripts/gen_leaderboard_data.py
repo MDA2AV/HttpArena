@@ -1784,12 +1784,15 @@ def compute_achievements(agg, profiles, meta, badge_index):
 # to the front page (404.html), and nothing here is renamed.
 VIEW_SLUG = {"all": "overall", "h2": "http2", "h3": "http3", "gw": "gateway",
              "grpc": "grpc", "ws": "websocket", "db": "database"}
+# A profile is at its id, but for the ids that are not what a visitor sees it called.
+PROFILE_SLUG = {"limited-conn": "short-lived", "json-comp": "json-compressed",
+                "gateway-64": "gateway-h2"}
 
 
 def _view_url(vid):
     """The board's page for a family or a profile. The path names the view; the hash
     after it only says how the view is shown."""
-    return "/" if vid == DEFAULT_SCOPE else "/board/" + VIEW_SLUG.get(vid, vid) + "/"
+    return "/" if vid == DEFAULT_SCOPE else "/board/" + (VIEW_SLUG.get(vid) or PROFILE_SLUG.get(vid, vid)) + "/"
 
 
 SCOPE_NAME = {"h1": "HTTP/1.1", "h2": "HTTP/2", "h3": "HTTP/3",
