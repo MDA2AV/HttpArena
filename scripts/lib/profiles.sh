@@ -119,10 +119,12 @@ declare -A PROFILES=(
     # them idle - one request each, then never used again - while the other 5%
     # (100,000 active ones, the first 4,096 opened before the ramp starts) carry
     # 100K req/s throughout. The question is how many of the fleet's connections
-    # the server takes before the active ones' p99 goes over 2 ms; a keep-alive
-    # timeout that closes the idle ones is fine, and counted. gcannon opens the
-    # fleet (--ramp-up, --idle) and reports one line per interval; the p99 limit
-    # is the harness's own (scripts/conn_hold.py, latency_score.RAMP). Needs
+    # the server takes before the active ones' p99 goes over 2 ms. A server may
+    # close an idle one after it has kept it 30 seconds (validate-keepalive.py
+    # checks a handful, conn_hold.py the run), and what it closed is counted;
+    # gcannon opens the fleet (--ramp-up, --idle) and reports one line per
+    # interval; the p99 limit and the 30 seconds are the harness's own
+    # (scripts/conn_hold.py, latency_score.RAMP). Needs
     # gcannon >= 0.10.0. Same density per address as the other held profiles
     # (31,250, over 127.0.0.1-.64). Opt-in and reference-only while the first
     # field is measured.

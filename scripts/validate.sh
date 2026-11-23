@@ -1369,6 +1369,25 @@ if has_test "connections-5m" || has_test "connections-1m" || has_test "connectio
     check "GET /baseline11 on 127.0.0.160" "55" "$HELD_DOCS" \
         "http://127.0.0.160:$PORT/baseline11?a=13&b=42"
 fi
+# connections-ramp-h1: 95% of its two million connections are idle after one
+# request. A server may close an idle connection, but has to keep it for 30
+# seconds first: with a five second keep-alive it holds a few percent of the fleet
+# and the profile measures how fast it can churn connections instead of how many
+# it can carry. The check waits 29 s - a second for timers that run coarse - and
+# the run is held to the same (scripts/conn_hold.py, idle_age).
+if has_test "connections-ramp-h1"; then
+    echo "[test] connections-ramp-h1: idle connections kept for 30 seconds"
+    IDLE_OUTPUT=$(python3 "$SCRIPT_DIR/validate-keepalive.py" localhost "$PORT" 29 2>&1) || true
+    echo "$IDLE_OUTPUT"
+    # A helper that died before its summary line is a failure, not a skip.
+    IDLE_PASS=$(printf '%s\n' "$IDLE_OUTPUT" | grep -oP '\d+(?= passed)' | tail -1 || true)
+    IDLE_FAIL=$(printf '%s\n' "$IDLE_OUTPUT" | grep -oP '\d+(?= failed)' | tail -1 || true)
+    PASS=$((PASS + ${IDLE_PASS:-0}))
+    FAIL=$((FAIL + ${IDLE_FAIL:-1}))
+    if [ "${IDLE_FAIL:-1}" -gt 0 ]; then
+        echo "        → $DOCS_BASE/h1/connections-ramp/validation"
+    fi
+fi
 # connections-1m-tls: a million over TLS on the h1 TLS port (127.0.0.1-.32),
 # where the baseline GET has to answer too, and over TLS 1.3 - the only
 # version gcannon offers - or every handshake of the run fails.

@@ -72,7 +72,8 @@ million:
 
 `reached` is every connection opened by the last interval that held the limit
 (conn_hold.py ramp_summary), idle ones included, whether or not the server has
-closed some of them since: closing them is a server doing its job, and is
+closed some of them since: closing one is a server doing its job, once it has
+kept it 30 seconds (a server that closes them younger ends its own ramp), and is
 reported beside it. No ratio against the field's best: the limit is fixed and so
 is the target.
 

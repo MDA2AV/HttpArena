@@ -50,7 +50,9 @@ CONN1M_TLS_WARMUP_MAX="${CONN1M_TLS_WARMUP_MAX:-900}"
 # open. The idle ones send one request and are never used or reopened, so a
 # server that times them out shows it (gcannon >= 0.10.0: --ramp-up, --idle).
 # The p99 limit is not gcannon's: conn_hold.py finds where the interval lines
-# cross CONNRAMP_P99_US and reports how many connections it took to get there.
+# cross CONNRAMP_P99_US and reports how many connections it took to get there. A
+# server that closes idle ones before they have been open CONNRAMP_IDLE_MIN
+# seconds (less a second for coarse timers) ends the ramp the same way.
 GCANNON_RATE_CONNECTIONS_RAMP="${GCANNON_RATE_CONNECTIONS_RAMP:-100000}"
 CONNRAMP_FLOOR="${CONNRAMP_FLOOR:-4096}"
 CONNRAMP_UP="${CONNRAMP_UP:-120}"
@@ -58,6 +60,7 @@ CONNRAMP_WINDOW="${CONNRAMP_WINDOW:-130}"
 CONNRAMP_IDLE="${CONNRAMP_IDLE:-95%}"
 CONNRAMP_ADDRS="${CONNRAMP_ADDRS:-64}"
 CONNRAMP_P99_US="${CONNRAMP_P99_US:-2000}"
+CONNRAMP_IDLE_MIN="${CONNRAMP_IDLE_MIN:-30}"
 CONNRAMP_CONNECT_LIMIT="${CONNRAMP_CONNECT_LIMIT:-64}"
 CONNRAMP_WARMUP_MAX="${CONNRAMP_WARMUP_MAX:-60}"
 CONNRAMP_SETTLE="${CONNRAMP_SETTLE:-30}"
@@ -238,7 +241,7 @@ _gcannon_hold_run() {
     [ "$profile" = "connections-1m-tls" ] && kernel_kib=16
     if [ "$profile" = "connections-ramp-h1" ]; then
         window="$CONNRAMP_WINDOW"
-        extra=(--ramp-p99-us "$CONNRAMP_P99_US")
+        extra=(--ramp-p99-us "$CONNRAMP_P99_US" --idle-min-s "$CONNRAMP_IDLE_MIN")
     fi
     timeout $(( warm + CONN5M_SETTLE + window + 300 )) python3 "$SCRIPT_DIR/conn_hold.py" \
         --profile "$profile" --conns "$conns" --rate "$rate" --port "$hport" \

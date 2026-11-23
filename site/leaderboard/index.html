@@ -2064,8 +2064,8 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     // name back ~200px and loses no information.
     if(LAT_RAMP[state.profile]){
       c.push({k:'l1mscore', label:'Score', num:true, w:'92px', min:0, tip:'0-100: the connections reached before the active ones\u2019 p99 went over 2 ms, as a share of the two million the ramp opens. Higher is better.'});
-      c.push({k:'reached', label:'Reached', num:true, w:'112px', min:0, tip:'Every connection opened by the last interval that held the 2 ms p99, idle ones included, whether or not the server has closed some of them since.'});
-      c.push({k:'held', label:'Open', num:true, w:'112px', min:0, tip:'Connections open at that moment. With a keep-alive timeout shorter than the ramp the server closes idle ones, so this is below Reached.'});
+      c.push({k:'reached', label:'Reached', num:true, w:'112px', min:0, tip:'Every connection opened by the last interval that held the 2 ms p99, idle ones included, whether or not the server has closed some of them since. An idle connection has to be kept 30 seconds first.'});
+      c.push({k:'held', label:'Peak open', num:true, w:'112px', min:0, tip:'The most connections open at once, in any interval up to then. With a keep-alive timeout shorter than the ramp the server closes idle ones, so this is below Reached.'});
       c.push({k:'shed', label:'Closed', num:true, w:'100px', min:520, tip:'Idle connections the server had closed by then: how it sheds what it is not using.'});
       c.push({k:'cpureq', label:'CPU / req', num:true, w:'110px', min:640, tip:'CPU microseconds the server spent per request over the whole run, read exactly out of its cgroup rather than sampled.'});
       c.push({k:'mem', label:'Mem', num:true, w:'92px', min:0, tip:'The server container\u2019s peak memory across the run.'});

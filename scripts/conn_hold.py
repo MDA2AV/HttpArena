@@ -75,6 +75,15 @@ MIN_VERSION_RAMP = (0, 10, 0)
 # next to it describes a server that is not keeping up (or one that has
 # answered nothing at all, and has no p99).
 RAMP_RATE_SHARE = 0.9
+# connections-ramp-h1: the least time an idle connection has to be left open,
+# and how much earlier a close still passes - a server's timer may be coarse.
+# validate-keepalive.py asks the same of a handful of connections; this asks it
+# of the run, where a server under load might do otherwise.
+IDLE_MIN_S = 30.0
+IDLE_SLACK_S = 1.0
+# Closes below this share of the idle connections opened are not looked at: a few
+# resets are not a server shedding.
+IDLE_CLOSED_SHARE = 0.01
 
 
 def log(msg: str) -> None:
@@ -184,25 +193,51 @@ def _raise_nofile(want: int) -> str | None:
             "fs.nr_open")
 
 
+def idle_age(rows: list, i: int) -> float | None:
+    """How long the idle connections the server closed by the end of row i had
+    been open, in seconds: the time since the idle_closed(i)-th idle connection
+    was opened. A server that gives every connection the same time closes them
+    oldest first, so the n-th close is the n-th open and this is its timeout; one
+    that closes in another order comes out as the mean age. None while too few
+    were closed to say."""
+    closed = rows[i].get("idle_closed") or 0
+    opened = rows[i].get("idle_opened") or 0
+    if opened <= 0 or closed < IDLE_CLOSED_SHARE * opened:
+        return None
+    now = rows[i].get("t") or 0.0
+    t0, n0 = 0.0, 0
+    for r in rows[:i + 1]:
+        t, n = r.get("t") or 0.0, r.get("idle_opened") or 0
+        if n >= closed:
+            return now - (t0 + (t - t0) * (closed - n0) / (n - n0) if n > n0 else t)
+        t0, n0 = t, n
+    return None
+
+
 def ramp_summary(args, g: dict) -> tuple[dict | None, str | None]:
     """How far the ramp got before the active connections' p99 went over the
     limit, from gcannon's timeline (one row per interval). Returns (summary,
     None) or (None, why not).
 
     The row that counts is the last one before the limit is crossed. A crossing
-    is an interval over the limit - its p99, or its rate short of what was
-    offered, which is also how a server that stopped answering reads - with the
-    one after it over too, or with nothing after it: one noisy interval on its
-    own is not the end of a ramp. `reached` is every connection opened by then,
-    idle ones included, whether or not the server has closed some since;
-    `connections_open` is how many of them were open at that moment."""
+    is an interval over the limit - its p99, its rate short of what was offered,
+    which is also how a server that stopped answering reads, or idle connections
+    closed younger than IDLE_MIN_S - with the one after it over too, or with
+    nothing after it: one noisy interval on its own is not the end of a ramp.
+    `reached` is every connection opened by then, idle ones included, whether or
+    not the server has closed some since; `connections_open` is the most of them
+    that were open at once."""
     rows = g.get("timeline") or []
     if not rows:
         return None, "no interval timeline in gcannon's summary"
 
-    def over(r: dict) -> str:
+    def over(i: int) -> str:
+        r = rows[i]
         if (r.get("rps") or 0) < RAMP_RATE_SHARE * args.rate:
             return "rate"
+        age = idle_age(rows, i)
+        if age is not None and age < args.idle_min_s - IDLE_SLACK_S:
+            return "shed"
         if (r.get("p99_us") or 0) > args.ramp_p99_us:
             return "p99"
         return ""
@@ -210,24 +245,28 @@ def ramp_summary(args, g: dict) -> tuple[dict | None, str | None]:
     reached = open_now = idle_closed = 0
     stop, crossed = "ceiling", None
     for i, r in enumerate(rows):
-        why = over(r)
-        if why and (i + 1 == len(rows) or over(rows[i + 1])):
-            stop, crossed = why, r
+        why = over(i)
+        if why and (i + 1 == len(rows) or over(i + 1)):
+            stop, crossed = why, i
             break
         if why:
             continue   # one interval on its own
         # opened so far: the active connections open now, and every idle one
         # ever opened (the timeline has no idle_* keys without --idle)
         reached = (r.get("active") or 0) + (r.get("idle_opened") or 0)
-        open_now = (r.get("active") or 0) + (r.get("idle_open") or 0)
+        open_now = max(open_now, (r.get("active") or 0) + (r.get("idle_open") or 0))
         idle_closed = r.get("idle_closed") or 0
     out = {"reached": reached, "connections_open": open_now, "stop": stop,
            "idle_closed": idle_closed, "p99_limit_us": args.ramp_p99_us,
            "intervals": len(rows)}
     if crossed is not None:
-        out["stop_t"] = crossed.get("t")
-        out["stop_p99_us"] = crossed.get("p99_us")
-        out["stop_rps"] = crossed.get("rps")
+        r = rows[crossed]
+        out["stop_t"] = r.get("t")
+        out["stop_p99_us"] = r.get("p99_us")
+        out["stop_rps"] = r.get("rps")
+        age = idle_age(rows, crossed)
+        if age is not None:
+            out["stop_idle_age_s"] = round(age, 2)
     return out, None
 
 
@@ -353,12 +392,18 @@ def run(args, prefix: list[str], gargs: list[str]) -> dict:
         found, why = ramp_summary(args, g)
         if found is None:
             return _error(args, why or "no ramp in gcannon's summary")
-        log("reached %d connections (%d open) within %.1f ms p99; stopped by %s%s"
+        tail = ""
+        if found["stop"] != "ceiling":
+            tail = " at %.0f s (p99 %.2f ms, %.0f req/s" % (
+                found.get("stop_t") or 0, (found.get("stop_p99_us") or 0) / 1000,
+                found.get("stop_rps") or 0)
+            if found["stop"] == "shed":
+                tail += ", idle connections closed after %.1f s, at least %.0f s is required" % (
+                    found.get("stop_idle_age_s") or 0, args.idle_min_s)
+            tail += ")"
+        log("reached %d connections (at most %d open at once) within %.1f ms p99; stopped by %s%s"
             % (found["reached"], found["connections_open"], args.ramp_p99_us / 1000,
-               found["stop"], "" if found["stop"] == "ceiling"
-               else " at %.0f s (p99 %.2f ms, %.0f req/s)"
-               % (found.get("stop_t") or 0, (found.get("stop_p99_us") or 0) / 1000,
-                  found.get("stop_rps") or 0)))
+               found["stop"], tail))
         summary["ramp"] = found
         summary["connections_open"] = found["connections_open"]
     return summary
@@ -387,6 +432,9 @@ def main(argv: list[str]) -> int:
     ap.add_argument("--ramp-p99-us", dest="ramp_p99_us", type=int, default=0,
                     help="connections-ramp-h1: the p99 limit (microseconds) the ramp is "
                          "read against; 0 = not a ramp")
+    ap.add_argument("--idle-min-s", dest="idle_min_s", type=float, default=IDLE_MIN_S,
+                    help="connections-ramp-h1: the least time (seconds) an idle connection "
+                         "has to be left open before the server may close it")
     args = ap.parse_args(argv[:i])
     print(json.dumps(run(args, argv[i + 1:j], argv[j + 1:]), indent=1))
     return 0
