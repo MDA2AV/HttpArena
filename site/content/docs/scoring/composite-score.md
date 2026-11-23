@@ -81,6 +81,7 @@ The tables below show whether a profile counts for framework entries. Engines an
 | CON-1M | Yes | One million held connections at a fixed 250K req/s; scored on CPU per request, memory, p50 and p99 ([held-connection score](/docs/test-profiles/h1/connections/implementation/#scoring)) |
 | CON-1M-TLS | Yes | The same over TLS 1.3 |
 | CON-5M | No (*) | Five million held connections at 1.25M req/s. Reference-only, and run only for the entries on the allowlist |
+| CON-RAMP | No (*) | A ramp to two million connections, 95% of them idle, while the active ones hold 100K req/s: how many it reached before their p99 passed 2 ms. Reference-only |
 | JSON Compressed | Yes | JSON with `Accept-Encoding: gzip, br` and multiplier `?m=N` |
 | JSON TLS | Yes | JSON workload over HTTP/1.1 + TLS on port 8081 |
 | 8Gbit | Yes | 10 KB echoed over TLS at a fixed 50K req/s; scored on CPU cost and latency (0-100 score, see above) |

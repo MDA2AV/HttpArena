@@ -139,6 +139,7 @@ pipeline | req_per_conn | cpu_limit | connections | endpoint
 | `connections-5m` | 1 | ∞ | `0-31,64-95` | 5000000 | gcannon `--rate` (≥ 0.8.2) | `/baseline11` paced at 1.25M req/s over 5M held connections on 127.0.0.1-.160, 20s window |
 | `connections-1m-tls` | 1 | ∞ | `0-31,64-95` | 1000000 | gcannon `--rate` (≥ 0.8.4) | `/baseline11` over TLS 1.3 on `H1TLS_PORT`, paced at 250K req/s over 1M held connections on 127.0.0.1-.32 |
 | `connections-1m` | 1 | ∞ | `0-31,64-95` | 1000000 | zrk 3.0.2, one per address | `/baseline11` paced at 250K req/s over 1M held connections on 127.0.0.1-.32 |
+| `connections-ramp-h1` | 1 | ∞ | `0-31,64-95` | 2000000 | gcannon `--ramp-up --idle` (≥ 0.10.0) | `/baseline11` at 100K req/s while 2M connections open over 120s on 127.0.0.1-.64, 95% idle; ends where the p99 passes 2 ms |
 | `json-comp` | 1 | ∞ | `0-31,64-95` | 4096, 16384 | gcannon | `/json/{count}` + `Accept-Encoding: gzip, br` |
 | `json-tls` | 1 | ∞ | `0-31,64-95` | 4096 | wrk | `/json/{count}` over TLS on `H1TLS_PORT` |
 | `8gbit` | 1 | ∞ | `0-31,64-95` | 512 | zrk | `POST /echo` on TLS `:8081` - 10 KB echoed, paced at 50k req/s |

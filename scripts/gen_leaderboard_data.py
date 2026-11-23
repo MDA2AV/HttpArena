@@ -81,6 +81,14 @@ CATALOG = [
         # server may grow to 128 GiB, so the field is chosen rather than open.
         ("connections-5m", "CON-5M", "Score out of 100 (reference): CPU per request, memory, p50 and p99 latency with five million held connections at 1.25M req/s.",
                                                     [5000000],           [5000000],       False,False,False),
+        # CON-RAMP: two million connections opened evenly over two minutes,
+        # 95% of them idle after one request, the other 5% carrying a fixed 100K
+        # req/s. The score is how many the ramp reached before those active
+        # ones' p99 went over 2 ms, as a share of the two million
+        # (latency_score.RAMP, conn_hold.py ramp_summary). Reference-only while
+        # the first field is measured.
+        ("connections-ramp-h1", "CON-RAMP", "Score out of 100 (reference): connections reached on a ramp to two million, 95% of them idle, before the active ones' p99 goes over 2 ms.",
+                                                    [2000000],           [2000000],       False,False,False),
     ]),
     ("Efficiency", [
         # Scored, on the same terms as latency-1m below: the rate is pinned, so
@@ -167,7 +175,8 @@ TPL_FIELDS = ("tpl_baseline", "tpl_json", "tpl_upload", "tpl_static", "tpl_async
 # Efficiency-only. Emitted like TPL_FIELDS - only where present - so the
 # other ~2,300 rows in data.js do not each grow four nulls.
 EFF_FIELDS = ("cpu_usec", "cpu_per_req_us", "rate_ratio", "target_rate",
-              "p99_9_latency", "connections_open", "p50_latency")
+              "p99_9_latency", "connections_open", "p50_latency",
+              "ramp_reached", "idle_closed")
 
 # Map each benchmark profile to its Knowledge Base "Implementation Guidelines"
 # page (docs ids differ from profile ids; TLS gRPC variants share one page).
@@ -185,6 +194,7 @@ PROFILE_DOC = {
     "connections-1m":     "test-profiles/h1/connections/implementation",
     "connections-1m-tls": "test-profiles/h1/connections/implementation",
     "connections-5m":     "test-profiles/h1/connections/implementation",
+    "connections-ramp-h1": "test-profiles/h1/connections-ramp/implementation",
     # The database profiles rank on their own board but keep their docs under
     # h1/: those pages are linked from outside, so their URLs stay.
     "async-db":         "test-profiles/h1/async-database/implementation",
@@ -1286,7 +1296,8 @@ def lat_scores(pid):
              "p99": _lat.to_us(r.get("p99_latency")),
              "mean": _lat.to_us(r.get("avg_latency")),
              "p50": _lat.to_us(r.get("p50_latency")),
-             "mem": _lat.to_mib(r.get("memory"))}
+             "mem": _lat.to_mib(r.get("memory")),
+             "reached": r.get("ramp_reached") or 0}
             for key, rs in RESULTS.items()
             if key.startswith(pid + "-") and key[len(pid) + 1:].isdigit()
             for r in rs]

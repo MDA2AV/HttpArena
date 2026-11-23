@@ -86,10 +86,11 @@ ulimit -n "$HARD_NOFILE" 2>/dev/null || true
 # The 5M caps are what the 251 GiB bench host has left after the fleet itself:
 # ~4 KiB of gcannon and ~8 KiB of kernel (both sockets and a conntrack entry)
 # per connection is ~57 GiB at five million; a server spending ~25 KiB per
-# connection fits in 128g. The million-connection profiles (connections-1m-tls,
-# connections-1m) get the 1M caps. Over TLS the kernel adds ~4 KiB of TLS
-# state per socket on each side that uses it, so the fleet costs ~20 KiB a
-# connection, ~19 GiB at a million, besides the server.
+# connection fits in 128g. connections-ramp-h1, two million mostly idle
+# connections, gets those caps too; the million-connection profiles
+# (connections-1m-tls, connections-1m) get the 1M caps. Over TLS the kernel
+# adds ~4 KiB of TLS state per socket on each side that uses it, so the fleet
+# costs ~20 KiB a connection, ~19 GiB at a million, besides the server.
 CONN1M_NOFILE="${CONN1M_NOFILE:-2097152}"
 CONN1M_MEM_LIMIT="${CONN1M_MEM_LIMIT:-96g}"
 CONN5M_NOFILE="${CONN5M_NOFILE:-8388608}"
@@ -107,7 +108,7 @@ HELD_CONN_DRAIN_TIMEOUT="${HELD_CONN_DRAIN_TIMEOUT:-600}"
 # "<nofile> <memory cap>" for a held-connection profile's server container.
 held_conn_limits() {
     case "$1" in
-        connections-5m)     echo "$CONN5M_NOFILE $CONN5M_MEM_LIMIT" ;;
+        connections-5m|connections-ramp-h1) echo "$CONN5M_NOFILE $CONN5M_MEM_LIMIT" ;;
         *)                  echo "$CONN1M_NOFILE $CONN1M_MEM_LIMIT" ;;
     esac
 }

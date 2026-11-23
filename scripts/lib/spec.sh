@@ -14,7 +14,7 @@ SPEC_SUITES=""
 # listener, ws the /ws echo.
 spec_profiles_for() {
     case "$1" in
-        h1) echo "baseline pipelined limited-conn json-comp async async-db fortunes latency-1m latency-10k connections-1m connections-1m-tls connections-5m" ;;
+        h1) echo "baseline pipelined limited-conn json-comp async async-db fortunes latency-1m latency-10k connections-1m connections-1m-tls connections-5m connections-ramp-h1" ;;
         h2) echo "baseline-h2 static-h2 baseline-h2c json-h2c" ;;
         h3) echo "baseline-h3 static-h3" ;;
         ws) echo "echo-ws echo-ws-pipeline echo-ws-limited" ;;

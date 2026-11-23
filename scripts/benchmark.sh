@@ -183,7 +183,7 @@ done
 # and any combination thereof.
 _has_isolated_test=false
 for t in baseline pipelined limited-conn json-comp json-tls upload \
-         static-tls async-db async latency-1m latency-10k connections-5m connections-1m-tls connections-1m \
+         static-tls async-db async latency-1m latency-10k connections-5m connections-1m-tls connections-1m connections-ramp-h1 \
          baseline-h2 static-h2 baseline-h2c json-h2c \
          baseline-h3 static-h3 \
          unary-grpc unary-grpc-tls \
@@ -356,7 +356,7 @@ run_one() {
     # three runs, which is not known until all three have happened. Every run is
     # recorded here and the choice is made below.
     local _mdir=""
-    case "$endpoint" in latency-1m|latency-10k|8gbit|connections-5m|connections-1m-tls|connections-1m) _mdir=$(mktemp -d) ;; esac
+    case "$endpoint" in latency-1m|latency-10k|8gbit|connections-5m|connections-1m-tls|connections-1m|connections-ramp-h1) _mdir=$(mktemp -d) ;; esac
 
     BEST_M=()
     local run
@@ -584,8 +584,14 @@ run_one() {
         if [ -n "${BEST_M[hold_error]:-}" ]; then
             warn "$endpoint did not run: ${BEST_M[hold_error]}"
         else
-            echo "=== Connections: ${BEST_M[connections_open]:-n/a} open of $CONNS | connect errors in the window ${BEST_M[connect_errors]:-n/a} ==="
-            if [ -n "${BEST_M[connections_open]:-}" ] \
+            if [ "$endpoint" = "connections-ramp-h1" ]; then
+                # Not a fleet that was held: how far the ramp got, and what
+                # stopped it (ceiling, p99 or rate; scripts/conn_hold.py).
+                echo "=== Ramp: reached ${BEST_M[ramp_reached]:-n/a} of $CONNS connections (${BEST_M[connections_open]:-n/a} open, ${BEST_M[idle_closed]:-n/a} idle closed by the server) | stopped by ${BEST_M[ramp_stop]:-n/a} ==="
+            else
+                echo "=== Connections: ${BEST_M[connections_open]:-n/a} open of $CONNS | connect errors in the window ${BEST_M[connect_errors]:-n/a} ==="
+            fi
+            if [ "$endpoint" != "connections-ramp-h1" ] && [ -n "${BEST_M[connections_open]:-}" ] \
                && [ "${BEST_M[connections_open]}" -lt $(( CONNS * 99 / 100 )) ] 2>/dev/null; then
                 warn "held ${BEST_M[connections_open]} of $CONNS connections through the window"
             fi
@@ -703,6 +709,14 @@ save_result() {
   \"p50_latency\": \"${BEST_M[p50_lat]:-}\",
   \"connections_open\": ${BEST_M[connections_open]:-null},
   \"window_connect_errors\": ${BEST_M[connect_errors]:-null}"
+            # connections-ramp-h1: the ramp's outcome (conn_hold.py
+            # ramp_summary), which the score is.
+            if [ "$profile" = "connections-ramp-h1" ]; then
+                eff_extra="$eff_extra,
+  \"ramp_reached\": ${BEST_M[ramp_reached]:-null},
+  \"ramp_stop\": \"${BEST_M[ramp_stop]:-}\",
+  \"idle_closed\": ${BEST_M[idle_closed]:-null}"
+            fi
         fi
     fi
 

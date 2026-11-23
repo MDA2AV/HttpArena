@@ -94,7 +94,9 @@ Everywhere else gcannon sends the next request the moment the last response arri
 
 A fleet that large needs four more options. `--addr-span` spreads it over consecutive loopback addresses, since one source address holds about 64.5K connections to one destination. `--connect-limit` caps the first connects in flight per thread, so millions of SYNs never land at once; over `https://` a connection counts until its handshake is done, so the server is never handed more handshakes than it completes. `--warmup-max` lets the warmup wait long enough for every connection to open, and `--settle` keeps the load running after that, before the window opens, so the server has worked off the connect phase by the time measuring starts. On stderr gcannon marks the window's start and end (`gcannon: warmup done ...`, `gcannon: measurement done`), which `scripts/conn_hold.py` uses to read the server's CPU over exactly that window.
 
-The held-connection profiles need gcannon 0.8.2 or later, and 0.8.4 or later over TLS. `gcannon --version` prints the version.
+With `--ramp-up` the connections beyond `--ramp` open evenly over a duration instead of all at once, and with `--idle` part of them send a single request and are then left alone; [CON-RAMP](/docs/test-profiles/h1/connections-ramp/implementation/) is built on both. There the rate belongs to the thread, not to any one connection, since the active ones come and go: each thread sends its own share of it to whichever connection has been free the longest, and gcannon reports a line per interval.
+
+The held-connection profiles need gcannon 0.8.2 or later, 0.8.4 or later over TLS, and 0.10.0 or later for CON-RAMP. `gcannon --version` prints the version.
 
 ## Command-line reference
 

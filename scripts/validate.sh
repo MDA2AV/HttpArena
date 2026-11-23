@@ -1251,7 +1251,7 @@ wait_h2() {
 # The fixed-rate profiles drive GET /baseline11, so they need the same
 # handler to be correct and gets its coverage from this section rather than
 # one of its own -- there is nothing about it a request-shaped check can see.
-if has_test "baseline" || has_test "limited-conn" || has_test "latency-1m" || has_test "latency-10k" || has_test "connections-5m" || has_test "connections-1m-tls" || has_test "connections-1m"; then
+if has_test "baseline" || has_test "limited-conn" || has_test "latency-1m" || has_test "latency-10k" || has_test "connections-5m" || has_test "connections-1m-tls" || has_test "connections-1m" || has_test "connections-ramp-h1"; then
     BASELINE_DOCS="$DOCS_BASE/h1/baseline/validation"
     echo "[test] baseline endpoints"
     check "GET /baseline11?a=13&b=42" "55" "$BASELINE_DOCS" \
@@ -1355,13 +1355,14 @@ fi
 # ───── Held connections: a listener on every loopback address ─────
 
 # connections-5m spreads its five million connections over 127.0.0.1-
-# 127.0.0.160 (connections-1m its million over .1-.32), because one source
-# address holds at most ~64K connections to one destination. A server bound to
+# 127.0.0.160 (connections-1m its million over .1-.32, connections-ramp-h1 its
+# two million over .1-.64), because one source address holds at most ~64K
+# connections to one destination. A server bound to
 # 127.0.0.1 or "localhost" passes every check above and refuses all of these
 # but the first, so the profiles ask for a listener on 0.0.0.0 or [::] and this
 # is where an entry finds out. Both ends of the widest range.
 HELD_DOCS="$DOCS_BASE/h1/connections/validation"
-if has_test "connections-5m" || has_test "connections-1m"; then
+if has_test "connections-5m" || has_test "connections-1m" || has_test "connections-ramp-h1"; then
     echo "[test] held connections: listener on every address"
     check "GET /baseline11 on 127.0.0.2" "55" "$HELD_DOCS" \
         "http://127.0.0.2:$PORT/baseline11?a=13&b=42"

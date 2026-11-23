@@ -22,6 +22,7 @@
     "connections-5m",
     "connections-1m-tls",
     "connections-1m",
+    "connections-ramp-h1",
     "latency-10k",
     "pipelined",
     "limited-conn",

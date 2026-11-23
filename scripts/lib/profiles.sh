@@ -115,6 +115,18 @@ declare -A PROFILES=(
     # (scripts/zrk_fanout.py) and merges their histograms. It stays at a
     # million: zrk's ~41 KiB per connection rules out five.
     [connections-1m]="1|0|0-31,64-95|1000000|connections-1m"
+    # CON-RAMP: two million connections opened evenly over two minutes, 95% of
+    # them idle - one request each, then never used again - while the other 5%
+    # (100,000 active ones, the first 4,096 opened before the ramp starts) carry
+    # 100K req/s throughout. The question is how many of the fleet's connections
+    # the server takes before the active ones' p99 goes over 2 ms; a keep-alive
+    # timeout that closes the idle ones is fine, and counted. gcannon opens the
+    # fleet (--ramp-up, --idle) and reports one line per interval; the p99 limit
+    # is the harness's own (scripts/conn_hold.py, latency_score.RAMP). Needs
+    # gcannon >= 0.10.0. Same density per address as the other held profiles
+    # (31,250, over 127.0.0.1-.64). Opt-in and reference-only while the first
+    # field is measured.
+    [connections-ramp-h1]="1|0|0-31,64-95|2000000|connections-ramp-h1"
     [json-comp]="1|0|0-31,64-95|4096,16384|json-compressed"
     [json-tls]="1|0|0-31,64-95|4096|json-tls"
     # 8Gbit: 100 KB up and the same 100 KB back, over TLS. The only profile
@@ -174,14 +186,16 @@ PROFILE_ORDER=(
     connections-5m
     connections-1m-tls
     connections-1m
+    connections-ramp-h1
 )
 
 # The held-connection profiles. Everything the harness does around their load
 # (host limits, the server's fd and memory caps, the window CPU, the held
-# count) is the same for all three; only the generator and the scale differ.
+# count) is the same for all of them; only the generator, the scale and - for
+# connections-ramp-h1 - the shape of the load differ.
 held_conn_profile() {
     case "$1" in
-        connections-5m|connections-1m-tls|connections-1m) return 0 ;;
+        connections-5m|connections-1m-tls|connections-1m|connections-ramp-h1) return 0 ;;
     esac
     return 1
 }

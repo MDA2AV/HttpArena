@@ -52,7 +52,7 @@ Each load generator has a pair of variables - native binary name and docker imag
 
 | Native (`$TOOL`) | Docker (`$TOOL_IMAGE`) | Used for | Source |
 |---|---|---|---|
-| `GCANNON=gcannon` | `GCANNON_IMAGE=gcannon:latest` | baseline, pipelined, limited-conn, json-comp, async-db, async, fortunes, echo-ws, echo-ws-pipeline, echo-ws-limited, connections-5m, connections-1m-tls | `docker/gcannon.Dockerfile` |
+| `GCANNON=gcannon` | `GCANNON_IMAGE=gcannon:latest` | baseline, pipelined, limited-conn, json-comp, async-db, async, fortunes, echo-ws, echo-ws-pipeline, echo-ws-limited, connections-5m, connections-1m-tls, connections-ramp-h1 | `docker/gcannon.Dockerfile` |
 | `H2LOAD=h2load` | `H2LOAD_IMAGE=h2load:latest` | baseline-h2, static-h2, baseline-h2c, json-h2c, unary-grpc, unary-grpc-tls, gateway-64, production-stack | `docker/h2load.Dockerfile` (Ubuntu + glibc, **not** alpine) |
 | `H2LOAD_H3=h2load-h3` | `H2LOAD_H3_IMAGE=h2load-h3:local` | baseline-h3, static-h3, gateway-h3 | `docker/h2load-h3.Dockerfile` (quictls + ngtcp2 + nghttp3) |
 | `WRK=wrk` | `WRK_IMAGE=wrk:local` | static-tls, json-tls | `docker/wrk.Dockerfile` |
@@ -96,7 +96,7 @@ From `endpoint_tool()` in `scripts/lib/profiles.sh`:
 | `latency-1m`, `latency-10k`, `8gbit`, `connections-1m` | zrk |
 | `h2`, `static-h2`, `h2c`, `json-h2c`, `gateway-64`, `grpc`, `grpc-tls`, `production-stack` | h2load |
 | `h3`, `static-h3`, `gateway-h3` | h2load-h3 |
-| everything else (`""`, `pipeline`, `async-db`, `async`, `fortunes`, `json-compressed`, `ws-echo`, `connections-5m`, `connections-1m-tls`) | gcannon |
+| everything else (`""`, `pipeline`, `async-db`, `async`, `fortunes`, `json-compressed`, `ws-echo`, `connections-5m`, `connections-1m-tls`, `connections-ramp-h1`) | gcannon |
 
 ## Small-machine overrides
 

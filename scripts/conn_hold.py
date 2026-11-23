@@ -2,7 +2,10 @@
 """Run gcannon --rate for a held-connection profile; report a fixed-rate summary.
 
 connections-5m holds five million keep-alive connections and paces requests
-across them, connections-1m-tls a million over TLS 1.3. gcannon does the load
+across them, connections-1m-tls a million over TLS 1.3. connections-ramp-h1
+opens two million over two minutes instead, 95% of them idle, and this wrapper
+reads from gcannon's interval timeline how many it took to push the active
+ones' p99 over the limit (--ramp-p99-us). gcannon does the load
 itself (gcannon >= 0.8.2: --rate, --addr-span, --connect-limit, --settle,
 --warmup-max) in one process: ~3.3 KiB a connection, against the ~303 KiB that
 sank the first million-connection attempt with zrk 2.3.0. (connections-1m
@@ -35,7 +38,7 @@ window CPU, connections still open). Usage:
     conn_hold.py --profile connections-5m --conns N --rate R --port P
                  --probe 127.0.0.2,127.0.0.160 [--span 127.0.0.1-127.0.0.160]
                  [--cpu-stat FILE] [--server-mem 128g] [--kib-per-conn 4]
-                 [--kernel-kib-per-conn 8]
+                 [--kernel-kib-per-conn 8] [--ramp-p99-us 2000]
                  -- <gcannon command prefix...> --args-- <gcannon arguments...>
 """
 
@@ -65,6 +68,13 @@ CLOSES_ITSELF = (0, 8, 3)
 # server past its handshake timeout, which closed them mid-handshake: a fleet
 # that never finished connecting.
 MIN_VERSION_TLS = (0, 8, 4)
+# connections-ramp-h1 is driven by --ramp-up and --idle, and read off the
+# interval lines they print (gcannon#35).
+MIN_VERSION_RAMP = (0, 10, 0)
+# An interval's rate has to reach this share of what was offered, or the p99
+# next to it describes a server that is not keeping up (or one that has
+# answered nothing at all, and has no p99).
+RAMP_RATE_SHARE = 0.9
 
 
 def log(msg: str) -> None:
@@ -174,6 +184,53 @@ def _raise_nofile(want: int) -> str | None:
             "fs.nr_open")
 
 
+def ramp_summary(args, g: dict) -> tuple[dict | None, str | None]:
+    """How far the ramp got before the active connections' p99 went over the
+    limit, from gcannon's timeline (one row per interval). Returns (summary,
+    None) or (None, why not).
+
+    The row that counts is the last one before the limit is crossed. A crossing
+    is an interval over the limit - its p99, or its rate short of what was
+    offered, which is also how a server that stopped answering reads - with the
+    one after it over too, or with nothing after it: one noisy interval on its
+    own is not the end of a ramp. `reached` is every connection opened by then,
+    idle ones included, whether or not the server has closed some since;
+    `connections_open` is how many of them were open at that moment."""
+    rows = g.get("timeline") or []
+    if not rows:
+        return None, "no interval timeline in gcannon's summary"
+
+    def over(r: dict) -> str:
+        if (r.get("rps") or 0) < RAMP_RATE_SHARE * args.rate:
+            return "rate"
+        if (r.get("p99_us") or 0) > args.ramp_p99_us:
+            return "p99"
+        return ""
+
+    reached = open_now = idle_closed = 0
+    stop, crossed = "ceiling", None
+    for i, r in enumerate(rows):
+        why = over(r)
+        if why and (i + 1 == len(rows) or over(rows[i + 1])):
+            stop, crossed = why, r
+            break
+        if why:
+            continue   # one interval on its own
+        # opened so far: the active connections open now, and every idle one
+        # ever opened (the timeline has no idle_* keys without --idle)
+        reached = (r.get("active") or 0) + (r.get("idle_opened") or 0)
+        open_now = (r.get("active") or 0) + (r.get("idle_open") or 0)
+        idle_closed = r.get("idle_closed") or 0
+    out = {"reached": reached, "connections_open": open_now, "stop": stop,
+           "idle_closed": idle_closed, "p99_limit_us": args.ramp_p99_us,
+           "intervals": len(rows)}
+    if crossed is not None:
+        out["stop_t"] = crossed.get("t")
+        out["stop_p99_us"] = crossed.get("p99_us")
+        out["stop_rps"] = crossed.get("rps")
+    return out, None
+
+
 def _error(args, msg: str) -> dict:
     log(msg)
     return {"hold_error": msg, "connections": args.conns, "target_rate": args.rate,
@@ -185,10 +242,12 @@ def _error(args, msg: str) -> dict:
 def run(args, prefix: list[str], gargs: list[str]) -> dict:
     ver = _version(prefix)
     tls = bool(gargs) and gargs[0].startswith("https://")
-    need = MIN_VERSION_TLS if tls else MIN_VERSION
+    ramp = args.ramp_p99_us > 0
+    need = MIN_VERSION_RAMP if ramp else MIN_VERSION_TLS if tls else MIN_VERSION
     if ver is None or ver < need:
         # prefix[-1] is the image or the binary: which gcannon was asked
-        why = ("--connect-limit held through the TLS handshake" if tls else
+        why = ("--ramp-up, --idle and the interval lines" if ramp else
+               "--connect-limit held through the TLS handshake" if tls else
                "--settle, and --rate with every thread spread over the whole interval")
         return _error(args, "%s needs gcannon >= %s (%s); %s %s"
                       % (args.profile, ".".join(map(str, need)), why, prefix[-1],
@@ -273,7 +332,7 @@ def run(args, prefix: list[str], gargs: list[str]) -> dict:
         and cpu.get("end") is not None and cpu["end"] >= cpu["start"] else None
     if g.get("connections_active") is not None:
         log(f"{g['connections_active']} of {args.conns} connections open at the end of the window")
-    return {
+    summary = {
         "connections": args.conns,
         "connections_open": g.get("connections_active"),
         "target_rate": args.rate,
@@ -290,6 +349,19 @@ def run(args, prefix: list[str], gargs: list[str]) -> dict:
         "server_cpu_usec": cpu_win,
         "gcannon": g,
     }
+    if ramp:
+        found, why = ramp_summary(args, g)
+        if found is None:
+            return _error(args, why or "no ramp in gcannon's summary")
+        log("reached %d connections (%d open) within %.1f ms p99; stopped by %s%s"
+            % (found["reached"], found["connections_open"], args.ramp_p99_us / 1000,
+               found["stop"], "" if found["stop"] == "ceiling"
+               else " at %.0f s (p99 %.2f ms, %.0f req/s)"
+               % (found.get("stop_t") or 0, (found.get("stop_p99_us") or 0) / 1000,
+                  found.get("stop_rps") or 0)))
+        summary["ramp"] = found
+        summary["connections_open"] = found["connections_open"]
+    return summary
 
 
 def main(argv: list[str]) -> int:
@@ -312,6 +384,9 @@ def main(argv: list[str]) -> int:
     ap.add_argument("--profile", default="connections-5m", help="for messages")
     ap.add_argument("--span", default="127.0.0.1-127.0.0.160",
                     help="the addresses the fleet is spread over, for messages")
+    ap.add_argument("--ramp-p99-us", dest="ramp_p99_us", type=int, default=0,
+                    help="connections-ramp-h1: the p99 limit (microseconds) the ramp is "
+                         "read against; 0 = not a ramp")
     args = ap.parse_args(argv[:i])
     print(json.dumps(run(args, argv[i + 1:j], argv[j + 1:]), indent=1))
     return 0

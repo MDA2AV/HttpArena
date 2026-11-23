@@ -21,6 +21,7 @@
     "connections-5m",
     "connections-1m-tls",
     "connections-1m",
+    "connections-ramp-h1",
     "pipelined",
     "limited-conn",
     "json-comp",
