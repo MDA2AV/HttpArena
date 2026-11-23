@@ -83,9 +83,5 @@ declare -A BEST_M
         self.assertNotIn("SAVED", result.stdout)
 
 
-class LiteBenchmarkRunTests(BenchmarkRunTests):
-    driver = ROOT / "scripts/benchmark-lite.sh"
-
-
 if __name__ == "__main__":
     unittest.main()

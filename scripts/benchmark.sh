@@ -343,6 +343,7 @@ run_one() {
 
     if ! framework_wait_ready "$endpoint"; then
         warn "$FRAMEWORK did not come up for $profile; skipping"
+        SERVER_DOWN=true
         dump_benchmark_logs
         if [ "$SAVE_RESULTS" = true ]; then save_benchmark_logs "$profile" "$CONNS"; fi
         framework_stop
@@ -794,10 +795,11 @@ for profile in "${profiles_to_run[@]}"; do
     parse_profile "${PROFILES[$profile]}"
     IFS=',' read -ra CONN_COUNTS <<< "$PROF_CONNS"
     for CONNS in "${CONN_COUNTS[@]}"; do
+        SERVER_DOWN=false
         run_one "$profile" "$CONNS" && continue
         failed_profiles=$((failed_profiles + 1))
-        if [ "${FAIL_FAST:-}" = "true" ]; then
-            warn "FAIL_FAST: $FRAMEWORK $profile/$CONNS failed - skipping its remaining profiles"
+        if [ "${FAIL_FAST:-}" = "true" ] && [ "$SERVER_DOWN" = true ]; then
+            warn "FAIL_FAST: $FRAMEWORK did not come up - skipping its remaining profiles"
             break 2
         fi
     done

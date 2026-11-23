@@ -12,8 +12,8 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 
 class BenchmarkLogTests(unittest.TestCase):
-    def measure(self, valid, gateway=True, save=True, lite=False, noisy=False):
-        driver = (ROOT / "scripts" / ("benchmark-lite.sh" if lite else "benchmark.sh")).read_text()
+    def measure(self, valid, gateway=True, save=True, noisy=False):
+        driver = (ROOT / "scripts" / "benchmark.sh").read_text()
         functions = "\n".join(
             re.search(rf"^{name}\(\) \{{\n.*?^\}}(?=\n\n)", driver, re.MULTILINE | re.DOTALL)[0]
             for name in ("run_one", "save_result")
@@ -111,16 +111,15 @@ declare -A BEST_M
                 self.assertEqual("DIAGNOSTIC REPLAY" in result.stdout, not valid)
 
     def test_failed_single_container_logs_respect_save_flag(self):
-        for lite in (False, True):
-            for save in (False, True):
-                with self.subTest(lite=lite, save=save):
-                    result, log, saved, stopped = self.measure(False, gateway=False, save=save, lite=lite)
-                    self.assertEqual(result.returncode, 1, result.stderr)
-                    self.assertFalse(saved)
-                    self.assertTrue(stopped)
-                    self.assertIn("database unavailable", result.stdout)
-                    self.assertEqual("database unavailable" in log, save)
-                    self.assertNotIn("DIAGNOSTIC REPLAY", result.stdout)
+        for save in (False, True):
+            with self.subTest(save=save):
+                result, log, saved, stopped = self.measure(False, gateway=False, save=save)
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertFalse(saved)
+                self.assertTrue(stopped)
+                self.assertIn("database unavailable", result.stdout)
+                self.assertEqual("database unavailable" in log, save)
+                self.assertNotIn("DIAGNOSTIC REPLAY", result.stdout)
 
     def test_noisy_service_log_is_capped_and_keeps_the_last_error(self):
         for gateway in (False, True):
