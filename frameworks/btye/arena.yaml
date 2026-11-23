@@ -1,0 +1,73 @@
+openapi: 3.1.0
+info:
+  title: arena
+  version: "1.0"
+paths:
+  /baseline2:
+    get:
+      operationId: baseline
+      parameters:
+        - {name: a, in: query, required: true, schema: {type: integer}}
+        - {name: b, in: query, required: true, schema: {type: integer}}
+      responses:
+        "200":
+          description: a + b
+          content:
+            text/plain:
+              schema: {type: integer}
+  /json/{count}:
+    get:
+      operationId: getJson
+      parameters:
+        - {name: count, in: path, required: true, schema: {type: integer}}
+        - {name: m, in: query, required: true, schema: {type: integer}}
+      responses:
+        "200":
+          description: first `count` items of the dataset, total = price * quantity * m
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Items"}
+  /static/{filename}:
+    get:
+      operationId: getStatic
+      parameters:
+        - {name: filename, in: path, required: true, schema: {type: string}}
+      responses:
+        "200":
+          description: file from /data/static
+          content:
+            application/octet-stream:
+              schema: {type: string, format: binary}
+        "404":
+          description: no such file
+components:
+  schemas:
+    Rating:
+      type: object
+      required: [score, count]
+      properties:
+        score: {type: integer}
+        count: {type: integer}
+    Item:
+      type: object
+      required: [id, name, category, price, quantity, active, tags, rating]
+      properties:
+        id: {type: integer}
+        name: {type: string}
+        category: {type: string}
+        price: {type: integer}
+        quantity: {type: integer}
+        active: {type: boolean}
+        tags:
+          type: array
+          items: {type: string}
+        rating: {$ref: "#/components/schemas/Rating"}
+        total: {type: integer}
+    Items:
+      type: object
+      required: [items, count]
+      properties:
+        items:
+          type: array
+          items: {$ref: "#/components/schemas/Item"}
+        count: {type: integer}
