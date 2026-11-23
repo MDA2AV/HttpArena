@@ -40,16 +40,16 @@ description: "What to implement, what the listener must allow, how the ramp is r
 | `--rate` | 100,000 |
 | `--addr-span` | 64 |
 | `--connect-limit` (per thread) | 64 |
-| `--warmup-max` / `--settle` | 60s / 5s |
+| `--warmup-max` / `--settle` | 60s / 30s |
 | `-d` | 130s |
 
-The 4,096 active connections open in the warmup, and five seconds of load settle them. The window then opens, and the ramp with it: the rest of the active connections and all the idle ones open evenly over 120 seconds, about 16,600 a second. The rate stays at 100,000 req/s throughout, paced by thread over whichever active connections are open, so the total does not depend on how many that is. Latency counts from each request's scheduled time.
+The 4,096 active connections open in the warmup and carry the offered rate for 30 seconds, which lets a JIT, a garbage collector and the caches settle before anything counts. The window then opens, and the ramp with it: the rest of the active connections and all the idle ones open evenly over 120 seconds, about 16,600 a second. The rate stays at 100,000 req/s throughout, paced by thread over whichever active connections are open, so the total does not depend on how many that is. Latency counts from each request's scheduled time.
 
 Each interval (five seconds), gcannon reports how many connections are open, how many idle ones have been opened and closed so far, and the active connections' rate and latency in it. Those lines are the result.
 
 **The p99 limit is the harness's.** gcannon does not stop at it. The run takes the full two minutes, and the harness then finds where the intervals crossed 2 ms: an interval over the limit, followed by another that is too (or at the end of the window), is where the ramp ends. A single noisy interval between two good ones is ignored. An interval whose rate falls short of 90% of the offered one counts as over the limit as well: a server that has stopped answering has no p99 worth the name.
 
-Around each run, the harness gives every run a fresh server and waits for the previous fleet to close, as on the [held-connection profiles](../../connections/implementation/#how-the-load-is-run).
+The run starts on a fresh server, once the host's TCP socket count is back near what it was before the first profile, as on the [held-connection profiles](../../connections/implementation/#how-the-load-is-run). There is one run, not several: the ramp is the measurement, and a warm-up precedes it.
 
 ## What is measured
 
@@ -77,7 +77,7 @@ Around each run, the harness gives every run a fresh server and waits for the pr
 | CPU | cpuset `0-31,64-95` (32 cores, both threads) |
 | Memory cap | 128 GiB (`CONN5M_MEM_LIMIT`), a server above it is OOM-killed |
 | Window | 130s |
-| Runs | 3, each on a fresh server, and the one that got furthest is kept |
+| Runs | 1, after a 30 s warm-up at the offered rate on the floor of the fleet; repeating the two-minute ramp would not say more |
 | Load generator | [gcannon](/docs/load-generators/h1/gcannon/) 0.10.0 or later |
 
 ## Scoring

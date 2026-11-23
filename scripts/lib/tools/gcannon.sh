@@ -39,8 +39,11 @@ CONN1M_TLS_ADDRS="${CONN1M_TLS_ADDRS:-32}"
 CONN1M_TLS_WARMUP_MAX="${CONN1M_TLS_WARMUP_MAX:-900}"
 
 # connections-ramp-h1: a fleet that grows to 2M over two minutes, 95% of it
-# idle. CONNRAMP_FLOOR active connections open in the warmup; over CONNRAMP_UP
-# seconds the rest of the active ones and all of the idle ones open evenly,
+# idle. CONNRAMP_FLOOR active connections open in the warmup and carry the offered
+# rate for CONNRAMP_SETTLE seconds, which warms the server up (JIT, caches, heaps)
+# before anything counts: there is one run of it, not a best-of (benchmark.sh).
+# Over CONNRAMP_UP seconds the rest of the active ones and all of the idle ones
+# then open evenly,
 # inside the measured window (CONNRAMP_WINDOW: the ramp, plus ten seconds that
 # show the fleet standing). The active ones carry GCANNON_RATE_CONNECTIONS_RAMP
 # throughout, paced by thread so the total does not depend on how many are
@@ -57,7 +60,7 @@ CONNRAMP_ADDRS="${CONNRAMP_ADDRS:-64}"
 CONNRAMP_P99_US="${CONNRAMP_P99_US:-2000}"
 CONNRAMP_CONNECT_LIMIT="${CONNRAMP_CONNECT_LIMIT:-64}"
 CONNRAMP_WARMUP_MAX="${CONNRAMP_WARMUP_MAX:-60}"
-CONNRAMP_SETTLE="${CONNRAMP_SETTLE:-5}"
+CONNRAMP_SETTLE="${CONNRAMP_SETTLE:-30}"
 
 # ── Build arguments ─────────────────────────────────────────────────────────
 

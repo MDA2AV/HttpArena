@@ -359,10 +359,13 @@ run_one() {
     case "$endpoint" in latency-1m|latency-10k|8gbit|connections-5m|connections-1m-tls|connections-1m|connections-ramp-h1) _mdir=$(mktemp -d) ;; esac
 
     BEST_M=()
-    local run
+    # connections-ramp-h1 is one ramp, after a warm-up at the offered rate
+    # (gcannon's --settle), and not a best-of.
+    local run runs="$RUNS"
+    [ "$endpoint" = "connections-ramp-h1" ] && runs=1
 
-    for run in $(seq 1 "$RUNS"); do
-        echo ""; echo "[run $run/$RUNS]"
+    for run in $(seq 1 "$runs"); do
+        echo ""; echo "[run $run/$runs]"
 
         # The held-connection profiles give every run a fresh server. One that
         # has just held five million connections keeps what it grew to after
@@ -487,7 +490,7 @@ run_one() {
         # fresh one. After the last run it is left for the profile's cleanup.
         if held_conn_profile "$endpoint" && ! $is_gateway; then
             held_conn_drain "after run $run"
-            if [ "$run" -lt "$RUNS" ]; then
+            if [ "$run" -lt "$runs" ]; then
                 framework_stop
             fi
         elif [ "$CONNS" -ge 32768 ]; then sleep 15
