@@ -1089,6 +1089,36 @@
       "response": true
     }
   },
+  "hapi-tuned": {
+    "dir": "hapi-tuned",
+    "description": "The hapi entry with three things changed. Each worker binds its own listener with reusePort, created in the entry and handed to hapi, instead of taking connections from the cluster primary. Brotli runs as one synchronous call at quality 1 inside the encoder hapi's compression calls, instead of a zlib stream at quality 3. Cookie parsing, range support and connection tracking for graceful stop are switched off. Routes, query and payload parsing and JSON serialization are the hapi entry's.",
+    "repo": "https://github.com/hapijs/hapi",
+    "type": "flagship",
+    "engine": "node:http",
+    "mode": "tuned",
+    "website": "https://hapi.dev",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
+  "hapi": {
+    "dir": "hapi",
+    "description": "hapi 21 on the Node http server, default configuration, one cluster worker per core. Routing, query and payload parsing, JSON serialization and compression are all hapi built-ins, with brotli (quality 3) registered through hapi's encoder API - no plugins.",
+    "repo": "https://github.com/hapijs/hapi",
+    "type": "flagship",
+    "engine": "node:http",
+    "mode": "standard",
+    "website": "https://hapi.dev",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "helidon-production": {
     "dir": "helidon-production",
     "description": "Helidon SE 27.0.0 on N\u00edma WebServer with Java 27, config-based static content with precompressed sidecars, HTTP/2, gRPC, and WebSocket support.",
@@ -1764,6 +1794,36 @@
       "response": false
     }
   },
+  "nifra-bun": {
+    "dir": "nifra-bun",
+    "description": "Nifra's typed router and middleware on Bun's native HTTP server through app.listen(), with one reusePort process per available core.",
+    "repo": "https://github.com/nifrajs/nifra",
+    "type": "emerging",
+    "engine": "bun",
+    "mode": "standard",
+    "website": "https://nifra.dev",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
+  "nifra-uws": {
+    "dir": "nifra-uws",
+    "description": "Nifra's typed router and middleware on uWebSockets.js through the @nifrajs/node-uws adapter, with one cluster worker per available core.",
+    "repo": "https://github.com/nifrajs/nifra",
+    "type": "emerging",
+    "engine": "uWebSockets.js",
+    "mode": "standard",
+    "website": "https://nifra.dev",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "nifra": {
     "dir": "nifra",
     "description": "Nifra's typed router and middleware on the official Node HTTP adapter, with one cluster worker per available core.",
@@ -1861,6 +1921,13 @@
         "mode": "standard"
       }
     ]
+  },
+  "okena": {
+    "dir": "okena",
+    "description": "okena, a load balancer, reverse proxy and API gateway written in x86-64 assembly (no libc, io_uring), with HttpArena's handler module assembled into the binary (make MODULES=httparena.inc): /baseline sums the query and body, /json/{count} serializes the parsed dataset per request (compressed per request by okena's own gzip/brotli for json-comp), /echo returns the body okena read, /delay/{ms} holds the request on okena's timers without blocking the worker, and benchmark.BenchmarkService/GetSum answers unary gRPC (protobuf decoded and encoded by the module, grpc-status as an HTTP/2 trailer). Static files from okena's own file server with its precompressed .br/.gz. Its own TLS 1.3 / 1.2, HTTP/2 and HTTP/3. HTTP/1.1 (and h2c for gRPC) on :8080, h1 over TLS on :8081, h2c on :8082, h2 and h3 on :8443.",
+    "repo": "https://github.com/Lu4nScr1pt1ng/okena",
+    "type": "infrastructure",
+    "engine": "okena"
   },
   "orisha-uring": {
     "dir": "orisha-uring",
@@ -1990,7 +2057,7 @@
   },
   "Proa": {
     "dir": "proa",
-    "description": "Compiled Proa HTML components served over thread-per-core Axum/Hyper workers with mimalloc v2, sonic-rs JSON serialization, thread-local libdeflater gzip compression, TLS 1.3 (AES-128-GCM via aws-lc-rs) on :8081, and per-worker deadpool-postgres pools.",
+    "description": "Compiled Proa HTML components served over thread-per-core Axum/Hyper workers with mimalloc v2, sonic-rs JSON serialization, thread-local libdeflater gzip compression, TLS 1.3 (AES-128-GCM via aws-lc-rs) for HTTP/1.1 (:8081), HTTP/2 (:8443), h2c (:8082), HTTP/3/QUIC via quinn+h3 (:8443/udp), gRPC, batched WebSocket echo, and per-worker deadpool-postgres pools.",
     "repo": "https://github.com/Proa-Labs/proa",
     "type": "emerging",
     "engine": "hyper",
@@ -2261,6 +2328,13 @@
       "request": true,
       "response": true
     }
+  },
+  "roxygen": {
+    "dir": "roxygen",
+    "description": "Meta's Roxygen, an HTTP/1.1 and HTTP/2 library that brings Proxygen's design to Rust. Serves h2c and HTTP/2 over rustls on Roxygen's owned HTTP/2 driver, which polls every stream of a connection from one future instead of running a task per request.",
+    "repo": "https://github.com/facebookincubator/roxygen",
+    "type": "engine",
+    "engine": "roxygen"
   },
   "rust-epoll": {
     "dir": "rust-epoll",
@@ -2919,7 +2993,7 @@
   },
   "vertx": {
     "dir": "vertx",
-    "description": "Eclipse Vert.x 5 with vertx-web on Netty's epoll transport, one server verticle per core. Routing and query/path params through the Router API, JsonObject serialization, gzip through the server compression option, TLS through BoringSSL (netty-tcnative).",
+    "description": "Eclipse Vert.x 5 with vertx-web on Netty's epoll transport, one Vert.x instance with its own SO_REUSEPORT listener per core. Routing and query/path params through the Router API, JsonObject serialization, gzip through the server compression option, TLS through BoringSSL (netty-tcnative).",
     "repo": "https://github.com/eclipse-vertx/vert.x",
     "type": "flagship",
     "engine": "Netty",
