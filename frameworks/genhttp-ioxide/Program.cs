@@ -65,6 +65,11 @@ var options = new EngineOptions
     {
         WriteSlabSize = writeSlab ?? new TcpTransportOptions().WriteSlabSize,
 
+        // An idle connection is closed after 35 s, as is one whose client stops draining a flush
+        // for as long. Past the 30 s connections-ramp-h1 asks an idle connection to be kept for.
+        ReadTimeoutMs = 35_000,
+        SendTimeoutMs = 35_000,
+
         // Kernel TLS on the way out, which is what this entry measured before the engine made it
         // opt-in: ioxide.tls used to default it on, so json-tls has always been kTLS TX with
         // OpenSSL still decrypting inbound. It needs the Linux tls module - without it every
