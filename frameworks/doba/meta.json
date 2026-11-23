@@ -2,7 +2,7 @@
   "display_name": "doba",
   "language": "C++",
   "engine": "doba",
-  "type": "emerging",
+  "type": "experimental",
   "mode": "standard",
   "description": "A high-performance, transport- and protocol-agnostic C++20 server framework.",
   "repo": "https://github.com/martianlabs/doba",
