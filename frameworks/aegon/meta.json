@@ -20,6 +20,8 @@
     "latency-10k",
     "pipelined",
     "limited-conn",
+    "connections-1m",
+    "connections-1m-tls",
     "json-tls",
     "json-comp",
     "8gbit",
