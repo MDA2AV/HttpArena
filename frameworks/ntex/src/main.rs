@@ -1,7 +1,8 @@
 use std::path::Path;
 
-use ntex::http::{self, HttpService};
+use ntex::http::{self, HttpService, HttpServiceConfig};
 use ntex::server::LoadBalancing;
+use ntex::time::Seconds;
 use ntex::util::Bytes;
 use ntex::web::{self, App, HttpResponse, middleware};
 use serde::{Deserialize, Serialize};
@@ -193,6 +194,22 @@ fn app_config() -> web::WebAppConfig {
     web::WebAppConfig::new().set_value(web::types::PayloadConfig::new(MAX_BODY))
 }
 
+// The connection profiles leave a connection idle for up to 4 s before its
+// first request and between requests. ntex closes a connection without a
+// request after 1 s by default (408), which drops connections there.
+// CON-1M-TLS keeps up to 4096 handshakes in flight; under that load the
+// default 5 s handshake deadline is tight.
+fn server_cfg() -> ntex::SharedCfg {
+    ntex::SharedCfg::new("httparena")
+        .add(
+            HttpServiceConfig::new()
+                .set_client_timeout(Seconds(10))
+                .set_keepalive(Seconds(10)),
+        )
+        .add(ntex::tls::TlsConfig::new().set_handshake_timeout(Seconds(10)))
+        .into()
+}
+
 fn load_tls_config(
     cert: impl std::io::Read,
     key: impl std::io::Read,
@@ -237,16 +254,15 @@ async fn main() -> std::io::Result<()> {
     };
 
     // Each worker accepts connections on its own `SO_REUSEPORT` listener, the
-    // kernel spreads new connections between them; no accept thread.
+    // kernel spreads new connections between them; no accept thread. The
+    // backlog applies to every listener, CON-1M opens 31,250 connections at
+    // once per load generator process.
     let mut server = ntex::server::build()
-        .backlog(1024)
+        .backlog(4096)
         .load_balancing(LoadBalancing::Reuseport)
-        .bind(
-            "http",
-            "0.0.0.0:8080",
-            ntex::SharedCfg::default(),
-            async move |st| HttpService::new(app(st, true).await),
-        )?;
+        .bind("http", "0.0.0.0:8080", server_cfg(), async move |st| {
+            HttpService::new(app(st, true).await)
+        })?;
 
     // The harness mounts /certs only for the TLS profiles, so a missing pair
     // leaves the TLS listener down rather than aborting startup.
@@ -259,12 +275,9 @@ async fn main() -> std::io::Result<()> {
             std::fs::File::open(key)?,
             ALPN_H1,
         )?;
-        server = server.bind(
-            "tls-h1",
-            "0.0.0.0:8081",
-            ntex::SharedCfg::default(),
-            async move |st| http::rustls(tls.clone(), &[], HttpService::new(app(st, false).await)),
-        )?;
+        server = server.bind("tls-h1", "0.0.0.0:8081", server_cfg(), async move |st| {
+            http::rustls(tls.clone(), &[], HttpService::new(app(st, false).await))
+        })?;
     }
 
     server.run().await
@@ -275,7 +288,7 @@ mod tests {
     use super::*;
     use ntex::http::{StatusCode, header};
     use ntex::web::test::{self, TestRequest};
-    use std::io::Read;
+    use std::io::{Read, Write};
 
     fn static_dir() -> &'static Path {
         Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../data/static"))
@@ -299,6 +312,80 @@ mod tests {
             assert_eq!(response.status(), StatusCode::OK);
             assert_eq!(test::read_body(response).await, expected);
         }
+    }
+
+    /// STATEMENT: A connection may stay idle for 4 s before its first request.
+    ///
+    /// HOW:
+    /// - Start a server with `server_cfg()` and open a plain TCP connection.
+    /// - Wait 4 s, send `GET /baseline11?a=1&b=2`, and confirm `200 OK` with
+    ///   body `3` instead of `408 Request Timeout`.
+    #[ntex::test]
+    async fn first_request_after_four_idle_seconds() {
+        let server = test::server_with(test::config().server_cfg(server_cfg()), async |_| {
+            App::new().configure(|cfg| routes(cfg, &[], static_dir(), true))
+        });
+
+        let mut stream = std::net::TcpStream::connect(server.addr()).unwrap();
+        stream
+            .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+            .unwrap();
+        ntex::time::sleep(Seconds(4)).await;
+        stream
+            .write_all(b"GET /baseline11?a=1&b=2 HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            .unwrap();
+        let mut buf = [0; 256];
+        let n = stream.read(&mut buf).unwrap();
+        let response = String::from_utf8_lossy(&buf[..n]);
+        assert!(response.starts_with("HTTP/1.1 200 OK"), "{response}");
+        assert!(response.ends_with("\r\n\r\n3"), "{response}");
+    }
+
+    /// STATEMENT: A TLS handshake that starts 6 s after connect still completes.
+    ///
+    /// HOW:
+    /// - Start a TLS server with `server_cfg()` and open a plain TCP connection.
+    /// - Wait 6 s (past ntex's 5 s default deadline), then handshake with
+    ///   rustls and send `GET /baseline11?a=1&b=2`.
+    /// - Confirm `200 OK` with body `3`.
+    #[ntex::test]
+    async fn tls_handshake_after_six_idle_seconds() {
+        let rcgen::CertifiedKey { cert, signing_key } =
+            rcgen::generate_simple_self_signed(vec!["localhost".into()]).unwrap();
+        let tls = load_tls_config(
+            cert.pem().as_bytes(),
+            signing_key.serialize_pem().as_bytes(),
+            ALPN_H1,
+        )
+        .unwrap();
+        let mut roots = rustls::RootCertStore::empty();
+        roots.add(cert.der().clone()).unwrap();
+        let client_tls = rustls::ClientConfig::builder()
+            .with_root_certificates(roots)
+            .with_no_client_auth();
+        let server = test::server_with(
+            test::config().rustls(tls).server_cfg(server_cfg()),
+            async |_| App::new().configure(|cfg| routes(cfg, &[], static_dir(), false)),
+        );
+
+        let tcp = std::net::TcpStream::connect(server.addr()).unwrap();
+        tcp.set_read_timeout(Some(std::time::Duration::from_secs(5)))
+            .unwrap();
+        ntex::time::sleep(Seconds(6)).await;
+        let conn = rustls::ClientConnection::new(
+            std::sync::Arc::new(client_tls),
+            "localhost".try_into().unwrap(),
+        )
+        .unwrap();
+        let mut stream = rustls::StreamOwned::new(conn, tcp);
+        stream
+            .write_all(b"GET /baseline11?a=1&b=2 HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            .unwrap();
+        let mut buf = [0; 256];
+        let n = stream.read(&mut buf).unwrap();
+        let response = String::from_utf8_lossy(&buf[..n]);
+        assert!(response.starts_with("HTTP/1.1 200 OK"), "{response}");
+        assert!(response.ends_with("\r\n\r\n3"), "{response}");
     }
 
     fn test_dataset() -> &'static [DatasetItem] {

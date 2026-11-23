@@ -32,14 +32,16 @@ by the `ntex-h2` entry.
 
 ## Notes
 
-- Default worker count and HTTP settings; backlog 1024 and 8 accept threads,
-  each with its own `SO_REUSEPORT` listener. The server is assembled with
-  `ntex::server::build()` because `web::HttpServer` does not expose the accept
-  thread count
-- Timer resolution is 2 ms instead of the default 16 ms
-- Write buffers use 4 KiB pages on 8080, where responses are small and larger
-  bodies are appended as separate pages without copying, and 16 KiB pages on
-  the TLS ports to match rustls record sizes
+- Client timeout (first request) and keep-alive raised to 10 s from ntex's
+  1 s and 5 s defaults, the connection profiles leave a connection idle for
+  up to 4 s before its first request and between requests. The TLS handshake
+  timeout is raised to 10 s from 5 s for the CON-1M-TLS connect phase
+- Default worker count, one per CPU the process may use. Each worker accepts
+  on its own `SO_REUSEPORT` listener with backlog 4096; there is no accept
+  thread. The server is assembled with `ntex::server::build()` because
+  `web::HttpServer` serves one app on every listener, and only 8080
+  compresses JSON
+- Timer resolution is 1 ms instead of the default 16 ms
 - On Linux the native runtime selects io-uring when available and falls back to
   polling; other Unix platforms use polling
 - Routing and extraction through `ntex::web` resources and the `Query`, `Path`,
