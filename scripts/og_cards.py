@@ -4,8 +4,8 @@ Drawn with Pillow in the look of the site's dark theme (site/root/assets/sr/sr.c
 the header with its hazard tape, the screwed-down plate with the page's title, and a
 rack with one unit per protocol family, lit where the page is about that family.
 
-A card says what a link is about and holds no results. The services that show it keep
-it for weeks, so a rank or a score on it would soon disagree with the page behind it.
+A card says what a link is about and holds no results. The services that show it cache
+it on their own schedule, so a rank or a score on it would soon disagree with the page.
 
 gen_leaderboard_data.py calls draw() for every page it writes. Everything that does
 not differ between cards is drawn once, at twice the size, and scaled down: Pillow

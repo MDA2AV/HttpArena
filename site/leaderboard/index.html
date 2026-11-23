@@ -179,10 +179,16 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // An archived round is the same board over another data set: ?round=<id>
   // loads rounds/<id>.js (written by gen_leaderboard_data.py), whose results,
   // profiles and hardware replace the current round's. Boot waits for it.
+  // The board's views and their addresses, {id: path}, on the deployed board: each view is
+  // a page of its own with its ranking in the HTML (build_view_pages in
+  // gen_leaderboard_data.py). The path names the view, the hash how it is shown. A local
+  // checkout has no such pages, and keeps the view in the hash as well.
+  var VIEWS=null; try{ VIEWS=JSON.parse(document.body.getAttribute('data-views')); }catch(e){}
+  var ROOT = VIEWS ? '/' : '';
   var ROUND_ID = (location.search.match(/[?&]round=([A-Za-z0-9_-]+)/)||[])[1] || '';
   if(ROUND_ID && !lbBoot.waited){
     lbBoot.waited=true;
-    var _rs=document.createElement('script'); _rs.src='rounds/'+ROUND_ID+'.js';
+    var _rs=document.createElement('script'); _rs.src=ROOT+'rounds/'+ROUND_ID+'.js';
     _rs.onload=_rs.onerror=function(){ lbBoot(); };
     document.head.appendChild(_rs);
     return;
@@ -199,13 +205,6 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // Run-logs are deployed at /logs/ (the board is the root site). Locally,
   // serve site/ and open /leaderboard/ so ../static/logs/ reaches site/static/logs/.
   var LOGBASE = (location.protocol==='file:' || location.pathname.indexOf('/leaderboard/')>=0) ? '../static/logs/' : '/logs/';
-  // Resolved now: the address of the page changes with the view (viewAddr).
-  var SEARCH_SRC = new URL('search.js', location.href).href;
-  // On the deployed board a view has an address of its own, /board/<view>/, so that a
-  // link to it unfurls as that view: a preview is made from the path, and the hash never
-  // reaches the server (build_view_pages in gen_leaderboard_data.py writes the pages).
-  // A local checkout and an archived round have no such pages and keep the view in the hash.
-  var VIEWS = !ROUND_ID && document.body.hasAttribute('data-views');
   // Keep whatever is already in #rows: the deploy pre-renders the default
   // ranking into it, and data.js failing to load is precisely when that
   // fallback earns its keep. Only an empty #rows (a local checkout that has
@@ -788,22 +787,35 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   var railOpen=false, railFocus=null, railFrom=null;
   var RAIL_ABBR={all:'ALL',h1:'H/1.1',h2:'H/2',h3:'H/3',gw:'GW',grpc:'gRPC',ws:'WS',db:'DB'};
   // The address of a view: a profile at some connections, or a composite (conns 0).
-  // rest is what else the address says, always in the hash.
+  // rest is what else the address says, always in the hash. A view without a page - a
+  // profile only an archived round has - is named in the hash of the front page.
   function viewAddr(id, conns, rest){
-    var p=rest.slice(), path=location.pathname, home=!conns && id==='h1';
-    if(VIEWS){
-      path=home ? '/' : '/board/'+encodeURIComponent(id)+'/';
-      if(conns && conns!==PROF[id].conns[0]) p.unshift('conns='+conns);
+    var p=rest.slice(), path=VIEWS && VIEWS[id];
+    if(path){ if(conns && conns!==PROF[id].conns[0]) p.unshift('conns='+conns); }
+    else {
+      path=VIEWS ? '/' : location.pathname;
+      if(conns) p.unshift('p='+encodeURIComponent(id), 'conns='+conns);
+      else if(id!=='h1') p.unshift('scope='+id);
     }
-    else if(conns) p.unshift('p='+encodeURIComponent(id), 'conns='+conns);
-    else if(!home) p.unshift('scope='+id);
     return path+location.search+(p.length ? '#'+p.join('&') : '');
   }
-  // The hash, with the view the path names in front when the hash names none.
+  // The hash, with the view the path names in front when the hash names none. A hash that
+  // does name one is an old link, and wins: writeHash then gives it the view's address.
   function viewHash(){
-    var h=location.hash.slice(1), m=VIEWS && location.pathname.match(/^\/board\/([^\/]+)\/$/);
-    if(m && !/(^|&)(p|scope)=/.test(h)) h=(PROF[decodeURIComponent(m[1])] ? 'p=' : 'scope=')+m[1]+(h ? '&'+h : '');
+    var h=location.hash.slice(1);
+    if(VIEWS && !/(^|&)(p|scope|doc)=/.test(h)) for(var id in VIEWS)
+      if(id!=='h1' && VIEWS[id]===location.pathname) return (PROF[id] ? 'p=' : 'scope=')+id+(h ? '&'+h : '');
     return h;
+  }
+  // The view on screen changed without a page load: what else names the page follows, the
+  // canonical above all - it is what a phone shares.
+  function headTags(){
+    if(!VIEWS) return;
+    var home=state.view==='composite' && state.scope==='h1', url='https://http-arena.com'+(VIEWS[state.view==='profile' ? state.profile : state.scope]||'/');
+    document.title=home ? 'HTTP Web Server Benchmarks – HttpArena' : document.getElementById('ptitle').textContent+' – HttpArena';
+    var c=document.querySelector('link[rel="canonical"]'), o=document.querySelector('meta[property="og:url"]');
+    if(c) c.href=url;
+    if(o) o.content=url;
   }
   // The address a pick leads to, as writeHash would write it after the pick: the
   // view, plus what carries over (types, Tuned, compact names, the room's view),
@@ -1152,7 +1164,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     if(window.LB_SEARCH){ if(cb) cb(); return; }
     _searchCb=cb;
     if(_searchReq) return;
-    _searchReq=document.createElement('script'); _searchReq.src=SEARCH_SRC;
+    _searchReq=document.createElement('script'); _searchReq.src=ROOT+'search.js';
     _searchReq.onload=function(){ var f=_searchCb; _searchCb=null; if(f) f(); };
     // Run the callback anyway: buildSearchIndex() still indexes the profiles
     // and composite views from LB_DATA, so the box keeps working without the
@@ -1181,13 +1193,16 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     });
   }
 
+  var pushNext=false;
   function pickScope(scope){
+    pushNext=true;
     state.view='composite'; state.scope=scope; state.sortKey='score'; state.sortDir=-1; state.q=''; state.lang=''; document.getElementById('q').value='';
     expanded.add('composite');
     buildNav(); renderHead(); render();
   }
   function pickProfile(id){
     var p=PROF[id]; if(!p) return;
+    pushNext=true;
     var ds=defProfileSort(id);
     state.view='profile'; state.profile=id; state.conns=p.conns[0]; state.sortKey=ds.k; state.sortDir=ds.d; state.q=''; document.getElementById('q').value='';
     expanded.add('detailed'); expanded.add(familyOf(p));
@@ -1249,7 +1264,10 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       }
     } else {
       var p=PROF[state.profile];
-      cat.textContent=p.category; title.textContent=p.label+' benchmark';
+      // Four profiles are called Baseline: the heading says over which protocol, the same
+      // way _view_name() in gen_leaderboard_data.py does.
+      var fam=FAMILIES.filter(function(f){ return f.k===familyOf(p); })[0].label;
+      cat.textContent=p.category; title.textContent=(p.label.indexOf(fam)===0 ? '' : fam+' ')+p.label+' benchmark';
       var b=esc(p.blurb||'');
       if(p.doc) b+=(b?' ':'')+'<a href="/docs/'+p.doc+'/">Implementation guidelines →</a>';
       blurb.innerHTML=b;
@@ -1266,6 +1284,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       thumb.style.transition='none'; moveThumb(seg);           // position without an initial slide
       requestAnimationFrame(function(){ thumb.style.transition=''; });
     }
+    headTags();
   }
 
   // ── columns ──────────────────────────────────────────────
@@ -1673,11 +1692,14 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     if(A3D && state.aisle && !state.maint) p.push('3d=1');
     if(state.open && !state.maint) p.push('open='+encodeURIComponent(state.open));
     var prof=state.view==='profile', to=viewAddr(prof ? state.profile : state.scope, prof ? state.conns : 0, p);
-    if(location.pathname+location.search+location.hash!==to){ try{ history.replaceState(null,'', to); }catch(e){} }
+    // A pick is a step Back takes back; everything else only edits the address.
+    var step=pushNext && VIEWS && to.split(/[?#]/)[0]!==location.pathname; pushNext=false;
+    if(location.pathname+location.search+location.hash!==to){ try{ history[step ? 'pushState' : 'replaceState'](null,'', to); }catch(e){} }
   }
   var _hashT; function scheduleHash(){ clearTimeout(_hashT); _hashT=setTimeout(writeHash,80); }
-  function restoreFromHash(){
-    var h=viewHash(); if(!h) return;
+  // back: the address was gone back to, and one that names nothing is the front page
+  function restoreFromHash(back){
+    var h=viewHash() || (back ? 'scope=h1' : ''); if(!h) return;
     var p={}; h.split('&').forEach(function(s){ var i=s.indexOf('='); if(i>0) p[s.slice(0,i)]=decodeURIComponent(s.slice(i+1)); });
     if(p.doc){ location.replace(docUrl(p.doc)); return; }   // legacy #doc=x bookmark -> /docs/x/
     if(p.type){ var ts=p.type.split(',').filter(Boolean); if(ts.length) state.types=ts; }
@@ -2996,7 +3018,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   }
   initRail(); initLegend(); initTips(); init3d(); initSpecPanel(); initHeat(); initModal(); initRack(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initNavSearch(); hw(); buildNav(); renderHead(); render();
   (function(){ var b=document.getElementById('brandHome'); if(b) b.onclick=function(e){ e.preventDefault(); pickScope('h1'); }; })();
-  window.addEventListener('hashchange', function(){ restoreFromHash(); buildNav(); renderHead(); render(); });
+  window.addEventListener(VIEWS ? 'popstate' : 'hashchange', function(){ restoreFromHash(!!VIEWS); buildNav(); renderHead(); render(); });
   var _rz; window.addEventListener('resize', function(){ clearTimeout(_rz); _rz=setTimeout(function(){ if(state.view==='profile') render(); else if(state.view==='composite'){ syncTopScroll(); if(FLOAT.measure){ FLOAT.measure(); floatCheck(); } } }, 150); });
 });
 </script>
