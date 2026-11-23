@@ -6,7 +6,7 @@
  {<<"gproc">>,{pkg,<<"gproc">>,<<"0.8.0">>},1},
  {<<"roadrunner">>,
   {git,"https://github.com/arizona-framework/roadrunner.git",
-       {ref,"6d5e1ef965d677f102c07fe326582f121a8d6540"}},
+       {ref,"4882776741f5da54084b21ce227070ff5d934641"}},
   0},
  {<<"roadrunner_grpc_protobuf">>,
   {git,"https://github.com/arizona-framework/roadrunner_grpc_protobuf.git",
