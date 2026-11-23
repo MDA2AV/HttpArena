@@ -14,7 +14,7 @@
 <body class="board">
   <header class="top">
     <div class="brand"><!--chrome:brand-->
-      <a class="brand-name" href="#" id="brandHome" aria-label="HttpArena home"><svg class="brand-ico" viewBox="0 0 28 28" aria-hidden="true"><rect class="bi-fr" x="1.75" y="1.75" width="24.5" height="24.5" rx="5"/><rect x="5.5" y="5.4" width="17" height="4.6" rx="1.2"/><rect x="5.5" y="11.7" width="17" height="4.6" rx="1.2"/><rect x="5.5" y="18" width="17" height="4.6" rx="1.2"/><circle class="bi-led" cx="19.3" cy="7.7" r="1.3"/><circle class="bi-led" cx="19.3" cy="14" r="1.3"/><circle class="bi-led a" cx="19.3" cy="20.3" r="1.3"/></svg><span><b>Http</b>Arena</span></a>
+      <a class="brand-name" href="/" id="brandHome" aria-label="HttpArena home"><svg class="brand-ico" viewBox="0 0 28 28" aria-hidden="true"><rect class="bi-fr" x="1.75" y="1.75" width="24.5" height="24.5" rx="5"/><rect x="5.5" y="5.4" width="17" height="4.6" rx="1.2"/><rect x="5.5" y="11.7" width="17" height="4.6" rx="1.2"/><rect x="5.5" y="18" width="17" height="4.6" rx="1.2"/><circle class="bi-led" cx="19.3" cy="7.7" r="1.3"/><circle class="bi-led" cx="19.3" cy="14" r="1.3"/><circle class="bi-led a" cx="19.3" cy="20.3" r="1.3"/></svg><span><b>Http</b>Arena</span></a>
     <!--/chrome:brand--></div>
     <nav class="top-nav" aria-label="Site"><!--chrome:nav-->
       <a class="tn" data-sec="board" href="/" data-tip="The leaderboard: every entry racked by its composite score."><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M4 9h16M4 15h16"/></svg><span>Racks</span></a>
@@ -199,6 +199,13 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // Run-logs are deployed at /logs/ (the board is the root site). Locally,
   // serve site/ and open /leaderboard/ so ../static/logs/ reaches site/static/logs/.
   var LOGBASE = (location.protocol==='file:' || location.pathname.indexOf('/leaderboard/')>=0) ? '../static/logs/' : '/logs/';
+  // Resolved now: the address of the page changes with the view (viewAddr).
+  var SEARCH_SRC = new URL('search.js', location.href).href;
+  // On the deployed board a view has an address of its own, /board/<view>/, so that a
+  // link to it unfurls as that view: a preview is made from the path, and the hash never
+  // reaches the server (build_view_pages in gen_leaderboard_data.py writes the pages).
+  // A local checkout and an archived round have no such pages and keep the view in the hash.
+  var VIEWS = !ROUND_ID && document.body.hasAttribute('data-views');
   // Keep whatever is already in #rows: the deploy pre-renders the default
   // ranking into it, and data.js failing to load is precisely when that
   // fallback earns its keep. Only an empty #rows (a local checkout that has
@@ -780,18 +787,34 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // and closes again on a pick.
   var railOpen=false, railFocus=null, railFrom=null;
   var RAIL_ABBR={all:'ALL',h1:'H/1.1',h2:'H/2',h3:'H/3',gw:'GW',grpc:'gRPC',ws:'WS',db:'DB'};
+  // The address of a view: a profile at some connections, or a composite (conns 0).
+  // rest is what else the address says, always in the hash.
+  function viewAddr(id, conns, rest){
+    var p=rest.slice(), path=location.pathname, home=!conns && id==='h1';
+    if(VIEWS){
+      path=home ? '/' : '/board/'+encodeURIComponent(id)+'/';
+      if(conns && conns!==PROF[id].conns[0]) p.unshift('conns='+conns);
+    }
+    else if(conns) p.unshift('p='+encodeURIComponent(id), 'conns='+conns);
+    else if(!home) p.unshift('scope='+id);
+    return path+location.search+(p.length ? '#'+p.join('&') : '');
+  }
+  // The hash, with the view the path names in front when the hash names none.
+  function viewHash(){
+    var h=location.hash.slice(1), m=VIEWS && location.pathname.match(/^\/board\/([^\/]+)\/$/);
+    if(m && !/(^|&)(p|scope)=/.test(h)) h=(PROF[decodeURIComponent(m[1])] ? 'p=' : 'scope=')+m[1]+(h ? '&'+h : '');
+    return h;
+  }
   // The address a pick leads to, as writeHash would write it after the pick: the
   // view, plus what carries over (types, Tuned, compact names, the room's view),
   // so a key opened in a new tab lands on the same board.
   function railHref(prof, v){
     var p=[];
-    if(prof){ p.push('p='+encodeURIComponent(v)); p.push('conns='+PROF[v].conns[0]); }
-    else if(v!=='h1') p.push('scope='+v);
     var ts=state.types.slice().sort().join(','); if(ts!=='emerging,flagship') p.push('type='+ts);
     if(!state.showTuned) p.push('tuned=0');
     if(state.compactFw) p.push('fw=compact');
     if(!state.maint) p.push(state.aisle ? 'aisle=1' : 'table=0');   // the Old View is the default (writeHash)
-    return esc(p.length ? '#'+p.join('&') : location.pathname+location.search);
+    return esc(viewAddr(v, prof ? PROF[v].conns[0] : 0, p));
   }
   var RAIL_MORE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 7 5 5-5 5M13 7l5 5-5 5"/></svg>';
   var RAIL_BACK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>';
@@ -1129,7 +1152,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     if(window.LB_SEARCH){ if(cb) cb(); return; }
     _searchCb=cb;
     if(_searchReq) return;
-    _searchReq=document.createElement('script'); _searchReq.src='search.js';
+    _searchReq=document.createElement('script'); _searchReq.src=SEARCH_SRC;
     _searchReq.onload=function(){ var f=_searchCb; _searchCb=null; if(f) f(); };
     // Run the callback anyway: buildSearchIndex() still indexes the profiles
     // and composite views from LB_DATA, so the box keeps working without the
@@ -1629,8 +1652,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       return;
     }
     var p=[], ts=state.types.slice().sort().join(',');
-    if(state.view==='profile'){ p.push('p='+state.profile); p.push('conns='+state.conns); }
-    else { if(state.scope!=='h1') p.push('scope='+state.scope); if(state.useMem) p.push('mem=1');
+    if(state.view!=='profile'){ if(state.useMem) p.push('mem=1');
       // Rescale is on by default, so it is written when off - and also whenever
       // the address spells out its leagues: a link with type= and no rescale= is
       // a ranking link (a rank badge), which opens with it off (restoreFromHash).
@@ -1650,12 +1672,12 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     if(!state.maint) p.push(state.aisle ? 'aisle=1' : 'table=0');
     if(A3D && state.aisle && !state.maint) p.push('3d=1');
     if(state.open && !state.maint) p.push('open='+encodeURIComponent(state.open));
-    var nh=p.length?('#'+p.join('&')):'';
-    if(location.hash!==nh){ try{ history.replaceState(null,'', nh||(location.pathname+location.search)); }catch(e){} }
+    var prof=state.view==='profile', to=viewAddr(prof ? state.profile : state.scope, prof ? state.conns : 0, p);
+    if(location.pathname+location.search+location.hash!==to){ try{ history.replaceState(null,'', to); }catch(e){} }
   }
   var _hashT; function scheduleHash(){ clearTimeout(_hashT); _hashT=setTimeout(writeHash,80); }
   function restoreFromHash(){
-    var h=location.hash.slice(1); if(!h) return;
+    var h=viewHash(); if(!h) return;
     var p={}; h.split('&').forEach(function(s){ var i=s.indexOf('='); if(i>0) p[s.slice(0,i)]=decodeURIComponent(s.slice(i+1)); });
     if(p.doc){ location.replace(docUrl(p.doc)); return; }   // legacy #doc=x bookmark -> /docs/x/
     if(p.type){ var ts=p.type.split(',').filter(Boolean); if(ts.length) state.types=ts; }

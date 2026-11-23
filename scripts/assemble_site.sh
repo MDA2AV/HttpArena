@@ -32,4 +32,5 @@ cp -r generated/frameworks "$out/frameworks"                                # a 
 cp -r generated/compare "$out/compare"                                      # head-to-head pages, one per language, at /compare/<language>/
 cp generated/data.json "$out/data.json"                                     # every result as plain JSON: what the Dataset structured data points at
 cp generated/llms.txt generated/llms-full.txt "$out/"                       # the ranking and the Knowledge Base as text, for readers that never run JS
-if [ -f generated/og.png ]; then cp generated/og.png "$out/og.png"; fi      # social card for the board; the per-doc ones ride along inside generated/docs
+cp -r generated/board "$out/board"                                          # a page per view of the board, with its social card; opens the board on that view
+if [ -f generated/og.png ]; then cp generated/og.png "$out/og.png"; fi      # social card for the board; the other pages' ride along in their folders

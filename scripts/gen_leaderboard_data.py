@@ -28,6 +28,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import latency_score as _lat  # noqa: E402  (reference impl for the fixed-rate scores)
+import og_cards  # noqa: E402  (the image a shared link unfurls into)
 from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -861,8 +862,8 @@ def board_chrome():
                              f"expected a <!--chrome:{name}--> block")
         return m.group(1).strip()
 
-    # the board's brand link drives its in-page router; on a generated page it goes home
-    brand = part("brand").replace('href="#" id="brandHome"', 'href="/"')
+    # the board's script finds its brand link by this id; a generated page has no use for it
+    brand = part("brand").replace(' id="brandHome"', '')
     return brand, part("links"), "", part("nav"), part("search")
 
 
@@ -1779,18 +1780,6 @@ def compute_achievements(agg, profiles, meta, badge_index):
 #   - /llms.txt and /llms-full.txt carry the same ranking and the Knowledge Base
 #     as plain text, for readers that will never run a script.
 
-OG_SIZE = (1200, 630)
-OG_BG = (9, 11, 14)
-OG_ACCENT = (98, 196, 255)
-OG_TEXT = (231, 234, 237)
-OG_MUTED = (152, 162, 173)
-# the hardware of the cards: a unit's face, its seam, an LED, a display
-OG_FACE = (34, 38, 43)
-OG_EDGE = (59, 66, 74)
-OG_LED = (61, 255, 143)
-OG_LCD = (125, 251, 216)
-OG_HAZARD = (242, 189, 0)
-
 SCOPE_NAME = {"h1": "HTTP/1.1", "h2": "HTTP/2", "h3": "HTTP/3",
               "gw": "Gateway", "grpc": "gRPC", "ws": "WebSocket", "db": "Database"}
 # The board's <h1> per family. renderHead() writes the same strings, so the
@@ -1814,119 +1803,21 @@ SITE_DESC = ("Independent webserver benchmarks across every major framework and 
              "(H1, H2, H3, gRPC, WebSocket) in multiple categories.")
 
 
-def _og_ready():
-    """Whether this machine can draw the cards. Pillow is a deploy-time
-    dependency and a local run without it should still produce a site: the
-    pages simply come out without og:image rather than not at all."""
-    try:
-        import PIL  # noqa: F401
-        return True
-    except ImportError:
-        return False
+def _og_card(dest, section, kicker, title, blurb="", **kw):
+    """One page's card, its rack holding the protocol families (og_cards.draw)."""
+    og_cards.draw(dest, section, kicker, title, blurb, families=SCOPE_NAME, **kw)
 
 
-def _og_font(size, bold=False):
-    from PIL import ImageFont
-    names = ("DejaVuSans-Bold.ttf", "LiberationSans-Bold.ttf") if bold else \
-            ("DejaVuSans.ttf", "LiberationSans-Regular.ttf")
-    for base in ("/usr/share/fonts/truetype/dejavu/",
-                 "/usr/share/fonts/truetype/liberation/", ""):
-        for n in names:
-            try:
-                return ImageFont.truetype(base + n, size)
-            except OSError:
-                continue
-    try:
-        return ImageFont.load_default(size=size)   # Pillow >= 10.1: scalable
-    except TypeError:
-        return ImageFont.load_default()
-
-
-def _og_wrap(draw, text, font, width, maxlines):
-    lines, cur = [], ""
-    for word in str(text).split():
-        nxt = (cur + " " + word).strip()
-        if cur and draw.textlength(nxt, font=font) > width:
-            lines.append(cur)
-            cur = word
-            if len(lines) == maxlines:
-                lines[-1] = lines[-1].rstrip(" .") + "…"
-                return lines
-        else:
-            cur = nxt
-    if cur:
-        lines.append(cur)
-    return lines
-
-
-def _og_card(dest, kicker, title, rows, footer, blurb=""):
-    """A 1200x630 card in the board's dark palette: wordmark, kicker, title, and
-    an optional monospaced block (the top of the ranking, on the root card)."""
-    from PIL import Image, ImageDraw
-    img = Image.new("RGB", OG_SIZE, OG_BG)
-    d = ImageDraw.Draw(img)
-    # the hazard tape that runs under the site's header
-    d.rectangle([0, 0, OG_SIZE[0], 12], fill=(24, 27, 31))
-    for x in range(-12, OG_SIZE[0], 28):
-        d.polygon([(x, 12), (x + 12, 0), (x + 26, 0), (x + 14, 12)], fill=OG_HAZARD)
-
-    mark = _og_font(36, bold=True)
-    d.text((72, 58), "Http", font=mark, fill=OG_ACCENT)
-    d.text((72 + d.textlength("Http", font=mark), 58), "Arena", font=mark, fill=OG_TEXT)
-
-    y = 158
-    if kicker:
-        f = _og_font(26)
-        d.text((72, y), _og_wrap(d, kicker, f, 1056, 1)[0], font=f, fill=OG_MUTED)
-        y += 46
-
-    # The ranking needs half the card, so a title sharing the space with one gets
-    # two lines and a smaller face; a doc title, which is alone here, gets three.
-    size, lead, maxlines = (54, 66, 2) if rows else (62, 76, 3)
-    ft = _og_font(size, bold=True)
-    for line in _og_wrap(d, title, ft, 1056, maxlines):
-        d.text((72, y), line, font=ft, fill=OG_TEXT)
-        y += lead
-
-    if blurb and not rows:
-        fb = _og_font(29)
-        y += 18
-        for line in _og_wrap(d, blurb, fb, 1056, 4):
-            d.text((72, y), line, font=fb, fill=OG_MUTED)
-            y += 40
-
-    if rows:
-        y = max(y + 22, 350)
-        fr = _og_font(29, bold=True)
-        y -= 6
-        for i, (name, right) in enumerate(rows[:5]):
-            # one unit of the rack per row: face, rank, LED, name, display
-            d.rounded_rectangle([60, y, 1140, y + 38], radius=4, fill=OG_FACE, outline=OG_EDGE)
-            d.text((80, y + 3), f"{i + 1}", font=fr, fill=OG_MUTED)
-            d.ellipse([118, y + 14, 128, y + 24], fill=OG_LED)
-            d.text((146, y + 3), name, font=fr, fill=OG_TEXT)
-            w = d.textlength(right, font=fr)
-            d.rounded_rectangle([1116 - w - 12, y + 4, 1132, y + 34], radius=3, fill=(3, 6, 5))
-            d.text((1124 - w, y + 3), right, font=fr, fill=OG_LCD)
-            y += 42
-
-    if footer:
-        f = _og_font(23)
-        d.text((72, 566), _og_wrap(d, footer, f, 1056, 1)[0], font=f, fill=OG_MUTED)
-
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    # Flat background, four ink colours and the antialiasing between them: a
-    # palette holds all of it and is a quarter of the truecolor file. 132 cards
-    # ship with the site, so it is worth the one line.
-    img = img.convert("P", palette=Image.ADAPTIVE, colors=64)
-    img.save(dest, "PNG", optimize=True)
+def _lang_accent(lang):
+    """A language's colour on the cards' dark plate."""
+    return (_LANG_COLORS.get(lang) or {}).get("textDark", "#9da7b2") if lang else None
 
 
 def _og_meta(url):
     """og:image tags for one page, or nothing when the cards were not drawn."""
     if not url:
         return ""
-    return ('<meta property="og:image" content="' + SITE + url + '">'
+    return ('<meta property="og:image" content="%s%s?v=%d">' % (SITE, url, og_cards.VERSION) +
             '<meta property="og:image:width" content="1200">'
             '<meta property="og:image:height" content="630">'
             '<meta name="twitter:card" content="summary_large_image">')
@@ -2329,6 +2220,8 @@ def build_index_page(rows, fw_lang, current, round_name, n_profiles, n_entries,
              '<a href="/docs/scoring/composite-score/">How it works →</a>')
 
     out = once(src, "</head>", head + "</head>", "</head>")
+    # the views have pages of their own here (build_view_pages)
+    out = once(out, '<body class="board">', '<body class="board" data-views>', "<body>")
     out = once(out, '<div class="cat" id="pcat"></div>',
                '<div class="cat" id="pcat">Composite ranking</div>', "#pcat")
     out = once(out, '<h1 id="ptitle"></h1>',
@@ -2880,6 +2773,8 @@ def _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url="", achievem
     desc = (f"{fw}" + (f" ({lang})" if lang else "") + f" {kind_word} performance: "
             + (f"ranked {lead[1]} of {lead[2]} in HttpArena, " if lead else "benchmarked in HttpArena, ")
             + f"compared on throughput, latency, CPU and memory over {len(runs)} runs.")
+    og_desc = (f"{fw}" + (f" ({lang})" if lang else "") + f" {kind_word} performance in HttpArena: "
+               "throughput, latency, CPU and memory, measured on the same machine as every other entry.")
     graph = [
         {"@type": "WebPage", "@id": url + "#page", "name": title, "description": desc,
          "url": url, "inLanguage": "en", "isPartOf": {"@id": SITE + "/#website"},
@@ -2908,7 +2803,7 @@ def _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url="", achievem
             + '<meta property="og:type" content="article">'
             + '<meta property="og:site_name" content="HttpArena">'
             + '<meta property="og:title" content="' + e(title) + '">'
-            + '<meta property="og:description" content="' + e(desc) + '">'
+            + '<meta property="og:description" content="' + e(og_desc) + '">'
             + '<meta property="og:url" content="' + url + '">'
             + _og_meta(og_url)
             + _jsonld({"@context": "https://schema.org", "@graph": graph})
@@ -3016,7 +2911,7 @@ def _lang_faq(lang, scopes, n_entries, round_name, has_compare=False):
 
 
 def _lang_page(lang, scopes, all_entries, round_name, siblings=(), updated="",
-               has_compare=False):
+               has_compare=False, og_url=""):
     """/frameworks/lang/<language>/ - one language's entries, compared family by family.
 
     Every number is read out of the badge index, the same source the entry pages
@@ -3042,6 +2937,8 @@ def _lang_page(lang, scopes, all_entries, round_name, siblings=(), updated="",
     desc = (f"Which {lang} web framework is fastest? See the full list of {n} "
             f"{lang} web frameworks and HTTP servers, compared by performance "
             f"in a composite score table.")
+    og_desc = (f"The {lang} web frameworks and HTTP servers in HttpArena, compared by "
+               "performance on the same machine.")
 
     # One table per league, never one per family: a composite is taken against
     # the leader of the entry's own league, over the profiles that league
@@ -3104,8 +3001,9 @@ def _lang_page(lang, scopes, all_entries, round_name, siblings=(), updated="",
             + '<meta property="og:type" content="website">'
             + '<meta property="og:site_name" content="HttpArena">'
             + '<meta property="og:title" content="' + e(title) + '">'
-            + '<meta property="og:description" content="' + e(desc) + '">'
+            + '<meta property="og:description" content="' + e(og_desc) + '">'
             + '<meta property="og:url" content="' + url + '">'
+            + _og_meta(og_url)
             + _jsonld({"@context": "https://schema.org", "@graph": graph})
             + _CSS_LINK
             + "</head>")
@@ -3187,7 +3085,7 @@ def _lang_page(lang, scopes, all_entries, round_name, siblings=(), updated="",
     return head + header + body + _THEME_TOGGLE + "</body></html>"
 
 
-def _fw_index_page(entries, lang_pages=(), updated="", compare_langs=()):
+def _fw_index_page(entries, lang_pages=(), updated="", compare_langs=(), og_url=""):
     """/frameworks/ - one link per entry, grouped by language. Also the page that
     makes every framework page reachable by following links from the board."""
     e = _html.escape
@@ -3196,6 +3094,8 @@ def _fw_index_page(entries, lang_pages=(), updated="", compare_langs=()):
     desc = (f"Browse the full list of {len(entries)} web frameworks, HTTP engines "
             "and reverse proxies benchmarked by HttpArena, compared by language "
             "and performance.")
+    og_desc = ("Every web framework, HTTP engine and reverse proxy benchmarked by HttpArena, "
+               "by language.")
     by_lang = {}
     for fw, lang, kind in entries:
         by_lang.setdefault(lang or "Other", []).append((fw, kind))
@@ -3240,8 +3140,9 @@ def _fw_index_page(entries, lang_pages=(), updated="", compare_langs=()):
             + '<meta property="og:type" content="website">'
             + '<meta property="og:site_name" content="HttpArena">'
             + '<meta property="og:title" content="' + e(title) + '">'
-            + '<meta property="og:description" content="' + e(desc) + '">'
+            + '<meta property="og:description" content="' + e(og_desc) + '">'
             + '<meta property="og:url" content="' + url + '">'
+            + _og_meta(og_url)
             + _jsonld({"@context": "https://schema.org", "@graph": graph})
             + _CSS_LINK
             + "</head>")
@@ -3617,8 +3518,14 @@ def _compare_page(lang, ranked, members, profiles, results, round_name, updated,
         desc = ("Compare %d %s web frameworks and HTTP servers head to head: requests per "
                 "second, p99 latency and the delta on every test profile, all measured on the "
                 "same machine." % (len(entries), lang))
+        og_desc = ("Compare any two %s web frameworks and HTTP servers head to head: requests per "
+                   "second, p99 latency and the delta on every test profile, all measured on the "
+                   "same machine." % lang)
     else:
         title = "Web framework comparison: any two entries, any language"
+        og_desc = ("Compare any two web frameworks and HTTP servers head to head, across every "
+                   "language: requests per second, p99 latency and the delta on every test profile, "
+                   "all measured on the same machine.")
         desc = ("Compare any two of %d web frameworks and HTTP servers head to head, across "
                 "every language: requests per second, p99 latency and the delta on every test "
                 "profile, all measured on the same machine." % len(entries))
@@ -3681,7 +3588,7 @@ def _compare_page(lang, ranked, members, profiles, results, round_name, updated,
             + '<meta property="og:type" content="website">'
             + '<meta property="og:site_name" content="HttpArena">'
             + '<meta property="og:title" content="' + e(title) + '">'
-            + '<meta property="og:description" content="' + e(desc) + '">'
+            + '<meta property="og:description" content="' + e(og_desc) + '">'
             + '<meta property="og:url" content="' + url + '">'
             + _og_meta(og_url)
             + _jsonld({"@context": "https://schema.org", "@graph": graph})
@@ -3809,7 +3716,7 @@ def _compare_index_page(langs, updated, og_url=""):
 
 
 def build_compare_pages(profiles, results, lang_rows, members_by_lang, compare_langs,
-                        round_name, updated, with_og=False, fw_lang=None):
+                        round_name, updated, with_og=False, fw_lang=None, lang_lit=None):
     """A head-to-head page per language, the cross-language one, and the index.
 
     `members_by_lang` is every language, not just the ones that earn a page:
@@ -3819,6 +3726,7 @@ def build_compare_pages(profiles, results, lang_rows, members_by_lang, compare_l
     if COMPARE_OUT.exists():
         shutil.rmtree(COMPARE_OUT)
     COMPARE_OUT.mkdir(parents=True, exist_ok=True)
+    lang_lit = lang_lit or {}            # language -> the families on its card
     written, cards = [], 0
     for lang in sorted(members_by_lang, key=str.lower):
         members = members_by_lang[lang]
@@ -3833,12 +3741,9 @@ def build_compare_pages(profiles, results, lang_rows, members_by_lang, compare_l
         dest.mkdir(parents=True, exist_ok=True)
         (dest / "index.html").write_text(page, encoding="utf-8")
         if with_og:
-            # the first league only: five numbers under one heading read as one
-            # ranking, and across leagues they are not one
-            _og_card(dest / "og.png", "Head to head · " + SCOPE_NAME[DEFAULT_SCOPE],
-                     lang + " web frameworks, compared",
-                     [(r[0], "%.0f" % r[3]) for r in (_by_league(rows)[0][1][:5] if rows else [])],
-                     "%d entries · %s · http-arena.com" % (len(members), round_name))
+            _og_card(dest / "og.png", "Compare", "Head to head", lang + " web frameworks, compared",
+                     "Pick any two and compare them test by test.",
+                     lit=lang_lit.get(lang), accent=_lang_accent(lang))
             cards += 1
         written.append((lang, len(members)))
 
@@ -3856,20 +3761,14 @@ def build_compare_pages(profiles, results, lang_rows, members_by_lang, compare_l
         dest.mkdir(parents=True, exist_ok=True)
         (dest / "index.html").write_text(all_page, encoding="utf-8")
         if with_og:
-            _og_card(dest / "og.png", "Head to head · every language",
-                     "Compare any two entries, whatever they are written in",
-                     [(r[0], "%.0f" % r[3])
-                      for r in (_by_league(all_rows)[0][1][:5] if all_rows else [])],
-                     "%d entries · %s · http-arena.com" % (len(all_members), round_name))
+            _og_card(dest / "og.png", "Compare", "Head to head · every language",
+                     "Compare any two entries", "Whatever they are written in, test by test.")
             cards += 1
         written.insert(0, (None, len(all_members)))
 
     if with_og:
-        _og_card(COMPARE_OUT / "og.png", "Head to head",
-                 "Compare two web frameworks, profile by profile",
-                 [(lang or "Every language", "%d entries" % n) for lang, n in
-                  sorted(written, key=lambda x: -x[1])[:5]],
-                 "%d languages · %s · http-arena.com" % (len(written), round_name))
+        _og_card(COMPARE_OUT / "og.png", "Compare", "Head to head", "Compare two web frameworks",
+                 "Side by side, test by test.")
         cards += 1
     (COMPARE_OUT / "index.html").write_text(
         _compare_index_page(written, updated, "/compare/og.png" if with_og else ""),
@@ -3973,12 +3872,14 @@ def build_fw_pages(profiles, results, meta, fw_lang, badge_index, achievements,
                      lang in compare_langs, (spec_full or {}).get(fw)),
             encoding="utf-8")
         if with_og:
-            _og_card(dest / "og.png", "Benchmark results", fw,
-                     [(SCOPE_NAME[s], "#%d of %d" % (rank, field))
-                      for s, rank, field, _, _link in ranks],
-                     " · ".join(x for x in [lang, TYPE_LABEL.get(kind, kind),
-                                            round_name, "http-arena.com"] if x),
-                     blurb=m.get("desc", ""))
+            chips = [(lang, _lang_accent(lang))] if lang else []
+            chips.append((TYPE_LABEL.get(kind, kind), og_cards.TYPE_COLOR.get(kind, "#9da7b2")))
+            if m.get("mode") == "tuned" and kind_has_mode(kind):
+                chips.append(("Tuned", None))
+            _og_card(dest / "og.png", "Frameworks", "Benchmark results", fw,
+                     "Results on every test it runs, all measured on the same machine.",
+                     lit={_scope_of(p) for p, _c, _r in runs}, accent=_lang_accent(lang),
+                     chips=chips, upper=False)
             cards += 1
         entries.append((fw, lang, kind))
 
@@ -3989,41 +3890,118 @@ def build_fw_pages(profiles, results, meta, fw_lang, badge_index, achievements,
         dest.mkdir(parents=True, exist_ok=True)
         (dest / "index.html").write_text(
             _lang_page(lang, lang_scopes[lang], members_by_lang[lang], round_name,
-                       siblings, updated, lang in compare_langs), encoding="utf-8")
+                       siblings, updated, lang in compare_langs,
+                       (_lang_url(lang) + "og.png") if with_og else ""), encoding="utf-8")
+        if with_og:
+            _og_card(dest / "og.png", "Frameworks", "By language", lang + " web frameworks",
+                     "Every " + lang + " entry, compared family by family.",
+                     lit=lang_scopes[lang], accent=_lang_accent(lang))
+            cards += 1
 
     (FW_OUT / "index.html").write_text(
-        _fw_index_page(entries, lang_pages, updated, compare_langs), encoding="utf-8")
+        _fw_index_page(entries, lang_pages, updated, compare_langs,
+                       "/frameworks/og.png" if with_og else ""), encoding="utf-8")
+    if with_og:
+        _og_card(FW_OUT / "og.png", "Frameworks", "Every entry", "Web frameworks, engines and proxies",
+                 "A page of results for each of them, grouped by language.")
+        cards += 1
     print(f"wrote {sources} implementation bundles (frameworks/<slug>/source.json)")
     return entries, cards, siblings, lang_scopes, members_by_lang, compare_langs
 
 
-def build_og_images(content, trails, rows, fw_lang, round_name):
-    """One card for the board and one per doc. Returns the root card's URL (or
-    "" when Pillow is missing), plus how many were written."""
-    if not _og_ready():
+def _scope_of(p):
+    """The family a profile ranks in (familyOf() on the board)."""
+    return FAMILY_OF_CAT.get(p["category"], "h1")
+
+
+def _doc_scopes(did):
+    """The families a Knowledge Base page is about, None for all of them."""
+    parts = did.split("/")
+    if "async-database" in parts or "fortunes" in parts:
+        return {"db"}                    # their docs are kept under h1/ (PROFILE_DOC)
+    return next(({k} for k in ({"gateway": "gw", "database": "db"}.get(x, x) for x in parts)
+                 if k in SCOPE_NAME), None)
+
+
+def build_og_images(content, trails):
+    """The card of the board and one per doc. Returns the board card's URL (or "" when
+    Pillow is missing), plus how many were written."""
+    if not og_cards.ready():
         print("[warn] Pillow not installed - no og:image cards, pages ship without them")
         # an earlier run's card would otherwise stay behind, with no page left
         # pointing at it
         (GEN / "og.png").unlink(missing_ok=True)
         return "", 0
 
-    GEN.mkdir(parents=True, exist_ok=True)
-    top = [(fw, "%.0f" % score) for fw, score in rows[:5]]
-    _og_card(GEN / "og.png",
-             "Composite ranking · " + SCOPE_NAME[DEFAULT_SCOPE],
-             "Which web framework is actually fastest?",
-             top,
-             f"{len(rows)} entries · {round_name} · http-arena.com")
+    _og_card(GEN / "og.png", "Racks", "Leaderboard", "Which web framework is actually fastest?",
+             "Independent benchmarks of web frameworks, HTTP engines and proxies.")
     written = 1
 
     for did, d in content.items():
-        crumb = " › ".join(t for t, _ in trails.get(did, [])[:-1]) or "Knowledge Base"
-        _og_card(DOCS_OUT / did / "og.png" if did else DOCS_OUT / "og.png",
-                 crumb, d["t"] or "Knowledge Base", [],
-                 "HttpArena Knowledge Base · http-arena.com",
-                 blurb=d.get("d") or _meta_desc(d["html"]))
+        # the tab of the card already says Knowledge Base, the root of every trail
+        crumb = " › ".join(t for t, _ in trails.get(did, [])[1:-1]) or "Documentation"
+        _og_card(DOCS_OUT / did / "og.png" if did else DOCS_OUT / "og.png", "Knowledge Base",
+                 crumb, d["t"] or "Knowledge Base", d.get("d") or _meta_desc(d["html"]),
+                 lit=_doc_scopes(did))
         written += 1
     return "/og.png", written
+
+
+# ── a page per view of the board ─────────────────────────────────────────────
+# A view of the board used to be a #hash, and a hash never reaches the server: whatever
+# view a link was for, it unfurled as the front page. So each view has an address of its
+# own, /board/<view>/, which the board shows while that view is on screen (viewAddr() in
+# index.html). The page there is only what an unfurler reads - its title, its description
+# and its card - and sends a browser on to the board, as /leaderboard/ does. noindex,
+# because what a search engine should list is the board.
+
+VIEW_OUT = GEN / "board"
+
+
+def build_view_pages(profiles, with_og):
+    """/board/<view>/ for every composite but the front page's own, and every profile."""
+    if VIEW_OUT.exists():
+        shutil.rmtree(VIEW_OUT)
+    e = _html.escape
+    same = "measured on the same machine."
+    views = [("all", "scope=all", "Composite ranking", "Overall web server benchmarks",
+              "Overall web server benchmarks", "Every protocol family in one ranking, " + same, None)]
+    for scope, name in SCOPE_NAME.items():
+        if scope != DEFAULT_SCOPE:
+            views.append((scope, "scope=" + scope, "Composite ranking", SCOPE_H1[scope], SCOPE_H1[scope],
+                          "The composite ranking over " + SCOPE_BLURB[scope] + ", " + same, {scope}))
+    for p in profiles:
+        name = SCOPE_NAME[_scope_of(p)]
+        views.append((p["id"], "p=" + p["id"], name + " · Test profile", p["label"],
+                      "%s: %s benchmark" % (name, p["label"]),
+                      "Every entry that runs this test, " + same, {_scope_of(p)}))
+    ids = [v[0] for v in views]
+    if len(set(ids)) != len(ids):
+        raise SystemExit("[fatal] board views: a profile is called like a family, they share /board/<id>/")
+    for vid, state, kicker, heading, title, desc, lit in views:
+        dest, url = VIEW_OUT / vid, "/board/" + vid + "/"
+        dest.mkdir(parents=True, exist_ok=True)
+        (dest / "index.html").write_text(
+            '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+            '<meta name="viewport" content="width=device-width, initial-scale=1">'
+            '<meta name="color-scheme" content="light dark">'
+            "<title>" + e(title) + " – HttpArena</title>"
+            '<meta name="description" content="' + e(desc) + '">'
+            '<meta name="robots" content="noindex">'
+            '<link rel="canonical" href="' + SITE + url + '">'
+            '<meta property="og:type" content="website">'
+            '<meta property="og:site_name" content="HttpArena">'
+            '<meta property="og:title" content="' + e(title) + '">'
+            '<meta property="og:description" content="' + e(desc) + '">'
+            '<meta property="og:url" content="' + SITE + url + '">'
+            + _og_meta((url + "og.png") if with_og else "")
+            + "<script>location.replace('/'+location.search+'#" + state
+            + "'+(location.hash?'&'+location.hash.slice(1):''))</script>"
+            '</head><body><p><a href="/#' + state + '">' + e(title) + "</a></p></body></html>\n",
+            encoding="utf-8")
+        if with_og:
+            _og_card(dest / "og.png", "Racks", kicker, heading, desc, lit=lit)
+    return len(views)
 
 
 def _spec_cell(s):
@@ -4362,7 +4340,7 @@ def main():
     # Docs are pre-rendered to real /docs/<id>/ pages (SEO); the SPA links out to
     # them. LB_DATA still carries the docs *tree* for the sidebar labels, but the
     # doc *content* is no longer shipped as docs.js.
-    has_og = _og_ready()
+    has_og = og_cards.ready()
     trails = _crumb_trails(docs_tree)
     n_pages = build_doc_pages(docs_tree, docs_content, trails, with_og=has_og)
     n_search, search_bytes = write_search_index(docs_tree, docs_content)
@@ -4386,13 +4364,14 @@ def main():
                                                        for n, fm in frameworks.items()})
     compare_pages, n_cmp_cards = build_compare_pages(
         profiles, results, {l: s.get(DEFAULT_SCOPE, []) for l, s in lang_scopes.items()},
-        members_by_lang, compare_langs, round_name, updated, has_og, fw_lang)
+        members_by_lang, compare_langs, round_name, updated, has_og, fw_lang, lang_scopes)
     n_urls, n_dated = write_sitemap(docs_content, fw_entries, lang_pages,
                                     [l for l, _n in compare_pages])
 
     # og cards go in after build_doc_pages: that one clears site/generated/docs/
     # before it writes, and the per-doc cards live inside it.
-    og_url, n_cards = build_og_images(docs_content, trails, board, fw_lang, round_name)
+    og_url, n_cards = build_og_images(docs_content, trails)
+    n_views = build_view_pages(profiles, has_og)
     json_bytes = write_data_json(payload)
     # Every entry the dataset covers, not the default board view — see _dataset_node.
     n_entries = len({r["fw"] for rows_ in results.values() for r in rows_})
@@ -4422,7 +4401,8 @@ def main():
     print(f"wrote {(GEN / 'data.json').relative_to(ROOT)} - {json_bytes // 1024} KB")
     print(f"wrote {(GEN / 'llms.txt').relative_to(ROOT)} - {llms_bytes // 1024} KB, "
           f"llms-full.txt {llms_full_bytes // 1024} KB")
-    print(f"wrote {n_cards + n_fw_cards + n_cmp_cards} og:image cards"
+    print(f"wrote {VIEW_OUT.relative_to(ROOT)}/ - {n_views} board views")
+    print(f"wrote {n_cards + n_fw_cards + n_cmp_cards + (n_views if n_cards else 0)} og:image cards"
           if n_cards else "no og:image cards (Pillow missing)")
 
 
