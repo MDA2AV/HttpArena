@@ -1,5 +1,0 @@
-{
-  "framework": "node",
-  "tls": "pass",
-  "check": "none"
-}
