@@ -3,55 +3,21 @@
 #include "func.h"
 
 #include <algorithm>
-#include <charconv>
+#include <cstdint>
+#include <cstring>
+#include <functional>
 #include <memory>
 #include <string>
 #include <string_view>
+#include <variant>
 #include <vector>
 
 namespace
 {
-    // paozhu's Postgres driver hands every column back as text. Supplying a
-    // `set_val` row type is enough for orm::db_conn::async_query() — no
-    // generated ORM model is needed (mini_project.sh empties orm/ + models/).
-    struct item_row
-    {
-        std::string id, name, category, price, quantity, active, tags, rating_score, rating_count;
-
-        void set_val(const std::string &col, const unsigned char *data, std::size_t len, unsigned char)
-        {
-            std::string value(reinterpret_cast<const char *>(data), len);
-            if (col == "id")                 { id = std::move(value); }
-            else if (col == "name")         { name = std::move(value); }
-            else if (col == "category")     { category = std::move(value); }
-            else if (col == "price")        { price = std::move(value); }
-            else if (col == "quantity")     { quantity = std::move(value); }
-            else if (col == "active")       { active = std::move(value); }
-            else if (col == "tags")         { tags = std::move(value); }
-            else if (col == "rating_score") { rating_score = std::move(value); }
-            else if (col == "rating_count") { rating_count = std::move(value); }
-        }
-    };
-
     struct fortune_row
     {
         long long id = 0;
         std::string message;
-
-        void set_val(const std::string &col, const unsigned char *data, std::size_t len, unsigned char)
-        {
-            std::string value(reinterpret_cast<const char *>(data), len);
-            if (col == "id")
-            {
-                long long parsed = 0;
-                std::from_chars(value.data(), value.data() + value.size(), parsed);
-                id = parsed;
-            }
-            else if (col == "message")
-            {
-                message = std::move(value);
-            }
-        }
     };
 
     void respond_db_error(const std::shared_ptr<http::httppeer> &peer, std::string_view message)
@@ -61,31 +27,33 @@ namespace
         peer->output = std::string(message);
     }
 
-    // Both DB routes query through orm::db_conn("pg")->async_query() inline.
-    // The process-wide ceiling under Postgres' max_connections is the ORM
-    // select pool itself: entrypoint.sh renders its maxpool to
-    // DATABASE_MAX_CONN - 24, and async_get_pg_select_conn() parks (woken on
-    // connection return) once that quota is full, so no separate gate is needed.
-    // pg_async_query_vec_impl() catches driver exceptions into error_msg and
-    // returns 0 rows, so a legitimate empty result is not an error;
-    // iserror / error_msg are the failure signal (503 via respond_db_error).
-
-    long long to_int(std::string_view value, long long fallback = 0)
+    // Binary PG rows: int2/int4/int8/bool arrive as int64_t, oid as uint64_t,
+    // float4/float8 as double, numeric as a text view; everything not in the
+    // driver's binary-decodable set (text/varchar/jsonb/...) arrives as text.
+    long long variant_int(const orm::col_value_variant &value)
     {
-        long long parsed = 0;
-        auto result = std::from_chars(value.data(), value.data() + value.size(), parsed);
-        return result.ec == std::errc{} ? parsed : fallback;
+        if (const auto *p = std::get_if<int64_t>(&value))
+        {
+            return static_cast<long long>(*p);
+        }
+        if (const auto *p = std::get_if<uint64_t>(&value))
+        {
+            return static_cast<long long>(*p);
+        }
+        if (const auto *p = std::get_if<double>(&value))
+        {
+            return static_cast<long long>(*p);
+        }
+        return 0;
     }
 
-    std::string integer_or_zero(const std::string &value)
+    std::string_view variant_text(const orm::col_value_variant &value)
     {
-        return std::to_string(to_int(value));
-    }
-
-    bool is_true(const std::string &value)
-    {
-        return value == "t" || value == "T" || value == "true" ||
-               value == "TRUE" || value == "1";
+        if (const auto *p = std::get_if<std::string_view>(&value))
+        {
+            return *p;
+        }
+        return {};
     }
 
     void append_json_string(std::string &out, std::string_view value)
@@ -117,52 +85,6 @@ namespace
             }
         }
         out.push_back('"');
-    }
-
-    std::string render_items(const std::vector<item_row> &rows)
-    {
-        std::string out;
-        out.reserve(rows.size() * 256 + 64);
-        out += "{\"items\":[";
-        for (std::size_t i = 0; i < rows.size(); ++i)
-        {
-            const item_row &r = rows[i];
-            if (i > 0)
-            {
-                out.push_back(',');
-            }
-            out += "{\"id\":";
-            out += integer_or_zero(r.id);
-            out += ",\"name\":";
-            append_json_string(out, r.name);
-            out += ",\"category\":";
-            append_json_string(out, r.category);
-            out += ",\"price\":";
-            out += integer_or_zero(r.price);
-            out += ",\"quantity\":";
-            out += integer_or_zero(r.quantity);
-            out += ",\"active\":";
-            out += is_true(r.active) ? "true" : "false";
-            out += ",\"tags\":";
-            // jsonb arrives as a JSON array in text form; keep it verbatim.
-            if (r.tags.size() > 1 && r.tags.front() == '[' && r.tags.back() == ']')
-            {
-                out += r.tags;
-            }
-            else
-            {
-                out += "[]";
-            }
-            out += ",\"rating\":{\"score\":";
-            out += integer_or_zero(r.rating_score);
-            out += ",\"count\":";
-            out += integer_or_zero(r.rating_count);
-            out += "}}";
-        }
-        out += "],\"count\":";
-        out += std::to_string(rows.size());
-        out.push_back('}');
-        return out;
     }
 
     std::string render_fortunes(std::vector<fortune_row> &rows)
@@ -207,19 +129,97 @@ asio::awaitable<std::string> arena_async_db(std::shared_ptr<httppeer> peer)
     if (limit > 50) limit = 50;
 
     // 预处理：参数绑定，驱动按连接缓存 statement，池化连接跨请求复用 warm 路径。
-    const std::string sql = "SELECT id,name,category,price,quantity,active,tags,rating_score,rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT ?";
+    // PG 直接用 $n 占位符，框架不再做 ? -> $n 转换。
+    const std::string sql = "SELECT id,name,category,price,quantity,active,tags,rating_score,rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3";
     std::vector<http::obj_val> params;
     params.emplace_back(min_price);
     params.emplace_back(max_price);
     params.emplace_back(limit);
 
-    std::vector<item_row> rows;
-    rows.reserve(static_cast<std::size_t>(limit));
+    // 二进制行直接渲染进响应，不再经过 item_row 的 9 次字符串拷贝和二次解析。
+    // 列位置按首行 col_names 解析一次；SQL 列序变化或列缺失会置 columns_bad。
+    constexpr int kColumnCount = 9;
+    int col[kColumnCount]     = {-1, -1, -1, -1, -1, -1, -1, -1, -1};
+    bool columns_ready        = false;
+    bool columns_bad          = false;
+    std::size_t row_count     = 0;
+    std::string out;
+    out.reserve(static_cast<std::size_t>(limit) * 256 + 64);
+    out += "{\"items\":[";
+
     try
     {
         auto link = std::make_unique<orm::db_conn>("pg");
-        co_await link->async_query_prepared(sql, params, rows);
-        if (link->iserror || !link->error_msg.empty())
+        co_await link->async_query_prepared_binary(
+            sql, params,
+            [&](int col_count, char **col_names, std::function<orm::col_value_variant(int)> get_data) -> bool
+            {
+                if (!columns_ready)
+                {
+                    static constexpr const char *expect[kColumnCount] = {
+                        "id", "name", "category", "price", "quantity",
+                        "active", "tags", "rating_score", "rating_count"};
+                    if (col_count != kColumnCount)
+                    {
+                        columns_bad = true;
+                        return false;
+                    }
+                    for (int e = 0; e < kColumnCount; ++e)
+                    {
+                        for (int i = 0; i < col_count; ++i)
+                        {
+                            if (col_names[i] != nullptr && std::strcmp(col_names[i], expect[e]) == 0)
+                            {
+                                col[e] = i;
+                                break;
+                            }
+                        }
+                        if (col[e] < 0)
+                        {
+                            columns_bad = true;
+                            return false;
+                        }
+                    }
+                    columns_ready = true;
+                }
+
+                if (row_count > 0)
+                {
+                    out.push_back(',');
+                }
+                out += "{\"id\":";
+                out += std::to_string(variant_int(get_data(col[0])));
+                out += ",\"name\":";
+                append_json_string(out, variant_text(get_data(col[1])));
+                out += ",\"category\":";
+                append_json_string(out, variant_text(get_data(col[2])));
+                out += ",\"price\":";
+                out += std::to_string(variant_int(get_data(col[3])));
+                out += ",\"quantity\":";
+                out += std::to_string(variant_int(get_data(col[4])));
+                out += ",\"active\":";
+                out += variant_int(get_data(col[5])) != 0 ? "true" : "false";
+                out += ",\"tags\":";
+                // jsonb arrives as a JSON array in text form; keep it verbatim.
+                const std::string_view tags = variant_text(get_data(col[6]));
+                if (tags.size() > 1 && tags.front() == '[' && tags.back() == ']')
+                {
+                    out += tags;
+                }
+                else
+                {
+                    out += "[]";
+                }
+                out += ",\"rating\":{\"score\":";
+                out += std::to_string(variant_int(get_data(col[7])));
+                out += ",\"count\":";
+                out += std::to_string(variant_int(get_data(col[8])));
+                out += "}}";
+                ++row_count;
+                return true;
+            });
+
+        if (columns_bad || link->iserror || !link->error_msg.empty())
         {
             respond_db_error(peer, "database query failed");
             co_return "";
@@ -231,7 +231,10 @@ asio::awaitable<std::string> arena_async_db(std::shared_ptr<httppeer> peer)
         co_return "";
     }
 
-    peer->output = render_items(rows);
+    out += "],\"count\":";
+    out += std::to_string(row_count);
+    out.push_back('}');
+    peer->output = std::move(out);
     co_return "";
 }
 
@@ -249,7 +252,20 @@ asio::awaitable<std::string> arena_fortunes(std::shared_ptr<httppeer> peer)
     try
     {
         auto link = std::make_unique<orm::db_conn>("pg");
-        co_await link->async_query_prepared("SELECT id,message FROM fortune", {}, rows);
+        co_await link->async_query_prepared_binary(
+            "SELECT id,message FROM fortune", {},
+            [&rows](int col_count, char **, auto get_data) -> bool
+            {
+                if (col_count < 2)
+                {
+                    return false;
+                }
+                fortune_row row;
+                row.id = variant_int(get_data(0));
+                row.message.assign(variant_text(get_data(1)));
+                rows.push_back(std::move(row));
+                return true;
+            });
         if (link->iserror || !link->error_msg.empty())
         {
             respond_db_error(peer, "database query failed");
