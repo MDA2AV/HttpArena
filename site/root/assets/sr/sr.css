@@ -345,8 +345,9 @@ html[data-theme="dark"]{
 
   /* Build-time ranking, written into #rows by gen_leaderboard_data.py and thrown
      away by renderComposite() as soon as data.js has been parsed. It is what a
-     reader without JavaScript gets, and what paints first for everyone else. */
-  .sb{width:100%; border-collapse:collapse; font-size:.86rem}
+     reader without JavaScript gets, and what paints first for everyone else. Its
+     five columns are held to the board's widest too. */
+  .sb{width:100%; max-width:calc(5 * var(--col-max)); border-collapse:collapse; font-size:.86rem}
   .sb th,.sb td{padding:.44rem .55rem; border-bottom:1px solid var(--line-soft); text-align:left}
   .sb th{color:var(--muted); font-size:.72rem; font-weight:650; letter-spacing:.02em; text-transform:uppercase}
   .sb td.n,.sb th.n{text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums}
@@ -366,7 +367,7 @@ html[data-theme="dark"]{
   .board-seo a{color:var(--accent)}
   .board-seo ul{margin:.4rem 0; padding-left:1.1rem}
 
-  .grid{--cols:54px minmax(250px,2fr) minmax(150px,1fr) 112px 92px 92px 96px 86px}
+  .grid{--col-max:8.5rem; --cols:54px minmax(250px,2fr) minmax(150px,1fr) 112px 92px 92px 96px 86px}
   .thead,.row{display:grid; grid-template-columns:var(--cols); align-items:center}
   .thead{position:sticky; top:57px; z-index:10; background:var(--bg); padding:.1rem 0 .55rem; border-bottom:1px solid var(--line); font-size:.72rem; font-weight:650; color:var(--muted); letter-spacing:.02em; text-transform:uppercase}
   .thead .th{padding:.2rem .55rem; cursor:pointer; user-select:none; white-space:nowrap}
@@ -501,7 +502,7 @@ html[data-theme="dark"]{
 
   /* ── Composite matrix ────────────────────────────────────── */
   /* table scrolls natively in both axes (bar drag, wheel, trackpad and finger all work); its own horizontal bar is hidden so only the synced bar shows */
-  .cwrap{display:block; width:100%; overflow-x:auto; overflow-y:auto; max-height:calc(100vh - 210px); border:1px solid var(--line); border-radius:10px; margin-top:.15rem; -webkit-overflow-scrolling:touch; scrollbar-width:thin; scrollbar-color:var(--line) transparent}
+  .cwrap{display:block; width:fit-content; max-width:100%; overflow-x:auto; overflow-y:auto; max-height:calc(100vh - 210px); border:1px solid var(--line); border-radius:10px; margin-top:.15rem; -webkit-overflow-scrolling:touch; scrollbar-width:thin; scrollbar-color:var(--line) transparent}
   .cwrap::-webkit-scrollbar{width:10px; height:0}
   .cwrap::-webkit-scrollbar-thumb{background:var(--line); border-radius:6px}
   .cwrap::-webkit-scrollbar-thumb:hover{background:var(--muted)}
@@ -520,16 +521,20 @@ html[data-theme="dark"]{
   .cscroll::-webkit-scrollbar-thumb{background:var(--text-2); border:2px solid var(--panel-2)}
   .cscroll::-webkit-scrollbar-thumb:hover{background:var(--text)}
   .cscroll>div{height:1px}
-  table.cm{border-collapse:separate; border-spacing:0; width:100%; min-width:max-content; font-size:.78rem; line-height:1.2}
+  table.cm{border-collapse:separate; border-spacing:0; font-size:.78rem; line-height:1.2}
   .cm th,.cm td{padding:.24rem .45rem; border-bottom:1px solid var(--line-soft); border-right:1px solid var(--line-soft); white-space:nowrap; background:var(--bg)}
   .cm th:last-child,.cm td:last-child{border-right:0}
   .cm tbody tr:last-child td{border-bottom:0}
   .cm thead th{position:sticky; top:0; z-index:3; background:var(--bg); border-bottom:1px solid var(--line); font-size:.76rem; text-transform:uppercase; letter-spacing:.02em; color:var(--text-2); font-weight:650; text-align:left; cursor:pointer}
   .cm thead th:hover{color:var(--text)}
   .cm th.num,.cm td.num{text-align:left; font-variant-numeric:tabular-nums; font-family:var(--mono)}
-  /* per-profile columns: as narrow as their figures, and sharing whatever width
-     the window has left over - no blank trailing column on a wide screen */
-  .cm th.pcol{white-space:normal; line-height:1.2; vertical-align:bottom}
+  /* per-profile columns: as narrow as their figures, and wider with the window up
+     to --col-max, where the table ends however wide the window is. The user: "set
+     a max width for columns to not fill the whole space". A cell's max-width does
+     not hold a column back in an auto-layout table, so the table is only as wide
+     as its columns ask for (no width of its own to share out) and --col-max is
+     what each of them asks for. */
+  .cm th.pcol{box-sizing:border-box; width:var(--col-max); line-height:1.2; vertical-align:bottom}
   .cm td.pc{color:var(--text-2); line-height:1.1; vertical-align:middle; position:relative}
   /* slim per-cell quality cue: bar length = this result's normalized score in its profile */
   .cm td.pc .cbar{position:absolute; left:0; bottom:0; height:2px; background:var(--muted); opacity:.45}
@@ -586,6 +591,7 @@ html[data-theme="dark"]{
   .cm td.pc.nc{opacity:.55}
 /* The compliance (Spec) column: a profile-like cell, set off from the profiles after it. */
 .cm th.spech, .cm td.spec{border-right:1px solid var(--line-soft)}
+.cm th.spech, .cm th.resilh{width:4.5rem}
 /* A crash during the suite: the percentage alone, in red. */
 .cm td.pc.spec.crashed .crps{color:#c0392b}
 html[data-theme="dark"] .cm td.pc.spec.crashed .crps{color:#f0857a}
@@ -614,7 +620,7 @@ html[data-theme="dark"] .cm td.pc.spec.crashed .crps{color:#f0857a}
   /* The overall view: five family columns where a family board has a dozen
      profile columns, so they can afford the room - the score, its place on the
      family board and a bar long enough to compare. */
-  .cm th.famcol{min-width:8.5rem}
+  .cm th.famcol{min-width:var(--col-max)}
   /* Two affordances per profile column: open that profile's detail view, and
      open its implementation guide. They sit on their own line under the label,
      so the column (width:1px, shrink-to-fit) does not get any wider. */
@@ -787,7 +793,8 @@ html:not([data-theme="dark"]) .round-sub{color:var(--lead)}
 .round-badge{border-radius:2px}
 
 .layout{display:block}
-/* no max width: the rack and the maintenance table take the whole window, however wide */
+/* no max width: the rack takes the whole window, however wide, and the maintenance
+   table as much of it as its columns ask for (--col-max, --row-max) */
 .main, .main.cmfull{max-width:none; margin:0; padding:1.3rem 1.25rem 4rem}
 .nav-mobile{display:none}
 
@@ -1716,6 +1723,8 @@ html:not([data-theme="dark"]) .str-m::after{filter:none}
 #grid .cm.heat td.pc .cbar{border-radius:4px !important}
 /* a profile's own maintenance view: the same quiet rows */
 #grid .thead{font:600 .8rem/1.25 var(--sans); letter-spacing:0; text-transform:none; color:var(--text-2); background:var(--panel-2); border:1px solid var(--line); border-bottom-color:var(--line); padding:.35rem 0}
+/* no wider than its columns at their widest (renderProfile) */
+#grid .thead, #grid #rows:has(>.row, >.empty){max-width:var(--row-max)}
 #grid .thead .th.sorted{color:var(--text)}
 #grid #rows:has(>.row){border:1px solid var(--line); border-top:0; overflow:hidden; background:var(--panel)}
 #grid .row, #grid .row:nth-child(even){background:var(--panel)}
