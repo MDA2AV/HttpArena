@@ -2135,7 +2135,13 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     // entry's card).
     var narrow=window.innerWidth<600;
     var dark=DARK(), COLS=narrow ? profileCols().slice(0,4) : profileCols();
-    document.getElementById('grid').style.setProperty('--cols', COLS.map(function(c){
+    // The widest the table gets: the name and the rate share what the window leaves
+    // them, two to one, up to 320 and 160px (the longest name asks for 313, the
+    // rate and its header for 122), and the other columns are fixed. Wider windows
+    // leave the rest of their width empty.
+    var WIDEST={fw:320, rps:160}, grid=document.getElementById('grid');
+    grid.style.setProperty('--row-max', COLS.reduce(function(w, c){ return w+(WIDEST[c.k]||parseInt(c.w, 10)); }, 0)+'px');
+    grid.style.setProperty('--cols', COLS.map(function(c){
       if(!narrow) return c.w;
       if(c.k==='rank') return '34px';
       if(c.k==='fw') return 'minmax(0,1.5fr)';
