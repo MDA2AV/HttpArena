@@ -4,6 +4,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "httparena-sharaf",
     resolvers += "Sonatype Central Snapshots" at "https://central.sonatype.com/repository/maven-snapshots/",
+    dependencyOverrides += "ba.sake" %% "potateh" % "0.6.1-SNAPSHOT",
     libraryDependencies ++= Seq(
       "ba.sake" %% "sharaf-potateh" % "0.24.1-SNAPSHOT",
       "ba.sake" %% "squery" % "0.13.0",
