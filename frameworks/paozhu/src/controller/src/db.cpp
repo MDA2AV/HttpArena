@@ -14,10 +14,11 @@
 
 namespace
 {
-    struct fortune_row
+    // 行视图：message 指向结果集缓冲区，排序和渲染期间不拷贝。
+    struct fortune_view
     {
         long long id = 0;
-        std::string message;
+        std::string_view message;
     };
 
     void respond_db_error(const std::shared_ptr<http::httppeer> &peer, std::string_view message)
@@ -87,18 +88,67 @@ namespace
         out.push_back('"');
     }
 
-    std::string render_fortunes(std::vector<fortune_row> &rows)
+    // 结果集池：data / row_offsets / 列名向量的容量跨请求复用，数据本身不缓存。
+    // 每个在途请求独占一个对象（同一 ioc 上多个请求的续体可能交错，共用会互相覆盖）。
+    class result_set_pool
     {
-        rows.push_back(fortune_row{0, "Additional fortune added at request time."});
-        std::sort(rows.begin(), rows.end(), [](const fortune_row &a, const fortune_row &b) {
-            return a.message < b.message;  // std::string::compare is byte-ordinal
+      public:
+        orm::pg_result_set &acquire()
+        {
+            if (free_.empty())
+            {
+                all_.push_back(std::make_unique<orm::pg_result_set>());
+                free_.push_back(all_.back().get());
+            }
+            orm::pg_result_set *rs = free_.back();
+            free_.pop_back();
+            return *rs;
+        }
+        void release(orm::pg_result_set &rs) noexcept
+        {
+            rs.clear();
+            free_.push_back(&rs);
+        }
+
+      private:
+        std::vector<std::unique_ptr<orm::pg_result_set>> all_;
+        std::vector<orm::pg_result_set *> free_;
+    };
+
+    result_set_pool &thread_result_sets()
+    {
+        // 协程在同一 ioc 线程上恢复（per_ioc_thread_num=1），池不需要加锁。
+        thread_local result_set_pool pool;
+        return pool;
+    }
+
+    class result_set_guard
+    {
+      public:
+        // 初始化顺序与成员声明一致（rs 在前），避免 -Wreorder；两者都只用到入参 pool。
+        explicit result_set_guard(result_set_pool &pool) : rs(pool.acquire()), pool_(pool) {}
+        ~result_set_guard() { pool_.release(rs); }
+        result_set_guard(const result_set_guard &)            = delete;
+        result_set_guard &operator=(const result_set_guard &) = delete;
+
+        orm::pg_result_set &rs;
+
+      private:
+        result_set_pool &pool_;
+    };
+
+    void render_fortunes(std::string &out, std::vector<fortune_view> &rows)
+    {
+        rows.push_back(fortune_view{0, "Additional fortune added at request time."});
+        std::sort(rows.begin(), rows.end(), [](const fortune_view &a, const fortune_view &b) {
+            return a.message < b.message;  // byte-ordinal, same as std::string::compare
         });
 
-        std::string out;
+        out.clear();
         out.reserve(rows.size() * 140 + 256);
         out += "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>Fortunes</title></head>";
         out += "<body><table><tr><th>id</th><th>message</th></tr>";
-        for (const fortune_row &r : rows)
+        for (const fortune_view &r : rows)
         {
             out += "<tr><td>";
             out += std::to_string(r.id);
@@ -107,7 +157,6 @@ namespace
             out += "</td></tr>";
         }
         out += "</table></body></html>";
-        return out;
     }
 }  // namespace
 
@@ -136,94 +185,103 @@ asio::awaitable<std::string> arena_async_db(std::shared_ptr<httppeer> peer)
     params.emplace_back(max_price);
     params.emplace_back(limit);
 
-    // 二进制行直接渲染进响应，不再经过 item_row 的 9 次字符串拷贝和二次解析。
-    // 列位置按首行 col_names 解析一次；SQL 列序变化或列缺失会置 columns_bad。
+    // 整取：先把所有行读进结果集、连接随即归还，再解码渲染；渲染阶段不再占用连接。
+    // 结果集来自线程本地池，缓冲区容量跨请求复用；行数据本身不缓存。
     constexpr int kColumnCount = 9;
-    int col[kColumnCount]     = {-1, -1, -1, -1, -1, -1, -1, -1, -1};
-    bool columns_ready        = false;
-    bool columns_bad          = false;
-    std::size_t row_count     = 0;
-    std::string out;
+    std::string &out       = peer->output;
+    out.clear();
     out.reserve(static_cast<std::size_t>(limit) * 256 + 64);
     out += "{\"items\":[";
 
     try
     {
         auto link = std::make_unique<orm::db_conn>("pg");
-        co_await link->async_query_prepared_binary(
-            sql, params,
-            [&](int col_count, char **col_names, std::function<orm::col_value_variant(int)> get_data) -> bool
-            {
-                if (!columns_ready)
-                {
-                    static constexpr const char *expect[kColumnCount] = {
-                        "id", "name", "category", "price", "quantity",
-                        "active", "tags", "rating_score", "rating_count"};
-                    if (col_count != kColumnCount)
-                    {
-                        columns_bad = true;
-                        return false;
-                    }
-                    for (int e = 0; e < kColumnCount; ++e)
-                    {
-                        for (int i = 0; i < col_count; ++i)
-                        {
-                            if (col_names[i] != nullptr && std::strcmp(col_names[i], expect[e]) == 0)
-                            {
-                                col[e] = i;
-                                break;
-                            }
-                        }
-                        if (col[e] < 0)
-                        {
-                            columns_bad = true;
-                            return false;
-                        }
-                    }
-                    columns_ready = true;
-                }
+        result_set_guard result(thread_result_sets());
+        orm::pg_result_set &rs = result.rs;
 
-                if (row_count > 0)
-                {
-                    out.push_back(',');
-                }
-                out += "{\"id\":";
-                out += std::to_string(variant_int(get_data(col[0])));
-                out += ",\"name\":";
-                append_json_string(out, variant_text(get_data(col[1])));
-                out += ",\"category\":";
-                append_json_string(out, variant_text(get_data(col[2])));
-                out += ",\"price\":";
-                out += std::to_string(variant_int(get_data(col[3])));
-                out += ",\"quantity\":";
-                out += std::to_string(variant_int(get_data(col[4])));
-                out += ",\"active\":";
-                out += variant_int(get_data(col[5])) != 0 ? "true" : "false";
-                out += ",\"tags\":";
-                // jsonb arrives as a JSON array in text form; keep it verbatim.
-                const std::string_view tags = variant_text(get_data(col[6]));
-                if (tags.size() > 1 && tags.front() == '[' && tags.back() == ']')
-                {
-                    out += tags;
-                }
-                else
-                {
-                    out += "[]";
-                }
-                out += ",\"rating\":{\"score\":";
-                out += std::to_string(variant_int(get_data(col[7])));
-                out += ",\"count\":";
-                out += std::to_string(variant_int(get_data(col[8])));
-                out += "}}";
-                ++row_count;
-                return true;
-            });
-
-        if (columns_bad || link->iserror || !link->error_msg.empty())
+        co_await link->async_query_prepared_all(sql, params, rs);
+        if (link->iserror || !link->error_msg.empty())
         {
             respond_db_error(peer, "database query failed");
             co_return "";
         }
+
+        // 列位置按列名解析一次；列数或列名不符直接 503，避免按错位渲染。
+        static constexpr const char *expect[kColumnCount] = {
+            "id", "name", "category", "price", "quantity",
+            "active", "tags", "rating_score", "rating_count"};
+        int col[kColumnCount] = {-1, -1, -1, -1, -1, -1, -1, -1, -1};
+        if (rs.col_names.size() != static_cast<std::size_t>(kColumnCount))
+        {
+            respond_db_error(peer, "database query failed");
+            co_return "";
+        }
+        for (int e = 0; e < kColumnCount; ++e)
+        {
+            for (int i = 0; i < kColumnCount; ++i)
+            {
+                if (rs.col_names[(std::size_t)i] == expect[e])
+                {
+                    col[e] = i;
+                    break;
+                }
+            }
+            if (col[e] < 0)
+            {
+                respond_db_error(peer, "database query failed");
+                co_return "";
+            }
+        }
+
+        std::vector<orm::col_value_variant> values;
+        std::vector<std::string> backing;
+        values.reserve(kColumnCount);
+        for (std::size_t i = 0; i < rs.row_count(); ++i)
+        {
+            values.clear();
+            backing.clear();
+            if (!rs.decode_row(i, values, backing))
+            {
+                respond_db_error(peer, "database query failed");
+                co_return "";
+            }
+            if (i > 0)
+            {
+                out.push_back(',');
+            }
+            out += "{\"id\":";
+            out += std::to_string(variant_int(values[(std::size_t)col[0]]));
+            out += ",\"name\":";
+            append_json_string(out, variant_text(values[(std::size_t)col[1]]));
+            out += ",\"category\":";
+            append_json_string(out, variant_text(values[(std::size_t)col[2]]));
+            out += ",\"price\":";
+            out += std::to_string(variant_int(values[(std::size_t)col[3]]));
+            out += ",\"quantity\":";
+            out += std::to_string(variant_int(values[(std::size_t)col[4]]));
+            out += ",\"active\":";
+            out += variant_int(values[(std::size_t)col[5]]) != 0 ? "true" : "false";
+            out += ",\"tags\":";
+            // jsonb arrives as a JSON array in text form; keep it verbatim.
+            const std::string_view tags = variant_text(values[(std::size_t)col[6]]);
+            if (tags.size() > 1 && tags.front() == '[' && tags.back() == ']')
+            {
+                out += tags;
+            }
+            else
+            {
+                out += "[]";
+            }
+            out += ",\"rating\":{\"score\":";
+            out += std::to_string(variant_int(values[(std::size_t)col[7]]));
+            out += ",\"count\":";
+            out += std::to_string(variant_int(values[(std::size_t)col[8]]));
+            out += "}}";
+        }
+
+        out += "],\"count\":";
+        out += std::to_string(rs.row_count());
+        out.push_back('}');
     }
     catch (const std::exception &)
     {
@@ -231,10 +289,6 @@ asio::awaitable<std::string> arena_async_db(std::shared_ptr<httppeer> peer)
         co_return "";
     }
 
-    out += "],\"count\":";
-    out += std::to_string(row_count);
-    out.push_back('}');
-    peer->output = std::move(out);
     co_return "";
 }
 
@@ -243,47 +297,48 @@ asio::awaitable<std::string> arena_fortunes(std::shared_ptr<httppeer> peer)
 {
     peer->type("text/html; charset=utf-8");
 
-    // 201 = 200 seeded rows + the runtime row appended by render_fortunes().
-    // The seed is this repo's own: 12 TechEmpower rows plus
-    // generate_series(13,200) in data/pgdb-seed.sql, not the 12-row TE
-    // contract; reserve() only sets capacity either way.
-    std::vector<fortune_row> rows;
-    rows.reserve(201);
+    // 整取：co_await 返回时连接已归还；排序和 HTML 渲染只读结果集缓冲区，
+    // message 不再逐行拷贝。reserve(row_count + 1) 给下面追加的运行时行留位。
     try
     {
         auto link = std::make_unique<orm::db_conn>("pg");
-        co_await link->async_query_prepared_binary(
-            "SELECT id,message FROM fortune", {},
-            [&rows](int col_count, char **, auto get_data) -> bool
-            {
-                if (col_count < 2)
-                {
-                    return false;
-                }
-                fortune_row row;
-                row.id = variant_int(get_data(0));
-                row.message.assign(variant_text(get_data(1)));
-                rows.push_back(std::move(row));
-                return true;
-            });
+        result_set_guard result(thread_result_sets());
+        orm::pg_result_set &rs = result.rs;
+
+        co_await link->async_query_prepared_all("SELECT id,message FROM fortune", {}, rs);
         if (link->iserror || !link->error_msg.empty())
         {
             respond_db_error(peer, "database query failed");
             co_return "";
         }
+        if (rs.col_names.size() < 2 || rs.row_count() == 0)
+        {
+            respond_db_error(peer, "fortune table is empty");
+            co_return "";
+        }
+
+        std::vector<fortune_view> rows;
+        rows.reserve(rs.row_count() + 1);
+        std::vector<orm::col_value_variant> values;
+        std::vector<std::string> backing;
+        for (std::size_t i = 0; i < rs.row_count(); ++i)
+        {
+            values.clear();
+            backing.clear();
+            if (!rs.decode_row(i, values, backing) || values.size() < 2)
+            {
+                respond_db_error(peer, "database query failed");
+                co_return "";
+            }
+            rows.push_back(fortune_view{variant_int(values[0]), variant_text(values[1])});
+        }
+        render_fortunes(peer->output, rows);
     }
     catch (const std::exception &)
     {
         respond_db_error(peer, "database query failed");
         co_return "";
     }
-    if (rows.empty())
-    {
-        respond_db_error(peer, "fortune table is empty");
-        co_return "";
-    }
-
-    peer->output = render_fortunes(rows);
     co_return "";
 }
 }  // namespace http
