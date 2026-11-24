@@ -896,9 +896,9 @@ checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
 
 [[package]]
 name = "ruvel"
-version = "0.12.0"
+version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "deb79eb0ec50e7d63e28443a6a88d709487f93ec8bc132b8ae6960bc183e1ab1"
+checksum = "17db3cfa0ee2e2c2145cf45302cf50239deee5b4c2852fb16dc6c902be745b16"
 dependencies = [
  "arc-swap",
  "regex",
@@ -1610,4 +1610,4 @@ checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
 
 [[patch.unused]]
 name = "ruvel"
-version = "0.11.1"
+version = "0.14.0"
