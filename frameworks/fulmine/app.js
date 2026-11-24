@@ -65,9 +65,10 @@ app.get('/pipeline', (req, res) => {
 });
 
 // GET and POST registered apart: each one goes native on uWS, and the GET reads no header.
-app.get('/baseline11', (req, res) => {
+const baseline = (req, res) => {
     res.type('text/plain').send(String(sumQuery(req.query)));
-});
+};
+app.get('/baseline11', baseline);
 
 // the load generator sends no Content-Type, so the parser reads any body
 app.post('/baseline11', readText, (req, res) => {
@@ -103,10 +104,11 @@ const registerJsonRoute = (target, path = '/json/:count', ...before) => target.g
     res.json({ items, count });
 });
 
-const registerEchoRoute = (target) => target.post('/echo', readRaw, (req, res) => {
-    // an empty body leaves req.body unset
+// an empty body leaves req.body unset
+const echo = (req, res) => {
     res.type('application/octet-stream').send(Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0));
-});
+};
+const registerEchoRoute = (target) => target.post('/echo', readRaw, echo);
 
 // The .br and .gz files on disk are served when the client accepts them.
 // https://fulmine.sndesign.it/examples/static-precompressed
@@ -216,22 +218,50 @@ app.get('/fortunes', async (req, res) => {
     });
 }
 
+// /spec, the compliance route: Http11Probe reads it on 8080, h2spec on 8082 and 8443.
+// HEAD goes to the GET handler, as on Express.
+const specHeaders = (req, res) => {
+    const raw = req.rawHeaders;
+    let out = '';
+    for (let i = 0; i < raw.length; i += 2) out += raw[i] + ': ' + raw[i + 1] + '\n';
+    res.type('text/plain').send(out);
+};
+app.get('/spec', (req, res) => {
+    res.type('text/plain').send('spec ok');
+});
+app.options('/spec', readRaw, (req, res) => {
+    res.set('allow', 'GET, HEAD, POST, OPTIONS').end();
+});
+app.post('/spec', readRaw, echo);
+app.get('/spec/headers', specHeaders);
+app.post('/spec/headers', readRaw, specHeaders);
+
+// /parse, for the resilience suite: each body goes through the parser of its type. The limits
+// are the parsers' defaults, a body over them is a 413 and an invalid one a 400.
+app.post('/parse',
+    express.json(), express.urlencoded(), express.multipart(), express.raw({ type: () => true }),
+    (req, res) => {
+        res.type('text/plain').send('ok');
+    });
+
 // No error middleware on purpose: one anywhere in the app takes the fast paths off every route,
 // and the final handler already answers 400, 404 and 413 with the status the profiles expect.
 
 // app.uwsApp.ws and not app.ws: the echo needs no Request object on the upgrade.
 // https://fulmine.sndesign.it/websockets
+// 64 KB: the Autobahn cases of the spec suite echo messages up to that size.
 app.uwsApp.ws('/ws', {
-    maxPayloadLength: 16 * 1024,
+    maxPayloadLength: 64 * 1024,
     message: (ws, message, isBinary) => ws.send(message, isBinary)
 });
 
-// json-tls, static-tls and 8gbit over TLS on 8081, when the harness mounts the certs.
+// json-tls, static-tls, 8gbit and connections-1m-tls over TLS on 8081, when the harness mounts the certs.
 // https://fulmine.sndesign.it/examples/https
 const tlsApp = (dir) => {
     const target = configure(express({
         uwsOptions: { key_file_name: dir + '/server.key', cert_file_name: dir + '/server.crt' }
     }));
+    target.get('/baseline11', baseline);
     registerJsonRoute(target);
     registerStaticRoute(target);
     registerEchoRoute(target);
@@ -275,13 +305,19 @@ if (hasPair('/certs-tls')) {
         setInterval(() => {
             const now = pairStamp();
             if (!now || now === stamp) return;
-            stamp = now;
             const next = tlsApp('/certs-tls');
-            next.listen(9000, (e) => {
-                if (e) return;
-                live.close();
-                live = next;
-            });
+            try {
+                next.listen(9000, (e) => {
+                    if (e) return;
+                    live.close();
+                    live = next;
+                });
+            } catch {
+                // listen() builds the SSL context: mid-swap the key and the certificate do not
+                // match yet and it throws, so the next tick tries again
+                return;
+            }
+            stamp = now;
         }, 1000).unref();
     });
 }

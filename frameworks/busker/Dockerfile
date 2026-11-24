@@ -1,4 +1,4 @@
-FROM docker.io/library/clojure:temurin-26-tools-deps-trixie@sha256:cdb48987feccf867d2bbc45a73ab697e32eb9e3c79779d68963e99b91d792d0d
+FROM docker.io/library/clojure:temurin-27-tools-deps-resolute@sha256:91b4f2e729c408e8ed1311d0bb6d7717ee72544d9a57cfd872f105ade75bb068
 
 
 ENV JAVA_TOOL_OPTIONS=--enable-native-access=ALL-UNNAMED
@@ -9,5 +9,6 @@ COPY deps.edn ./
 RUN clojure -X:deps prep
 
 COPY src ./src
+RUN mkdir classes && clojure -M:aot -e "(compile 'httparena.busker.core)"
 
-CMD ["clojure", "-M", "-m", "httparena.busker.core"]
+CMD ["clojure", "-M:aot", "-m", "httparena.busker.core"]

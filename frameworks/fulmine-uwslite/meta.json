@@ -14,6 +14,8 @@
   "repo": "https://github.com/nigrosimone/fulmine.js",
   "website": "https://fulmine.sndesign.it/",
   "enabled": true,
+  "resilience": true,
+  "spec": ["h1"],
   "tests": [
     "baseline",
     "limited-conn",
@@ -22,7 +24,9 @@
     "latency-1m",
     "json-comp",
     "json-tls",
-    "8gbit"
+    "8gbit",
+    "connections-1m",
+    "connections-1m-tls"
   ],
   "maintainers": ["nigrosimone"]
 }

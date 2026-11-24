@@ -1,0 +1,47 @@
+{
+  "framework": "fulmine.js - uwsLite",
+  "dir": "fulmine-uwslite",
+  "suites": {
+    "h1": {
+      "tool": "http11probe",
+      "version": "d50d818",
+      "passed": 155,
+      "total": 159,
+      "warnings": 19,
+      "failed": [
+        {
+          "id": "COMP-HOST-WITH-PATH",
+          "test": "Host header with path component must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a73.2",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-OPTIONS-STAR",
+          "test": "OPTIONS * is the only valid asterisk-form request",
+          "expected": "2xx or 405; close/timeout = warn",
+          "got": "400, connection closed",
+          "rfc": "RFC 9112 \u00a73.2.4",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-HTTP10-DEFAULT-CLOSE",
+          "test": "HTTP/1.0 without keep-alive \u2014 server should close connection after response",
+          "expected": "2xx + close",
+          "got": "400, connection closed",
+          "rfc": "RFC 9112 \u00a79.3",
+          "level": "Should"
+        },
+        {
+          "id": "COMP-CHUNKED-TRAILER-VALID",
+          "test": "Valid chunked body with trailer field should be accepted",
+          "expected": "2xx + echo",
+          "got": "400, connection closed",
+          "rfc": "RFC 9112 \u00a77.1.2",
+          "level": "Must"
+        }
+      ]
+    }
+  }
+}

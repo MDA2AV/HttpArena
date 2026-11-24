@@ -4,6 +4,40 @@
 # and gRPC plaintext (indirectly via -H and -d, though we use h2load for
 # that in practice). This file owns the gcannon ↔ driver interface.
 
+# connections-5m: five million keep-alive connections
+# with 1.25M req/s paced over them, one request per connection every four
+# seconds, so what is left to measure is what holding the rest of the fleet
+# costs. Four seconds stays inside the 5s keep-alive default of Node, uvicorn
+# and actix: at five (1M req/s) actix's timeouts raced every request, 51,410
+# reconnects at 16,000 connections against none at four. Needs gcannon >= 0.8.2
+# (--rate with every thread spread over the interval, --addr-span,
+# --connect-limit, --warmup-max, --settle); scripts/conn_hold.py checks.
+#
+# One source address holds ~64.5K connections to one destination, so the
+# fleet spans 127.0.0.1-127.0.0.CONN5M_ADDRS (31,250 on each of 160, the
+# density the million-connection runs held). First connects are capped per
+# thread so five million SYNs never land at once, and the warmup waits for all
+# of them to open: up to CONN5M_WARMUP_MAX. The load then runs CONN5M_SETTLE
+# more seconds before the 20s window opens: genhttp-ioxide's first 5M run,
+# measured from the moment the last connection opened, answered 670K more
+# requests in the window than were sent in it (p50 10 ms, p90 390 ms) - the
+# connect phase's backlog, not the steady state.
+GCANNON_RATE_CONNECTIONS_5M="${GCANNON_RATE_CONNECTIONS_5M:-1250000}"
+CONN5M_ADDRS="${CONN5M_ADDRS:-160}"
+CONN5M_CONNECT_LIMIT="${CONN5M_CONNECT_LIMIT:-64}"
+CONN5M_WARMUP_MAX="${CONN5M_WARMUP_MAX:-300}"
+CONN5M_SETTLE="${CONN5M_SETTLE:-30}"
+
+# connections-1m-tls: the same over TLS 1.3, at a million connections and
+# 250K req/s - the same four-second interval - over 127.0.0.1-.32, the same
+# 31,250 per address. The warmup may take longer, since every connection also
+# handshakes; gcannon >= 0.8.4 holds each --connect-limit slot until the
+# handshake is done, so the server never has more than 64 per client thread
+# waiting (MDA2AV/gcannon#33). It shares CONN5M_CONNECT_LIMIT and CONN5M_SETTLE.
+GCANNON_RATE_CONNECTIONS_1M_TLS="${GCANNON_RATE_CONNECTIONS_1M_TLS:-250000}"
+CONN1M_TLS_ADDRS="${CONN1M_TLS_ADDRS:-32}"
+CONN1M_TLS_WARMUP_MAX="${CONN1M_TLS_WARMUP_MAX:-900}"
+
 # ── Build arguments ─────────────────────────────────────────────────────────
 
 # Usage: gcannon_build_args <endpoint> <conns> <pipeline> <duration> [req_per_conn]
@@ -80,6 +114,28 @@ gcannon_build_args() {
             # redoes the HTTP/1.1 upgrade, which is what that profile measures.
             [ "$req_per_conn" -gt 0 ] 2>/dev/null && args+=(-r "$req_per_conn")
             ;;
+        connections-5m|connections-1m-tls)
+            # The baseline GET: what varies here is how many connections are
+            # held, so the request stays the one subscribers are already
+            # validated on - plaintext on PORT, or TLS 1.3 on H1TLS_PORT
+            # (https:// makes gcannon handshake, then hand the session to
+            # kernel TLS). gcannon_run hands the --args-- part to
+            # scripts/conn_hold.py, which owns everything around the load.
+            local url="http://127.0.0.1:$PORT/baseline11?a=1&b=2"
+            local hport="$PORT" warm="$CONN5M_WARMUP_MAX"
+            local rate="$GCANNON_RATE_CONNECTIONS_5M" addrs="$CONN5M_ADDRS"
+            if [ "$endpoint" = "connections-1m-tls" ]; then
+                url="https://127.0.0.1:$H1TLS_PORT/baseline11?a=1&b=2"
+                hport="$H1TLS_PORT" warm="$CONN1M_TLS_WARMUP_MAX"
+                rate="$GCANNON_RATE_CONNECTIONS_1M_TLS" addrs="$CONN1M_TLS_ADDRS"
+            fi
+            args=(--hold-- "$endpoint" "$conns" "$rate" "$hport" "$warm" "$addrs"
+                  --args-- "$url"
+                  -c "$conns" -t "$THREADS" -d 20s
+                  --rate "$rate" --addr-span "$addrs"
+                  --connect-limit "$CONN5M_CONNECT_LIMIT"
+                  --warmup-max "${warm}s" --settle "${CONN5M_SETTLE}s" --json)
+            ;;
         *)
             fail "gcannon_build_args: unknown endpoint '$endpoint'"
             ;;
@@ -93,6 +149,10 @@ gcannon_build_args() {
 # Run gcannon with the given args, return output on stdout.
 # Honors GCANNON_MODE=native|docker.
 gcannon_run() {
+    if [ "${1:-}" = "--hold--" ]; then
+        _gcannon_hold_run "${@:2}"
+        return 0
+    fi
     local -a args=("$@")
     if [ "$GCANNON_MODE" = "native" ]; then
         timeout 45 taskset -c "$GCANNON_CPUS" \
@@ -107,12 +167,95 @@ gcannon_run() {
     fi
 }
 
+# connections-5m / connections-1m-tls: gcannon under scripts/conn_hold.py,
+# which probes the listener, refuses a run the host cannot hold, raises the
+# open-file limit for the fleet, and reads the server cgroup's CPU at
+# gcannon's window markers. stdout is the wrapper's JSON summary; stderr
+# (gcannon's own lines) goes straight to the log.
+_gcannon_hold_run() {
+    local profile="$1" conns="$2" rate="$3" hport="$4" warm="$5" addrs="$6"
+    shift 6
+    [ "${1:-}" = "--args--" ] && shift
+    local nofile mem
+    read -r nofile mem <<< "$(held_conn_limits "$profile")"
+    local -a prefix
+    if [ "$GCANNON_MODE" = "native" ]; then
+        prefix=(taskset -c "$GCANNON_CPUS" env LD_LIBRARY_PATH=/usr/lib "$GCANNON")
+    else
+        prefix=(docker run --rm --network host --cpuset-cpus="$GCANNON_CPUS"
+                --security-opt seccomp=unconfined
+                --ulimit memlock=-1:-1 --ulimit nofile="$nofile:$nofile"
+                -v "$REQUESTS_DIR:$REQUESTS_DIR:ro" "$GCANNON_IMAGE")
+    fi
+    local cpu_stat=""
+    if [ -n "${CONTAINER_NAME:-}" ]; then
+        cpu_stat=$(_cgroup_cpu_path "$CONTAINER_NAME" 2>/dev/null) || cpu_stat=""
+    fi
+    # Kernel memory per connection: both sockets and a conntrack entry, and
+    # over TLS a kernel TLS context on each side that uses one (gcannon's
+    # always, the server's when it offloads too).
+    local kernel_kib=8
+    [ "$profile" = "connections-1m-tls" ] && kernel_kib=16
+    timeout $(( warm + CONN5M_SETTLE + 20 + 300 )) python3 "$SCRIPT_DIR/conn_hold.py" \
+        --profile "$profile" --conns "$conns" --rate "$rate" --port "$hport" \
+        --probe "127.0.0.2,127.0.0.$addrs" --span "127.0.0.1-127.0.0.$addrs" \
+        ${cpu_stat:+--cpu-stat "$cpu_stat"} --server-mem "${FRAMEWORK_MEM_LIMIT:-$mem}" \
+        --kib-per-conn 4 --kernel-kib-per-conn "$kernel_kib" \
+        -- "${prefix[@]}" --args-- "$@" || true
+}
+
 # ── Parse output ────────────────────────────────────────────────────────────
+
+# connections-5m / connections-1m-tls: the fixed-rate keys benchmark.sh reads (the same ones
+# zrk_parse emits for the latency profiles), from conn_hold.py's summary.
+_gcannon_hold_parse() {
+    python3 - "$1" <<'PY'
+import json, sys
+raw = sys.argv[1]
+s, e = raw.find("{"), raw.rfind("}")
+try:
+    d = json.loads(raw[s:e + 1]) if s >= 0 and e > s else {}
+except ValueError:
+    d = {}
+if not d:
+    sys.stderr.write("[gcannon] no held-connection summary in the output:\n%s\n" % (raw[:2000] or "<empty>"))
+lat = d.get("latency_us") or {}
+codes = d.get("status_codes") or {}
+print("rps=%d" % round(d.get("rps") or 0))
+print("avg_lat=%.1fus" % (lat.get("mean") or 0))
+# The median, which the held-connection score weighs (latency_score.HELD).
+print("p50_lat=%.1fus" % (lat.get("p50") or 0))
+print("p99_lat=%.1fus" % (lat.get("p99") or 0))
+print("p999_lat=%.1fus" % (lat.get("p99_9") or 0))
+print("reconnects=%d" % (d.get("reconnects") or 0))
+print("bandwidth=%.2fMB/s" % ((d.get("bytes_per_sec") or 0) / 1e6))
+for k in ("2xx", "3xx", "4xx", "5xx"):
+    print("status_%s=%d" % (k, codes.get(k) or 0))
+print("rate_ratio=%.4f" % (d.get("rate_ratio") or 0))
+print("duration=%.0fs" % (d.get("duration_s") or 0))
+print("target_rate=%d" % (d.get("target_rate") or 0))
+print("max_schedule_lag_us=%d" % (d.get("max_schedule_lag_us") or 0))
+if d.get("connections_open") is not None:
+    print("connections_open=%d" % d["connections_open"])
+print("connect_errors=%d" % ((d.get("errors") or {}).get("connect") or 0))
+if d.get("server_cpu_usec") is not None:
+    print("cpu_usec_window=%d" % d["server_cpu_usec"])
+if d.get("hold_error"):
+    print("hold_error=%s" % " ".join(str(d["hold_error"]).split()))
+PY
+}
 
 # Usage: gcannon_parse <endpoint> <output>
 # Echoes KEY=VALUE lines. Caller reads into an assoc array.
 gcannon_parse() {
     local endpoint="$1" output="$2"
+
+    case "$endpoint" in
+        connections-5m|connections-1m-tls)
+            _gcannon_hold_parse "$output"
+            return 0
+            ;;
+    esac
 
     # rps — compute from 2xx (or 3xx for caching, or WS frames for ws-echo)
     # divided by the actual measured duration.

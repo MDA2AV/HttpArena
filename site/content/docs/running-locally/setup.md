@@ -66,9 +66,9 @@ No distro package exists. Either build it yourself from `docker/h2load-h3.Docker
 sudo apt install wrk
 ```
 
-### zrk - latency-1m / latency-10k / latency-500k-8cpu / 8gbit
+### zrk - latency-1m / latency-10k / 8gbit / connections-1m
 
-No distro package. You don't have to install anything: when no `zrk` binary is on the `PATH`, `benchmark.sh` builds the `zrk:local` image from `docker/zrk.Dockerfile` and runs it in docker.
+No distro package. You don't have to install anything: when no `zrk` binary is on the `PATH`, `benchmark.sh` builds the `zrk:local` image from `docker/zrk.Dockerfile` and runs it in docker. `connections-1m` needs zrk 3.0.2 or later: without a native one that new, `benchmark.sh` builds a `zrk:3.0.2` image from the same Dockerfile.
 
 
 ## Permission check

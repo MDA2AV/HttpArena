@@ -209,7 +209,7 @@ if has_test "baseline-h2" || has_test "static-h2" || has_test "baseline-h3" || h
 fi
 
 needs_h1tls=false
-if has_test "json-tls" || has_test "static-tls" || has_test "8gbit"; then
+if has_test "json-tls" || has_test "static-tls" || has_test "8gbit" || has_test "connections-1m-tls"; then
     needs_h1tls=true
 fi
 
@@ -1251,7 +1251,7 @@ wait_h2() {
 # The fixed-rate profiles drive GET /baseline11, so they need the same
 # handler to be correct and gets its coverage from this section rather than
 # one of its own -- there is nothing about it a request-shaped check can see.
-if has_test "baseline" || has_test "limited-conn" || has_test "latency-1m" || has_test "latency-10k" || has_test "latency-500k-8cpu"; then
+if has_test "baseline" || has_test "limited-conn" || has_test "latency-1m" || has_test "latency-10k" || has_test "connections-5m" || has_test "connections-1m-tls" || has_test "connections-1m"; then
     BASELINE_DOCS="$DOCS_BASE/h1/baseline/validation"
     echo "[test] baseline endpoints"
     check "GET /baseline11?a=13&b=42" "55" "$BASELINE_DOCS" \
@@ -1350,6 +1350,33 @@ if has_test "baseline" || has_test "limited-conn" || has_test "latency-1m" || ha
     if [ "${FRAG_FAIL:-0}" -gt 0 ]; then
         echo "        → $BASELINE_DOCS"
     fi
+fi
+
+# ───── Held connections: a listener on every loopback address ─────
+
+# connections-5m spreads its five million connections over 127.0.0.1-
+# 127.0.0.160 (connections-1m its million over .1-.32), because one source
+# address holds at most ~64K connections to one destination. A server bound to
+# 127.0.0.1 or "localhost" passes every check above and refuses all of these
+# but the first, so the profiles ask for a listener on 0.0.0.0 or [::] and this
+# is where an entry finds out. Both ends of the widest range.
+HELD_DOCS="$DOCS_BASE/h1/connections/validation"
+if has_test "connections-5m" || has_test "connections-1m"; then
+    echo "[test] held connections: listener on every address"
+    check "GET /baseline11 on 127.0.0.2" "55" "$HELD_DOCS" \
+        "http://127.0.0.2:$PORT/baseline11?a=13&b=42"
+    check "GET /baseline11 on 127.0.0.160" "55" "$HELD_DOCS" \
+        "http://127.0.0.160:$PORT/baseline11?a=13&b=42"
+fi
+# connections-1m-tls: a million over TLS on the h1 TLS port (127.0.0.1-.32),
+# where the baseline GET has to answer too, and over TLS 1.3 - the only
+# version gcannon offers - or every handshake of the run fails.
+if has_test "connections-1m-tls"; then
+    echo "[test] held connections over TLS: listener on every address, TLS 1.3"
+    check "GET /baseline11 over TLS 1.3 on 127.0.0.2" "55" "$HELD_DOCS" \
+        -k --tlsv1.3 --http1.1 "https://127.0.0.2:$H1TLS_PORT/baseline11?a=13&b=42"
+    check "GET /baseline11 over TLS 1.3 on 127.0.0.32" "55" "$HELD_DOCS" \
+        -k --tlsv1.3 --http1.1 "https://127.0.0.32:$H1TLS_PORT/baseline11?a=13&b=42"
 fi
 
 # ───── Pipelined (GET /pipeline) ─────

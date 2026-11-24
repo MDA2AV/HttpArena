@@ -54,8 +54,9 @@ if [ -z "${GCANNON_CPUS:-}" ]; then
 fi
 export GCANNON_CPUS
 
+_H2LOAD_EXPLICIT="${H2LOAD:+true}"
 H2LOAD="${H2LOAD:-h2load}"
-H2LOAD_IMAGE="${H2LOAD_IMAGE:-h2load:latest}"
+H2LOAD_IMAGE="${H2LOAD_IMAGE:-h2load:1.69.0}"
 
 H2LOAD_H3="${H2LOAD_H3:-h2load-h3}"
 H2LOAD_H3_IMAGE="${H2LOAD_H3_IMAGE:-h2load-h3:local}"
@@ -74,6 +75,42 @@ LOADGEN_DOCKER="${LOADGEN_DOCKER:-false}"
 HARD_NOFILE=$(ulimit -Hn 2>/dev/null || echo 1048576)
 [[ "$HARD_NOFILE" =~ ^[0-9]+$ ]] || HARD_NOFILE=1048576
 ulimit -n "$HARD_NOFILE" 2>/dev/null || true
+
+# The held-connection profiles' server container. HARD_NOFILE is whatever the
+# shell running the harness was given, which can be below the fleet; these
+# profiles need a socket per connection plus the server's own, so the container
+# gets these instead (capped at fs.nr_open, which system_tune_held_connections
+# raises). The memory cap keeps an entry from taking the host down with it: it
+# is OOM-killed and the run reports what it held.
+#
+# The 5M caps are what the 251 GiB bench host has left after the fleet itself:
+# ~4 KiB of gcannon and ~8 KiB of kernel (both sockets and a conntrack entry)
+# per connection is ~57 GiB at five million; a server spending ~25 KiB per
+# connection fits in 128g. The million-connection profiles (connections-1m-tls,
+# connections-1m) get the 1M caps. Over TLS the kernel adds ~4 KiB of TLS
+# state per socket on each side that uses it, so the fleet costs ~20 KiB a
+# connection, ~19 GiB at a million, besides the server.
+CONN1M_NOFILE="${CONN1M_NOFILE:-2097152}"
+CONN1M_MEM_LIMIT="${CONN1M_MEM_LIMIT:-96g}"
+CONN5M_NOFILE="${CONN5M_NOFILE:-8388608}"
+CONN5M_MEM_LIMIT="${CONN5M_MEM_LIMIT:-128g}"
+
+# Between held-connection runs the harness waits for the host's TCP socket
+# count to come back down (system.sh, held_conn_drain) instead of sleeping: to
+# within HELD_CONN_DRAIN_SLACK of what it held before the first profile, giving
+# up after HELD_CONN_DRAIN_STALL seconds without progress or
+# HELD_CONN_DRAIN_TIMEOUT seconds in all.
+HELD_CONN_DRAIN_SLACK="${HELD_CONN_DRAIN_SLACK:-50000}"
+HELD_CONN_DRAIN_STALL="${HELD_CONN_DRAIN_STALL:-30}"
+HELD_CONN_DRAIN_TIMEOUT="${HELD_CONN_DRAIN_TIMEOUT:-600}"
+
+# "<nofile> <memory cap>" for a held-connection profile's server container.
+held_conn_limits() {
+    case "$1" in
+        connections-5m)     echo "$CONN5M_NOFILE $CONN5M_MEM_LIMIT" ;;
+        *)                  echo "$CONN1M_NOFILE $CONN1M_MEM_LIMIT" ;;
+    esac
+}
 
 # Postgres sidecar.
 PG_CONTAINER="httparena-postgres"
@@ -94,10 +131,8 @@ banner() {
 
 # ── Failure diagnostics ─────────────────────────────────────────────────────
 #
-# Container logs are written to site/static/logs/ only by save_result(), which
-# a server that never became ready never reaches — and framework_stop() runs
-# `docker rm -f` moments later, so the evidence is gone. These print it while
-# it still exists. Bounded by FAIL_LOG_TAIL: a crash-looping server can emit
+# Print diagnostics before teardown removes the containers. Bounded by
+# FAIL_LOG_TAIL: a crash-looping server can emit
 # megabytes, and this output is also what lands in the PR comment, which
 # quotes the last 200 lines of the run.
 
@@ -112,6 +147,10 @@ dump_container_logs() {
         return 0
     fi
     echo "─── $label — $state"
+    if [ "$n" = all ]; then
+        docker logs "$ref" 2>&1 || true
+        return 0
+    fi
     logs=$(docker logs --tail "$n" "$ref" 2>&1) || true
     if [ -n "$logs" ]; then
         echo "─── $label — last $n log lines ───"
@@ -131,4 +170,37 @@ dump_compose_logs() {
         name=$(docker inspect -f '{{.Name}}' "$id" 2>/dev/null | sed 's#^/##')
         dump_container_logs "$id" "${name:-$id}"
     done
+}
+
+dump_benchmark_logs() {
+    if [ -n "${GATEWAY_PROJECT:-}" ]; then
+        dump_compose_logs "$GATEWAY_PROJECT"
+    else
+        dump_container_logs "$CONTAINER_NAME" "$FRAMEWORK"
+    fi
+}
+
+save_benchmark_logs() {
+    local profile="$1" conns="$2"
+    local log_dir="$ROOT_DIR/site/static/logs/$profile/$conns"
+    mkdir -p "$log_dir"
+    local log_file="$log_dir/${FRAMEWORK}.log"
+    if [ -n "${GATEWAY_PROJECT:-}" ]; then
+        FAIL_LOG_TAIL=all dump_compose_logs "$GATEWAY_PROJECT" >"$log_file" 2>&1
+    else
+        docker logs "$CONTAINER_NAME" >"$log_file" 2>&1 || true
+    fi
+
+    # Keep noisy containers below GitHub's file-size limit.
+    local log_max=${HTTPARENA_MAX_LOG_BYTES:-8000000} log_size
+    log_size=$(wc -c < "$log_file")
+    if [ "$log_size" -gt "$log_max" ] 2>/dev/null; then
+        tail -c "$log_max" "$log_file" >"$log_file.tail"
+        {
+            echo "[httparena] container log was ${log_size} bytes; keeping the last ${log_max}."
+            cat "$log_file.tail"
+        } >"$log_file"
+        rm -f "$log_file.tail"
+        warn "$FRAMEWORK $profile/$conns: container log was ${log_size} bytes, truncated to ${log_max}"
+    fi
 }

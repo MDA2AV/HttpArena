@@ -22,4 +22,9 @@ futures-util = "0.3"
 opt-level = 3
 codegen-units = 1
 lto = "thin"
-panic = "abort"
+# Panics unwind (the default) instead of aborting. actix-http 3.20 unwraps
+# HeaderName::from_bytes() on each request header, and that fails on a name
+# longer than 65,535 bytes, which httparse lets through: a 100 KB header name
+# still fits actix-http's 128 KiB request buffer. Unwinding, tokio's task
+# harness catches the panic and only that connection is dropped; with
+# panic = "abort" one such request took the whole server down.

@@ -2,7 +2,7 @@
 #ifndef _CONST_DEFINE_FUNC_H
 #define _CONST_DEFINE_FUNC_H
 
-#define CONST_MONEY_PART 1000000
+#define CONST_MONEY_PART 100
 #define CONST_HTTP_HEADER_BODY_SIZE 16384
 #define CONST_PHP_BODY_POST_SIZE 16777216
 
@@ -177,7 +177,7 @@
 // server.cpp 的 steam_count 只统计「已派发」的流，客户端只发 HEADERS 不开 END_STREAM
 // 时永远不会触发，因此这里必须再卡一道，否则 http_data/http_post_data 可被撑爆。
 // HTTP/2 per-connection resource caps (http2_parse.cpp). Guards against clients that send HEADERS without END_STREAM — server.cpp's stream_count only tracks dispatched streams and never fires for this case.
-#define CONST_HTTP2_MAX_STREAMS 512
+#define CONST_HTTP2_MAX_STREAMS 2048
 
 // HTTP/2 的 host / :authority 最大长度（与 HTTP/1 的 host 口径一致）。
 // 超过这个长度一律拒绝，避免超长值进入 header_host_process 的逐字符循环。
@@ -193,6 +193,30 @@
 // a peer's Dynamic Table Size Update may only resize within it. The peer's own advertised
 // header_table_size bounds its decoder, not ours.
 #define CONST_HTTP2_DYNAMIC_TABLE_MAX_SIZE 4096
+
+// 编码器动态表的本地上限（响应头方向）。对端 SETTINGS_HEADER_TABLE_SIZE 可以广告到
+// 2^32-1，RFC 7541 §4.2 允许编码器选用不超过该值的任意上限——本端取 min(对端值, 此 cap)，
+// 防止对端用一个巨型广告值把每连接的编码表撑成无界内存。与上面的解码侧上限是两套账。
+// Local ceiling of the HPACK encoder table. RFC 7541 §4.2 lets the encoder pick any size up
+// to the peer-advertised value; we clamp to this cap so a huge SETTINGS advertisement cannot
+// grow per-connection encoder memory without bound. Separate from the decoder ceiling above.
+#define CONST_HTTP2_ENCODER_TABLE_CAP 4096
+
+// HPACK encoder dynamic table switch for response headers. Define to enable Indexed representation;
+// comment out to fall back to Literal without Indexing (0000xxxx).
+#define PAOZHU_HPACK_ENCODER_DYNAMIC_TABLE 1
+
+// Connection-level error COMPRESSION_ERROR (RFC 9113 §7 / RFC 7541). GOAWAY with this code
+// on unrecoverable HEADERS write failure — the connection state cannot be trusted.
+// 连接级错误码 COMPRESSION_ERROR（RFC 9113 §7 / RFC 7541）：HEADERS 写失败后 GOAWAY 带此码断连。
+#define CONST_HTTP2_ERROR_COMPRESSION 0x09
+
+// 连接级错误码 INTERNAL_ERROR（RFC 9113 §7）：handler 抛出未预期异常时的兜底 GOAWAY。
+// 异常点不确定（可能在头编码前/后），不能断言是压缩失步，用 INTERNAL_ERROR 而非 0x09；
+// 也不用 NO_ERROR(0)——那会让客户端把一次服务端故障当成正常收尾。
+// Connection-level INTERNAL_ERROR (RFC 9113 §7): fallback GOAWAY for unexpected handler
+// exceptions. The throw site is unknown, so neither NO_ERROR nor COMPRESSION_ERROR is honest.
+#define CONST_HTTP2_ERROR_INTERNAL 0x02
 
 // HTTP/2 协议允许的最大窗口值（2^31-1）。SETTINGS_INITIAL_WINDOW_SIZE 与
 // WINDOW_UPDATE 累加超过该值必须按 RFC 9113 §6.9.1 报 FLOW_CONTROL_ERROR。
@@ -263,11 +287,54 @@ constexpr bool http2_wu_stream_id_ok(unsigned long long sid, unsigned long long 
 
 #define CONST_HTTP2_SEND_FRAME_BUF 15360
 
-// 一条流连续多久没有任何字节真正推进，就放弃它（RST_STREAM，不断连接）。
-// 量的是「多久没推进」而不是「等了多久」：慢客户端只要一直在收，
-// 等得再久也不该撤流；只有彻底没进展才该撤。
-// Stream abandoned (RST_STREAM, no GOAWAY) when no bytes actually advance for N seconds. Measures "time without progress", not "time waited" — slow clients that keep receiving are fine.
-#define CONST_HTTP2_SEND_NO_PROGRESS_TIMEOUT 120
+// 内联/文件发送每轮入内容环的 DATA 帧数上限：一次窗口预留按字节记账，切成至多这么多帧
+// 逐帧入环（仍按对端 MAX_FRAME_SIZE 切帧）。与下面的补喂闸配套：闸 24 + 批 6 = 30 ≤ 31
+// 可用槽，一批开始喂入后不会因本批而卡满。
+#define CONST_HTTP2_SEND_BATCH_FRAMES 6
+
+// 内容环补喂闸：积压槽数达到本值就就地等（20ms 一拍自醒），给在途批次与控制帧留槽。
+#define CONST_HTTP2_CONTENT_RING_FEED_GATE 24
+
+// 环满等待：基础拍长（微秒）+ 自适应边界。入参是环的积压槽数（has_size），不是剩余槽。
+// 积压 > SLOW：消费者还没排空多少，说明自己醒早了，持续翻倍加长等待；
+// 积压 < FAST：环几乎空了，说明上一觉睡过头（等待过长），持续减半缩短等待。
+// 持续朝同一方向推就持续指数退避，直到 MIN / MAX 封顶。
+// Base ring-full wait (μs) + adaptive bounds. Input is ring BACKLOG (has_size), not remaining
+// slots. Backlog > SLOW: consumer barely drained, we woke too early — keep doubling the wait;
+// backlog < FAST: ring nearly empty, we overslept — keep halving it. Capped at MIN / MAX.
+#define CONST_HTTP2_RING_FULL_WAIT_BASE     1000
+#define CONST_HTTP2_RING_FULL_WAIT_MIN      100       // 100μs
+#define CONST_HTTP2_RING_FULL_WAIT_MAX      200000    // 200ms
+#define CONST_HTTP2_RING_FULL_WAIT_FAST     3         // backlog < 3 → 睡过头，减半
+#define CONST_HTTP2_RING_FULL_WAIT_SLOW     18        // backlog > 18 → 醒早了，翻倍
+
+// 根据当前间隔 + 环积压槽数，算出下一次等待间隔（微秒）。
+// Compute next wait interval (μs) from current value + ring backlog (has_size).
+constexpr unsigned int http2_ring_wait_adjust_us(unsigned int current_us, unsigned char backlog_slots)
+{
+    if (backlog_slots < CONST_HTTP2_RING_FULL_WAIT_FAST)
+    {
+        if (current_us > CONST_HTTP2_RING_FULL_WAIT_MIN)
+            current_us /= 2;
+        if (current_us < CONST_HTTP2_RING_FULL_WAIT_MIN)
+            current_us = CONST_HTTP2_RING_FULL_WAIT_MIN;
+    }
+    else if (backlog_slots > CONST_HTTP2_RING_FULL_WAIT_SLOW)
+    {
+        if (current_us < CONST_HTTP2_RING_FULL_WAIT_MAX)
+            current_us *= 2;
+        if (current_us > CONST_HTTP2_RING_FULL_WAIT_MAX)
+            current_us = CONST_HTTP2_RING_FULL_WAIT_MAX;
+    }
+    return current_us;
+}
+
+// h1 文件直发单块尺寸（fread + 一次写）。原 4096 让 100KB 文件付 26 次写 syscall；
+// 64KB 块降到 2~3 次。心跳必须每块刷：64KB 在 6.2KB/s 慢客户端下约 10s 一块，
+// 对 httpwatch 的 now-60s idle 阈值留足余量（旧 %16 拍在 64KB 块下会变成 1MB 一刷）。
+// 池化 content 缓冲常驻容量随之涨到 64KB/对象，回池 clear() 不释放，属有意保留的热容量。
+#define CONST_HTTP1_FILE_CHUNK_BYTES 65536
+
 // 每连接 HTTP/2 发送环的槽数。三条硬约束：
 //   1. 必须是 2 的幂 —— 下标推进用 & (capacity_ - 1)，非 2 的幂会算出错误的下一格；
 //   2. 不能超过 255 —— head_/tail_ 是 unsigned char；
@@ -277,47 +344,10 @@ constexpr bool http2_wu_stream_id_ok(unsigned long long sid, unsigned long long 
 // MUST fit unsigned char (head_/tail_), and one slot stays empty for the full/empty test,
 // so capacity-1 frames are queueable.
 #define CONST_HTTP2_RING_QUEUE_CAPACITY 32
-// 发送环积压到几个槽就让路。32 槽环有 31 个可排槽，目标是正好留 6 个给
-// HEADERS/SETTINGS/RST/GOAWAY/WINDOW_UPDATE 这类控制帧收尾，所以阈值取 24：
-// 判据是严格大于（has_size() > 24），积压 24 时仍放行一帧到 25，看到 25 就挂起，
-// 稳态最大积压 25，31 − 25 = 6。取 25 会变成最大积压 26、只剩 5 格，反而不达标。
-// 8 发送线程下的已知代价：闸门是"先读 has_size() 再 push"，读和 push 之间有窗口，
-// 8 个推者可能同时通过同一个 24 的检查；6 格空位对 8 个推者不够，最坏一轮会有
-// 2 次 push 失败（计入 http2_ring_overflow_count，帧留在对象上由 standby_next
-// 下一轮重投，不丢数据）。2 线程时 6 格足够（并发推者数 2 < 6）。
-// 发送侧的挂起条件和回灌条件必须用同一个数，否则会出现「挂起来、回灌去」的空转循环。
-// Send-ring backpressure slot threshold. 31 usable slots, exactly 6 reserved for control-frame
-// tails, hence 24: the test is strictly greater, so a backlog of 24 still admits one more frame
-// (to 25) and parking starts at 25; steady-state max is 25 and 31 - 25 = 6. Using 25 would make
-// the max 26 and leave only 5. Known cost with 8 send threads: the gate reads has_size() before
-// pushing, so up to 8 pushers may pass the same check; 6 free slots cannot absorb 8, so worst case
-// 2 pushes fail per round (counted in http2_ring_overflow_count, retried via standby_next — no data
-// loss). 2 threads: 6 slots are enough.
-// Suspend and refill conditions MUST use the same value to avoid "hang → refill → hang" thrashing.
-#define CONST_HTTP2_RING_BACKPRESSURE_SLOTS 24
-// 一条流一轮之内除了首帧还能补喂几帧：每轮最多推 SEND_FEED_MAX + 1 = 6 帧（首帧 + 5 次补喂）。
-// 首帧由闸门放行，每次补喂之前重取发送环积压，达到 CONST_HTTP2_RING_FEED_SLOTS 或
-// 额度用完就停 —— 这个上限是「一条流不许在本轮独占发送线程」的界，不是吞吐旋钮：
-// 环空着的时候多喂的帧，最终仍受窗口与传输约束。
-// 要让本值真正生效，CONST_HTTP2_RING_FEED_SLOTS 必须 >= 本值 + 1，否则水位先到、一轮凑不满。
-// Max extra frames per stream per round: SEND_FEED_MAX + 1 = 6 frames per round (first + 5 extras).
-// For this cap to bind, CONST_HTTP2_RING_FEED_SLOTS must be >= SEND_FEED_MAX + 1, else the
-// feed-watermark cuts the round short.
-#define CONST_HTTP2_SEND_FEED_MAX 5
-// 补喂允许的发送环积压水位：环里已排队帧数低于它才继续喂同一条流。取成与让路阈值同一个数
-// （24），单条流可以一路喂到积压 24 才停；31 个可排槽里剩下的 7 个留给控制帧收尾。
-// 必须 >= SEND_FEED_MAX + 1（6），否则水位先拦、一轮凑不满 6 帧。
-// Feed-watermark: keep feeding the same stream while ring queued < this. Set equal to the
-// backpressure threshold (24) so one stream may fill up to 24; the remaining 7 usable slots keep
-// headroom for control-frame tails. Must be >= SEND_FEED_MAX + 1 (6), else rounds get cut short.
-#define CONST_HTTP2_RING_FEED_SLOTS 24
-// 发送线程最长能睡多久：等待新发送对象的条件变量带这个期限，醒来跑一次挂起表兜底扫描。
-// 取 6 而不是 5，是为了与 httpwatch 主循环那根 5 秒错开 —— 两条周期任务若同刻醒来会
-// 去抢同一批锁（idle 清理要持 socket_session_lists_mutex，兜底要持 send_data_mutex）。
-// 没有这个期限，「所有发送对象都挂在表上」这个状态本身就让发送线程睡在无超时的 wait 上，
-// 而挂在表上的对象恰恰只有这一趟扫描会去续期与撤流。
-// Max send-thread sleep (seconds) — wake at least this often to run the parked-belt sweep (renews time_limit + issues RST for stuck streams). Chosen 6 (not 5) to de-phase from httpwatch's 5s cycle (avoids simultaneous lock contention). Without deadline: all sends parked ⇒ thread sleeps forever; belt never runs.
-#define CONST_HTTP2_BELT_SWEEP_SECONDS 6
+
+// 一次窗口停等的总预算：到期 RST(CANCEL) 撤流，连接保留。按次重算，不是整条响应的
+// 预算；被 WU 叫醒后用剩余量重挂，小增量不续命。
+#define CONST_HTTP2_WINDOW_STALL_TIMEOUT 10
 
 // RST_STREAM 流错误码（RFC 9113 §7）。CANCEL 表示「流被撤销」，不表示对端违反协议；
 // 本地背压/过载放弃发送时应使用它，而不是 PROTOCOL_ERROR(0x01)。

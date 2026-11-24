@@ -26,12 +26,13 @@ under `scopes.<family>.default.markdown`.
 
 | Family | `<family>` | What the composite covers |
 |---|---|---|
-| HTTP/1.1 | `h1` | Connection, Concurrency, Efficiency, Workload and Database profiles |
+| HTTP/1.1 | `h1` | Connection, Concurrency, Efficiency and Workload profiles |
 | HTTP/2 | `h2` | the HTTP/2 profiles |
 | HTTP/3 | `h3` | the HTTP/3 profiles |
 | Gateway | `gw` | reverse-proxy and production-stack profiles |
 | gRPC | `grpc` | unary, plaintext and TLS |
 | WebSocket | `ws` | the echo profiles |
+| Database | `db` | the Async DB and Fortunes profiles |
 
 `<framework>` is your entry's board name, lowercased, with anything outside
 `A-Z a-z 0-9 . _ -` replaced by `-`. It is the same name as your file under

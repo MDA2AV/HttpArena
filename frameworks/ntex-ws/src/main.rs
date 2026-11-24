@@ -64,12 +64,15 @@ async fn echo<F: Filter>(io: &Io<F>) {
                 Err(_) => break,
             },
             ws::Frame::Binary(bin) => ws::Message::Binary(bin),
+            // A fragmented message goes back fragment by fragment; the codec
+            // checks the sequence, and the UTF-8 of a text message across it.
+            ws::Frame::Continuation(item) => ws::Message::Continuation(item),
             ws::Frame::Ping(msg) => ws::Message::Pong(msg),
             ws::Frame::Close(reason) => {
                 let _ = io.encode(ws::Message::Close(reason), &codec);
                 break;
             }
-            ws::Frame::Pong(_) | ws::Frame::Continuation(_) => continue,
+            ws::Frame::Pong(_) => continue,
         };
         if io.encode(msg, &codec).is_err() {
             break;

@@ -93,6 +93,10 @@ LOADGEN_DOCKER=true ./scripts/benchmark.sh aspnet-minimal
 | `LOADGEN_DOCKER` | `false` | When `true`, every load generator runs from its Docker image instead of the host binary. Builds missing images automatically. |
 | `GCANNON_MODE` | `native` | `native` or `docker`. `LOADGEN_DOCKER=true` sets this to `docker` for you. |
 | `GCANNON_CPUS` | `32-63,96-127` | Cores the load generators are pinned to (via `taskset` in native mode or `--cpuset-cpus` in docker mode). Framework containers use the *other* half of the CPU topology. |
+| `DB_SERVER_CPUS` | `0-15,64-79` | Server cpuset on the database profiles. |
+| `DB_LOADGEN_CPUS` | `16-31,80-95` | Load-generator cpuset on the database profiles. Replaces `GCANNON_CPUS` there. |
+| `DB_POSTGRES_CPUS` | `32-63,96-127` | Postgres cpuset on the database profiles. On a box too small for these three, the generator and Postgres stay where they are. |
+| `DB_THREADS` | `32` | Load-generator threads on the database profiles. Replaces `THREADS` there. |
 
 ### Tool binaries + images
 
@@ -106,7 +110,7 @@ LOADGEN_DOCKER=true ./scripts/benchmark.sh aspnet-minimal
 | `H2LOAD_H3_IMAGE` | `h2load-h3:local` | Docker image with `quictls` + `nghttp3` + `ngtcp2` + `nghttp2 --enable-http3` built from source. |
 | `WRK` | `wrk` | Native binary - static-tls, json-tls. |
 | `WRK_IMAGE` | `wrk:local` | Docker image. |
-| `ZRK` | `zrk` | Native binary - latency-1m, latency-10k, latency-500k-8cpu, 8gbit. |
+| `ZRK` | `zrk` | Native binary - latency-1m, latency-10k, 8gbit. |
 | `ZRK_IMAGE` | `zrk:local` | Docker image, built automatically when no native `zrk` is on the `PATH`. |
 
 ### Postgres sidecar
@@ -132,13 +136,15 @@ pipeline | req_per_conn | cpu_limit | connections | endpoint
 | `async` | 1 | ∞ | `0-31,64-95` | 32000 | gcannon | `GET /delay/10`, 10s runs |
 | `latency-1m` | 1 | ∞ | `0-31,64-95` | 1024 | zrk | `/baseline11` paced at 1M req/s, 20s runs |
 | `latency-10k` | 1 | ∞ | `0-31,64-95` | 1024 | zrk | `/baseline11` paced at 10K req/s, 20s runs |
-| `latency-500k-8cpu` | 1 | ∞ | `0-3,64-67` | 1024 | zrk | `/baseline11` paced at 500K req/s, 20s runs |
+| `connections-5m` | 1 | ∞ | `0-31,64-95` | 5000000 | gcannon `--rate` (≥ 0.8.2) | `/baseline11` paced at 1.25M req/s over 5M held connections on 127.0.0.1-.160, 20s window |
+| `connections-1m-tls` | 1 | ∞ | `0-31,64-95` | 1000000 | gcannon `--rate` (≥ 0.8.4) | `/baseline11` over TLS 1.3 on `H1TLS_PORT`, paced at 250K req/s over 1M held connections on 127.0.0.1-.32 |
+| `connections-1m` | 1 | ∞ | `0-31,64-95` | 1000000 | zrk 3.0.2, one per address | `/baseline11` paced at 250K req/s over 1M held connections on 127.0.0.1-.32 |
 | `json-comp` | 1 | ∞ | `0-31,64-95` | 4096, 16384 | gcannon | `/json/{count}` + `Accept-Encoding: gzip, br` |
 | `json-tls` | 1 | ∞ | `0-31,64-95` | 4096 | wrk | `/json/{count}` over TLS on `H1TLS_PORT` |
 | `8gbit` | 1 | ∞ | `0-31,64-95` | 512 | zrk | `POST /echo` on TLS `:8081` - 10 KB echoed, paced at 50k req/s |
 | `static-tls` | 1 | 200 | `0-31,64-95` | 1024 | wrk | 20 files via `static-rotate.lua` over TLS on `H1TLS_PORT` |
-| `async-db` | 1 | ∞ | `0-31,64-95` | 1024 | gcannon | 5 limit variants (5/10/20/35/50), `-r 25`, 10s runs |
-| `fortunes` | 1 | ∞ | `0-31,64-95` | 1024 | gcannon | `/fortunes` |
+| `async-db` | 1 | ∞ | `0-15,64-79` | 1024 | gcannon | 5 limit variants (5/10/20/35/50), `-r 25`, 10s runs |
+| `fortunes` | 1 | ∞ | `0-15,64-79` | 1024 | gcannon | `/fortunes` |
 | `baseline-h2` | 1 | ∞ | `0-31,64-95` | 256, 1024 | h2load | `/baseline2` on `H2PORT` TLS |
 | `static-h2` | 1 | ∞ | `0-31,64-95` | 256, 1024 | h2load | `/static/*` on `H2PORT` TLS |
 | `baseline-h2c` | 1 | ∞ | `0-31,64-95` | 256, 1024, 4096 | h2load | `/baseline2` h2c on `H2C_PORT` |

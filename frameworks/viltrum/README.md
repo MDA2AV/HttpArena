@@ -17,6 +17,7 @@ This entry runs viltrum with its default configuration (standard mode).
 | static-h2 | `GET /static/*` on 8443 | `app.static_files` with `precompressed: true`: the `.br` or `.gz` copy on disk to a client that accepts it, read from disk on each request |
 | baseline-h2c | `GET /baseline2` on 8082 | HTTP/2 with prior knowledge; the listener serves HTTP/1.1 too |
 | json-h2c | `GET /json/:count?m=` on 8082 | the json-comp handler over h2c |
+| spec (h1, h2, ws) | `/spec`, `/spec/headers` on 8080, 8443, 8082; `/ws` | the compliance route: GET/HEAD text, OPTIONS with `Allow`, POST echo through `c.body()`, the parsed header fields back one per line |
 
 TLS is viltrum's own listener (`app.serve` with a `TlsOptions` listener), on the same epoll workers as
 cleartext: TLS 1.3 preferred, 1.2 minimum, AEAD suites only. The common TLS 1.3 handshake (X25519, RSA-PSS)

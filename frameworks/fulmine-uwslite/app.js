@@ -25,9 +25,10 @@ function sumQuery(query) {
     return sum;
 }
 
-app.uwsLite.get('/baseline11', (req, res) => {
+const baseline = (req, res) => {
     res.type('text/plain').send(String(sumQuery(req.query)));
-});
+};
+app.uwsLite.get('/baseline11', baseline);
 
 app.uwsLite.post('/baseline11', { body: 'text' }, (req, res) => {
     let total = sumQuery(req.query);
@@ -59,14 +60,45 @@ const json = (req, res) => {
 
 app.uwsLite.get('/json/:count', { compress }, json);
 
-// json-tls and 8gbit over TLS on 8081, when the harness mounts the certs. json-tls never sends
-// Accept-Encoding, so this route has no compress. The echo answers while the body is lent.
+// /spec, the compliance route for Http11Probe. A HEAD goes to the Express route lite registers.
+const specHeaders = (req, res) => {
+    let out = '';
+    for (const name in req.headers) out += name + ': ' + req.headers[name] + '\n';
+    res.type('text/plain').send(out);
+};
+app.uwsLite.get('/spec', (req, res) => {
+    res.type('text/plain').send('spec ok');
+});
+app.uwsLite.options('/spec', { body: 'lent' }, (req, res) => {
+    res.set('allow', 'GET, HEAD, POST, OPTIONS').end();
+});
+app.uwsLite.post('/spec', { body: 'lent', limit: '1mb' }, (req, res) => {
+    res.type('application/octet-stream').send(req.body);
+});
+app.uwsLite.get('/spec/headers', { headers: true }, specHeaders);
+app.uwsLite.post('/spec/headers', { body: 'lent', headers: true }, specHeaders);
+
+// The echo answers while the body is lent. Over the limit a 413, and the rest of the body is not read.
+const echo = (req, res) => {
+    res.type('application/octet-stream').send(req.body);
+};
+app.uwsLite.post('/echo', { body: 'lent', limit: '1mb' }, echo);
+
+// /parse, for the resilience suite, as the fulmine entry: an Express route, each body goes through
+// the parser of its type with the parsers' defaults.
+app.post('/parse',
+    express.json(), express.urlencoded(), express.multipart(), express.raw({ type: () => true }),
+    (req, res) => {
+        res.type('text/plain').send('ok');
+    });
+
+// json-tls, 8gbit and connections-1m-tls over TLS on 8081, when the harness mounts the certs. json-tls never sends
+// Accept-Encoding, so this route has no compress.
 if (fs.existsSync('/certs/server.key') && fs.existsSync('/certs/server.crt')) {
     const tls = express({ uwsOptions: { key_file_name: '/certs/server.key', cert_file_name: '/certs/server.crt' } });
+    tls.uwsLite.get('/baseline11', baseline);
     tls.uwsLite.get('/json/:count', json);
-    tls.uwsLite.post('/echo', { body: 'lent', limit: '1mb' }, (req, res) => {
-        res.type('application/octet-stream').send(req.body);
-    });
+    tls.uwsLite.post('/echo', { body: 'lent', limit: '1mb' }, echo);
     tls.listen(8081);
 }
 

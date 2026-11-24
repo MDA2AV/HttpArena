@@ -15,7 +15,7 @@
   "website": "https://srfnstack.github.io/spliffy/",
   "enabled": true,
   "tests": [
-    "baseline", "latency-1m", "latency-10k", "latency-500k-8cpu",
+    "baseline", "latency-1m", "latency-10k",
     "pipelined",
     "limited-conn",
     "async",

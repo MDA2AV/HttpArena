@@ -1,16 +1,16 @@
 ---
 title: zrk
 seo_title: "zrk: Constant-Throughput Load Generator"
-description: "HttpArena uses zrk to hold a fixed offered rate for the fixed-rate profiles (Latency-1M, Latency-10K, Latency-500K/8 and 8Gbit), with coordinated-omission correction and a machine-readable summary."
+description: "HttpArena uses zrk to hold a fixed offered rate for the fixed-rate profiles (Latency-1M, Latency-10K, 8Gbit and CON-1M), with coordinated-omission correction and a machine-readable summary."
 ---
 
-[zrk](https://github.com/zoxy-io/zrk) is a constant-throughput HTTP load generator, used for the fixed-rate profiles: **Latency-1M**, **Latency-10K**, **Latency-500K/8** and **8Gbit**.
+[zrk](https://github.com/zoxy-io/zrk) is a constant-throughput HTTP load generator, used for the fixed-rate profiles: **Latency-1M**, **Latency-10K**, **8Gbit** and **CON-1M**.
 
 ## Why a third generator
 
-gcannon and wrk are both closed-loop: each connection sends its next request as soon as the previous response lands, so the rate finds its own ceiling. That answers "how fast can this go", which is what almost every profile here asks.
+wrk, and gcannon by default, are closed-loop: each connection sends its next request as soon as the previous response lands, so the rate finds its own ceiling. That answers "how fast can this go", which is what almost every profile here asks.
 
-The fixed-rate profiles ask the opposite question. Latency-1M, for example, pins the rate at one million requests per second and measures what the server spent to serve it, so the generator has to *hold* a rate rather than discover one. gcannon has no rate limiter at all, by design.
+The fixed-rate profiles ask the opposite question. Latency-1M, for example, pins the rate at one million requests per second and measures what the server spent to serve it, so the generator has to *hold* a rate rather than discover one. gcannon's [fixed-rate mode](../gcannon/#fixed-rate-mode---rate) holds one too, and runs the held-connection profiles CON-5M and CON-1M-TLS; the profiles here stay on zrk at a pinned version, so their numbers stay comparable across rounds (see [Version pinning](#version-pinning)).
 
 ## Why zrk and not wrk2
 
@@ -36,13 +36,15 @@ The image pins an exact version and verifies its checksum, unlike gcannon which 
 
 zrk has no distro package. `benchmark.sh` builds the `zrk:local` image from `docker/zrk.Dockerfile` automatically when a framework subscribes to one of these profiles and no `zrk` binary is on the `PATH`.
 
+`connections-1m` (CON-1M) is the exception: it runs zrk **3.0.2**, while the profiles above stay on 2.3.0. A native `zrk` 3.0.2 or later on the `PATH` is used; otherwise `benchmark.sh` builds a `zrk:3.0.2` image from the same Dockerfile, with that version and checksum. 3.0.2 keeps one latency histogram per thread rather than one per connection, about 41 KiB per held connection against 2.3.0's ~303 KiB, which is what lets [a million connections](/docs/test-profiles/h1/connections/implementation/#con-1m-32-zrk-processes) fit. zrk takes a single URL, so the million runs as 32 processes, one per loopback address.
+
 ## Parameters
 
 | Profile | Request | Offered rate | Connections | Duration |
 |---|---|---|---|---|
 | `latency-1m` | `GET /baseline11?a=1&b=2` | 1,000,000 req/s | 1,024 | 20s |
 | `latency-10k` | `GET /baseline11?a=1&b=2` | 10,000 req/s | 1,024 | 20s |
-| `latency-500k-8cpu` | `GET /baseline11?a=1&b=2` | 500,000 req/s | 1,024 | 20s |
 | `8gbit` | `POST /echo` with a 10 KB body, over TLS on port 8081 | 50,000 req/s | 512 | 5s |
+| `connections-1m` | `GET /baseline11?a=1&b=2`, over 127.0.0.1-.32 | 250,000 req/s | 1,000,000 (32 processes) | 20s window |
 
 All of them run with 64 threads and 3 runs, keeping the run with the best score.

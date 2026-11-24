@@ -1,8 +1,8 @@
 {:paths ["src"]
- :deps {org.clojure/clojure {:mvn/version "1.12.5"}
+ :deps {org.clojure/clojure {:mvn/version "1.12.6"}
         org.clojure/data.json {:mvn/version "2.5.2"}
-        ring/ring-core {:mvn/version "1.15.5"}
-        info.sunng/ring-jetty9-adapter {:mvn/version "0.40.3"}
-        info.sunng/ring-jetty9-adapter-http2 {:mvn/version "0.2.9"}}
+        ring/ring-core {:mvn/version "1.15.6"}
+        info.sunng/ring-jetty9-adapter {:mvn/version "0.40.6"}
+        info.sunng/ring-jetty9-adapter-http2 {:mvn/version "0.2.11"}}
  :aliases {:test {:extra-paths ["test"]
                   :main-opts ["-m" "httparena.ring-jetty9-adapter.core-test"]}}}

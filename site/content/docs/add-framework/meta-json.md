@@ -51,7 +51,9 @@ Create a `meta.json` file in your framework directory:
 | `async` | HTTP/1.1 | `/delay/{ms}` |
 | `latency-1m` | HTTP/1.1 | `/baseline11` (fixed 1M req/s) |
 | `latency-10k` | HTTP/1.1 | `/baseline11` (fixed 10K req/s) |
-| `latency-500k-8cpu` | HTTP/1.1 | `/baseline11` (fixed 500K req/s on four cores plus SMT) |
+| `connections-1m` | HTTP/1.1 | `/baseline11` (CON-1M: 1M held connections at a fixed 250K req/s; needs a listener on `0.0.0.0` or `[::]` and an idle timeout of 5 s or more) |
+| `connections-1m-tls` | HTTP/1.1 + TLS | `/baseline11` on port 8081 over TLS 1.3 (CON-1M-TLS: 1M held connections at 250K req/s; same requirements) |
+| `connections-5m` | HTTP/1.1 | `/baseline11` (CON-5M: 5M held connections at 1.25M req/s; same requirements, and runs only if the entry is on `scripts/connections-5m-allowlist.json`) |
 | `json-comp` | HTTP/1.1 | `/json/{count}?m=N` (must honor `Accept-Encoding: gzip, br`) |
 | `json-tls` | HTTP/1.1 + TLS | `/json/{count}?m=N` (port 8081, ALPN `http/1.1`) |
 | `8gbit` | HTTP/1.1 + TLS | `POST /echo` on port 8081 (10 KB echoed verbatim) |

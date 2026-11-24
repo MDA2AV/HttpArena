@@ -4,9 +4,9 @@
 
 ## Stack
 
-- **Language:** Valk 0.8.7
+- **Language:** Valk 0.8.8
 - **Framework:** standard library (`valk.http`, `valk.json`, `valk.fs`, `valk.time`)
-- **Build:** official Valk 0.8.7 release tarball on `ubuntu:24.04`, compiled with `valk build src -o /server --release --static`
+- **Build:** official Valk 0.8.8 release tarball on `ubuntu:24.04`, compiled with `valk build src -o /server --release --static`
 
 ## Listeners & Endpoints
 

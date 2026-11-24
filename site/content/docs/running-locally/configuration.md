@@ -41,6 +41,10 @@ Every framework `Dockerfile` reads the same defaults from its env, so you rarely
 | `LOADGEN_DOCKER` | `false` | When `true`, every load generator runs from its Docker image instead of the host binary. Builds missing images automatically from `docker/*.Dockerfile`. Forced `true` by `benchmark-lite.sh`. |
 | `GCANNON_MODE` | `native` | `native` or `docker`. Implied by `LOADGEN_DOCKER`. |
 | `GCANNON_CPUS` | dynamic | CPU list the load generators run on. Native mode wraps calls in `taskset -c $GCANNON_CPUS`; docker mode passes it via `--cpuset-cpus`. Defaults to the upper half of available cores on smaller machines to avoid resource contention with the server. |
+| `DB_SERVER_CPUS` | `0-15,64-79` | Server cpuset on the database profiles. |
+| `DB_LOADGEN_CPUS` | `16-31,80-95` | Load-generator cpuset on the database profiles. Replaces `GCANNON_CPUS` there. |
+| `DB_POSTGRES_CPUS` | `32-63,96-127` | Postgres cpuset on the database profiles. On a box too small for these three, the generator and Postgres stay where they are. |
+| `DB_THREADS` | `32` | Load-generator threads on the database profiles. Replaces `THREADS` there. |
 
 ## Tool binaries and images
 
@@ -48,11 +52,12 @@ Each load generator has a pair of variables - native binary name and docker imag
 
 | Native (`$TOOL`) | Docker (`$TOOL_IMAGE`) | Used for | Source |
 |---|---|---|---|
-| `GCANNON=gcannon` | `GCANNON_IMAGE=gcannon:latest` | baseline, pipelined, limited-conn, json-comp, async-db, async, fortunes, echo-ws, echo-ws-pipeline, echo-ws-limited | `docker/gcannon.Dockerfile` |
+| `GCANNON=gcannon` | `GCANNON_IMAGE=gcannon:latest` | baseline, pipelined, limited-conn, json-comp, async-db, async, fortunes, echo-ws, echo-ws-pipeline, echo-ws-limited, connections-5m, connections-1m-tls | `docker/gcannon.Dockerfile` |
 | `H2LOAD=h2load` | `H2LOAD_IMAGE=h2load:latest` | baseline-h2, static-h2, baseline-h2c, json-h2c, unary-grpc, unary-grpc-tls, gateway-64, production-stack | `docker/h2load.Dockerfile` (Ubuntu + glibc, **not** alpine) |
 | `H2LOAD_H3=h2load-h3` | `H2LOAD_H3_IMAGE=h2load-h3:local` | baseline-h3, static-h3, gateway-h3 | `docker/h2load-h3.Dockerfile` (quictls + ngtcp2 + nghttp3) |
 | `WRK=wrk` | `WRK_IMAGE=wrk:local` | static-tls, json-tls | `docker/wrk.Dockerfile` |
-| `ZRK=zrk` | `ZRK_IMAGE=zrk:local` | latency-1m, latency-10k, latency-500k-8cpu, 8gbit | `docker/zrk.Dockerfile` |
+| `ZRK=zrk` | `ZRK_IMAGE=zrk:local` | latency-1m, latency-10k, 8gbit | `docker/zrk.Dockerfile` |
+| `ZRK=zrk` (3.0.2 or later) | `ZRK_CONN1M_IMAGE=zrk:3.0.2` | connections-1m | `docker/zrk.Dockerfile`, built with zrk 3.0.2 |
 
 ## Postgres sidecar
 
@@ -88,10 +93,10 @@ From `endpoint_tool()` in `scripts/lib/profiles.sh`:
 | Endpoint | Tool |
 |---|---|
 | `static-tls`, `json-tls` | wrk |
-| `latency-1m`, `latency-10k`, `latency-500k-8cpu`, `8gbit` | zrk |
+| `latency-1m`, `latency-10k`, `8gbit`, `connections-1m` | zrk |
 | `h2`, `static-h2`, `h2c`, `json-h2c`, `gateway-64`, `grpc`, `grpc-tls`, `production-stack` | h2load |
 | `h3`, `static-h3`, `gateway-h3` | h2load-h3 |
-| everything else (`""`, `pipeline`, `async-db`, `async`, `fortunes`, `json-compressed`, `ws-echo`) | gcannon |
+| everything else (`""`, `pipeline`, `async-db`, `async`, `fortunes`, `json-compressed`, `ws-echo`, `connections-5m`, `connections-1m-tls`) | gcannon |
 
 ## Small-machine overrides
 

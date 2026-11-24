@@ -10,6 +10,7 @@ package main
 
 import "std/builder"
 import "std/compress/flate"
+import "std/compress/gzip"
 import "std/convert"
 import "std/http"
 import "std/http/server"
@@ -126,6 +127,70 @@ func specHeaders(r http.server.Request) http.server.Response {
     return http.server.Text(strings.Join(freeze(lines), ""))
 }
 
+// /parse, the resilience suite's parser endpoint: the body goes through the standard parser its Content-Type names
+// (JSON → json.Parse, a form → url.ParseQuery, multipart → http.server.Multipart). A body in a Content-Encoding (gzip /
+// deflate) is decoded first, its output capped at maxBody like a plain body (the zlib checksum of deflate is not checked). 200 when it parses, 400 when it does not, 413
+// when the decoded body is over the cap, 415 for an encoding the server does not decode
+func parse(r http.server.Request) http.server.Response {
+    enc := field(r, "content-encoding")
+    if enc != "" && enc != "identity" {
+        if enc != "gzip" && enc != "x-gzip" && enc != "deflate" {
+            return http.server.Status(http.StatusCode(415))
+        }
+        if enc == "deflate" {
+            // the deflate coding is the zlib format (RFC 9110 8.4.1.2): a 2-byte header, the DEFLATE data, a 4-byte Adler-32
+            z := r.body
+            if len(z) < 6 || int(z[0]) % 16 != 8 || (int(z[0]) * 256 + int(z[1])) % 31 != 0 || int(z[1]) / 32 % 2 != 0 {
+                return http.server.Status(http.BadRequest)
+            }
+            b, e := compress.flate.Decode(z[2:len(z) - 4], maxSize: maxBody)
+            return decoded(mediaType(r), b, e)
+        }
+        b, e := compress.gzip.Decode(r.body, maxSize: maxBody)
+        return decoded(mediaType(r), b, e)
+    }
+    mt := mediaType(r)
+    if mt == "multipart/form-data" {
+        _ := http.server.Multipart(r) catch return http.server.Status(http.BadRequest)
+        return http.server.Text("ok")
+    }
+    return parsed(mt, r.body)
+}
+
+func decoded(mt string, b []byte, e error?) http.server.Response {
+    return switch e {
+    case nil: parsed(mt, b)
+    case compress.flate.TooLarge{}: http.server.Status(http.ContentTooLarge)
+    default: http.server.Status(http.BadRequest)
+    }
+}
+
+// A request header's value, lower case and trimmed ("" when absent)
+func field(r http.server.Request, name string) string {
+    v := http.server.Header(r, name)
+    if v == nil {
+        return ""
+    }
+    return strings.ToLower(strings.TrimSpace(v))
+}
+
+// The media type of the request, lower case, without its parameters
+func mediaType(r http.server.Request) string {
+    mt, _, _ := strings.Cut(field(r, "content-type"), ";")
+    return strings.TrimSpace(mt)
+}
+
+// JSON and form bodies are parsed; any other type is only buffered (a multipart body that came in a Content-Encoding too)
+func parsed(mt string, b []byte) http.server.Response {
+    if mt == "application/json" {
+        _ := json.Parse(b) catch return http.server.Status(http.BadRequest)
+    } else if mt == "application/x-www-form-urlencoded" {
+        q := string(b) catch return http.server.Status(http.BadRequest)
+        _ := url.ParseQuery(q) catch return http.server.Status(http.BadRequest)
+    }
+    return http.server.Text("ok")
+}
+
 func routes(ds []Item) []http.server.Route {
     none := []http.server.Middleware{}
     return []http.server.Route{
@@ -135,6 +200,7 @@ func routes(ds []Item) []http.server.Route {
         http.server.Route{method: "GET", path: "/delay/:ms", handler: delay, middleware: none},
         http.server.Route{method: "GET", path: "/json/:count", handler: (r) => items(ds, r), middleware: none, cache: http.server.Unstated{}},
         http.server.Route{method: "POST", path: "/echo", handler: echo, middleware: none},
+        http.server.Route{method: "POST", path: "/parse", handler: parse, middleware: none},
         http.server.Route{method: "GET", path: "/spec", handler: specText, middleware: none},
         http.server.Route{method: "OPTIONS", path: "/spec", handler: specOptions, middleware: none},
         http.server.Route{method: "POST", path: "/spec", handler: echo, middleware: none},

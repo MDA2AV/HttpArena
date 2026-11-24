@@ -30,7 +30,7 @@ Five load generators are dispatched per profile - each one is built for a specif
 | Parameter | Value |
 |-----------|-------|
 | Load generators | `gcannon` (HTTP/1.1, WebSocket), `wrk` (`static-tls`, `json-tls`), `zrk` (fixed-rate: `latency-*`, `8gbit`), `h2load` (HTTP/2, h2c, gRPC, gateway), `h2load-h3` (HTTP/3 / QUIC) |
-| Threads | 64 for every generator (`$THREADS` / `$H2THREADS` / `$H3THREADS`) |
+| Threads | 64 for every generator (`$THREADS` / `$H2THREADS` / `$H3THREADS`), 32 on the [database profiles](database/) (`$DB_THREADS`) |
 | Duration | 5s default; `async` and `async-db` 10s, `latency-*` 20s |
 | Runs | 3 per (profile, connection count) - the best run is kept (highest RPS, or highest score on the fixed-rate profiles) |
 | Networking | Docker `--network host` for all containers (server + load generator + Postgres + Redis sidecars) |
@@ -63,5 +63,6 @@ Gateway and `production-stack` profiles are compose-orchestrated, so their servi
   {{< card link="h3" title="H/3" subtitle="Baseline and static file benchmarks over QUIC for frameworks with native H/3 support." icon="globe-alt" >}}
   {{< card link="grpc" title="gRPC" subtitle="Unary RPC throughput over HTTP/2, cleartext and TLS, using Protocol Buffers serialization." icon="globe-alt" >}}
   {{< card link="ws" title="WebSocket" subtitle="WebSocket echo throughput measuring frame processing performance." icon="globe-alt" >}}
+  {{< card link="database" title="Database" subtitle="Postgres-backed HTTP/1.1 benchmarks with the server, load generator and database each on CPUs of their own." icon="database" >}}
   {{< card link="compliance" title="Compliance" subtitle="The /spec route the protocol-compliance suites run against, and the compliance score columns." icon="shield-check" >}}
 {{< /cards >}}

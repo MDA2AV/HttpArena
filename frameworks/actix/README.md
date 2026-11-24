@@ -68,3 +68,6 @@ served by the `actix-h2c` entry and WebSocket by `actix-websocket`.
 - A missing `/certs` leaves the TLS listeners down instead of aborting startup
 - Docker release builds use `target-cpu=native` and ThinLTO, together with the
   manifest's `opt-level=3` and `codegen-units=1`
+- Panics unwind, the Rust default, rather than abort: actix-http panics on a
+  request header name over 65,535 bytes, and unwinding confines that to the
+  connection that sent it

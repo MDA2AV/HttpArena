@@ -51,7 +51,7 @@ The one exception is `zrk`, which drives `8gbit`: `benchmark-lite.sh` does not b
 
 For the default (native) mode, install each tool the host binary. If anything is missing, set `LOADGEN_DOCKER=true` and the script falls back to the same docker images `benchmark-lite.sh` uses.
 
-- **gcannon** - io_uring HTTP/1.1, WebSocket, and `--raw` multi-template generator. Requires Linux kernel ≥ 6.1 with `io_uring` enabled.
+- **gcannon** - io_uring HTTP/1.1, WebSocket, and `--raw` multi-template generator. Requires Linux kernel ≥ 6.1 with `io_uring` enabled. `connections-5m` needs gcannon ≥ 0.8.2 (`--rate`, `--addr-span`), and `connections-1m-tls` ≥ 0.8.4 (`--connect-limit` held through the TLS handshake); `gcannon --version` prints it, and an older build has no `--version` at all.
 
   ```bash
   git clone --branch liburing-2.9 https://github.com/axboe/liburing.git
@@ -75,7 +75,7 @@ For the default (native) mode, install each tool the host binary. If anything is
   sudo apt install wrk
   ```
 
-- **zrk** - the fixed-rate profiles (`latency-1m`, `latency-10k`, `latency-500k-8cpu`, `8gbit`). No distro package; if no `zrk` binary is on the `PATH`, `benchmark.sh` builds and uses the `zrk:local` image from `docker/zrk.Dockerfile` automatically.
+- **zrk** - the fixed-rate profiles (`latency-1m`, `latency-10k`, `8gbit`, `connections-1m`). No distro package; if no `zrk` binary is on the `PATH`, `benchmark.sh` builds and uses the `zrk:local` image from `docker/zrk.Dockerfile` automatically. `connections-1m` needs zrk 3.0.2 or later; without a native one that new, `benchmark.sh` builds a `zrk:3.0.2` image.
 
 
 ## Permission notes

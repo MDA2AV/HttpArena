@@ -23,6 +23,8 @@ ntex 4 on its native runtime.
 | `/static/{name}` | GET | Serves `/data/static/{name}` from disk, preferring a `.br`/`.gz` sibling |
 | `/async-db?min=&max=&limit=` | GET | Items with `price` in range from Postgres, up to `limit` (1-50) |
 | `/fortunes` | GET | Fortune rows from Postgres plus a runtime row, sorted and rendered as HTML |
+| `/spec`, `/spec/headers` | GET, HEAD, OPTIONS, POST | The compliance route ([contract](https://http-arena.com/docs/test-profiles/compliance/)) for the h1 suite; `ntex-h2` serves it on `:8443` and `:8082` for the h2 suite |
+| `/parse` | POST | The resilience suite's parser sink ([contract](https://http-arena.com/docs/test-profiles/resilience/attacks/)): JSON and forms through the `Json` and `Form` extractors at their default limits, any other body through `Bytes`, all decoded from `Content-Encoding` |
 
 The same routes are served over TLS with HTTP/1.1 on port 8081 (`json-tls`,
 `static-tls`, `8gbit`). The h2 profiles (`baseline-h2`, `static-h2`) are served

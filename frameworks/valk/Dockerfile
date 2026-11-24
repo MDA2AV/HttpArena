@@ -1,8 +1,8 @@
 FROM ubuntu:24.04 AS build
 
-ARG VALK_VERSION=0.8.7
-ARG VALK_SHA256_X64=96830289514d81e1e29e10cf83553d004b1b651f446908ecd4d8c6175e1ff4c2
-ARG VALK_SHA256_ARM64=bf72503b8976d2f7b3bbee45a9b14c2965957914abfe1e4d4c7ae2ea29daae79
+ARG VALK_VERSION=0.8.8
+ARG VALK_SHA256_X64=b371b3b85f8d552e6fb7df1fd9768efa837097b2bb7da501fee7ae3c75b75de8
+ARG VALK_SHA256_ARM64=fa7e5c33458c434222efa691ae519e08906dec8ce0b5a961c02c018acdb4f755
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates curl gcc libc6-dev \
