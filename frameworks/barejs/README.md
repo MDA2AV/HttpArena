@@ -6,7 +6,7 @@ High-performance JIT-specialized web framework for Bun with zero-allocation cont
 
 - **Language:** TypeScript
 - **Runtime:** Bun 1.4.4
-- **Framework:** [BareJS](https://github.com/xarhang/bareJS) 0.1.60
+- **Framework:** [BareJS](https://github.com/xarhang/bareJS) 0.1.61
 - **Server:** `app.listen()` from `barejs`, running on Bun's native HTTP server with one `reusePort` worker process per available CPU core
 - **Templates:** Handlebars (`views/fortunes.hbs`)
 
