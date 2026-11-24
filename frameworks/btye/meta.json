@@ -1,7 +1,7 @@
 {
   "display_name": "BT-YE",
   "language": "C++",
-  "type": "emerging",
+  "type": "experimental",
   "mode": "standard",
   "engine": "hidi",
   "completeness": {
