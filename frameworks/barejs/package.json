@@ -1,0 +1,9 @@
+{
+  "name": "httparena-barejs",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "barejs": "0.1.58",
+    "handlebars": "4.7.8"
+  }
+}
