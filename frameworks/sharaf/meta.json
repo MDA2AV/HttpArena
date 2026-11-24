@@ -20,6 +20,7 @@
     "async",
     "json-comp",
     "json-tls",
+    "8gbit",
     "static-tls",
     "async-db",
     "fortunes",

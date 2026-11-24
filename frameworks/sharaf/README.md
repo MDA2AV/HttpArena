@@ -7,7 +7,7 @@ Supported profiles:
 
 - `baseline`, `pipelined`, `limited-conn`
 - `async`
-- `json-comp`, `json-tls`, `static-tls`
+- `json-comp`, `json-tls`, `8gbit`, `static-tls`
 - `async-db`, `fortunes`
 - `latency-1m`, `latency-10k`, `latency-500k-8cpu`
 

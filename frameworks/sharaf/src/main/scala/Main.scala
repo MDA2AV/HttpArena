@@ -1,3 +1,4 @@
+import java.io.ByteArrayInputStream
 import java.net.InetSocketAddress
 import java.nio.file.{Files, Paths}
 import java.security.{KeyFactory, KeyStore}
@@ -43,6 +44,12 @@ object Main {
       case POST -> Path("baseline11") =>
         val body = Request.current.bodyString.trim.toLongOption.getOrElse(0L)
         Response.withBody((querySum + body).toString)
+      case POST -> Path("echo") =>
+        // Consume the upload before committing the response so Potateh can reuse the connection.
+        val bytes = Request.current.bodyInputStream.readAllBytes()
+        Response
+          .settingHeader("Content-Length", bytes.length.toString)
+          .withBody(new ByteArrayInputStream(bytes))
       case GET -> Path("json", count) =>
         case class JsonQuery(m: Long = 1L) derives QueryStringRW
         val multiplier = Request.current.queryParams[JsonQuery].m
