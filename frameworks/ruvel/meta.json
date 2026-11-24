@@ -16,7 +16,6 @@
     "latency-10k",
     "latency-500k-8cpu"
   ],
-  "spec": ["h1"],
   "completeness": {
     "routing": true,
     "middleware": true,
