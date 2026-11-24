@@ -14,6 +14,53 @@
 
 namespace
 {
+    const std::string PG_DB_TAG = "pg";
+
+    // SQL 是固定文本：提到文件级静态，避免每请求构造超 SSO 的 std::string（堆分配）。
+    // prepared 缓存按 SQL 文本哈希，静态串内容不变，缓存键同样稳定。
+    const std::string SQL_ITEMS_BY_PRICE =
+        "SELECT id,name,category,price,quantity,active,tags,rating_score,rating_count "
+        "FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3";
+    const std::string SQL_FORTUNES = "SELECT id,message FROM fortune";
+
+    // 只缓存线程私有的 tag 解析结果；不缓存 db_conn，也不缓存其中的查询连接。
+    // 每个协程帧仍创建独立的 db_conn，per_ioc_thread_num=2 时不存在共享请求状态。
+    struct pg_db_binding
+    {
+        std::string dbtag;
+        std::shared_ptr<orm::orm_conn_pool> conn_obj;
+        orm::DB_TYPE db_type = orm::DB_TYPE::POSTGRESQL;
+        bool ready = false;
+    };
+
+    void bind_cached_pg(orm::db_conn &link)
+    {
+        thread_local pg_db_binding binding;
+        if (binding.ready)
+        {
+            link.dbtag   = binding.dbtag;
+            link.conn_obj = binding.conn_obj;
+            link.db_type  = binding.db_type;
+            return;
+        }
+
+        link.select_db(PG_DB_TAG);
+        if (link.conn_obj && link.db_type == orm::DB_TYPE::POSTGRESQL)
+        {
+            binding.dbtag    = link.dbtag;
+            binding.conn_obj = link.conn_obj;
+            binding.db_type  = link.db_type;
+            binding.ready    = true;
+        }
+    }
+
+    std::unique_ptr<orm::db_conn> make_pg_conn()
+    {
+        auto link = std::make_unique<orm::db_conn>();
+        bind_cached_pg(*link);
+        return link;
+    }
+
     // 行视图：message 指向结果集缓冲区，排序和渲染期间不拷贝。
     struct fortune_view
     {
@@ -122,6 +169,55 @@ namespace
         return pool;
     }
 
+    // 参数组池：vector 容量跨请求复用。注意不能直接 thread_local 覆写一个 vector——
+    // 驱动的重试路径（statement 丢失→重 Parse）会在挂起之后再读一次 params，
+    // 交错请求会互相覆盖；必须像结果集那样独占租用到协程结束。
+    class params_pool
+    {
+      public:
+        std::vector<http::obj_val> &acquire()
+        {
+            if (free_.empty())
+            {
+                all_.push_back(std::make_unique<std::vector<http::obj_val>>());
+                free_.push_back(all_.back().get());
+            }
+            std::vector<http::obj_val> *p = free_.back();
+            free_.pop_back();
+            return *p;
+        }
+        void release(std::vector<http::obj_val> &v) noexcept
+        {
+            v.clear();
+            free_.push_back(&v);
+        }
+
+      private:
+        std::vector<std::unique_ptr<std::vector<http::obj_val>>> all_;
+        std::vector<std::vector<http::obj_val> *> free_;
+    };
+
+    params_pool &thread_params()
+    {
+        thread_local params_pool pool;
+        return pool;
+    }
+
+    class params_guard
+    {
+      public:
+        // 成员声明顺序与初始化顺序一致（params 在前），避免 -Wreorder。
+        explicit params_guard(params_pool &pool) : params(pool.acquire()), pool_(pool) {}
+        ~params_guard() { pool_.release(params); }
+        params_guard(const params_guard &)            = delete;
+        params_guard &operator=(const params_guard &) = delete;
+
+        std::vector<http::obj_val> &params;
+
+      private:
+        params_pool &pool_;
+    };
+
     class result_set_guard
     {
       public:
@@ -179,8 +275,10 @@ asio::awaitable<std::string> arena_async_db(std::shared_ptr<httppeer> peer)
 
     // 预处理：参数绑定，驱动按连接缓存 statement，池化连接跨请求复用 warm 路径。
     // PG 直接用 $n 占位符，框架不再做 ? -> $n 转换。
-    const std::string sql = "SELECT id,name,category,price,quantity,active,tags,rating_score,rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3";
-    std::vector<http::obj_val> params;
+    // params 从线程本地池租用（容量复用），协程结束才归还——重试路径挂起后还要读它。
+    const std::string &sql = SQL_ITEMS_BY_PRICE;
+    params_guard leased_params(thread_params());
+    std::vector<http::obj_val> &params = leased_params.params;
     params.emplace_back(min_price);
     params.emplace_back(max_price);
     params.emplace_back(limit);
@@ -195,7 +293,7 @@ asio::awaitable<std::string> arena_async_db(std::shared_ptr<httppeer> peer)
 
     try
     {
-        auto link = std::make_unique<orm::db_conn>("pg");
+        auto link = make_pg_conn();
         result_set_guard result(thread_result_sets());
         orm::pg_result_set &rs = result.rs;
 
@@ -301,11 +399,11 @@ asio::awaitable<std::string> arena_fortunes(std::shared_ptr<httppeer> peer)
     // message 不再逐行拷贝。reserve(row_count + 1) 给下面追加的运行时行留位。
     try
     {
-        auto link = std::make_unique<orm::db_conn>("pg");
+        auto link = make_pg_conn();
         result_set_guard result(thread_result_sets());
         orm::pg_result_set &rs = result.rs;
 
-        co_await link->async_query_prepared_all("SELECT id,message FROM fortune", {}, rs);
+        co_await link->async_query_prepared_all(SQL_FORTUNES, {}, rs);
         if (link->iserror || !link->error_msg.empty())
         {
             respond_db_error(peer, "database query failed");
