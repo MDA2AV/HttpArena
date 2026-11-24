@@ -13,6 +13,9 @@
   "description": "Sharaf with one virtual thread per persistent connection, Squery-backed PostgreSQL, compression, and the supported HTTP/1 profiles.",
   "repo": "https://github.com/sake92/sharaf",
   "enabled": true,
+  "spec": ["h1"],
+  "resilience": true,
+  "tls_check": true,
   "tests": [
     "baseline",
     "pipelined",

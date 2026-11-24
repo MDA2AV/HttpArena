@@ -1,11 +1,8 @@
-import java.io.ByteArrayInputStream
+import java.io.{ByteArrayInputStream, InputStream, OutputStream}
 import java.net.InetSocketAddress
 import java.nio.file.{Files, Paths}
-import java.security.{KeyFactory, KeyStore}
-import java.security.cert.CertificateFactory
-import java.security.spec.PKCS8EncodedKeySpec
 import java.util.concurrent.Executors
-import javax.net.ssl.{KeyManagerFactory, SSLContext}
+import scala.util.control.NonFatal
 
 import ba.sake.potateh.ServerConfig
 import ba.sake.querson.QueryStringRW
@@ -44,12 +41,15 @@ object Main {
       case POST -> Path("baseline11") =>
         val body = Request.current.bodyString.trim.toLongOption.getOrElse(0L)
         Response.withBody((querySum + body).toString)
-      case POST -> Path("echo") =>
-        // Consume the upload before committing the response so Potateh can reuse the connection.
-        val bytes = Request.current.bodyInputStream.readAllBytes()
-        Response
-          .settingHeader("Content-Length", bytes.length.toString)
-          .withBody(new ByteArrayInputStream(bytes))
+      case POST -> Path("echo") => binaryEcho()
+      case POST -> Path("spec") => binaryEcho()
+      case GET -> Path("spec") => specText
+      case HEAD -> Path("spec") => specText
+      case OPTIONS -> Path("spec") =>
+        discardRequestBody()
+        Response.withBody("").settingHeader("Allow", "GET, HEAD, POST, OPTIONS")
+      case GET -> Path("spec", "headers") => specHeaders()
+      case POST -> Path("spec", "headers") => specHeaders()
       case GET -> Path("json", count) =>
         case class JsonQuery(m: Long = 1L) derives QueryStringRW
         val multiplier = Request.current.queryParams[JsonQuery].m
@@ -92,17 +92,25 @@ object Main {
     val handler = SharafHandler.exceptions(jsonCompression, ExceptionMapper.default)
     val cert = Paths.get(sys.env.getOrElse("TLS_CERT", "/certs/server.crt"))
     val key = Paths.get(sys.env.getOrElse("TLS_KEY", "/certs/server.key"))
-    val servers = if Files.isRegularFile(cert) && Files.isRegularFile(key) then {
+    val benchmarkServers = if Files.isRegularFile(cert) && Files.isRegularFile(key) then {
       val tlsConfig = PotatehTls.configure(
         config.withBindAddress(new InetSocketAddress("0.0.0.0", 8081)),
-        new TlsConfig(serverTlsContext(cert, key))
+        new TlsConfig(ArenaTls.context(cert, key))
       )
       Seq(
         PotatehSharafServer(handler, "0.0.0.0", 8080).withConfig(config),
         PotatehSharafServer(handler, "0.0.0.0", 8081).withConfig(tlsConfig)
       )
     } else Seq(PotatehSharafServer(handler, "0.0.0.0", 8080).withConfig(config))
-    servers.foreach(_.start())
+    val rotationCert = Paths.get("/certs-tls/server.crt")
+    val rotationKey = Paths.get("/certs-tls/server.key")
+    val rotationServers = Option.when(Files.isRegularFile(rotationCert) && Files.isRegularFile(rotationKey)) {
+      val rotationConfig = config
+        .withBindAddress(new InetSocketAddress("0.0.0.0", 9000))
+        .withServerSocketFactory(() => ArenaTls.reloadingSocket(rotationCert, rotationKey))
+      PotatehSharafServer(handler, "0.0.0.0", 9000).withConfig(rotationConfig)
+    }
+    val servers = benchmarkServers ++ rotationServers
     Runtime.getRuntime.addShutdownHook(
       new Thread(
         () => {
@@ -114,27 +122,37 @@ object Main {
         "sharaf-potateh-shutdown"
       )
     )
+    try servers.foreach(_.start())
+    catch {
+      case NonFatal(error) =>
+        servers.reverseIterator.foreach { server =>
+          try server.stop()
+          catch { case NonFatal(stopError) => error.addSuppressed(stopError) }
+        }
+        throw error
+    }
   }
 
-  private def serverTlsContext(certPath: java.nio.file.Path, keyPath: java.nio.file.Path): SSLContext = {
-    val certificate = scala.util.Using.resource(Files.newInputStream(certPath)) { input =>
-      CertificateFactory.getInstance("X.509").generateCertificate(input)
+  private def binaryEcho()(using Request): Response[InputStream] = {
+    // Consume the upload before committing the response so Potateh can reuse the connection.
+    val bytes = Request.current.bodyInputStream.readAllBytes()
+    val body: InputStream = new ByteArrayInputStream(bytes)
+    Response.withBody(body).settingHeader("Content-Length", bytes.length.toString)
+  }
+
+  private val specText = Response.withBody("spec ok").settingHeader("Content-Length", "7")
+
+  private def discardRequestBody()(using Request): Unit = {
+    Request.current.bodyInputStream.transferTo(OutputStream.nullOutputStream())
+    ()
+  }
+
+  private def specHeaders()(using Request): Response[String] = {
+    discardRequestBody()
+    val headers = Request.current.headers.iterator.flatMap { (name, values) =>
+      values.iterator.map(value => s"${name.value}: $value")
     }
-    val pem = Files.readString(keyPath)
-      .replace("-----BEGIN PRIVATE KEY-----", "")
-      .replace("-----END PRIVATE KEY-----", "")
-      .replaceAll("\\s", "")
-    val keyBytes = java.util.Base64.getDecoder.decode(pem)
-    val key = KeyFactory.getInstance(certificate.getPublicKey.getAlgorithm)
-      .generatePrivate(new PKCS8EncodedKeySpec(keyBytes))
-    val store = KeyStore.getInstance(KeyStore.getDefaultType)
-    store.load(null, null)
-    store.setKeyEntry("server", key, Array.emptyCharArray, Array(certificate))
-    val managers = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm)
-    managers.init(store, Array.emptyCharArray)
-    val context = SSLContext.getInstance("TLS")
-    context.init(managers.getKeyManagers, null, null)
-    context
+    Response.withBody(headers.mkString("\n"))
   }
 
   private def querySum(using Request): Long = {
