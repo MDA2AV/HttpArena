@@ -7,6 +7,7 @@
 import { spawn } from 'node:child_process';
 import cluster from 'node:cluster';
 import { existsSync, readFileSync } from 'node:fs';
+import { connect } from 'node:net';
 import { availableParallelism } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -67,22 +68,155 @@ const workers = parseInt(process.env.WORKERS, 10) || cpuCount();
 const isWorker = !isMainThread || cluster.isWorker;
 const isPrimary = !isWorker;
 
+// The listeners open together. Each one is a process of its own whose workers
+// would bind as they finish loading, so left alone the ports come up a few
+// hundred milliseconds apart, in no fixed order, and a client that has just
+// seen one of them answer can be refused on the next. Nothing binds on its
+// own account: a worker loads, reports to its primary on GATE and waits; a
+// listener's primary reports to the plain one over the process channel once
+// all of its workers have; and when every listener has loaded, the plain
+// primary releases them (openListeners below).
+const GATE = 'morojs:listen';
+const GATE_WAIT_MS = 15000;
+
+// The primary's end of the gate. `loaded` resolves when every worker has
+// reported; release() lets them bind, and answers a worker that reports
+// afterwards (one the cluster restarted) straight away.
+function gatekeeper() {
+    const gate = new BroadcastChannel(GATE);
+    gate.unref();
+    let reported = 0;
+    let open = false;
+    let allLoaded;
+    const loaded = new Promise(resolve => (allLoaded = resolve));
+    gate.onmessage = ({ data }) => {
+        if (data !== 'loaded') return;
+        if (open) gate.postMessage('open');
+        else if (++reported === workers) allLoaded(true);
+    };
+    return {
+        loaded,
+        release() {
+            open = true;
+            gate.postMessage('open');
+        },
+    };
+}
+
+// The worker's end: resolves when the primary releases the listener. A worker
+// nobody releases binds anyway after twice the primary's own patience, so a
+// lost message costs time and not the port.
+function released() {
+    return new Promise(resolve => {
+        const gate = new BroadcastChannel(GATE);
+        const finish = () => {
+            clearTimeout(timer);
+            gate.close();
+            resolve();
+        };
+        const timer = setTimeout(() => {
+            console.error(`morojs: ${ROLE} worker not released after ${2 * GATE_WAIT_MS} ms, binding`);
+            finish();
+        }, 2 * GATE_WAIT_MS);
+        gate.onmessage = ({ data }) => {
+            if (data === 'open') finish();
+        };
+        gate.postMessage('loaded');
+    });
+}
+
+const within = (promise, ms) =>
+    new Promise(resolve => {
+        const timer = setTimeout(resolve, ms, false);
+        promise.then(value => {
+            clearTimeout(timer);
+            resolve(value);
+        });
+    });
+
+// Resolves once the port accepts a connection, or the process behind it has
+// exited, or GATE_WAIT_MS have passed.
+function accepting(port, child) {
+    return new Promise(resolve => {
+        const deadline = Date.now() + GATE_WAIT_MS;
+        const dial = () => {
+            const socket = connect({ port, host: '127.0.0.1' });
+            socket.once('connect', () => {
+                socket.destroy();
+                resolve(true);
+            });
+            socket.once('error', () => {
+                socket.destroy();
+                if (child.exitCode !== null || child.signalCode !== null || Date.now() >= deadline) {
+                    resolve(false);
+                } else {
+                    setTimeout(dial, 2);
+                }
+            });
+        };
+        dial();
+    });
+}
+
+// Runs in the plain primary. The two HTTP/1.1 TLS listeners go first and are
+// seen to accept before anything else is released: no client asks them
+// whether the service is up, and the ports a client does ask - :8080, :8443,
+// :8082 - are then released in the same turn of the loop, :8080 first. A
+// listener that has not loaded in GATE_WAIT_MS is released as it is, and the
+// rest are not held up for it.
+async function openListeners(keeper, children) {
+    const everyone = [keeper.loaded, ...children.map(c => c.loaded)];
+    if ((await within(Promise.all(everyone), GATE_WAIT_MS)) === false) {
+        console.error(`morojs: not every listener had loaded after ${GATE_WAIT_MS} ms, opening`);
+    }
+    const release = c => c.child.connected && c.child.send('open');
+    const asked = c => !LISTENERS[c.role].certs || LISTENERS[c.role].http2;
+    const quiet = children.filter(c => !asked(c));
+    quiet.forEach(release);
+    await Promise.all(quiet.map(c => accepting(LISTENERS[c.role].port, c.child)));
+    keeper.release();
+    children.filter(asked).forEach(release);
+}
+
 // The harness mounts /certs for the TLS and HTTP/2 profiles and /certs-tls
 // for the tls_check section only; a listener whose pair is absent is not
 // started. h2c needs no material and always starts.
-if (ROLE === 'plain' && isPrimary) {
-    for (const role of ['tls', 'tlscheck', 'h2', 'h2c']) {
-        if (LISTENERS[role].certs && !hasPair(LISTENERS[role].certs)) continue;
-        const child = spawn(process.execPath, [fileURLToPath(import.meta.url)], {
-            stdio: 'inherit',
-            env: { ...process.env, MORO_ROLE: role },
-        });
-        child.on('exit', (code, signal) => {
-            console.error(`morojs: ${role} process exited (${signal ?? code})`);
-        });
-        for (const signal of ['SIGTERM', 'SIGINT']) {
-            process.on(signal, () => child.kill(signal));
+if (isPrimary) {
+    const keeper = gatekeeper();
+    if (ROLE !== 'plain') {
+        // Started by the plain primary, which says when to open. Run by hand,
+        // with no channel to a parent, the listener opens once it has loaded.
+        if (process.send) {
+            keeper.loaded.then(() => process.send('loaded'));
+            process.on('message', message => {
+                if (message === 'open') keeper.release();
+            });
+        } else {
+            keeper.loaded.then(() => keeper.release());
         }
+    } else {
+        const children = [];
+        for (const role of ['tls', 'tlscheck', 'h2', 'h2c']) {
+            if (LISTENERS[role].certs && !hasPair(LISTENERS[role].certs)) continue;
+            const child = spawn(process.execPath, [fileURLToPath(import.meta.url)], {
+                stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
+                env: { ...process.env, MORO_ROLE: role },
+            });
+            const loaded = new Promise(resolve => {
+                child.on('message', message => {
+                    if (message === 'loaded') resolve(true);
+                });
+                child.once('exit', () => resolve(true));
+            });
+            child.on('exit', (code, signal) => {
+                console.error(`morojs: ${role} process exited (${signal ?? code})`);
+            });
+            for (const signal of ['SIGTERM', 'SIGINT']) {
+                process.on(signal, () => child.kill(signal));
+            }
+            children.push({ role, child, loaded });
+        }
+        openListeners(keeper, children);
     }
 }
 
@@ -547,4 +681,6 @@ if (ROLE === 'tls' || ROLE === 'h2') {
     );
 }
 
+// Bound when the primary says so, with every other listener (GATE above).
+if (isWorker) await released();
 app.listen();

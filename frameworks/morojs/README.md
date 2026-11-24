@@ -87,6 +87,10 @@ MoroJS on its native HTTP engine, clustered by the framework itself.
   with ALPN `h2` (HTTP/1.1 still accepted), `:8082` is cleartext prior-knowledge HTTP/2 with
   HTTP/1.1 beside it. Each is its own process for the same one-configuration-per-process reason,
   clustered on worker threads like the other listeners.
+- The listeners open together. Every worker of every process loads and waits; when all have, the
+  plain primary opens `:8081` and `:9000`, sees them accept, and releases `:8080`, `:8443` and
+  `:8082` in the same turn, so a client that has seen one port answer is not refused on another.
+  Left to bind as each process finished loading, `:8081` opened 90 to 280 ms after `:8080`.
 - `/echo` sends back `req.rawBody`, the request body as it arrived, `Content-Length` or chunked
   alike, in the framework's default body handling. A Buffer handed to `res.send()` goes out
   `application/octet-stream` through the framework's prepared reply.
