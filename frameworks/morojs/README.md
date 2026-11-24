@@ -112,7 +112,7 @@ MoroJS on its native HTTP engine, clustered by the framework itself.
   mounted on the TLS listener behind a path check so the JSON route on that port does not pay for
   the lookup; the check calls `next()` synchronously, which keeps that route on the server's
   synchronous dispatch.
-- `connections-1m` and `connections-1m-tls` need nothing of their own: the listeners bind `0.0.0.0`,
+- `connections-1m`, `connections-1m-tls` and `connections-5m` need nothing of their own: the listeners bind `0.0.0.0`,
   the engine has no connection cap unless `server.maxConnections` sets one, and idle keep-alive
   connections stay open for 75 seconds (`server.timeouts.idle`, the default).
 - `/spec` is on every listener, through the same routes as everything else. `HEAD /spec` has no

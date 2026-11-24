@@ -38,13 +38,15 @@
     "baseline-h2c",
     "json-h2c",
     "connections-1m",
-    "connections-1m-tls"
+    "connections-1m-tls",
+    "connections-5m"
   ],
   "spec": [
     "h1",
     "h2",
     "ws"
   ],
+  "resilience": true,
   "maintainers": [
     "M-Chris"
   ]
