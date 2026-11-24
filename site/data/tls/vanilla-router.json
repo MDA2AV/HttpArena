@@ -1,0 +1,5 @@
+{
+  "framework": "vanilla-router",
+  "tls": "pass",
+  "check": "none"
+}
