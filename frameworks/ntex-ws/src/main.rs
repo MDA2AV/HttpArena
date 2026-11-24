@@ -58,7 +58,6 @@ async fn echo<F: Filter>(io: &Io<F>) {
     let codec = ws::Codec::new();
     while let Ok(Some(frame)) = io.recv(&codec).await {
         let msg = match frame {
-            // The codec has already validated the payload as UTF-8.
             ws::Frame::Text(text) => match ByteString::try_from(text) {
                 Ok(text) => ws::Message::Text(text),
                 Err(_) => break,

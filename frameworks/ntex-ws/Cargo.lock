@@ -769,9 +769,9 @@ dependencies = [
 
 [[package]]
 name = "ntex"
-version = "4.10.0"
+version = "4.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a62fc5f9c67a63ba26dbb8d47aefee7337c5e032896ee65c9fadb24510dad553"
+checksum = "ba05ccf757b51728b222938aaf4feea9683a7ab70d51ccf9d418cb0342d4590e"
 dependencies = [
  "atoi_simd",
  "base64",
@@ -815,9 +815,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-bytes"
-version = "1.16.1"
+version = "1.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "509e15e0417a8bc6e229c90e7134e7dc6fd357724f2786a98b195c5eddd191be"
+checksum = "443f1cb21df60d5c7a380442032179004b3714b393b91caa92ae13bfced2acbb"
 dependencies = [
  "bytes",
  "serde",
@@ -908,9 +908,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-io"
-version = "4.8.2"
+version = "4.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75570e1e5c2faeb7896a106f5bcf0288b3188486b0bbb63282a78c0385404d01"
+checksum = "0b4c97196ad67a39d5a619606a958768ce5d2d0c3fd43c2f3758f15570bbeb99"
 dependencies = [
  "bitflags",
  "log",

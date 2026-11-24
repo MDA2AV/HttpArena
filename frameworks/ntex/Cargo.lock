@@ -372,9 +372,9 @@ dependencies = [
 
 [[package]]
 name = "crc32fast"
-version = "1.5.5"
+version = "1.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b929dd2a135771f40afabd1073f85eed59c800b7c61901e5c254270497dad64"
+checksum = "fd9ae8fcb3ea71b0b26338b4ffb13006bb175de8fd07921089a906ce7e5e6945"
 dependencies = [
  "cfg-if",
 ]
@@ -1192,9 +1192,9 @@ dependencies = [
 
 [[package]]
 name = "ntex"
-version = "4.10.0"
+version = "4.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a62fc5f9c67a63ba26dbb8d47aefee7337c5e032896ee65c9fadb24510dad553"
+checksum = "ba05ccf757b51728b222938aaf4feea9683a7ab70d51ccf9d418cb0342d4590e"
 dependencies = [
  "atoi_simd",
  "base64 0.23.1",
@@ -1242,9 +1242,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-bytes"
-version = "1.16.1"
+version = "1.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "509e15e0417a8bc6e229c90e7134e7dc6fd357724f2786a98b195c5eddd191be"
+checksum = "443f1cb21df60d5c7a380442032179004b3714b393b91caa92ae13bfced2acbb"
 dependencies = [
  "bytes",
  "serde",
@@ -1360,9 +1360,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-io"
-version = "4.8.2"
+version = "4.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75570e1e5c2faeb7896a106f5bcf0288b3188486b0bbb63282a78c0385404d01"
+checksum = "0b4c97196ad67a39d5a619606a958768ce5d2d0c3fd43c2f3758f15570bbeb99"
 dependencies = [
  "bitflags",
  "log",
@@ -3041,9 +3041,9 @@ checksum = "85ccff8a4805aba1eaa4cd4afcd49f7557dd2cf5fd79ffc37f8959466effc5aa"
 
 [[package]]
 name = "zlib-rs"
-version = "0.6.8"
+version = "0.6.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b268e58e7c693d7c271f93ffc4ba3b380412554231c85bf61ca7af91042a4112"
+checksum = "aa76918995d776d9dd34d371030be228d021137449771493d56e29f77e4148ac"
 
 [[package]]
 name = "zmij"
@@ -3053,27 +3053,27 @@ checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
 
 [[package]]
 name = "zstd"
-version = "0.13.5"
+version = "0.13.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50adf04cf3ec914b0b9905c9dde90c80fe74bfd701e331fc80a39c512c525278"
+checksum = "b04655dc7bf4abd8ebe23dac6bef20fceea52a29ad19e37a4101b3951d7e8b45"
 dependencies = [
  "zstd-safe",
 ]
 
 [[package]]
 name = "zstd-safe"
-version = "7.4.1"
+version = "7.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "498d94ad68720c89b4fbe41b9090850651e68cb2dd9210ce7ffbff3a94653819"
+checksum = "df2575690b2a3eccad509fe7898cdde32a5afca06a06449ff4dcfb318c7b7281"
 dependencies = [
  "zstd-sys",
 ]
 
 [[package]]
 name = "zstd-sys"
-version = "2.1.3+zstd.1.5.7"
+version = "2.2.0+zstd.1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f729a06d0257428fd9d997ac8db7e1407bd0262ab016b085b36bc52957c0052d"
+checksum = "c3f4089cda6dda4dc43c43dd9f8964140064fd2f752f3da46c3a483c3c175160"
 dependencies = [
  "cc",
  "pkg-config",
