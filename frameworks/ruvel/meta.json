@@ -13,8 +13,7 @@
     "limited-conn",
     "async",
     "latency-1m",
-    "latency-10k",
-    "latency-500k-8cpu"
+    "latency-10k"
   ],
   "completeness": {
     "routing": true,
