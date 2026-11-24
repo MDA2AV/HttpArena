@@ -2,8 +2,12 @@ use valk.core
 use valk.fs
 use valk.http
 use valk.json
+use valk.template
 use valk.thread
 use valk.time
+use valk.url
+use postgres
+use protobuf
 
 struct Rating {
     score: int
@@ -38,14 +42,74 @@ struct Page {
     count: int
 }
 
-type Handler (fn(http.Request)(http.Response))
+struct DbPage {
+    items: Array[Item]
+    count: int
+}
+
+struct Fortune {
+    id: int
+    message: String
+}
+
+struct FortunesPage {
+    fortunes: Array[Fortune]
+}
+
+class PgSlot {
+    pipe: postgres.Pipeline
+    stmt_items: postgres.Statement
+    stmt_fortunes: postgres.Statement
+}
+
+class PgPool {
+    slots: Array[PgSlot]
+    next: uint (0)
+
+    fn pick() ?PgSlot {
+        let len = this.slots.length
+        if len == 0 : return null
+        let start = this.next % len
+        this.next = start + 1
+        let best = this.slots[start]
+        let best_wait = best.pipe.waiting()
+        if best_wait == 0 : return best
+        each 1 .. len as offset {
+            let candidate = this.slots[(start + offset) % len]
+            let w = candidate.pipe.waiting()
+            if w < best_wait {
+                best = candidate
+                best_wait = w
+                if w == 0 : break
+            }
+        }
+        return best
+    }
+}
+
+enum Endpoint {
+    baseline
+    pipeline
+    delay
+    json_items
+    async_db
+    fortunes
+    ws_echo
+    grpc_get_sum
+    echo_body
+}
+
+shared db_open_conns: uint (0)
 
 global thread_dataset: ?Array[Item] (null)
-global current_route: ?http.Route[Handler] (null)
-global h1_routes: ?http.Router[Handler] (null)
-global h1_tls_routes: ?http.Router[Handler] (null)
-global h2_routes: ?http.Router[Handler] (null)
-global h2c_routes: ?http.Router[Handler] (null)
+global thread_pg_pool: ?PgPool (null)
+global thread_pg_init_lock: ?core.Mutex (null)
+global thread_pg_retry_at: uint (0)
+global thread_views: ?template.Engine (null)
+global h1_routes: ?http.Router[Endpoint] (null)
+global h1_tls_routes: ?http.Router[Endpoint] (null)
+global h2_routes: ?http.Router[Endpoint] (null)
+global h2c_routes: ?http.Router[Endpoint] (null)
 
 fn dataset() Array[Item] {
     let d = thread_dataset
@@ -57,15 +121,110 @@ fn dataset() Array[Item] {
     return loaded
 }
 
-fn route_param(req: http.Request, name: String) ?String {
-    let route = current_route ?! return null
-    return route.param(req.path, name) !? null
+fn views() template.Engine {
+    let v = thread_views
+    if isset(v) : return v
+    let engine = template.Engine.new()
+    engine.set_many(#embed_dir("src/views"))
+    thread_views = engine
+    return engine
 }
 
-fn dispatch(router: http.Router[Handler], req: http.Request) http.Response {
+fn connect_pg_slot(host: String, user: String, password: String, dbname: String, port: u32) ?PgSlot {
+    let con = postgres.connect(host, user, password, dbname, port, postgres.SslMode.disable) ! return null
+    let stmt_items = con.prepare("SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN :min AND :max LIMIT :limit") ! {
+        con.close()
+        return null
+    }
+    let stmt_fortunes = con.prepare("SELECT id, message FROM fortune") ! {
+        con.close()
+        return null
+    }
+    let pipe = postgres.Pipeline.new(con) ! {
+        con.close()
+        return null
+    }
+    return PgSlot { pipe: pipe, stmt_items: stmt_items, stmt_fortunes: stmt_fortunes }
+}
+
+fn pg_pool() ?PgPool {
+    let existing = thread_pg_pool
+    if isset(existing) : return existing
+    let now = time.mono_ms()
+    if thread_pg_retry_at > now : return null
+
+    let lock = thread_pg_init_lock
+    if !isset(lock) {
+        let m = core.Mutex.new() ! return null
+        thread_pg_init_lock = m
+        lock = m
+    }
+    let guard = lock ?! return null
+    guard.lock()
+    defer guard.unlock()
+
+    let again = thread_pg_pool
+    if isset(again) : return again
+    if thread_pg_retry_at > time.mono_ms() : return null
+
+    let raw_url = core.getenv("DATABASE_URL") !? ""
+    if raw_url.bytes == 0 {
+        thread_pg_retry_at = time.mono_ms() + 1000
+        return null
+    }
+    let parsed = url.parse(raw_url)
+    let host = parsed.host.bytes > 0 ? parsed.host : "127.0.0.1"
+    if host == "localhost" : host = "127.0.0.1"
+    let port = (parsed.port ?? 5432).to(u32)
+    let user = parsed.user.bytes > 0 ? url.decode(parsed.user) : "bench"
+    let password = parsed.password.bytes > 0 ? url.decode(parsed.password) : ""
+    let dbname = parsed.path.ltrim("/")
+    if dbname.bytes == 0 : dbname = "benchmark"
+
+    let max_conn = (core.getenv("DATABASE_MAX_CONN") !? "256").to_uint() !? 256
+    if max_conn == 0 : max_conn = 256
+    let workers = core.cpu_thread_count()
+    if workers < 1 : workers = 1
+    if workers > 128 : workers = 128
+    let per_worker = max_conn / workers
+    if per_worker < 1 : per_worker = 1
+
+    let slots = Array[PgSlot].new(per_worker)
+    each 0 .. per_worker as _ {
+        let taken = atomic(db_open_conns + 1)
+        if taken >= max_conn {
+            atomic(db_open_conns - 1)
+            break
+        }
+        let slot = connect_pg_slot(host, user, password, dbname, port) ?! {
+            atomic(db_open_conns - 1)
+            break
+        }
+        slots.append(slot)
+    }
+
+    if slots.length == 0 {
+        thread_pg_retry_at = time.mono_ms() + 500
+        return null
+    }
+    let pool = PgPool { slots: slots }
+    thread_pg_pool = pool
+    return pool
+}
+
+fn dispatch(router: http.Router[Endpoint], req: http.Request) http.Response {
     let route = router.find(req.method, req.path) ! return http.Response.text("not found", 404)
-    current_route = route
-    return (route.handler)(req)
+    match route.handler {
+        .baseline => return baseline(req)
+        .pipeline => return pipeline(req)
+        .delay => return delay(req, route.param(req.path, "ms") !? "0")
+        .json_items => return json_items(req, route.param(req.path, "count") !? null)
+        .async_db => return async_db(req)
+        .fortunes => return fortunes(req)
+        .ws_echo => return ws_echo(req)
+        .grpc_get_sum => return grpc_get_sum(req)
+        .echo_body => return echo_body(req)
+    }
 }
 
 fn baseline(req: http.Request) http.Response {
@@ -80,15 +239,14 @@ fn pipeline(req: http.Request) http.Response {
     return http.Response.text("ok")
 }
 
-fn delay(req: http.Request) http.Response {
-    let raw = route_param(req, "ms") ?? "0"
+fn delay(req: http.Request, raw: String) http.Response {
     let ms = raw.to_uint() !? 0
     if ms > 0 : time.sleep_ms(ms)
     return http.Response.text(ms.to_string())
 }
 
-fn json_items(req: http.Request) http.Response {
-    let raw = route_param(req, "count") ?! return http.Response.text("bad request", 400)
+fn json_items(req: http.Request, raw_opt: ?String) http.Response {
+    let raw = raw_opt ?! return http.Response.text("bad request", 400)
     let count = raw.to_int() ! return http.Response.text("bad request", 400)
     let m = (req.query_param("m") !? "1").to_int() !? 1
     let items = dataset()
@@ -113,6 +271,117 @@ fn json_items(req: http.Request) http.Response {
     return http.Response.json_of(Page { items: totals, count: n })
 }
 
+fn async_db(req: http.Request) http.Response {
+    let min_price = (req.query_param("min") !? "10").to_int() !? 10
+    let max_price = (req.query_param("max") !? "50").to_int() !? 50
+    let limit = (req.query_param("limit") !? "50").to_int() !? 50
+    if limit < 1 : limit = 1
+    if limit > 50 : limit = 50
+
+    let pool = pg_pool() ?! return http.Response.json("{\"items\":[],\"count\":0}")
+    let slot = pool.pick() ?! return http.Response.json("{\"items\":[],\"count\":0}")
+    let result = slot.pipe.start(slot.stmt_items).arg(min_price).arg(max_price).arg(limit).run() ! {
+        return http.Response.json("{\"items\":[],\"count\":0}")
+    }
+    defer result.release()
+
+    let items = Array[Item].new(limit.to(uint))
+    while result.next_row() {
+        let tags = json.decode_to[Array[String]](result.col_string(6)) !? Array[String].new()
+        items.append(Item {
+            id: result.col_int(0)
+            name: result.col_string(1)
+            category: result.col_string(2)
+            price: result.col_int(3)
+            quantity: result.col_int(4)
+            active: result.col_bool(5)
+            tags: tags
+            rating: Rating {
+                score: result.col_int(7)
+                count: result.col_int(8)
+            }
+        })
+    }
+    return http.Response.json_of(DbPage { items: items, count: items.length.to(int) })
+}
+
+fn fortunes(req: http.Request) http.Response {
+    let list = Array[Fortune].new(208)
+    let pool = pg_pool()
+    if isset(pool) {
+        let slot = pool.pick()
+        if isset(slot) {
+            let result = slot.pipe.start(slot.stmt_fortunes).run() !? null
+            if isset(result) {
+                defer result.release()
+                while result.next_row() {
+                    list.append(Fortune {
+                        id: result.col_int(0)
+                        message: result.col_string(1)
+                    })
+                }
+            }
+        }
+    }
+    list.append(Fortune {
+        id: 0
+        message: "Additional fortune added at request time."
+    })
+    list.sort(fn(a: Fortune, b: Fortune) bool { return a.message > b.message })
+    let out = ByteBuffer.new(32_768)
+    views().render_into("fortunes.html", FortunesPage { fortunes: list }, out) ! return http.Response.text("render error", 500)
+    return http.Response.html(out.into_string())
+}
+
+fn grpc_error(status: String, msg: String) http.Response {
+    let res = http.Response.new("", 200, "application/grpc")
+    res.set_trailer("grpc-status", status)
+    res.set_trailer("grpc-message", msg)
+    return res
+}
+
+fn grpc_get_sum(req: http.Request) http.Response {
+    let body = req.body
+    if body.bytes < 5 : return grpc_error("3", "truncated grpc frame")
+    if body[0] != 0 : return grpc_error("12", "compressed grpc frames not supported")
+    let msg_len: uint = (body[1].to(uint) << 24)
+        | (body[2].to(uint) << 16)
+        | (body[3].to(uint) << 8)
+        | body[4].to(uint)
+    if 5 + msg_len > body.bytes : return grpc_error("3", "incomplete grpc message")
+
+    let a: i32 = 0
+    let b: i32 = 0
+    let reader = protobuf.Reader.new(body.view(5, msg_len))
+    while true {
+        let tag = reader.next_tag() ! return grpc_error("3", "invalid protobuf")
+        let field_num, wire_type = tag ?! break
+        if field_num == 1 : a = reader.read_int32() ! return grpc_error("3", "invalid field a")
+        else if field_num == 2 : b = reader.read_int32() ! return grpc_error("3", "invalid field b")
+        else : reader.skip_field(wire_type) ! return grpc_error("3", "invalid field")
+    }
+
+    let sum = a + b
+    let out = ByteBuffer.new(32)
+    out.write_byte(0)
+    out.write_u32_be(0)
+    let writer = protobuf.Writer.to_buffer(out)
+    if sum != 0 {
+        writer.write_tag(1, protobuf.WireType.varint)
+        writer.write_raw_int32(sum)
+    }
+    let payload_len = (out.length - 5).to(u32)
+    let hdr = out.view(0, 5)
+    hdr[1] = ((payload_len >> 24) & 0xff).to(u8)
+    hdr[2] = ((payload_len >> 16) & 0xff).to(u8)
+    hdr[3] = ((payload_len >> 8) & 0xff).to(u8)
+    hdr[4] = (payload_len & 0xff).to(u8)
+
+    let res = http.Response.new(out.into_string(), 200, "application/grpc")
+    res.set_trailer("grpc-status", "0")
+    return res
+}
+
 fn echo_body(req: http.Request) http.Response {
     return http.Response.new(req.body, 200, "application/octet-stream")
 }
@@ -129,13 +398,16 @@ fn ws_echo(req: http.Request) http.Response {
 
 fn handle_h1(req: http.Request) http.Response {
     let r = h1_routes ?? <{
-        let built = http.Router[Handler].new()
-        built.add("GET", "/baseline11", baseline)
-        built.add("POST", "/baseline11", baseline)
-        built.add("GET", "/pipeline", pipeline)
-        built.add("GET", "/delay/@ms", delay)
-        built.add("GET", "/json/@count", json_items)
-        built.add("GET", "/ws", ws_echo)
+        let built = http.Router[Endpoint].new()
+        built.add("GET", "/baseline11", .baseline)
+        built.add("POST", "/baseline11", .baseline)
+        built.add("GET", "/pipeline", .pipeline)
+        built.add("GET", "/delay/@ms", .delay)
+        built.add("GET", "/json/@count", .json_items)
+        built.add("GET", "/async-db", .async_db)
+        built.add("GET", "/fortunes", .fortunes)
+        built.add("GET", "/ws", .ws_echo)
+        built.add("POST", "/benchmark.BenchmarkService/GetSum", .grpc_get_sum)
         h1_routes = built
         return built
     }
@@ -144,9 +416,11 @@ fn handle_h1(req: http.Request) http.Response {
 
 fn handle_h1_tls(req: http.Request) http.Response {
     let r = h1_tls_routes ?? <{
-        let built = http.Router[Handler].new()
-        built.add("GET", "/json/@count", json_items)
-        built.add("POST", "/echo", echo_body)
+        let built = http.Router[Endpoint].new()
+        built.add("GET", "/baseline11", .baseline)
+        built.add("POST", "/baseline11", .baseline)
+        built.add("GET", "/json/@count", .json_items)
+        built.add("POST", "/echo", .echo_body)
         h1_tls_routes = built
         return built
     }
@@ -155,9 +429,10 @@ fn handle_h1_tls(req: http.Request) http.Response {
 
 fn handle_h2(req: http.Request) http.Response {
     let r = h2_routes ?? <{
-        let built = http.Router[Handler].new()
-        built.add("GET", "/baseline2", baseline)
-        built.add("POST", "/baseline2", baseline)
+        let built = http.Router[Endpoint].new()
+        built.add("GET", "/baseline2", .baseline)
+        built.add("POST", "/baseline2", .baseline)
+        built.add("POST", "/benchmark.BenchmarkService/GetSum", .grpc_get_sum)
         h2_routes = built
         return built
     }
@@ -166,10 +441,10 @@ fn handle_h2(req: http.Request) http.Response {
 
 fn handle_h2c(req: http.Request) http.Response {
     let r = h2c_routes ?? <{
-        let built = http.Router[Handler].new()
-        built.add("GET", "/baseline2", baseline)
-        built.add("POST", "/baseline2", baseline)
-        built.add("GET", "/json/@count", json_items)
+        let built = http.Router[Endpoint].new()
+        built.add("GET", "/baseline2", .baseline)
+        built.add("POST", "/baseline2", .baseline)
+        built.add("GET", "/json/@count", .json_items)
         h2c_routes = built
         return built
     }
@@ -193,9 +468,10 @@ fn start_h1_tls(cert_path: String, key_path: String, static_dir: String) {
 }
 
 fn start_h2_tls(cert_path: String, key_path: String, static_dir: String) {
-    let h2_tls = http.Server.new("0.0.0.0", 8443, handle_h2)
+    let h2_tls = http.Server.new("::", 8443, handle_h2)
     h2_tls.tls(cert_path, key_path) ! panic("Failed to configure TLS on port 8443")
     h2_tls.http2 = true
+    h2_tls.http3 = true
     h2_tls.compress = true
     h2_tls.reuse_port = true
     if fs.is_dir(static_dir) : h2_tls.add_static_dir(static_dir, "", "/static") ! {}
@@ -217,6 +493,7 @@ fn main() {
     }
 
     let server = http.Server.new("0.0.0.0", 8080, handle_h1)
+    server.http2 = true
     server.compress = true
     server.reuse_port = true
     server.start() ! panic("Failed to start HTTP server on port 8080")

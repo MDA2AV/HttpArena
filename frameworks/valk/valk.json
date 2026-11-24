@@ -1,4 +1,21 @@
 {
     "src": "src",
-    "use": "0.8.8"
+    "use": "0.9.2",
+    "dependencies": {
+        "postgres": {
+            "src": "github.com/ctxcode/valk-postgres",
+            "version": "0.9.x",
+            "current": "0.9.0"
+        },
+        "protobuf": {
+            "src": "github.com/ctxcode/valk-protobuf",
+            "version": "0.2.x",
+            "current": "0.2.0"
+        },
+        "sql": {
+            "src": "github.com/ctxcode/valk-sql",
+            "version": "0.5.x",
+            "current": "0.5.0"
+        }
+    }
 }

@@ -1,8 +1,8 @@
 FROM ubuntu:24.04 AS build
 
-ARG VALK_VERSION=0.8.8
-ARG VALK_SHA256_X64=b371b3b85f8d552e6fb7df1fd9768efa837097b2bb7da501fee7ae3c75b75de8
-ARG VALK_SHA256_ARM64=fa7e5c33458c434222efa691ae519e08906dec8ce0b5a961c02c018acdb4f755
+ARG VALK_VERSION=0.9.2
+ARG VALK_SHA256_X64=872a2b3193b1a9f8b6f2a04584c0b499dad3b03774a475cb8a5bec1953728986
+ARG VALK_SHA256_ARM64=d6d24c419db439ef3a78380efa8c82e045fa43d397daf32e8248a6c62ed47e4a
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates curl gcc libc6-dev \
@@ -26,6 +26,18 @@ ENV PATH="/opt/valk:${PATH}"
 WORKDIR /app
 COPY valk.json ./
 COPY src ./src
+RUN set -eux; \
+    for spec in \
+        "valk-postgres 0.9.0" \
+        "valk-protobuf 0.2.0" \
+        "valk-sql 0.5.0"; do \
+        set -- $spec; repo="$1"; ver="$2"; \
+        mkdir -p "vendor/github-ctxcode-${repo}/${ver}"; \
+        curl -fsSL "https://github.com/ctxcode/${repo}/archive/refs/tags/${ver}.tar.gz" \
+            | tar -xz --strip-components=1 -C "vendor/github-ctxcode-${repo}/${ver}"; \
+    done; \
+    mkdir -p vendor/github-ctxcode-valk-postgres/0.9.0/vendor; \
+    ln -s /app/vendor/github-ctxcode-valk-sql vendor/github-ctxcode-valk-postgres/0.9.0/vendor/github-ctxcode-valk-sql
 RUN valk build src -o /server --release --static
 
 FROM ubuntu:24.04
