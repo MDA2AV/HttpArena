@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "barejs": "0.1.59",
+    "barejs": "0.1.60",
     "handlebars": "4.7.8"
   }
 }
