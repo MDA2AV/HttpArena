@@ -1,0 +1,26 @@
+{
+  "framework": "Galay",
+  "results": {
+    "baseline-4096": {
+      "framework": "Galay",
+      "language": "C++",
+      "rps": 1833894,
+      "avg_latency": "2.23ms",
+      "p99_latency": "102.20ms",
+      "max_latency": "",
+      "cpu": "6220.7%",
+      "memory": "4.2GiB",
+      "connections": 4096,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "183.62MB/s",
+      "input_bw": "141.66MB/s",
+      "reconnects": 0,
+      "status_2xx": 9169473,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    }
+  }
+}
