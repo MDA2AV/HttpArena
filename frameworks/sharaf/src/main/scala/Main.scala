@@ -83,7 +83,7 @@ object Main {
       .withBacklog(8192)
       .withExecutor(virtualThreads)
     val routesHandler = SharafHandler.routes(routes)
-    val gzipHandler = SharafHandler.gzip(routesHandler, GzipSettings.default.withLevel(1))
+    val gzipHandler = SharafHandler.gzip(routesHandler, GzipSettings.default.withLevel(3))
     val filesHandler = SharafHandler.files(Paths.get("/data"))
     val jsonCompression: SharafHandler = context =>
       if context.params.path.segments.headOption.contains("json") then gzipHandler.handle(context)
