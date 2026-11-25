@@ -79,7 +79,7 @@ object Main {
     }
     val config = ServerConfig.Default
       .withBindAddress(new InetSocketAddress("0.0.0.0", 8080))
-      .withMaxConnections(32768)
+      .withMaxConnections(1_010_000)
       .withBacklog(8192)
       .withExecutor(virtualThreads)
     val routesHandler = SharafHandler.routes(routes)
