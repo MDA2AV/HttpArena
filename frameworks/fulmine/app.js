@@ -255,9 +255,17 @@ app.post('/parse',
 // app.uwsApp.ws and not app.ws: the echo needs no Request object on the upgrade.
 // https://fulmine.sndesign.it/websockets
 // 64 KB: the Autobahn cases of the spec suite echo messages up to that size.
+// A client that stops reading is closed when a send goes over the backpressure limit, so its
+// queue does not grow in the kernel. end() calls dropped again, hence the set.
+const ending = new WeakSet();
 app.uwsApp.ws('/ws', {
     maxPayloadLength: 64 * 1024,
-    message: (ws, message, isBinary) => ws.send(message, isBinary)
+    message: (ws, message, isBinary) => ws.send(message, isBinary),
+    dropped: (ws) => {
+        if (ending.has(ws)) return;
+        ending.add(ws);
+        ws.end();
+    }
 });
 
 // json-tls, static-tls, 8gbit and connections-1m-tls over TLS on 8081, when the harness mounts the certs.
