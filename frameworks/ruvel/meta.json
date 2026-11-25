@@ -17,7 +17,6 @@
     "connections-1m",
     "connections-5m"
   ],
-  "spec": ["h1"],
   "completeness": {
     "routing": true,
     "middleware": true,
