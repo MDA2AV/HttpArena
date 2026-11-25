@@ -13,8 +13,11 @@
     "limited-conn",
     "async",
     "latency-1m",
-    "latency-10k"
+    "latency-10k",
+    "connections-1m",
+    "connections-5m"
   ],
+  "spec": ["h1"],
   "completeness": {
     "routing": true,
     "middleware": true,

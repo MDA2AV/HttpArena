@@ -896,16 +896,15 @@ checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
 
 [[package]]
 name = "ruvel"
-version = "0.15.0"
+version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "17db3cfa0ee2e2c2145cf45302cf50239deee5b4c2852fb16dc6c902be745b16"
+checksum = "44725a00790218a6e3c02505a76cefa2e6f22de311da558ed7ab3810b561ca26"
 dependencies = [
  "arc-swap",
  "regex",
  "serde",
  "serde_json",
  "sqlx",
- "thiserror",
  "tokio",
 ]
 
@@ -1610,4 +1609,4 @@ checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
 
 [[patch.unused]]
 name = "ruvel"
-version = "0.14.0"
+version = "0.15.0"

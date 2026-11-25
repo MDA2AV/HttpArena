@@ -20,7 +20,7 @@ name = "server"
 path = "src/main.rs"
 
 [dependencies]
-ruvel = "0.15"
+ruvel = "0.16"
 tokio = { version = "1.54.1", features = ["full"] }
 
 [lints.clippy]
