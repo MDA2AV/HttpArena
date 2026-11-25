@@ -1,6 +1,7 @@
 {
   "display_name": "ktor",
   "language": "Kotlin",
+  "runtime": "jvm",
   "type": "flagship",
   "mode": "standard",
   "completeness": {

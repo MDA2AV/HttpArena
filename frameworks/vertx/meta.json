@@ -1,6 +1,7 @@
 {
   "display_name": "vertx",
   "language": "Java",
+  "runtime": "jvm",
   "type": "flagship",
   "mode": "standard",
   "completeness": {

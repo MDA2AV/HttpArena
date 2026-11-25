@@ -1,6 +1,7 @@
 {
   "display_name": "wastnet",
   "language": "Java",
+  "runtime": "jvm",
   "engine": "wastnet",
   "type": "experimental",
   "mode": "standard",

@@ -1,6 +1,7 @@
 {
   "display_name": "cardigan",
   "language": "Java",
+  "runtime": "jvm",
   "type": "engine",
   "engine": "io_uring",
   "description": "Java HTTP engine built on io_uring, Panama FFI, virtual threads, and thread-per-core event loops.",

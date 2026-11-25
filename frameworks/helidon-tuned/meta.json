@@ -1,6 +1,7 @@
 {
   "display_name": "helidon-tuned",
   "language": "Java",
+  "runtime": "jvm",
   "type": "flagship",
   "mode": "tuned",
   "completeness": {

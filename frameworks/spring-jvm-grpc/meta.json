@@ -1,6 +1,7 @@
 {
   "display_name": "spring-jvm-grpc",
   "language": "Java",
+  "runtime": "jvm",
   "type": "flagship",
   "mode": "tuned",
   "engine": "netty (grpc)",

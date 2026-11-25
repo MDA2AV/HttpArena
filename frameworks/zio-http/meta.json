@@ -1,6 +1,7 @@
 {
   "display_name": "zio-http",
   "language": "Scala",
+  "runtime": "jvm",
   "type": "flagship",
   "mode": "standard",
   "completeness": {

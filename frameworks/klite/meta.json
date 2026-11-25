@@ -1,6 +1,7 @@
 {
   "display_name": "klite",
   "language": "Kotlin",
+  "runtime": "jvm",
   "type": "emerging",
   "mode": "standard",
   "completeness": {

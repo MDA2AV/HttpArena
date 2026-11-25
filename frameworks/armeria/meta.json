@@ -1,6 +1,7 @@
 {
   "display_name": "armeria",
   "language": "Java",
+  "runtime": "jvm",
   "type": "flagship",
   "mode": "standard",
   "completeness": {

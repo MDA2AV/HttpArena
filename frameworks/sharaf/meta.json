@@ -1,6 +1,7 @@
 {
   "display_name": "Sharaf",
   "language": "Scala",
+  "runtime": "jvm",
   "type": "experimental",
   "mode": "standard",
   "completeness": {

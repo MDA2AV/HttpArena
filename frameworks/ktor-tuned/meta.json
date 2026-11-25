@@ -1,6 +1,7 @@
 {
   "display_name": "ktor-tuned",
   "language": "Kotlin",
+  "runtime": "jvm",
   "type": "flagship",
   "mode": "tuned",
   "completeness": {

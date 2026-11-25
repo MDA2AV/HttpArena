@@ -7,6 +7,8 @@ FRAMEWORK=""
 IMAGE_NAME=""
 CONTAINER_NAME=""
 LANGUAGE=""
+# "jvm" for entries running on a JVM; empty means natively compiled.
+FRAMEWORK_RUNTIME=""
 DISPLAY_NAME=""
 FRAMEWORK_TESTS=""
 
@@ -22,6 +24,9 @@ framework_load_meta() {
 
     LANGUAGE=$(python3 -c "
 import json; print(json.load(open('$meta_file')).get('language', ''))" 2>/dev/null || echo "")
+
+    FRAMEWORK_RUNTIME=$(python3 -c "
+import json; print(json.load(open('$meta_file')).get('runtime', ''))" 2>/dev/null || echo "")
 
     DISPLAY_NAME=$(python3 -c "
 import json; print(json.load(open('$meta_file')).get('display_name', '$FRAMEWORK'))" 2>/dev/null || echo "$FRAMEWORK")
@@ -126,6 +131,16 @@ framework_start() {
     # of their own (held_conn_limits) when the caller did not.
     if [ -n "$mem_limit" ]; then
         args+=(--memory="$mem_limit" --memory-swap="$mem_limit")
+    fi
+
+    # JVM entries: inject JAVA_TOOL_OPTIONS so stats.sh can attach jcmd and read
+    # the live heap. Setting -e replaces any ENV the image declares, so the
+    # image's own value is read back and kept in front of ours.
+    if [ "$FRAMEWORK_RUNTIME" = "jvm" ]; then
+        local img_jto
+        img_jto=$(docker image inspect -f '{{range .Config.Env}}{{println .}}{{end}}' "$IMAGE_NAME" 2>/dev/null \
+                  | sed -n 's/^JAVA_TOOL_OPTIONS=//p' | head -1)
+        args+=(-e "JAVA_TOOL_OPTIONS=${img_jto:+$img_jto }${JVM_TOOL_OPTIONS:--XX:-DisableAttachMechanism -XX:+UsePerfData}")
     fi
 
     # Profiles that exercise the database get DATABASE_URL + per-profile conn cap.

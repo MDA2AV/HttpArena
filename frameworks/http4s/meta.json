@@ -1,6 +1,7 @@
 {
   "display_name": "http4s",
   "language": "Scala",
+  "runtime": "jvm",
   "type": "flagship",
   "mode": "standard",
   "completeness": {

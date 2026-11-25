@@ -1,6 +1,7 @@
 {
   "display_name": "micronaut-tuned",
   "language": "Java",
+  "runtime": "jvm",
   "type": "flagship",
   "mode": "tuned",
   "completeness": {

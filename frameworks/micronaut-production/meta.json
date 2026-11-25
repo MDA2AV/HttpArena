@@ -1,6 +1,7 @@
 {
   "display_name": "micronaut-production",
   "language": "Java",
+  "runtime": "jvm",
   "type": "flagship",
   "mode": "standard",
   "completeness": {

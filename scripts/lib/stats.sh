@@ -17,6 +17,48 @@ STATS_LOG=""
 STATS_AVG_CPU="0%"
 STATS_PEAK_MEM="0MiB"
 STATS_BREAKDOWN=""
+STATS_CONTAINERS=()
+# What STATS_PEAK_MEM measures: "cgroup" (docker's container usage, peak) or
+# "jvm-live-heap" (heap in use after a forced full GC, see _jvm_live_heap_mib).
+STATS_MEM_KIND="cgroup"
+STATS_CGROUP_PEAK_MEM="0MiB"
+
+# Live heap of the JVM in a running container, in MiB, on stdout.
+#
+# docker's figure for a JVM is its cgroup usage: young-gen garbage nobody has
+# collected yet, committed-but-empty heap the JVM never returns, and so on. It
+# measures GC tuning, not what the app retains. A full GC (jcmd GC.run) followed
+# by GC.heap_info leaves only reachable objects, which is the retained set.
+# The old/tenured generation is read where the collector has one (Parallel,
+# Serial); G1 and ZGC report whole-heap "used", which after a full GC is the
+# same thing. Needs a JDK (jcmd) in the image; returns non-zero otherwise.
+_jvm_live_heap_mib() {
+    local c="$1" pid info
+    pid=$(docker exec "$c" jcmd 2>/dev/null | awk '$1 ~ /^[0-9]+$/ && $2 !~ /JCmd$/ { print $1; exit }')
+    [ -n "$pid" ] || return 1
+    docker exec "$c" jcmd "$pid" GC.run >/dev/null 2>&1 || return 1
+    info=$(docker exec "$c" jcmd "$pid" GC.heap_info 2>/dev/null) || return 1
+    printf '%s\n' "$info" | awk '
+        function kb(s,   v, u) {
+            v = s; gsub(/[^0-9.]/, "", v); u = s; gsub(/[0-9.,]/, "", u)
+            if (u ~ /^[Mm]/) return v * 1024
+            if (u ~ /^[Gg]/) return v * 1024 * 1024
+            return v + 0
+        }
+        # "... used 12345K ..." / "used 120M" — value after the word used.
+        function used(line,   i, n, f) {
+            n = split(line, f, /[ ,\[]+/)
+            for (i = 1; i < n; i++) if (f[i] == "used") return kb(f[i + 1])
+            return -1
+        }
+        /ParOldGen|tenured generation/ { old = used($0) }
+        /garbage-first heap|ZHeap|Shenandoah/ { whole = used($0) }
+        END {
+            kbv = (old > 0) ? old : whole
+            if (kbv < 0 || kbv == "") exit 1
+            printf "%.2f\n", kbv / 1024
+        }'
+}
 
 # Start a background poller. Accepts one or more container names. Each
 # sample writes one line per container, tagged with a snapshot counter so
@@ -27,6 +69,7 @@ STATS_BREAKDOWN=""
 stats_start() {
     STATS_LOG=$(mktemp)
     local containers=("$@")
+    STATS_CONTAINERS=("$@")
     (
         local snap=0
         while true; do
@@ -123,6 +166,21 @@ stats_stop() {
                 }
             }
         ' "$STATS_LOG")
+    fi
+
+    # ── JVM entries: replace the cgroup peak with live heap after a full GC.
+    #    Single-container runs only; gateway stacks keep the cgroup sum. Falls
+    #    back to the cgroup figure (kind stays "cgroup") when jcmd is absent.
+    STATS_CGROUP_PEAK_MEM="$STATS_PEAK_MEM"
+    STATS_MEM_KIND="cgroup"
+    if [ "${FRAMEWORK_RUNTIME:-}" = "jvm" ] && [ "${#STATS_CONTAINERS[@]}" -eq 1 ]; then
+        local live
+        if live=$(_jvm_live_heap_mib "${STATS_CONTAINERS[0]}") && [ -n "$live" ]; then
+            STATS_MEM_KIND="jvm-live-heap"
+            STATS_PEAK_MEM=$(awk -v m="$live" 'BEGIN { if (m >= 1024) printf "%.1fGiB", m / 1024; else printf "%.0fMiB", m }')
+        else
+            warn "jcmd unavailable in ${STATS_CONTAINERS[0]}; JVM memory is the cgroup figure"
+        fi
     fi
 
     rm -f "$STATS_LOG"

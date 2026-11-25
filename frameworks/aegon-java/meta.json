@@ -1,6 +1,7 @@
 {
   "display_name": "aegon-java",
   "language": "Java",
+  "runtime": "jvm",
   "type": "experimental",
   "mode": "standard",
   "engine": "io_uring",

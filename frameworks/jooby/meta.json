@@ -1,6 +1,7 @@
 {
   "display_name": "jooby",
   "language": "Java",
+  "runtime": "jvm",
   "type": "flagship",
   "mode": "standard",
   "completeness": {

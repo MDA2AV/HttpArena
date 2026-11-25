@@ -1,6 +1,7 @@
 {
   "display_name": "genhttp-kt-netty",
   "language": "Kotlin",
+  "runtime": "jvm",
   "type": "experimental",
   "mode": "standard",
   "completeness": {

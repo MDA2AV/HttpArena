@@ -404,7 +404,7 @@ run_one() {
 
         # Print trimmed output (drop h2load-h3 per-thread spawn chatter).
         echo "$output" | grep -Ev '^(Warm-up|Main benchmark duration|Stopped all clients|progress: [0-9]+% of clients started|spawning thread #[0-9]+|[0-9]*Warm-up phase is over for thread #[0-9]+)' || true
-        info "CPU $STATS_AVG_CPU | Mem $STATS_PEAK_MEM"
+        info "CPU $STATS_AVG_CPU | Mem $STATS_PEAK_MEM ($STATS_MEM_KIND)"
         [ -n "$STATS_BREAKDOWN" ] && info "  $STATS_BREAKDOWN"
 
         if [ "$run_exit" -ne 0 ]; then
@@ -747,6 +747,7 @@ save_result() {
   "max_latency": "${BEST_M[max_lat]:-}",
   "cpu": "$best_cpu",
   "memory": "$best_mem",
+  "memory_kind": "${STATS_MEM_KIND:-cgroup}",
   "connections": $CONNS,
   "threads": $THREADS,
   "duration": "${BEST_M[duration]:-$DURATION}",

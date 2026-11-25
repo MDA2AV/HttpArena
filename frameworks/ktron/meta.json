@@ -1,6 +1,7 @@
 {
   "display_name": "ktron",
   "language": "Kotlin",
+  "runtime": "jvm",
   "type": "experimental",
   "mode": "standard",
   "engine": "io_uring",

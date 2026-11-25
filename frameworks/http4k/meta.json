@@ -1,6 +1,7 @@
 {
   "display_name": "http4k",
   "language": "Kotlin",
+  "runtime": "jvm",
   "type": "flagship",
   "mode": "standard",
   "completeness": {

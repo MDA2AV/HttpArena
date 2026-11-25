@@ -1,6 +1,7 @@
 {
   "display_name": "quarkus-jvm",
   "language": "Java",
+  "runtime": "jvm",
   "type": "flagship",
   "mode": "tuned",
   "completeness": {
