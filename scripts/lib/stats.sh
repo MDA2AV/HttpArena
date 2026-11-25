@@ -33,11 +33,13 @@ STATS_CGROUP_PEAK_MEM="0MiB"
 # Serial); G1 and ZGC report whole-heap "used", which after a full GC is the
 # same thing. Needs a JDK (jcmd) in the image; returns non-zero otherwise.
 _jvm_live_heap_mib() {
-    local c="$1" pid info
-    pid=$(docker exec "$c" jcmd 2>/dev/null | awk '$1 ~ /^[0-9]+$/ && $2 !~ /JCmd$/ { print $1; exit }')
+    local c="$1" pid info jcmd=jcmd
+    # -jre images have no jcmd; framework_start mounts a JDK at /opt/jdk-tools.
+    docker exec "$c" sh -c 'command -v jcmd' >/dev/null 2>&1 || jcmd=/opt/jdk-tools/bin/jcmd
+    pid=$(docker exec "$c" "$jcmd" 2>/dev/null | awk '$1 ~ /^[0-9]+$/ && $2 !~ /JCmd$/ { print $1; exit }')
     [ -n "$pid" ] || return 1
-    docker exec "$c" jcmd "$pid" GC.run >/dev/null 2>&1 || return 1
-    info=$(docker exec "$c" jcmd "$pid" GC.heap_info 2>/dev/null) || return 1
+    docker exec "$c" "$jcmd" "$pid" GC.run >/dev/null 2>&1 || return 1
+    info=$(docker exec "$c" "$jcmd" "$pid" GC.heap_info 2>/dev/null) || return 1
     printf '%s\n' "$info" | awk '
         function kb(s,   v, u) {
             v = s; gsub(/[^0-9.]/, "", v); u = s; gsub(/[0-9.,]/, "", u)

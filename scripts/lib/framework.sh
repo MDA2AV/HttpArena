@@ -88,6 +88,21 @@ framework_build() {
     fi
 }
 
+# Host directory holding a full JDK, extracted once from JVM_TOOLS_IMAGE.
+# Prints the path; returns non-zero when it cannot be provided.
+jvm_tools_dir() {
+    local dir="${JVM_TOOLS_DIR:-${TMPDIR:-/tmp}/httparena-jdk-tools}"
+    if [ ! -x "$dir/bin/jcmd" ]; then
+        local img="${JVM_TOOLS_IMAGE:-eclipse-temurin:25-jdk}" cid
+        cid=$(docker create "$img" 2>/dev/null) || { warn "cannot create $img for JDK tools"; return 1; }
+        rm -rf "$dir"; mkdir -p "$dir"
+        docker cp "$cid:/opt/java/openjdk/." "$dir" >/dev/null 2>&1 || true
+        docker rm -f "$cid" >/dev/null 2>&1 || true
+        [ -x "$dir/bin/jcmd" ] || { warn "no jcmd in $img"; return 1; }
+    fi
+    printf '%s\n' "$dir"
+}
+
 # ── Container lifecycle ─────────────────────────────────────────────────────
 
 # Start a framework container with volume mounts appropriate to the endpoint.
@@ -141,6 +156,12 @@ framework_start() {
         img_jto=$(docker image inspect -f '{{range .Config.Env}}{{println .}}{{end}}' "$IMAGE_NAME" 2>/dev/null \
                   | sed -n 's/^JAVA_TOOL_OPTIONS=//p' | head -1)
         args+=(-e "JAVA_TOOL_OPTIONS=${img_jto:+$img_jto }${JVM_TOOL_OPTIONS:--XX:-DisableAttachMechanism -XX:+UsePerfData}")
+        # Most images run on a -jre base, which has no jcmd. Mount a JDK
+        # (read-only, at /opt/jdk-tools) so stats.sh can still attach with it.
+        local jdk_dir
+        if jdk_dir=$(jvm_tools_dir); then
+            args+=(-v "$jdk_dir:/opt/jdk-tools:ro")
+        fi
     fi
 
     # Profiles that exercise the database get DATABASE_URL + per-profile conn cap.
