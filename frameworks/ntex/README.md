@@ -75,10 +75,10 @@ by the `ntex-h2` entry.
   reopened in the background
 - `/fortunes` runs `SELECT id, message FROM fortune` on a statement prepared
   once per connection, appends the runtime row, sorts by message in byte order
-  and renders the Askama template `templates/fortunes.html` into a
-  pre-sized buffer. `askama.toml` registers an escaper that writes named
-  entities (`&lt;`) instead of Askama's numeric ones. Database errors return
-  `500` in the same cases as `/async-db`
+  and renders the sailfish template `templates/fortunes.stpl` into a
+  pre-sized buffer, which becomes the response body without copying
+  (`Bytes::from_ext`). Sailfish escapes with named entities (`&lt;`).
+  Database errors return `500` in the same cases as `/async-db`
 - A missing `/certs` leaves the TLS listeners down instead of aborting startup:
   `validate.sh` mounts the directory only for entries subscribed to a TLS test
 - Docker release builds use `target-cpu=native` and ThinLTO, together with the

@@ -19,9 +19,9 @@ checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
 
 [[package]]
 name = "ahash"
-version = "0.8.13"
+version = "0.8.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fca89247609239eeb6915e6991111866b92d7b31025e69302bbf430cc4d2c38"
+checksum = "54dae3d1d7b8956f3506c4e999a74e77f932a59153ccf38ab8cf96db74bb9dc0"
 dependencies = [
  "cfg-if",
  "getrandom 0.4.3",
@@ -825,9 +825,9 @@ dependencies = [
 
 [[package]]
 name = "ntex"
-version = "4.10.1"
+version = "4.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba05ccf757b51728b222938aaf4feea9683a7ab70d51ccf9d418cb0342d4590e"
+checksum = "bde5061afbe253afa5727f06029c9b195a06afe5f3a1b9484b2bbb834adb8065"
 dependencies = [
  "atoi_simd",
  "base64 0.23.1",
@@ -918,9 +918,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-grpc"
-version = "4.2.1"
+version = "4.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "240968c1571dbcdeed12342c49f78983735c71dd900bb26aee85f3bd6e017ad6"
+checksum = "cc767451c885a227ac3ad5fb2723c8bf2b4ae113c92e4b55668484090b8afff4"
 dependencies = [
  "base64 0.22.1",
  "bitflags",
@@ -1000,9 +1000,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-io"
-version = "4.8.3"
+version = "4.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b4c97196ad67a39d5a619606a958768ce5d2d0c3fd43c2f3758f15570bbeb99"
+checksum = "9947556956405a29b86e54ab9e7029ac3c1539d8b8596e0c7c4dac4cc77b0832"
 dependencies = [
  "bitflags",
  "log",
@@ -1040,9 +1040,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-net"
-version = "4.13.0"
+version = "4.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6093c528745cfe4414ef609ed5b6a42f2d47b4127dc8c4762e90801ce83e3746"
+checksum = "aa6a54444e9e44b0934cb29a63ac43abda991757d0da1f1489fc3014ac31cb42"
 dependencies = [
  "bitflags",
  "cfg-if",
@@ -1120,9 +1120,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-server"
-version = "4.6.2"
+version = "4.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd14afabb015192704ff79dc2bcaf50e1deb35e0cf6ccc2482662d18302560a1"
+checksum = "44f176ff3de3a7185fd87e4147add019bd5bfea51e1851d85e4280c9ceb22530"
 dependencies = [
  "async-channel",
  "event-listener",
@@ -1144,9 +1144,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-service"
-version = "5.10.0"
+version = "5.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9be8241ae4c4513113f098d82709aa5051e61381db2424b9cc02e3d9e82bec1"
+checksum = "7ae0df0ba0ec6d8103d2219412b185f61bab510f84e64d759376730f400209f8"
 dependencies = [
  "foldhash",
  "log",
@@ -2278,18 +2278,18 @@ dependencies = [
 
 [[package]]
 name = "zerocopy"
-version = "0.8.64"
+version = "0.8.65"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed43f3060383c64b000f3c630550aebdfa9d3b76d48de32390483dd2cc7e0865"
+checksum = "32bc8a75f879cd6fe53a6bedf3c28f0e1b914c77424fc2be9e2ec85d7d25aff5"
 dependencies = [
  "zerocopy-derive",
 ]
 
 [[package]]
 name = "zerocopy-derive"
-version = "0.8.64"
+version = "0.8.65"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a5cbd820fe3e35fb38c83b6dc7e6b1618bc46e0cd10073ae94e8d52dc468d8b9"
+checksum = "b8bfd2644ea1681f60cf95029ff18aa8ad1cc3f7b8fe37286f8e473bb29f816b"
 dependencies = [
  "proc-macro2",
  "quote",
