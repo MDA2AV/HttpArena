@@ -67,16 +67,16 @@ MoroJS on its native HTTP engine, clustered by the framework itself.
   after its startup has initialised the pool at Node's default of 4, and Node reads the variable
   only at process start.
 - `json-tls`, `static-tls` and `8gbit` listen on `8081` behind the engine's own TLS listener
-  (TLS 1.3, ALPN `http/1.1`), when `/certs/server.crt` and `/certs/server.key` are mounted. Moro
-  locks one configuration per process, so that listener is a second process running the same file
-  with `MORO_ROLE=tls`, clustered the same way; it is not started when the certificates are absent. The
+  (TLS 1.3, ALPN `http/1.1`), when `/certs/server.crt` and `/certs/server.key` are mounted. That
+  listener is a second app in the same process, with its own configuration, routes and middleware;
+  it is not started when the certificates are absent. The
   engine terminates TLS with the BoringSSL it bundles (`@morojs/engine` 1.1.20; kept current by a
   scheduled engine release for every upstream snapshot) on its own BIOs (1.1.17): one copy in,
   ciphertext appended straight into the buffer it sends from, and a body over 8 KiB encrypted
   from the caller's bytes rather than
   copied behind the head first. Measured at one worker on these three request mixes, CPU per request
   fell by a fifth on the static files, a seventh on the JSON bodies and a sixth on the 100 KB echo.
-- `tls_check` is opted into: a third process of the same file (`MORO_ROLE=tlscheck`) listens on
+- `tls_check` is opted into: a third app in the process listens on
   `9000` reading `/certs-tls`, with `server.ssl.watch: true`, so a pair replaced on disk is
   validated and swapped onto the running listener without a restart and without touching
   connections already established. Only started when `/certs-tls` is mounted, which validate.sh
@@ -85,12 +85,25 @@ MoroJS on its native HTTP engine, clustered by the framework itself.
   (`http2: true`; RFC 9113 and HPACK implemented in the engine, `@morojs/engine` 1.1.19), behind
   the same request and response objects, routes and middleware as HTTP/1.1. `:8443` terminates TLS
   with ALPN `h2` (HTTP/1.1 still accepted), `:8082` is cleartext prior-knowledge HTTP/2 with
-  HTTP/1.1 beside it. Each is its own process for the same one-configuration-per-process reason,
-  clustered on worker threads like the other listeners.
-- The listeners open together. Every worker of every process loads and waits; when all have, the
-  plain primary opens `:8081` and `:9000`, sees them accept, and releases `:8080`, `:8443` and
-  `:8082` in the same turn, so a client that has seen one port answer is not refused on another.
-  Left to bind as each process finished loading, `:8081` opened 90 to 280 ms after `:8080`.
+  HTTP/1.1 beside it. Each is an app of its own in the same process, on the same worker threads
+  as the other listeners.
+- One process, one set of worker threads, an app per listener. Clustered apps in a process share
+  its workers (MoroJS 1.9.2): the first one to listen starts them and the others add their
+  listener, so a worker thread holds every listener and loads the framework and the dataset once.
+  As one process per listener, which is what this entry ran before, the same listeners idled at
+  1.67 GiB on twelve workers; as one process they idle at 416 MiB.
+- Memory the framework and the engine give back by themselves, nothing configured. A moment after
+  a worker starts listening, the heap its start-up left behind is returned (MoroJS 1.9.2,
+  `@morojs/engine` 1.2.3): about 13 MB a worker. A keep-alive connection that is waiting for
+  its next request holds no parser and no request buffers (`@morojs/engine` 1.2.3): 480 bytes of
+  engine memory where it held about 1.8 KB. Together with the one process above, twelve workers
+  idle at 255 MiB where the entry idled at 1.67 GiB, and six workers hold 100,000 connections in
+  580 MiB where they needed 1.44 GiB.
+- The listeners open together. Every app is built before any of them listens and they are told to
+  listen in one go, the two HTTP/1.1 TLS ports first, so a worker binds its ports in the same turn
+  and a client that has seen one port answer is not refused on another. Measured over six starts,
+  every port opened within a millisecond of `:8080`; as separate processes `:8081` opened 90 to
+  280 ms after it.
 - `/echo` sends back `req.rawBody`, the request body as it arrived, `Content-Length` or chunked
   alike, in the framework's default body handling. A Buffer handed to `res.send()` goes out
   `application/octet-stream` through the framework's prepared reply.
@@ -126,6 +139,8 @@ MoroJS on its native HTTP engine, clustered by the framework itself.
   compressed one is read as the bytes it is, under the body size limit.
 - `fortunes` goes through EJS directly: Moro ships no view layer, so the template file is compiled
   once per worker with `ejs.compile` and rendered per request, `<%= %>` escaping every cell.
+- `pg` and `ejs` are imported where `DATABASE_URL` is set and nowhere else: without a database no
+  route reaches either, and a worker thread does not carry them.
 - `/async-db` and `/fortunes` answer from the driver's callback rather than from an async handler:
   the reply is the same, and the request stops paying three promise hops (the handler's, the
   router's, the server's). `pg-native`, which the uWebSockets-based entries use, loads its libpq
