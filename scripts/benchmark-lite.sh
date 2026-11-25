@@ -295,7 +295,7 @@ run_one() {
         stats_stop
 
         echo "$output" | grep -Ev '^(Warm-up|Main benchmark duration|Stopped all clients|progress: [0-9]+% of clients started|spawning thread #[0-9]+|[0-9]*Warm-up phase is over for thread #[0-9]+)' || true
-        info "CPU $STATS_AVG_CPU | Mem $STATS_PEAK_MEM ($STATS_MEM_KIND)"
+        info "CPU $STATS_AVG_CPU | Mem $STATS_PEAK_MEM (${STATS_MEM_KIND:-cgroup})"
         [ -n "$STATS_BREAKDOWN" ] && info "  $STATS_BREAKDOWN"
 
         if [ "$run_exit" -ne 0 ]; then

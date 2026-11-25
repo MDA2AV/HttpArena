@@ -45,6 +45,7 @@ DURATION=5s
 SAVE_RESULTS=true
 STATS_AVG_CPU=1%
 STATS_PEAK_MEM=1MiB
+STATS_MEM_KIND=cgroup
 STATS_BREAKDOWN=""
 declare -A PROFILES=([baseline-h2]=ignored)
 declare -A BEST_M

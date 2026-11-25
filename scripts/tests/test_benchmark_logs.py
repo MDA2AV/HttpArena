@@ -73,6 +73,7 @@ RUNS=1
 DURATION=5s
 STATS_AVG_CPU=1%
 STATS_PEAK_MEM=1MiB
+STATS_MEM_KIND=cgroup
 STATS_BREAKDOWN=""
 declare -A PROFILES=([production-stack]=ignored)
 declare -A BEST_M
