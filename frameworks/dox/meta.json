@@ -1,0 +1,31 @@
+{
+  "display_name": "dox",
+  "language": "Dart",
+  "type": "emerging",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "engine": "dox-http-native",
+  "description": "Dox, a Dart web framework, on its native Rust HTTP server with one isolate per CPU core. Queries use the Dox query builder; fortunes render with dox_view.",
+  "repo": "https://github.com/dartondox/dox",
+  "website": "https://dartondox.dev",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "async",
+    "json-comp",
+    "baseline-h2c",
+    "json-h2c",
+    "async-db",
+    "fortunes"
+  ],
+  "maintainers": [
+    "necessarylion"
+  ]
+}
