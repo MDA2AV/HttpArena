@@ -1,21 +1,21 @@
 # valk
 
-[Valk](https://valk-lang.dev)'s standard library HTTP/1.1, HTTP/2, and WebSocket server (`valk.http` on `valk.net` / `valk.io`, OpenSSL for TLS) in default configuration.
+[Valk](https://valk-lang.dev)'s standard library HTTP/1.1, HTTP/2, HTTP/3, and WebSocket server (`valk.http` on `valk.net` / `valk.io`, OpenSSL for TLS and QUIC TLS/AEAD) in default configuration.
 
 ## Stack
 
-- **Language:** Valk 0.8.8
-- **Framework:** standard library (`valk.http`, `valk.json`, `valk.fs`, `valk.time`)
-- **Build:** official Valk 0.8.8 release tarball on `ubuntu:24.04`, compiled with `valk build src -o /server --release --static`
+- **Language:** Valk 0.9.3
+- **Framework:** standard library (`valk.http`, `valk.json`, `valk.template`, `valk.fs`, `valk.time`) + `valk-postgres`, `valk-protobuf`, `valk-sql`
+- **Build:** official Valk 0.9.3 release tarball on `ubuntu:24.04`, compiled with `valk build src -o /server --release --static`
 
 ## Listeners & Endpoints
 
 | Port | Protocol | Endpoints |
 |------|----------|-----------|
-| `8080` | HTTP/1.1 & WebSocket | `GET/POST /baseline11`, `GET /pipeline`, `GET /delay/@ms`, `GET /json/@count`, `GET /ws` |
+| `8080` | HTTP/1.1, h2c (gRPC), & WebSocket | `GET/POST /baseline11`, `GET /pipeline`, `GET /delay/@ms`, `GET /json/@count`, `GET /async-db`, `GET /fortunes`, `GET /ws`, `POST /benchmark.BenchmarkService/GetSum` |
 | `8081` | HTTP/1.1 + TLS | `GET /json/@count`, `POST /echo`, `GET /static/*` |
 | `8082` | HTTP/2 cleartext (h2c) | `GET/POST /baseline2`, `GET /json/@count` |
-| `8443` | HTTP/2 + TLS | `GET/POST /baseline2`, `GET /static/*` |
+| `8443` | HTTP/2 + TLS (TCP) & HTTP/3 + QUIC (UDP) | `GET/POST /baseline2`, `GET /static/*`, `POST /benchmark.BenchmarkService/GetSum` |
 
 ## Notes
 
