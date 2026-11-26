@@ -25,31 +25,32 @@ What you need installed before running HttpArena benchmarks locally.
 - **curl** - readiness probes.
 - **git** - image builds clone gcannon / nghttp2 source from GitHub.
 
-## Choosing a script
+## Choosing how to run
 
-| | `benchmark.sh` | `benchmark-lite.sh` |
+There is one driver, `benchmark.sh`. Its defaults describe the reference bench host; on any other machine you run it with a [host profile](../host-profiles/) that scales it down.
+
+| | `benchmark.sh` | `benchmark-lite.sh` (`HOST_PROFILE=lite`) |
 |---|---|---|
 | Who it's for | Full runs on a tuned benchmark host | Laptops, CI runners, quick local validation |
-| Load generators | Native binaries by default, docker mode opt-in (`LOADGEN_DOCKER=true`) | **Always** docker, forced |
-| CPU pinning | Per-profile `--cpuset-cpus` | None (container gets all cores) |
+| Load generators | Native binaries by default, Docker opt-in (`LOADGEN_DOCKER=true`) | Always Docker |
+| CPU pinning | Per-profile `--cpuset-cpus` | None (containers get all cores) |
 | Threads | 64 for every generator | `nproc / 2`, or `--load-threads N` |
 | Profiles | All 27 | A subset of 13 (see [benchmark-lite.sh](../scripts/benchmark-lite/#profile-set)) |
+| `--save` writes to | `results/` and the site data | `results-hosts/lite/` |
 | Host tuning (CPU gov, sysctl, MTU, daemon restart) | Yes | Yes |
 | Root needed | For tuning + docker | For tuning + docker |
 
-Pick `benchmark-lite.sh` if you just want to sanity-check a framework; pick `benchmark.sh` if you're trying to reproduce leaderboard numbers.
+Pick `benchmark-lite.sh` to sanity-check a framework or compare frameworks on your own machine; pick `benchmark.sh` to reproduce leaderboard numbers. For a specific small machine such as a Raspberry Pi, see the `rpi` profile on [Host profiles](../host-profiles/).
 
-## benchmark-lite.sh requirements
+## Requirements with Docker load generators
 
-Just Docker, bash, python3. Every load-generator image is built from `docker/*.Dockerfile` on first run (first invocation takes a few minutes while `quictls` + `ngtcp2` compile for `h2load-h3`; cached after that).
+Docker, bash and python3 - this covers `benchmark-lite.sh`, every other host profile and `LOADGEN_DOCKER=true`. Every load-generator image is built from `docker/*.Dockerfile` on first use (the first run takes a few minutes while `quictls` + `ngtcp2` compile for `h2load-h3`; cached after that). The images build on x86_64 and arm64.
 
-You do **not** need `gcannon`, `h2load`, `h2load-h3`, or `wrk` installed on the host. You do not need a specific kernel for gcannon - the container already carries `liburing` 2.9.
-
-The one exception is `zrk`, which drives `8gbit`: `benchmark-lite.sh` does not build its image. Build it once with `docker build -t zrk:local -f docker/zrk.Dockerfile docker/` before running that profile.
+You do **not** need `gcannon`, `h2load`, `h2load-h3`, `wrk` or `zrk` installed on the host, nor a specific kernel for gcannon - the container already carries `liburing` 2.9.
 
 ## benchmark.sh requirements (native load-generator mode)
 
-For the default (native) mode, install each tool the host binary. If anything is missing, set `LOADGEN_DOCKER=true` and the script falls back to the same docker images `benchmark-lite.sh` uses.
+For the default (native) mode, install each tool the host binary. If anything is missing, set `LOADGEN_DOCKER=true` and the script uses the Docker images described above instead.
 
 - **gcannon** - io_uring HTTP/1.1, WebSocket, and `--raw` multi-template generator. Requires Linux kernel ≥ 6.1 with `io_uring` enabled. `connections-5m` needs gcannon ≥ 0.8.2 (`--rate`, `--addr-span`), and `connections-1m-tls` ≥ 0.8.4 (`--connect-limit` held through the TLS handshake); `gcannon --version` prints it, and an older build has no `--version` at all.
 

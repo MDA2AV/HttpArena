@@ -22,9 +22,9 @@ The fast road: install nothing, let the scripts build everything.
 ./scripts/benchmark-lite.sh actix baseline
 ```
 
-First invocation builds `gcannon:latest`, `h2load:latest`, `h2load-h3:local`, and `wrk:local` from `docker/*.Dockerfile`. `h2load-h3` is the slow one - expect a few minutes while quictls + ngtcp2 compile. Cached after that. (The `zrk:local` image for the fixed-rate profiles is built by `benchmark.sh` when needed; for `benchmark-lite.sh` build it yourself with `docker build -t zrk:local -f docker/zrk.Dockerfile docker/`.)
+The first invocation builds `gcannon:latest`, `h2load:latest`, `h2load-h3:local`, `wrk:local` and `zrk:local` from `docker/*.Dockerfile`. `h2load-h3` is the slow one - expect a few minutes while quictls + ngtcp2 compile. Cached after that.
 
-To use the same docker images with the full `benchmark.sh` driver (all profiles, CPU pinning, etc.) set `LOADGEN_DOCKER=true`:
+`benchmark-lite.sh` is `benchmark.sh` with the `lite` [host profile](../host-profiles/): no CPU pinning, fewer threads, a smaller profile set, results kept in `results-hosts/lite/`. To use the same Docker images with the full bench-host settings (all profiles, CPU pinning, results in `results/`), set `LOADGEN_DOCKER=true` instead:
 
 ```bash
 LOADGEN_DOCKER=true ./scripts/benchmark.sh actix --save

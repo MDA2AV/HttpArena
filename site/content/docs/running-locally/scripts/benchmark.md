@@ -7,6 +7,8 @@ weight: 3
 
 `scripts/benchmark.sh` is the full-fidelity benchmark driver. It runs one framework across every profile it subscribes to, tunes the host, collects metrics, and (with `--save`) persists results to `results/` and the site data JSONs.
 
+Its defaults describe the reference bench host. On another machine, select a [host profile](../../host-profiles/) with `HOST_PROFILE=<name>` - `benchmark-lite.sh` is `benchmark.sh` with `HOST_PROFILE=lite`.
+
 The driver itself is mostly orchestration - the real work lives in the composable library modules under `scripts/lib/`.
 
 ## Synopsis
@@ -18,7 +20,7 @@ The driver itself is mostly orchestration - the real work lives in the composabl
 | Argument | Description |
 |---|---|
 | `<framework>` | Name of the framework directory under `frameworks/`. Required. |
-| `[profile]` | Optional - run only this profile (e.g. `baseline`, `async-db`, `echo-ws`), or a comma-separated list run in the order given (e.g. `gateway-h3,gateway-64`). A name that is not a profile fails before anything is built. If omitted, runs every profile the framework subscribes to. |
+| `[profile]` | Optional - run only this profile (e.g. `baseline`, `async-db`, `echo-ws`), or a comma-separated list run in the order given (e.g. `gateway-h3,gateway-64`). A name that is not in `PROFILE_ORDER` (of the host profile, if one is set) fails before anything is built. If omitted, runs every profile the framework subscribes to. |
 | `--save` | Persist results. Without it, you get a dry run - numbers printed, nothing written. |
 
 `--save` can appear in any position. There is no other positional argument.
@@ -38,14 +40,14 @@ The driver itself is mostly orchestration - the real work lives in the composabl
 5. **Postgres sidecar** - started if the framework subscribes to any of `async-db`, `fortunes`, `gateway-64`, `gateway-h3`, `production-stack`. Uses `postgres:18` (Debian, glibc), tmpfs-backed, seeded from `data/pgdb-seed.sql`, `max_connections=256`, host network.
 6. **Profile loop** - for each subscribed profile × each connection count:
    - Starts the framework container (or `docker compose up` for gateway profiles).
-   - Waits up to 30s for the right endpoint to respond.
+   - Waits up to `READY_TIMEOUT` seconds (default 30) for the right endpoint to respond. With `FAIL_FAST=true`, a framework that does not come up skips its remaining profiles.
    - Builds the tool-specific argument vector.
    - Runs `$RUNS` measurement iterations (default 3), keeps the best by rps (by score on the fixed-rate profiles).
    - Each iteration: starts `docker stats` polling, runs the load generator under a timeout, stops polling, parses output.
    - Raw load-generator output from every run is written to `site/static/logs/<profile>/<conns>/<framework>.<tool>.run<N>.txt` - useful when a parser misbehaves.
-7. **Save** (`--save` only) - writes `results/<profile>/<conns>/<framework>.json` + framework `docker logs` to `site/static/logs/<profile>/<conns>/<framework>.log`.
+7. **Save** (`--save` only) - writes `results/<profile>/<conns>/<framework>.json` + framework `docker logs` to `site/static/logs/<profile>/<conns>/<framework>.log`. With a host profile: `results-hosts/<name>/<profile>/<conns>/<framework>.json` and `results-hosts/<name>/_logs/`.
 8. **Restore** - trap runs `framework_stop`, `gateway_down`, `postgres_stop`, then restores the loopback MTU. The CPU governor is deliberately left on `performance`.
-9. **Rebuild site data** (`--save` only) - re-runs `scripts/rebuild_site_data.py` to regenerate `site/data/results/<framework>.json` and `site/data/frameworks.json`.
+9. **Rebuild site data** (`--save` only, not with a host profile) - re-runs `scripts/rebuild_site_data.py` to regenerate `site/data/results/<framework>.json` and `site/data/frameworks.json`.
 
 ## Flags
 
@@ -70,6 +72,9 @@ Set via `VAR=value ./scripts/benchmark.sh ...` or `export VAR=value`.
 | `H2THREADS` | `64` | h2load worker threads (h2, h2c gRPC). |
 | `H3THREADS` | `64` | h2load-h3 worker threads (HTTP/3 over QUIC). |
 | `SKIP_TUNE` | `false` | When `true`, skips the host tuning step. |
+| `HOST_PROFILE` | unset | Host profile from `scripts/lib/hosts/` for machines other than the bench host. See [Host profiles](../../host-profiles/). |
+| `READY_TIMEOUT` | `30` | Seconds to wait for a framework to come up. |
+| `FAIL_FAST` | unset | `true`: stop a framework at the first profile it does not come up for. |
 
 ### Ports
 
@@ -182,6 +187,9 @@ DURATION=2s RUNS=1 ./scripts/benchmark.sh actix baseline
 
 # Override load-gen threading for a small machine
 THREADS=8 H2THREADS=16 H3THREADS=8 ./scripts/benchmark.sh actix baseline
+
+# Run with a host profile (results go to results-hosts/rpi/)
+HOST_PROFILE=rpi ./scripts/benchmark.sh actix --save
 ```
 
 ## Output layout

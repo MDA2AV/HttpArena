@@ -24,6 +24,14 @@ source "$SOURCE_DIR/redis.sh"
 source "$SOURCE_DIR/gateway.sh"
 source "$SOURCE_DIR/framework.sh"
 source "$SOURCE_DIR/profiles.sh"
+# Optional host profile (HOST_PROFILE=<name> -> scripts/lib/hosts/<name>.sh) for
+# machines other than the bench host. Its results go to results-hosts/<name>/.
+if [ -n "${HOST_PROFILE:-}" ]; then
+    [ -f "$SOURCE_DIR/hosts/$HOST_PROFILE.sh" ] || fail "unknown HOST_PROFILE: $HOST_PROFILE (no scripts/lib/hosts/$HOST_PROFILE.sh)"
+    RESULTS_DIR="$ROOT_DIR/results-hosts/$HOST_PROFILE"
+    LOGS_DIR="$RESULTS_DIR/_logs"
+    source "$SOURCE_DIR/hosts/$HOST_PROFILE.sh"
+fi
 source "$SOURCE_DIR/tools/gcannon.sh"
 source "$SOURCE_DIR/tools/h2load.sh"
 source "$SOURCE_DIR/tools/h2load-h3.sh"
@@ -63,7 +71,10 @@ if [ -n "$PROFILE_FILTER" ]; then
     IFS=',' read -ra _wanted <<< "$PROFILE_FILTER"
     for _p in "${_wanted[@]}"; do
         [ -n "$_p" ] || continue
-        [ -n "${PROFILES[$_p]+x}" ] || fail "unknown profile: $_p (see PROFILE_ORDER in scripts/lib/profiles.sh)"
+        case " ${PROFILE_ORDER[*]} " in
+            *" $_p "*) ;;
+            *) fail "unknown profile: $_p (not in PROFILE_ORDER${HOST_PROFILE:+ of host profile $HOST_PROFILE})" ;;
+        esac
         case ",$(IFS=,; echo "${profiles_to_run[*]}")," in
             *",$_p,"*) ;;
             *) profiles_to_run+=("$_p") ;;
@@ -113,6 +124,7 @@ docker volume prune -f >/dev/null 2>&1 || true
 docker image prune  -f >/dev/null 2>&1 || true
 
 info "available CPUs: $(nproc 2>/dev/null || echo ?)"
+[ -n "${HOST_PROFILE:-}" ] && info "host profile: $HOST_PROFILE (results in ${RESULTS_DIR#$ROOT_DIR/})"
 
 # ── Docker-mode setup — BEFORE system_tune() ────────────────────────────────
 #
@@ -126,7 +138,7 @@ if [ "$LOADGEN_DOCKER" = "true" ]; then
     info "load generators: docker mode"
     GCANNON_MODE=docker
     DOCKER_FLAGS=(
-        --rm --network host
+        --rm --init --network host
         --cpuset-cpus="$GCANNON_CPUS"
         --security-opt seccomp=unconfined
         --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576
@@ -144,6 +156,7 @@ if [ "$LOADGEN_DOCKER" = "true" ]; then
     for i in "${!_loadgen_images[@]}"; do
         img="${_loadgen_images[$i]}"
         df="${_loadgen_files[$i]}"
+        if [ "$df" = "h2load-h3.Dockerfile" ] && [ "${SKIP_H3_LOADGEN:-}" = "true" ]; then continue; fi
         if ! docker image inspect "$img" >/dev/null 2>&1; then
             info "building $img from docker/$df"
             _build_args=""
@@ -210,7 +223,7 @@ if { framework_subscribes_to "latency-1m" || framework_subscribes_to "latency-10
         info "building $ZRK_IMAGE from docker/zrk.Dockerfile (no native zrk on PATH)"
         docker build -t "$ZRK_IMAGE" -f "$ROOT_DIR/docker/zrk.Dockerfile" "$ROOT_DIR/docker"             || fail "$ZRK_IMAGE build failed — the fixed-rate profiles cannot run without it"
     fi
-    ZRK_CMD="docker run --rm --network host --cpuset-cpus=$GCANNON_CPUS --security-opt seccomp=unconfined --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576 -v $REQUESTS_DIR:$REQUESTS_DIR:ro $ZRK_IMAGE"
+    ZRK_CMD="docker run --rm --init --network host --cpuset-cpus=$GCANNON_CPUS --security-opt seccomp=unconfined --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576 -v $REQUESTS_DIR:$REQUESTS_DIR:ro $ZRK_IMAGE"
     info "zrk: docker mode ($ZRK_IMAGE)"
 fi
 
@@ -330,6 +343,7 @@ run_one() {
 
     if ! framework_wait_ready "$endpoint"; then
         warn "$FRAMEWORK did not come up for $profile; skipping"
+        SERVER_DOWN=true
         dump_benchmark_logs
         if [ "$SAVE_RESULTS" = true ]; then save_benchmark_logs "$profile" "$CONNS"; fi
         framework_stop
@@ -759,7 +773,7 @@ save_result() {
   "status_5xx": ${BEST_M[status_5xx]:-0}${tpl_extra}${eff_extra}${cpu_extra}
 }
 EOF
-    info "saved results/$profile/$CONNS/${FRAMEWORK}.json"
+    info "saved ${dir#$ROOT_DIR/}/${FRAMEWORK}.json"
 
     save_benchmark_logs "$profile" "$CONNS"
 }
@@ -781,13 +795,20 @@ for profile in "${profiles_to_run[@]}"; do
     parse_profile "${PROFILES[$profile]}"
     IFS=',' read -ra CONN_COUNTS <<< "$PROF_CONNS"
     for CONNS in "${CONN_COUNTS[@]}"; do
-        run_one "$profile" "$CONNS" || failed_profiles=$((failed_profiles + 1))
+        SERVER_DOWN=false
+        run_one "$profile" "$CONNS" && continue
+        failed_profiles=$((failed_profiles + 1))
+        if [ "${FAIL_FAST:-}" = "true" ] && [ "$SERVER_DOWN" = true ]; then
+            warn "FAIL_FAST: $FRAMEWORK did not come up - skipping its remaining profiles"
+            break 2
+        fi
     done
 done
 
 # ── Rebuild site data ───────────────────────────────────────────────────────
 
-if [ "$SAVE_RESULTS" = "true" ]; then
+# Only results in the default results/ dir feed the site.
+if [ "$SAVE_RESULTS" = "true" ] && [ "$RESULTS_DIR" = "$ROOT_DIR/results" ]; then
     info "rebuilding site/data/*.json"
     python3 "$SCRIPT_DIR/rebuild_site_data.py" --root "$ROOT_DIR"
 fi
