@@ -1,0 +1,1076 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "7cf38a3d86dab65b0a037b3c8610c106",
+    "packages": [
+        {
+            "name": "league/mime-type-detection",
+            "version": "1.17.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/thephpleague/mime-type-detection.git",
+                "reference": "f5f47eff7c48ed1003069a2ca67f316fb4021c76"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/thephpleague/mime-type-detection/zipball/f5f47eff7c48ed1003069a2ca67f316fb4021c76",
+                "reference": "f5f47eff7c48ed1003069a2ca67f316fb4021c76",
+                "shasum": ""
+            },
+            "require": {
+                "ext-fileinfo": "*",
+                "php": "^7.4 || ^8.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.2",
+                "phpstan/phpstan": "^0.12.68",
+                "phpunit/phpunit": "^8.5.8 || ^9.3 || ^10.0 || ^11.0 || ^12.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "League\\MimeTypeDetection\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Frank de Jonge",
+                    "email": "info@frankdejonge.nl"
+                }
+            ],
+            "description": "Mime-type detection for Flysystem",
+            "support": {
+                "issues": "https://github.com/thephpleague/mime-type-detection/issues",
+                "source": "https://github.com/thephpleague/mime-type-detection/tree/1.17.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/frankdejonge",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/league/flysystem",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2026-07-09T11:49:27+00:00",
+            "published-time": "2026-07-09T11:50:09+00:00"
+        },
+        {
+            "name": "psr/clock",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/php-fig/clock.git",
+                "reference": "e41a24703d4560fd0acb709162f73b8adfc3aa0d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/php-fig/clock/zipball/e41a24703d4560fd0acb709162f73b8adfc3aa0d",
+                "reference": "e41a24703d4560fd0acb709162f73b8adfc3aa0d",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.0 || ^8.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Psr\\Clock\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "PHP-FIG",
+                    "homepage": "https://www.php-fig.org/"
+                }
+            ],
+            "description": "Common interface for reading the clock.",
+            "homepage": "https://github.com/php-fig/clock",
+            "keywords": [
+                "clock",
+                "now",
+                "psr",
+                "psr-20",
+                "time"
+            ],
+            "support": {
+                "issues": "https://github.com/php-fig/clock/issues",
+                "source": "https://github.com/php-fig/clock/tree/1.0.0"
+            },
+            "time": "2022-11-25T14:36:26+00:00",
+            "published-time": "2022-11-25T14:59:22+00:00"
+        },
+        {
+            "name": "psr/log",
+            "version": "3.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/php-fig/log.git",
+                "reference": "f16e1d5863e37f8d8c2a01719f5b34baa2b714d3"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/php-fig/log/zipball/f16e1d5863e37f8d8c2a01719f5b34baa2b714d3",
+                "reference": "f16e1d5863e37f8d8c2a01719f5b34baa2b714d3",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.0.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "3.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Psr\\Log\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "PHP-FIG",
+                    "homepage": "https://www.php-fig.org/"
+                }
+            ],
+            "description": "Common interface for logging libraries",
+            "homepage": "https://github.com/php-fig/log",
+            "keywords": [
+                "log",
+                "psr",
+                "psr-3"
+            ],
+            "support": {
+                "source": "https://github.com/php-fig/log/tree/3.0.2"
+            },
+            "time": "2024-09-11T13:17:53+00:00",
+            "published-time": "2024-09-11T13:21:14+00:00"
+        },
+        {
+            "name": "symfony/polyfill-php84",
+            "version": "v1.43.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/polyfill-php84.git",
+                "reference": "22c6548499cbe5c5bb072fc0c42312dff062a015"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/polyfill-php84/zipball/22c6548499cbe5c5bb072fc0c42312dff062a015",
+                "reference": "22c6548499cbe5c5bb072fc0c42312dff062a015",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2"
+            },
+            "type": "library",
+            "extra": {
+                "thanks": {
+                    "url": "https://github.com/symfony/polyfill",
+                    "name": "symfony/polyfill"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "bootstrap.php"
+                ],
+                "psr-4": {
+                    "Symfony\\Polyfill\\Php84\\": ""
+                },
+                "classmap": [
+                    "Resources/stubs"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nicolas Grekas",
+                    "email": "p@tchwork.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Symfony polyfill backporting some PHP 8.4+ features to lower PHP versions",
+            "homepage": "https://symfony.com",
+            "keywords": [
+                "compatibility",
+                "polyfill",
+                "portable",
+                "shim"
+            ],
+            "support": {
+                "source": "https://github.com/symfony/polyfill-php84/tree/v1.43.0"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nicolas-grekas",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2026-09-23T22:01:09+00:00",
+            "published-time": "2026-09-30T10:23:33+00:00"
+        },
+        {
+            "name": "symfony/polyfill-php85",
+            "version": "v1.44.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/polyfill-php85.git",
+                "reference": "94c794cb5ba51784bc259f11e9f128593297d8dc"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/polyfill-php85/zipball/94c794cb5ba51784bc259f11e9f128593297d8dc",
+                "reference": "94c794cb5ba51784bc259f11e9f128593297d8dc",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2"
+            },
+            "type": "library",
+            "extra": {
+                "thanks": {
+                    "url": "https://github.com/symfony/polyfill",
+                    "name": "symfony/polyfill"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "bootstrap.php"
+                ],
+                "psr-4": {
+                    "Symfony\\Polyfill\\Php85\\": ""
+                },
+                "classmap": [
+                    "Resources/stubs"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nicolas Grekas",
+                    "email": "p@tchwork.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Symfony polyfill backporting some PHP 8.5+ features to lower PHP versions",
+            "homepage": "https://symfony.com",
+            "keywords": [
+                "compatibility",
+                "polyfill",
+                "portable",
+                "shim"
+            ],
+            "support": {
+                "source": "https://github.com/symfony/polyfill-php85/tree/v1.44.0"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nicolas-grekas",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2026-10-30T15:20:09+00:00",
+            "published-time": "2026-11-15T14:20:22+00:00"
+        },
+        {
+            "name": "thesis/async",
+            "version": "0.1.x-dev",
+            "dist": {
+                "type": "path",
+                "url": "thesis/packages/async",
+                "reference": "9267d69e344c044116e004bcaddac832fd730907"
+            },
+            "require": {
+                "php": "^8.6",
+                "php-64bit": "*",
+                "thesis/dispatcher": "^0.4",
+                "thesis/source-location": "^0.1",
+                "thesis/time": "^0.4"
+            },
+            "require-dev": {
+                "ext-pcntl": "*",
+                "ext-posix": "*",
+                "testo/assert": "^0.1.17",
+                "testo/data": "^0.1.10",
+                "testo/test": "^0.1.8",
+                "testo/testo": "^0.10.29",
+                "thesis/testo-plugin": "^0.1"
+            },
+            "suggest": {
+                "ext-pcntl": "To use awaitSignal() and trapSignals()"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "0.1.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Thesis\\Async\\": "src/"
+                },
+                "files": [
+                    "src/Internal/internal.php",
+                    "src/Trace/api.php",
+                    "src/api.php",
+                    "src/platform.php"
+                ]
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Thesis\\Async\\": "tests/"
+                },
+                "files": [
+                    "tests/helpers.php"
+                ]
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Vadim Zanfir",
+                    "email": "vadimzanfir@gmail.com"
+                },
+                {
+                    "name": "Valentin Udaltsov",
+                    "email": "udaltsov.valentin@gmail.com"
+                },
+                {
+                    "name": "Contributors",
+                    "homepage": "https://github.com/thesis-php/thesis/graphs/contributors"
+                }
+            ],
+            "description": "Structured concurrency for PHP fibers with an event loop and task-tree cancellation.",
+            "keywords": [
+                "async",
+                "cancellation",
+                "event-loop",
+                "fibers",
+                "lazy-initialization",
+                "php",
+                "signals",
+                "structured-concurrency"
+            ],
+            "support": {
+                "issues": "https://github.com/thesis-php/thesis/issues",
+                "source": "https://github.com/thesis-php/thesis/tree/main/packages/async",
+                "security": "https://github.com/thesis-php/thesis/security/policy"
+            },
+            "transport-options": {
+                "symlink": false,
+                "relative": true
+            }
+        },
+        {
+            "name": "thesis/dispatcher",
+            "version": "0.4.x-dev",
+            "dist": {
+                "type": "path",
+                "url": "thesis/packages/dispatcher",
+                "reference": "4b2215ad6ff9540017d6c9f9f93f90bfb53f56c6"
+            },
+            "require": {
+                "php": "^8.4",
+                "thesis/formatter": "^0.2"
+            },
+            "require-dev": {
+                "testo/assert": "^0.1.17",
+                "testo/data": "^0.1.10",
+                "testo/test": "^0.1.8",
+                "testo/testo": "^0.10.29"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "0.4.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Thesis\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Thesis\\": "tests/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Vadim Zanfir",
+                    "email": "vadimzanfir@gmail.com"
+                },
+                {
+                    "name": "Valentin Udaltsov",
+                    "email": "udaltsov.valentin@gmail.com"
+                },
+                {
+                    "name": "Contributors",
+                    "homepage": "https://github.com/thesis-php/thesis/graphs/contributors"
+                }
+            ],
+            "description": "Synchronous event dispatcher that matches events to listeners by parameter type.",
+            "keywords": [
+                "event-dispatcher",
+                "events",
+                "php"
+            ],
+            "support": {
+                "issues": "https://github.com/thesis-php/thesis/issues",
+                "source": "https://github.com/thesis-php/thesis/tree/main/packages/dispatcher",
+                "security": "https://github.com/thesis-php/thesis/security/policy"
+            },
+            "transport-options": {
+                "symlink": false,
+                "relative": true
+            }
+        },
+        {
+            "name": "thesis/exceptionally",
+            "version": "0.4.x-dev",
+            "dist": {
+                "type": "path",
+                "url": "thesis/packages/exceptionally",
+                "reference": "e780c3ccd777aa2ca7a51110a6ece79a73a85dca"
+            },
+            "require": {
+                "php": "^8.2.2",
+                "symfony/polyfill-php85": "^1.32"
+            },
+            "require-dev": {
+                "testo/assert": "^0.1.17",
+                "testo/test": "^0.1.8",
+                "testo/testo": "^0.10.29"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "0.4.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Thesis\\": "src/"
+                },
+                "files": [
+                    "src/api.php"
+                ]
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Thesis\\": "tests/"
+                },
+                "files": [
+                    "tests/Exceptionally/helpers.php"
+                ]
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Vadim Zanfir",
+                    "email": "vadimzanfir@gmail.com"
+                },
+                {
+                    "name": "Valentin Udaltsov",
+                    "email": "udaltsov.valentin@gmail.com"
+                },
+                {
+                    "name": "Contributors",
+                    "homepage": "https://github.com/thesis-php/thesis/graphs/contributors"
+                }
+            ],
+            "description": "Turns PHP errors into exceptions around a callable, safe when the callable suspends a fiber.",
+            "keywords": [
+                "error-handling",
+                "exceptions",
+                "fibers",
+                "php",
+                "warnings"
+            ],
+            "support": {
+                "issues": "https://github.com/thesis-php/thesis/issues",
+                "source": "https://github.com/thesis-php/thesis/tree/main/packages/exceptionally",
+                "security": "https://github.com/thesis-php/thesis/security/policy"
+            },
+            "transport-options": {
+                "symlink": false,
+                "relative": true
+            }
+        },
+        {
+            "name": "thesis/formatter",
+            "version": "0.2.x-dev",
+            "dist": {
+                "type": "path",
+                "url": "thesis/packages/formatter",
+                "reference": "fd1511c38d041eb7c8a31fb2a12c8c97200d62f1"
+            },
+            "require": {
+                "php": "^8.4",
+                "thesis/source-location": "^0.1"
+            },
+            "require-dev": {
+                "testo/assert": "^0.1.17",
+                "testo/data": "^0.1.10",
+                "testo/test": "^0.1.8",
+                "testo/testo": "^0.10.29"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "0.2.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Thesis\\Formatter\\": "src/"
+                },
+                "files": [
+                    "src/Internal/internal.php",
+                    "src/api.php"
+                ]
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Thesis\\Formatter\\": "tests/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Vadim Zanfir",
+                    "email": "vadimzanfir@gmail.com"
+                },
+                {
+                    "name": "Valentin Udaltsov",
+                    "email": "udaltsov.valentin@gmail.com"
+                },
+                {
+                    "name": "Contributors",
+                    "homepage": "https://github.com/thesis-php/thesis/graphs/contributors"
+                }
+            ],
+            "description": "Formats PHP values, classes, functions and parameters into short strings for error messages.",
+            "keywords": [
+                "error-messages",
+                "formatter",
+                "php"
+            ],
+            "support": {
+                "issues": "https://github.com/thesis-php/thesis/issues",
+                "source": "https://github.com/thesis-php/thesis/tree/main/packages/formatter",
+                "security": "https://github.com/thesis-php/thesis/security/policy"
+            },
+            "transport-options": {
+                "symlink": false,
+                "relative": true
+            }
+        },
+        {
+            "name": "thesis/http",
+            "version": "0.1.x-dev",
+            "dist": {
+                "type": "path",
+                "url": "thesis/packages/http",
+                "reference": "de26babea34f52799744d0a49536fa362e3e893a"
+            },
+            "require": {
+                "league/mime-type-detection": "^1.16",
+                "php": "^8.6",
+                "php-64bit": "*",
+                "psr/log": "^3.0",
+                "thesis/async": "^0.1",
+                "thesis/dispatcher": "^0.4",
+                "thesis/io": "^0.1",
+                "thesis/net": "^0.1",
+                "thesis/time": "^0.4"
+            },
+            "require-dev": {
+                "amphp/http-client": "^5.3",
+                "amphp/http-server": "^3.4",
+                "ext-openssl": "*",
+                "ext-zlib": "*",
+                "testo/assert": "^0.1.17",
+                "testo/codecov": "^0.2.5",
+                "testo/data": "^0.1.10",
+                "testo/test": "^0.1.8",
+                "testo/testo": "^0.10.29",
+                "thesis/exceptionally": "^0.4",
+                "thesis/testo-plugin": "^0.1"
+            },
+            "suggest": {
+                "ext-zlib": "To compress server responses and decode gzip or deflate on the client"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "0.1.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Thesis\\Http\\": "src/"
+                },
+                "files": [
+                    "src/Internal/Http1/internal.php",
+                    "src/Internal/internal.php",
+                    "src/Server/api.php",
+                    "src/api.php"
+                ]
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Thesis\\Http\\": "tests/"
+                },
+                "files": [
+                    "tests/Internal/Http1/helpers.php",
+                    "tests/helpers.php"
+                ]
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Vadim Zanfir",
+                    "email": "vadimzanfir@gmail.com"
+                },
+                {
+                    "name": "Valentin Udaltsov",
+                    "email": "udaltsov.valentin@gmail.com"
+                },
+                {
+                    "name": "Contributors",
+                    "homepage": "https://github.com/thesis-php/thesis/graphs/contributors"
+                }
+            ],
+            "description": "Asynchronous HTTP/1 client and server with connection pooling, routing and streamed bodies.",
+            "keywords": [
+                "async",
+                "http",
+                "http-client",
+                "http-headers",
+                "http-message",
+                "http-server",
+                "http-trailers",
+                "http1",
+                "php",
+                "query-string",
+                "router",
+                "static-files",
+                "streaming",
+                "tls"
+            ],
+            "support": {
+                "issues": "https://github.com/thesis-php/thesis/issues",
+                "source": "https://github.com/thesis-php/thesis/tree/main/packages/http",
+                "security": "https://github.com/thesis-php/thesis/security/policy"
+            },
+            "transport-options": {
+                "symlink": false,
+                "relative": true
+            }
+        },
+        {
+            "name": "thesis/io",
+            "version": "0.1.x-dev",
+            "dist": {
+                "type": "path",
+                "url": "thesis/packages/io",
+                "reference": "96bc83d411eeb73606f8eae905b950280e6cd6e5"
+            },
+            "require": {
+                "php": "^8.6",
+                "php-64bit": "*",
+                "thesis/async": "^0.1",
+                "thesis/time": "^0.4"
+            },
+            "require-dev": {
+                "testo/assert": "^0.1.17",
+                "testo/codecov": "^0.2.5",
+                "testo/data": "^0.1.10",
+                "testo/lifecycle": "^0.1.9",
+                "testo/test": "^0.1.8",
+                "testo/testo": "^0.10.29",
+                "thesis/testo-plugin": "^0.1"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "0.1.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Thesis\\Io\\": "src/"
+                },
+                "files": [
+                    "src/Internal/internal.php",
+                    "src/api.php"
+                ]
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Thesis\\Io\\": "tests/"
+                },
+                "files": [
+                    "tests/helpers.php"
+                ]
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Vadim Zanfir",
+                    "email": "vadimzanfir@gmail.com"
+                },
+                {
+                    "name": "Valentin Udaltsov",
+                    "email": "udaltsov.valentin@gmail.com"
+                },
+                {
+                    "name": "Contributors",
+                    "homepage": "https://github.com/thesis-php/thesis/graphs/contributors"
+                }
+            ],
+            "description": "Fast binary I/O: typed byte buffer, non-blocking streams, stdio and a string reader.",
+            "keywords": [
+                "async",
+                "binary",
+                "buffer",
+                "fibers",
+                "io",
+                "non-blocking-io",
+                "php",
+                "streams",
+                "string-reader"
+            ],
+            "support": {
+                "issues": "https://github.com/thesis-php/thesis/issues",
+                "source": "https://github.com/thesis-php/thesis/tree/main/packages/io",
+                "security": "https://github.com/thesis-php/thesis/security/policy"
+            },
+            "transport-options": {
+                "symlink": false,
+                "relative": true
+            }
+        },
+        {
+            "name": "thesis/net",
+            "version": "0.1.x-dev",
+            "dist": {
+                "type": "path",
+                "url": "thesis/packages/net",
+                "reference": "2079bddf3e0e053033058fc40a451a45c2ac3f21"
+            },
+            "require": {
+                "ext-filter": "*",
+                "ext-openssl": "*",
+                "php": "^8.6",
+                "php-64bit": "*",
+                "thesis/async": "^0.1",
+                "thesis/io": "^0.1",
+                "thesis/time": "^0.4"
+            },
+            "require-dev": {
+                "ext-intl": "*",
+                "ext-sockets": "*",
+                "testo/assert": "^0.1.17",
+                "testo/test": "^0.1.8",
+                "testo/testo": "^0.10.29",
+                "thesis/testo-plugin": "^0.1"
+            },
+            "suggest": {
+                "ext-intl": "To resolve internationalized host names (Пример.test)",
+                "ext-sockets": "To report why a connection failed (refused, unreachable) instead of a generic message"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "0.1.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Thesis\\Net\\": "src/"
+                },
+                "files": [
+                    "src/Internal/internal.php",
+                    "src/api.php"
+                ]
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Thesis\\Net\\": "tests/"
+                },
+                "files": [
+                    "tests/helpers.php"
+                ]
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Vadim Zanfir",
+                    "email": "vadimzanfir@gmail.com"
+                },
+                {
+                    "name": "Valentin Udaltsov",
+                    "email": "udaltsov.valentin@gmail.com"
+                },
+                {
+                    "name": "Contributors",
+                    "homepage": "https://github.com/thesis-php/thesis/graphs/contributors"
+                }
+            ],
+            "description": "Non-blocking TCP and Unix sockets with TLS and an async DNS resolver, cancelled by the task tree.",
+            "keywords": [
+                "async",
+                "dns",
+                "fibers",
+                "networking",
+                "php",
+                "sockets",
+                "tcp",
+                "tls",
+                "unix-socket"
+            ],
+            "support": {
+                "issues": "https://github.com/thesis-php/thesis/issues",
+                "source": "https://github.com/thesis-php/thesis/tree/main/packages/net",
+                "security": "https://github.com/thesis-php/thesis/security/policy"
+            },
+            "transport-options": {
+                "symlink": false,
+                "relative": true
+            }
+        },
+        {
+            "name": "thesis/source-location",
+            "version": "0.1.x-dev",
+            "dist": {
+                "type": "path",
+                "url": "thesis/packages/source-location",
+                "reference": "245618e5afd9524b3333290ca80ccb81a223f98e"
+            },
+            "require": {
+                "composer-runtime-api": "^2.1",
+                "php": "^8.4"
+            },
+            "require-dev": {
+                "testo/assert": "^0.1.17",
+                "testo/test": "^0.1.8",
+                "testo/testo": "^0.10.29"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "0.1.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Thesis\\SourceLocation\\": "src/"
+                },
+                "files": [
+                    "src/Internal/internal.php",
+                    "src/api.php"
+                ]
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Thesis\\SourceLocation\\": "tests/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Vadim Zanfir",
+                    "email": "vadimzanfir@gmail.com"
+                },
+                {
+                    "name": "Valentin Udaltsov",
+                    "email": "udaltsov.valentin@gmail.com"
+                },
+                {
+                    "name": "Contributors",
+                    "homepage": "https://github.com/thesis-php/thesis/graphs/contributors"
+                }
+            ],
+            "description": "Find source locations and callers outside a library, including in code run by eval().",
+            "keywords": [
+                "backtrace",
+                "debugging",
+                "php",
+                "source-location"
+            ],
+            "support": {
+                "issues": "https://github.com/thesis-php/thesis/issues",
+                "source": "https://github.com/thesis-php/thesis/tree/main/packages/source-location",
+                "security": "https://github.com/thesis-php/thesis/security/policy"
+            },
+            "transport-options": {
+                "symlink": false,
+                "relative": true
+            }
+        },
+        {
+            "name": "thesis/time",
+            "version": "0.4.x-dev",
+            "dist": {
+                "type": "path",
+                "url": "thesis/packages/time",
+                "reference": "4329912cd2bc8a3a958688d7f25bd2ffd273727e"
+            },
+            "require": {
+                "php": "^8.2.2",
+                "psr/clock": "^1.0",
+                "symfony/polyfill-php84": "^1.34"
+            },
+            "require-dev": {
+                "testo/assert": "^0.1.17",
+                "testo/codecov": "^0.2.5",
+                "testo/data": "^0.1.10",
+                "testo/test": "^0.1.8",
+                "testo/testo": "^0.10.60"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "0.4.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Thesis\\Time\\": "src/"
+                },
+                "files": [
+                    "src/Internal/internal.php",
+                    "src/api.php",
+                    "polyfill/load.php"
+                ]
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Thesis\\Time\\": "tests/"
+                },
+                "files": [
+                    "tests/helpers.php"
+                ]
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Vadim Zanfir",
+                    "email": "vadimzanfir@gmail.com"
+                },
+                {
+                    "name": "Valentin Udaltsov",
+                    "email": "udaltsov.valentin@gmail.com"
+                },
+                {
+                    "name": "Contributors",
+                    "homepage": "https://github.com/thesis-php/thesis/graphs/contributors"
+                }
+            ],
+            "description": "Time\\Duration polyfill for PHP 8.2+ with parsing, conversions, a stopwatch and PSR-20 clocks.",
+            "keywords": [
+                "clock",
+                "duration",
+                "php",
+                "polyfill",
+                "psr-20",
+                "stopwatch",
+                "time"
+            ],
+            "support": {
+                "issues": "https://github.com/thesis-php/thesis/issues",
+                "source": "https://github.com/thesis-php/thesis/tree/main/packages/time",
+                "security": "https://github.com/thesis-php/thesis/security/policy"
+            },
+            "transport-options": {
+                "symlink": false,
+                "relative": true
+            }
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "dev",
+    "stability-flags": {},
+    "prefer-stable": true,
+    "prefer-lowest": false,
+    "platform": {
+        "ext-pcntl": "*",
+        "ext-zlib": "*"
+    },
+    "platform-dev": {},
+    "plugin-api-version": "2.11.0"
+}
