@@ -102,10 +102,9 @@ $router = new Router([
         },
         middleware: [new Gzip()],
     )),
-    Route::post('/echo', static fn(Request $request) => new Response(
-        headers: ['Content-Type' => 'application/octet-stream'],
-        body: $request->takeBody(),
-    )),
+    Route::post('/echo', static fn(Request $request) => $request
+        ->echo()
+        ->withHeader('Content-Type', 'application/octet-stream')),
     Route::get('/spec', static fn() => new Response(headers: ['Content-Type' => 'text/plain'], body: 'spec ok')),
     Route::options('/spec', static function (Request $request) {
         $request->takeBody()->discard();

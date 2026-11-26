@@ -4,13 +4,13 @@ RUN docker-php-ext-install pcntl
 FROM extensions AS dependencies
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 WORKDIR /app
-ARG THESIS_REV=2b2bc1126676f5dd288f0403976fab863c8838aa
+ARG THESIS_REV=445b16a97893d224576882806ee3be2b010bf518
 RUN apk add --no-cache git \
     && git init -q thesis \
     && git -C thesis fetch --depth=1 https://github.com/thesis-php/thesis.git "${THESIS_REV}" \
     && git -C thesis checkout -q --detach "${THESIS_REV}"
-COPY composer.json composer.lock ./
-RUN composer install --prefer-source --no-dev --no-interaction --no-plugins --no-scripts --classmap-authoritative \
+COPY composer.json ./
+RUN composer update --prefer-source --no-dev --no-interaction --no-plugins --no-scripts --classmap-authoritative \
     && find vendor -name .git -prune -exec rm -rf {} +
 
 FROM php:8.6-cli-alpine
