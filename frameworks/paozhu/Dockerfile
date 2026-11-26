@@ -29,7 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Pinned so mini_project.sh, the controller generator and the CMake entry point
 # stay in sync with the scaffold this entry was written against.
-ARG PAOZHU_REF=c7e9f60d5a7907f077d3c6ffd97ba321801448af
+ARG PAOZHU_REF=848f8ac32fdb5a552c829b07dab8c27fa0c78a40
 WORKDIR /paozhu
 # Prefer a source archive shipped in the build context (offline / slow-GitHub
 # environments); otherwise fetch the pinned revision from codeload. The direct
@@ -68,8 +68,8 @@ RUN find /paozhu/controller /paozhu/conf -type f -name '._*' -delete && \
 # src/CMakeLists.txt already defaults ENABLE_BENCHMARK to ON and compiles
 # startup/main_docker.cpp in every config, so no build-time patching is needed.
 COPY src/CMakeLists.txt /paozhu/CMakeLists.txt
-# The foreground entry itself is pinned too: it resolves argv[1] to a conf file
-# and installs the SIGTERM handler that the two-conf-dir layout relies on.
+# The foreground entry itself is pinned too: it resolves argv[1] to the single
+# conf file and installs the SIGTERM handler.
 COPY src/startup/main_docker.cpp /paozhu/startup/main_docker.cpp
 # Benchmark-specific HTTP/2 send-ring parameters (32 slots / 24 backpressure / 24 feed).
 # Override the upstream header so these macros are actually compiled in. Requires the
@@ -94,22 +94,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 COPY --from=build /paozhu/bin/paozhu /server
-# httpserver::run() prefers <cwd>/conf/server.conf and only honours argv[1]
-# when that file is absent. Two conf dirs (and no /app/conf/server.conf) make
-# each process load its own file, hence its own ports.
-COPY --from=build /paozhu/conf/server.conf    /app/conf/main/server.conf
-COPY --from=build /paozhu/conf/server-h1.conf /app/conf/h1/server.conf
-COPY --from=build /paozhu/conf/dh4096.pem     /app/conf/main/dh4096.pem
-COPY --from=build /paozhu/conf/dh4096.pem     /app/conf/h1/dh4096.pem
+# httpserver::run() prefers <cwd>/conf/server.conf. The single instance loads
+# this file and owns all four configured listeners.
+COPY --from=build /paozhu/conf/server.conf    /app/conf/server.conf
+COPY --from=build /paozhu/conf/dh4096.pem     /app/conf/dh4096.pem
 COPY src/conf/openssl.cnf /app/conf/openssl.cnf
-# Rendered by entrypoint.sh into /app/conf/main/orm.conf when the harness
-# injects DATABASE_URL. Kept as .tpl so startup_orm_init() never sees it.
+# Rendered by entrypoint.sh into /app/conf/orm.conf when the harness injects
+# DATABASE_URL. Kept as .tpl so startup_orm_init() never sees the placeholders.
 COPY src/conf/orm.conf /app/conf/orm.conf.tpl
 COPY src/entrypoint.sh /entrypoint.sh
 
 RUN mkdir -p /app/www/default /app/module/view /app/module/controller \
              /app/models /app/orm /app/view /app/temp /app/log /app/cache \
-             /app/temp-h1 /app/log-h1 /app/plugins /app/libs && \
+             /app/plugins /app/libs && \
     printf 'Hello World! Paozhu\n' > /app/www/default/index.html && \
     chmod +x /entrypoint.sh
 

@@ -1,22 +1,17 @@
 #!/usr/bin/env bash
-# paozhu has one plaintext and one TLS port per process. HttpArena needs four
-# listeners, so run two instances with two conf files: the main one serves
-# :8080 (HTTP/1.1) and :8443 (ALPN h2), the second serves :8081 with ALPN
-# pinned to http/1.1 for json-tls plus :8082 cleartext h2c for
-# baseline-h2c and json-h2c.
-# See README.md.
+# One paozhu process owns all four listeners from comma-separated httpport and
+# httpsport values: :8080 HTTP/1.1, :8443 TLS, :8081 TLS for json-tls and :8082
+# cleartext h2c for baseline-h2c and json-h2c. See README.md.
 set -euo pipefail
 
 cd /app
 
-# serverconfig resolves the four TLS file names relative to each conf file's
-# own directory, so stage the harness pair into both conf dirs.
+# serverconfig resolves TLS file names relative to server.conf, so stage the
+# harness pair into the single conf directory.
 if [ -f /certs/server.crt ] && [ -f /certs/server.key ]; then
-    for d in /app/conf/main /app/conf/h1; do
-        cp /certs/server.crt "$d/server.crt"
-        cp /certs/server.key "$d/server.key"
-        chmod 600 "$d/server.key"
-    done
+    cp /certs/server.crt /app/conf/server.crt
+    cp /certs/server.key /app/conf/server.key
+    chmod 600 /app/conf/server.key
 fi
 
 http_ioc_count() {
@@ -86,9 +81,8 @@ http_ioc_count() {
 
 # HttpArena injects DATABASE_URL / DATABASE_MAX_CONN only for the DB profiles.
 # startup_orm_init() unconditionally reads <conf dir>/orm.conf, so render
-# src/conf/orm.conf into the main instance's conf dir from the environment
-# instead of shipping hardcoded credentials. The h1 instance has no pool:
-# /async-db and /fortunes are served on :8080 by the main instance.
+# src/conf/orm.conf beside server.conf from the environment instead of shipping
+# hardcoded credentials.
 if [ -n "${DATABASE_URL:-}" ]; then
     db_url="${DATABASE_URL#*://}"
     db_credentials="${db_url%%@*}"
@@ -110,7 +104,7 @@ if [ -n "${DATABASE_URL:-}" ]; then
     http_iocs=$(http_ioc_count)
     co_cap=0
     ioc_cap=4
-    if [ -r /app/conf/main/server.conf ]; then
+    if [ -r /app/conf/server.conf ]; then
         while IFS='=' read -r key value; do
             key="${key//[[:space:]]/}"
             value="${value%%;*}"
@@ -121,7 +115,7 @@ if [ -n "${DATABASE_URL:-}" ]; then
                 ioc_cap=$value
                 if [ "$ioc_cap" -lt 1 ]; then ioc_cap=1; fi
             fi
-        done < /app/conf/main/server.conf
+        done < /app/conf/server.conf
     fi
     if [ "$co_cap" -gt 0 ] && [ "$co_cap" -lt "$http_iocs" ]; then
         http_iocs=$co_cap
@@ -142,15 +136,18 @@ if [ -n "${DATABASE_URL:-}" ]; then
         line="${line//__DB_SELECT_MAX__/$db_select_max}"
         line="${line//__DB_SELECT_MIN__/$db_select_min}"
         printf '%s\n' "$line"
-    done < /app/conf/orm.conf.tpl > /app/conf/main/orm.conf
+    done < /app/conf/orm.conf.tpl > /app/conf/orm.conf
 fi
 
-# No /app/conf/server.conf exists, so httpserver::run() falls back to argv[1]
-# and each instance loads its own ports (8080/8443 vs 8082/8081).
-/server /app/conf/h1/server.conf &
-H1_PID=$!
-/server /app/conf/main/server.conf &
-MAIN_PID=$!
+/server /app/conf/server.conf &
+SERVER_PID=$!
+
+shutdown() {
+    trap - TERM INT
+    kill -TERM "$SERVER_PID" 2>/dev/null || true
+    wait "$SERVER_PID" 2>/dev/null || true
+}
+trap shutdown TERM INT
 
 # ── Lazy-cache warmup ────────────────────────────────────────────────────
 # arena.cpp 懒加载静态文件：首次 miss 时把存在的源文件/.gz/.br 变体全部
@@ -186,15 +183,5 @@ if [ -d /data/static ]; then
     warm_static http://localhost:8082
 fi
 
-shutdown() {
-    trap - TERM INT
-    kill -TERM "$MAIN_PID" "$H1_PID" 2>/dev/null || true
-    wait "$MAIN_PID" 2>/dev/null || true
-    wait "$H1_PID" 2>/dev/null || true
-}
-trap shutdown TERM INT
-
-# If either server exits, take the other one down too — the container should
-# not look healthy with a dead listener.
-wait -n "$MAIN_PID" "$H1_PID" || true
+wait "$SERVER_PID" || true
 shutdown
