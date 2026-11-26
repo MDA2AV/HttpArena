@@ -4,7 +4,7 @@ RUN docker-php-ext-install pcntl
 FROM extensions AS dependencies
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 WORKDIR /app
-ARG THESIS_REV=445b16a97893d224576882806ee3be2b010bf518
+ARG THESIS_REV=50ce1e68405c3f866ef92ff73ed7b06243d36f35
 RUN apk add --no-cache git \
     && git init -q thesis \
     && git -C thesis fetch --depth=1 https://github.com/thesis-php/thesis.git "${THESIS_REV}" \
