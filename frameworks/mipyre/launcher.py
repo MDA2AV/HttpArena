@@ -33,10 +33,10 @@ class TlsFiles:
     key: str
 
 
-def server_env(threads: int, port: int, tls: TlsFiles | None) -> dict[str, str]:
+def server_env(port: int, tls: TlsFiles | None) -> dict[str, str]:
     """Return the engine settings for this container, by environment variable."""
     env = {
-        "MIPYRE_THREADS": str(threads),
+        "MIPYRE_THREADS": "logical",
         "MIPYRE_HOST": "0.0.0.0",
         "MIPYRE_PORT": str(port),
         "MIPYRE_EXTRA_PLAIN_PORTS": str(H2C_PORT),
@@ -51,31 +51,6 @@ def server_env(threads: int, port: int, tls: TlsFiles | None) -> dict[str, str]:
         "MIPYRE_TLS_KEY": tls.key,
         "MIPYRE_EXTRA_TLS_PORTS": f"{port + 1},{H2_TLS_PORT}",
     }
-
-
-def _physical_cores() -> int:
-    """Physical cores among the CPUs this process may run on (its affinity
-    mask: the container's cpuset), counting SMT siblings once.
-
-    One TPC thread per physical core is what the engine is built for: two
-    threads pinned to SMT siblings run the same code path and fight over one
-    core's L1/L2 (measured -50% per thread on a 7840HS). sysfs lists every CPU
-    of the host whatever the cpuset (64 cores for HttpArena's 0-31,64-95 of a
-    64C/128T host), so the count starts from the affinity mask.
-    """
-    try:
-        allowed = sorted(os.sched_getaffinity(0))
-    except AttributeError:  # not Linux
-        return max(os.cpu_count() or 1, 1)
-    cores = set()
-    for cpu in allowed:
-        path = f"/sys/devices/system/cpu/cpu{cpu}/topology/thread_siblings_list"
-        try:
-            with open(path) as f:
-                cores.add(f.read().strip())
-        except OSError:
-            cores.add(f"cpu{cpu}")  # topology unknown: count the CPU as its own core
-    return max(len(cores), 1)
 
 
 def _parse_port(raw: str) -> int:
@@ -104,9 +79,7 @@ def main() -> int:
                 f"TLS companion port {base_port + 1} (max 65535); use PORT<=65534"
             )
         tls = TlsFiles(tls_cert, tls_key)
-    # One TPC thread per physical core (32 on HttpArena's cpuset), not one per
-    # logical CPU: two threads on SMT siblings of one core fight over its L1/L2.
-    env = os.environ | server_env(_physical_cores(), base_port, tls)
+    env = os.environ | server_env(base_port, tls)
 
     try:
         proc = subprocess.Popen(["python3", "app.py"], env=env)

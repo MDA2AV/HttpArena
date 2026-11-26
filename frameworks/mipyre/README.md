@@ -1,7 +1,7 @@
 # mipyre — HTTP Arena submission
 
 mipyre is a Python web framework with a Rust core: hyper + tokio + rustls +
-mimalloc, with one pinned thread per physical core and a PEP 684
+mimalloc, with one pinned thread per logical CPU and a PEP 684
 sub-interpreter on each, so Python handlers run on every core at once. This
 submission exposes every Arena endpoint with standard mipyre decorators — no
 special harness-only glue.
@@ -20,12 +20,12 @@ special harness-only glue.
 | async | `async def` route + `asyncio.sleep` on its worker's asyncio loop |
 | async-db / fortunes | `mipyre.db.PgPool` (sqlx) on the run's DB runtime; a worker waits with its GIL released. fortunes renders `templates/fortunes.html` with Jinja2 |
 | unary-grpc / unary-grpc-tls | `@app.unary_unary`: `GetSum` is a Python handler, its messages decoded and encoded by `protobuf` (`benchmark_pb2.py` is protoc's from `benchmark.proto`) |
-| latency-500k-8cpu | one TPC thread per physical core of the cpuset (4 on `0-3,64-67`) |
+| latency-500k-8cpu | one TPC thread per logical CPU of the cpuset (8 on `0-3,64-67`) |
 | echo-ws | `@app.websocket("/ws")`: a `def` called once per message returns it; **not subscribed** (`meta.json`) |
 
 ## Build (local)
 
-The image installs the released wheel from PyPI (`mipyre==4.1.0`, cp314
+The image installs the released wheel from PyPI (`mipyre==4.2.0`, cp314
 manylinux x86_64); there is no source tree or Rust toolchain in the build.
 
 ```bash
@@ -38,10 +38,9 @@ docker build -t httparena-mipyre frameworks/mipyre
 settings as `MIPYRE_*` variables (threads, host, ports, TLS files). The engine
 refuses a `MIPYRE_*` name it does not read, so a renamed setting stops the
 start instead of running on defaults. It sizes the server to one thread per
-**physical** core of the container's cpuset (32 on the Arena's `0-31,64-95`):
-two threads on SMT siblings of one core run the same code path and contend for
-its L1/L2.
+logical CPU of the container's cpuset (64 on the Arena's `0-31,64-95`); the
+engine pins one thread on every core before it pins any SMT sibling.
 
 The Postgres pool belongs to the server run, not to a Python interpreter:
-every worker's `PgPool.connect()` binds to the run's one pool, so a 32-thread
+every worker's `PgPool.connect()` binds to the run's one pool, so a 64-thread
 deployment doesn't multiply connection count.
