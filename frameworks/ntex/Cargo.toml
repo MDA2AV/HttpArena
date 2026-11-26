@@ -9,7 +9,7 @@ deadpool = { version = "0.13", default-features = false, features = ["unmanaged"
 mimalloc = { version = "0.1", default-features = false, features = ["v2"] }
 ntex = { version = "4.11", default-features = false, features = ["compress", "rustls", "serde"] }
 ntex-bytes = "1.16"
-ntex-files = "4.7"
+ntex-files = "4.8"
 ntex-io = { version = "4.9", features = ["tokio"] }
 rustls = { version = "0.23", default-features = false, features = ["ring", "logging", "std", "tls12"] }
 rustls-pemfile = "2"
