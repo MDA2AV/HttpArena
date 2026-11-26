@@ -443,6 +443,11 @@ jobs:
                       if m3 and rows:
                           rows[-1].update(cpureq=m3.group(1), p99=m3.group(2),
                                           p999=m3.group(3), ratio=m3.group(4))
+                          continue
+                      # connections-ramp-h1: how far the ramp got, which is its result.
+                      m4 = re.match(r"^=== Ramp: (.+) ===$", line)
+                      if m4 and rows:
+                          rows[-1]["ramp"] = m4.group(1)
               return rows
 
           def table(rows, deltas):
@@ -474,6 +479,9 @@ jobs:
                       out.append(base + mid + tail_)
                   else:
                       out.append(base + tail_)
+              for r in rows:
+                  if r.get("ramp"):
+                      out += ["", "{} / {}: {}".format(r["prof"], r["conns"], r["ramp"])]
               return "\n".join(out)
 
           def tail(path, n):

@@ -38,6 +38,33 @@ GCANNON_RATE_CONNECTIONS_1M_TLS="${GCANNON_RATE_CONNECTIONS_1M_TLS:-250000}"
 CONN1M_TLS_ADDRS="${CONN1M_TLS_ADDRS:-32}"
 CONN1M_TLS_WARMUP_MAX="${CONN1M_TLS_WARMUP_MAX:-900}"
 
+# connections-ramp-h1: a fleet that grows to 2M over two minutes, 95% of it
+# idle. CONNRAMP_FLOOR active connections open in the warmup and carry the offered
+# rate for CONNRAMP_SETTLE seconds, which warms the server up (JIT, caches, heaps)
+# before anything counts: there is one run of it, not a best-of (benchmark.sh).
+# Over CONNRAMP_UP seconds the rest of the active ones and all of the idle ones
+# then open evenly,
+# inside the measured window (CONNRAMP_WINDOW: the ramp, plus ten seconds that
+# show the fleet standing). The active ones carry GCANNON_RATE_CONNECTIONS_RAMP
+# throughout, paced by thread so the total does not depend on how many are
+# open. The idle ones send one request and are never used or reopened, so a
+# server that times them out shows it (gcannon >= 0.10.0: --ramp-up, --idle).
+# The p99 limit is not gcannon's: conn_hold.py finds where the interval lines
+# cross CONNRAMP_P99_US and reports how many connections it took to get there. A
+# server that closes idle ones before they have been open CONNRAMP_IDLE_MIN
+# seconds (less a second for coarse timers) ends the ramp the same way.
+GCANNON_RATE_CONNECTIONS_RAMP="${GCANNON_RATE_CONNECTIONS_RAMP:-100000}"
+CONNRAMP_FLOOR="${CONNRAMP_FLOOR:-4096}"
+CONNRAMP_UP="${CONNRAMP_UP:-120}"
+CONNRAMP_WINDOW="${CONNRAMP_WINDOW:-130}"
+CONNRAMP_IDLE="${CONNRAMP_IDLE:-95%}"
+CONNRAMP_ADDRS="${CONNRAMP_ADDRS:-64}"
+CONNRAMP_P99_US="${CONNRAMP_P99_US:-2000}"
+CONNRAMP_IDLE_MIN="${CONNRAMP_IDLE_MIN:-30}"
+CONNRAMP_CONNECT_LIMIT="${CONNRAMP_CONNECT_LIMIT:-64}"
+CONNRAMP_WARMUP_MAX="${CONNRAMP_WARMUP_MAX:-60}"
+CONNRAMP_SETTLE="${CONNRAMP_SETTLE:-30}"
+
 # ── Build arguments ─────────────────────────────────────────────────────────
 
 # Usage: gcannon_build_args <endpoint> <conns> <pipeline> <duration> [req_per_conn]
@@ -136,6 +163,20 @@ gcannon_build_args() {
                   --connect-limit "$CONN5M_CONNECT_LIMIT"
                   --warmup-max "${warm}s" --settle "${CONN5M_SETTLE}s" --json)
             ;;
+        connections-ramp-h1)
+            # The same request as the other held profiles, and the same wrapper;
+            # what differs is how the fleet comes up and what is read from the
+            # result.
+            args=(--hold-- "$endpoint" "$conns" "$GCANNON_RATE_CONNECTIONS_RAMP" "$PORT"
+                  "$CONNRAMP_WARMUP_MAX" "$CONNRAMP_ADDRS"
+                  --args-- "http://127.0.0.1:$PORT/baseline11?a=1&b=2"
+                  -c "$conns" -t "$THREADS" -d "${CONNRAMP_WINDOW}s"
+                  --rate "$GCANNON_RATE_CONNECTIONS_RAMP" --idle "$CONNRAMP_IDLE"
+                  --ramp "$CONNRAMP_FLOOR" --ramp-up "${CONNRAMP_UP}s"
+                  --addr-span "$CONNRAMP_ADDRS"
+                  --connect-limit "$CONNRAMP_CONNECT_LIMIT"
+                  --warmup-max "${CONNRAMP_WARMUP_MAX}s" --settle "${CONNRAMP_SETTLE}s" --json)
+            ;;
         *)
             fail "gcannon_build_args: unknown endpoint '$endpoint'"
             ;;
@@ -167,11 +208,12 @@ gcannon_run() {
     fi
 }
 
-# connections-5m / connections-1m-tls: gcannon under scripts/conn_hold.py,
-# which probes the listener, refuses a run the host cannot hold, raises the
-# open-file limit for the fleet, and reads the server cgroup's CPU at
-# gcannon's window markers. stdout is the wrapper's JSON summary; stderr
-# (gcannon's own lines) goes straight to the log.
+# connections-5m / connections-1m-tls / connections-ramp-h1: gcannon under
+# scripts/conn_hold.py, which probes the listener, refuses a run the host cannot
+# hold, raises the open-file limit for the fleet, and reads the server cgroup's
+# CPU at gcannon's window markers. stdout is the wrapper's JSON summary; stderr
+# (gcannon's own lines, the interval lines of a ramp included) goes straight to
+# the log.
 _gcannon_hold_run() {
     local profile="$1" conns="$2" rate="$3" hport="$4" warm="$5" addrs="$6"
     shift 6
@@ -194,13 +236,18 @@ _gcannon_hold_run() {
     # Kernel memory per connection: both sockets and a conntrack entry, and
     # over TLS a kernel TLS context on each side that uses one (gcannon's
     # always, the server's when it offloads too).
-    local kernel_kib=8
+    local kernel_kib=8 window=20
+    local -a extra=()
     [ "$profile" = "connections-1m-tls" ] && kernel_kib=16
-    timeout $(( warm + CONN5M_SETTLE + 20 + 300 )) python3 "$SCRIPT_DIR/conn_hold.py" \
+    if [ "$profile" = "connections-ramp-h1" ]; then
+        window="$CONNRAMP_WINDOW"
+        extra=(--ramp-p99-us "$CONNRAMP_P99_US" --idle-min-s "$CONNRAMP_IDLE_MIN")
+    fi
+    timeout $(( warm + CONN5M_SETTLE + window + 300 )) python3 "$SCRIPT_DIR/conn_hold.py" \
         --profile "$profile" --conns "$conns" --rate "$rate" --port "$hport" \
         --probe "127.0.0.2,127.0.0.$addrs" --span "127.0.0.1-127.0.0.$addrs" \
         ${cpu_stat:+--cpu-stat "$cpu_stat"} --server-mem "${FRAMEWORK_MEM_LIMIT:-$mem}" \
-        --kib-per-conn 4 --kernel-kib-per-conn "$kernel_kib" \
+        --kib-per-conn 4 --kernel-kib-per-conn "$kernel_kib" "${extra[@]}" \
         -- "${prefix[@]}" --args-- "$@" || true
 }
 
@@ -237,6 +284,13 @@ print("target_rate=%d" % (d.get("target_rate") or 0))
 print("max_schedule_lag_us=%d" % (d.get("max_schedule_lag_us") or 0))
 if d.get("connections_open") is not None:
     print("connections_open=%d" % d["connections_open"])
+# connections-ramp-h1: how far the ramp got before the active connections' p99
+# went over the limit, and why it ended there (conn_hold.py ramp_summary).
+ramp = d.get("ramp")
+if ramp:
+    print("ramp_reached=%d" % (ramp.get("reached") or 0))
+    print("ramp_stop=%s" % (ramp.get("stop") or ""))
+    print("idle_closed=%d" % (ramp.get("idle_closed") or 0))
 print("connect_errors=%d" % ((d.get("errors") or {}).get("connect") or 0))
 if d.get("server_cpu_usec") is not None:
     print("cpu_usec_window=%d" % d["server_cpu_usec"])
@@ -251,7 +305,7 @@ gcannon_parse() {
     local endpoint="$1" output="$2"
 
     case "$endpoint" in
-        connections-5m|connections-1m-tls)
+        connections-5m|connections-1m-tls|connections-ramp-h1)
             _gcannon_hold_parse "$output"
             return 0
             ;;

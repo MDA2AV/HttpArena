@@ -3,7 +3,7 @@
 the held-connection profiles `connections-1m`, `connections-1m-tls` and
 `connections-5m` (CON-1M, CON-1M-TLS, CON-5M).
 
-Every other profile here ranks on one number, requests per second. This one
+Every other profile here ranks on one number, requests per second. These
 cannot: the rate is pinned, so every entry that finishes serves the same load
 and the interesting differences are in what it cost and how the tail behaved.
 
@@ -63,6 +63,20 @@ are plain ratios; both latencies get the three-decade scale the p99 has above.
 The rate factor still applies: a connection that never opened sends nothing, so
 a fleet only partly held shows up as a shortfall in the rate.
 
+CON-RAMP (`connections-ramp-h1`) is not a steady load. Two million connections
+open over two minutes, 95% of them idle, and the score is how far the ramp got
+before the active connections' p99 went over the limit, as a share of the two
+million:
+
+    score = 100 * min(1, reached / FULL_RATE[profile])
+
+`reached` is every connection opened by the last interval that held the limit
+(conn_hold.py ramp_summary), idle ones included, whether or not the server has
+closed some of them since: closing one is a server doing its job, once it has
+kept it 30 seconds (a server that closes them younger ends its own ramp), and is
+reported beside it. No ratio against the field's best: the limit is fixed and so
+is the target.
+
 Two modes:
 
     latency_score.py --pick <dir> [--profile P]   best of N runs (benchmark.sh)
@@ -96,6 +110,9 @@ FULL_RATE = {
     # same way.
     "connections-1m-tls": 237_500.0,
     "connections-1m": 237_500.0,
+    # CON-RAMP is scored on the connections reached, not on a rate: full credit
+    # is the whole fleet.
+    "connections-ramp-h1": 2_000_000.0,
 }
 DEFAULT_PROFILE = "latency-1m"
 W_CPU, W_P99, W_MEAN = 0.50, 0.25, 0.25
@@ -108,6 +125,11 @@ MEAN_DECADES = 1.0   # mean: ten times the best is zero
 HELD = frozenset({"connections-1m", "connections-1m-tls", "connections-5m"})
 H_CPU, H_MEM, H_P50, H_P99 = 0.25, 0.25, 0.25, 0.25
 HELD_DECADES = 3.0   # p50 and p99: a third of the term per decade above the best
+
+# connections-ramp-h1 (CON-RAMP): how many connections the ramp reached within the
+# p99 limit, against the whole fleet. Keep in step with LAT_RAMP in
+# site/leaderboard/index.html.
+RAMP = frozenset({"connections-ramp-h1"})
 
 
 def to_us(value) -> float | None:
@@ -161,7 +183,7 @@ def linear_score(value: float | None, best: float | None) -> float:
 
 def score_rows(rows: list[dict], profile: str = DEFAULT_PROFILE) -> list[dict]:
     """Annotate rows with their score. Each row needs rps, cpu, p99, mean - and
-    mem and p50 on the held-connection profiles.
+    mem and p50 on the held-connection profiles, and reached on CON-RAMP.
 
     Bests are taken over the rows given, so a caller scoring one framework's
     three runs gets them normalised against each other, and a caller scoring the
@@ -170,6 +192,11 @@ def score_rows(rows: list[dict], profile: str = DEFAULT_PROFILE) -> list[dict]:
     def best_of(key):
         vals = [r[key] for r in rows if r.get(key)]
         return min(vals) if vals else None
+
+    if profile in RAMP:
+        for r in rows:
+            r["score"] = 100.0 * _clamp((r.get("reached") or 0) / FULL_RATE[profile])
+        return rows
 
     if profile in HELD:
         b_cpu, b_mem = best_of("cpu"), best_of("mem")
@@ -235,6 +262,8 @@ def pick(dirpath: str, profile: str = DEFAULT_PROFILE) -> int | None:
             # the run's peak memory (benchmark.sh writes stats_mem per run).
             "p50": to_us(kv.get("p50_lat")),
             "mem": to_mib(meta.get("stats_mem")),
+            # CON-RAMP: how far the ramp got (conn_hold.py ramp_summary).
+            "reached": float(kv.get("ramp_reached") or 0),
         })
     if not rows:
         return None
@@ -262,12 +291,23 @@ def table(results_dir: Path, profile: str = DEFAULT_PROFILE) -> None:
                 "mean": to_us(r.get("avg_latency")),
                 "p50": to_us(r.get("p50_latency")),
                 "mem": to_mib(r.get("memory")),
+                "reached": r.get("ramp_reached") or 0,
             })
     if not rows:
         print(f"no {profile} results found", file=sys.stderr)
         return
     score_rows(rows, profile)
     rows.sort(key=lambda r: -r["score"])
+    if profile in RAMP:
+        print("%-24s %7s %11s %9s %11s %11s" %
+              ("framework", "score", "reached", "us/req", "mem MiB", "p99"))
+        for r in rows:
+            print("%-24s %7.1f %11d %9s %11s %11s" % (
+                r["fw"], r["score"], r["reached"],
+                "-" if r["cpu"] is None else f"{r['cpu']:.1f}",
+                "-" if r["mem"] is None else f"{r['mem']:.0f}",
+                "-" if r["p99"] is None else f"{r['p99']:.0f}"))
+        return
     if profile in HELD:
         print("%-24s %7s %7s %9s %10s %11s %11s" %
               ("framework", "score", "rate", "us/req", "mem MiB", "p50", "p99"))

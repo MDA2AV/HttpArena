@@ -1993,7 +1993,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     setupTopScroll(); setupFloatHead();
   }
 
-  function val(r,k){ if(k==='rps')return r.rps||0; if(k==='held')return r.connections_open!=null?+r.connections_open:0; if(k==='bw')return bw(r.bandwidth); if(k==='bwreq'){var b=bw(r.bandwidth),q=r.rps||0;return q>0?b/q:0;} if(k==='inbw')return bw(r.input_bw); if(k==='avg')return lat(r.avg_latency); if(k==='p99')return lat(r.p99_latency); if(k==='p50')return lat(r.p50_latency); if(k==='l1mscore')return latScore(state.profile,r.fw); if(k==='p999')return lat(r.p99_9_latency); if(k==='cpureq')return (r.cpu_per_req_us!=null)?+r.cpu_per_req_us:Infinity; if(k==='cputot'){var t=cpuTotPct(r); return t==null?Infinity:t;} if(k==='cpu')return cpu(r.cpu); if(k==='mem')return mem(r.memory); if(k==='fw')return (r.fw||'').toLowerCase(); return 0; }
+  function val(r,k){ if(k==='rps')return r.rps||0; if(k==='held')return r.connections_open!=null?+r.connections_open:0; if(k==='reached')return +r.ramp_reached||0; if(k==='shed')return +r.idle_closed||0; if(k==='bw')return bw(r.bandwidth); if(k==='bwreq'){var b=bw(r.bandwidth),q=r.rps||0;return q>0?b/q:0;} if(k==='inbw')return bw(r.input_bw); if(k==='avg')return lat(r.avg_latency); if(k==='p99')return lat(r.p99_latency); if(k==='p50')return lat(r.p50_latency); if(k==='l1mscore')return latScore(state.profile,r.fw); if(k==='p999')return lat(r.p99_9_latency); if(k==='cpureq')return (r.cpu_per_req_us!=null)?+r.cpu_per_req_us:Infinity; if(k==='cputot'){var t=cpuTotPct(r); return t==null?Infinity:t;} if(k==='cpu')return cpu(r.cpu); if(k==='mem')return mem(r.memory); if(k==='fw')return (r.fw||'').toLowerCase(); return 0; }
   function fmtBytes(n){ if(n>=1048576)return (n/1048576).toFixed(2)+' MB'; if(n>=1024)return (n/1024).toFixed(1)+' KB'; return Math.round(n)+' B'; }
   // Explorer columns - profile-specific (json-comp adds BW/req, upload adds In BW);
   // low-priority columns drop out below width breakpoints so the grid never overflows.
@@ -2005,11 +2005,11 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // Offered rate that earns the whole rate factor, per profile. 95% of target:
   // the generator never quite reaches its own number, so the threshold has to
   // sit below it. Mirrors FULL_RATE in scripts/latency_score.py.
-  var LAT_FULL={'latency-1m':950000, 'latency-10k':9500, '8gbit':47500, 'connections-5m':1187500, 'connections-1m-tls':237500, 'connections-1m':237500};
+  var LAT_FULL={'latency-1m':950000, 'latency-10k':9500, '8gbit':47500, 'connections-5m':1187500, 'connections-1m-tls':237500, 'connections-1m':237500, 'connections-ramp-h1':2000000};
   // Logical CPUs each fixed-rate profile is pinned to, per scripts/lib/profiles.sh:
   // cpuset 0-31,64-95 is 32 cores with both threads, so 64. Used to turn CPU-per-request
   // into "how much of the machine it was allowed did this take".
-  var LAT_CPUS={'latency-1m':64, 'latency-10k':64, '8gbit':64, 'connections-5m':64, 'connections-1m-tls':64, 'connections-1m':64};
+  var LAT_CPUS={'latency-1m':64, 'latency-10k':64, '8gbit':64, 'connections-5m':64, 'connections-1m-tls':64, 'connections-1m':64, 'connections-ramp-h1':64};
   // CPU microseconds per second / 1e6 = cores in use; over the allowance = 0-100%.
   function cpuTotPct(r,pid){
     if(r==null||r.cpu_per_req_us==null) return null;
@@ -2022,6 +2022,9 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // ratios, p50 and p99 on the three-decade scale. Mirrors HELD in scripts/latency_score.py.
   var LAT_HELD={'connections-1m':1, 'connections-1m-tls':1, 'connections-5m':1};
   var HELD_W_CPU=0.25, HELD_W_MEM=0.25, HELD_W_P50=0.25, HELD_W_P99=0.25;
+  // CON-RAMP: how many connections the ramp reached within the p99 limit, out of
+  // the whole fleet. Mirrors RAMP in scripts/latency_score.py.
+  var LAT_RAMP={'connections-ramp-h1':1};
   var _latScores={};
   function isLatProfile(pid){ return Object.prototype.hasOwnProperty.call(LAT_FULL,pid); }
   function clamp01(v){ return v<0?0:v>1?1:v; }
@@ -2044,6 +2047,11 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   }
   function latBuild(pid, rows){
     var out={}; _latScores[pid]=out;
+    if(LAT_RAMP[pid]){
+      var rfull=LAT_FULL[pid]||1;
+      rows.forEach(function(r){ out[r.fw]=100*clamp01((+r.ramp_reached||0)/rfull); });
+      return;
+    }
     if(LAT_HELD[pid]){
       var hc=Infinity,hm=Infinity,h5=Infinity,h9=Infinity, hfull=LAT_FULL[pid]||1;
       rows.forEach(function(r){
@@ -2101,6 +2109,17 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     // exact one. Avg latency stays: it replaced p99.9 in the score and is the
     // queueing signal this view has to show. Dropping the other two buys the
     // name back ~200px and loses no information.
+    if(LAT_RAMP[state.profile]){
+      c.push({k:'l1mscore', label:'Score', num:true, w:'92px', min:0, tip:'0-100: the connections reached before the active ones\u2019 p99 went over 2 ms, as a share of the two million the ramp opens. Higher is better.'});
+      c.push({k:'reached', label:'Reached', num:true, w:'112px', min:0, tip:'Every connection opened by the last interval that held the 2 ms p99, idle ones included, whether or not the server has closed some of them since. An idle connection has to be kept 30 seconds first.'});
+      c.push({k:'held', label:'Peak open', num:true, w:'112px', min:0, tip:'The most connections open at once, in any interval up to then. With a keep-alive timeout shorter than the ramp the server closes idle ones, so this is below Reached.'});
+      c.push({k:'shed', label:'Closed', num:true, w:'100px', min:520, tip:'Idle connections the server had closed by then: how it sheds what it is not using.'});
+      c.push({k:'cpureq', label:'CPU / req', num:true, w:'110px', min:640, tip:'CPU microseconds the server spent per request over the whole run, read exactly out of its cgroup rather than sampled.'});
+      c.push({k:'mem', label:'Mem', num:true, w:'92px', min:0, tip:'The server container\u2019s peak memory across the run.'});
+      c.push({k:'p50', label:'p50', num:true, w:'92px', min:820, tip:'Median latency of the active connections over the whole run, coordinated-omission corrected.'});
+      c.push({k:'p99', label:'p99', num:true, w:'92px', min:0, tip:'99th-percentile latency of the active connections over the whole run. The limit the ramp is stopped at is per interval.'});
+      return c.filter(function(x){ return W>=x.min; });
+    }
     if(LAT_HELD[state.profile]){
       c.push({k:'l1mscore', label:'Score', num:true, w:'92px', min:0, tip:'0-100. rateFactor \u00d7 (0.25\u00d7CPU per request + 0.25\u00d7memory + 0.25\u00d7p50 + 0.25\u00d7p99), each measured against the best in the field. rateFactor is 1 at 95% of the offered rate and falls proportionally below it. Higher is better.'});
       c.push({k:'rps', label:'Requests / sec', num:true, w:'minmax(150px,1fr)', min:0, tip:TIP.rps});
@@ -2145,6 +2164,8 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     if(k==='cpureq') return '<div class="c num sub">'+(r.cpu_per_req_us!=null?esc((+r.cpu_per_req_us).toFixed(2))+' \u00b5s':'-')+'</div>';
     if(k==='cputot'){ var t=cpuTotPct(r,state.profile); return '<div class="c num sub">'+(t==null?'-':esc(t.toFixed(1))+'%')+'</div>'; }
     if(k==='held') return '<div class="c num sub">'+(r.connections_open!=null?fmt(+r.connections_open):'-')+'</div>';
+    if(k==='reached') return '<div class="c num sub">'+(r.ramp_reached!=null?fmt(+r.ramp_reached):'-')+'</div>';
+    if(k==='shed') return '<div class="c num sub">'+(r.idle_closed!=null?fmt(+r.idle_closed):'-')+'</div>';
     if(k==='avg') return '<div class="c num sub">'+esc(r.avg_latency||'-')+'</div>';
     if(k==='p99') return '<div class="c num sub">'+esc(r.p99_latency||'-')+'</div>';
     if(k==='p50') return '<div class="c num sub">'+esc(r.p50_latency||'-')+'</div>';

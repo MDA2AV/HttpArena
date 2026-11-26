@@ -404,6 +404,10 @@ if (cluster.isPrimary) {
 
     const server = http.createServer(handle);
 
+    // connections-ramp-h1 wants an idle connection kept for at least 30 seconds;
+    // node closes it after 5 by default (plus the second of keepAliveTimeoutBuffer).
+    server.keepAliveTimeout = 35_000;
+
     // Scaling is cluster to fork the workers, but not its round robin: with reusePort
     // every worker binds 8080 itself with SO_REUSEPORT and the kernel spreads the
     // accepts, the way bun and deno do it. node sets exclusive on its own when

@@ -16,7 +16,7 @@
   </PropertyGroup>
 
   <!-- GenHTTP from source, cloned by the Dockerfile into GenHttpSource (see there). Its
-       GenHTTP.Engine.Ioxide pins ioxide 0.26.563; ioxide.pg and ioxide.timer below are built
+       GenHTTP.Engine.Ioxide pins ioxide 0.30.660; ioxide.pg and ioxide.timer below are built
        against the same ioxide, so they move with it. -->
   <PropertyGroup>
     <GenHttpSource Condition="'$(GenHttpSource)' == ''">/genhttp</GenHttpSource>
@@ -33,9 +33,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ioxide.pg" Version="0.26.563" />
+    <PackageReference Include="ioxide.pg" Version="0.30.660" />
     <!-- Ring-native timeouts for /delay: the wait completes on the reactor, not the thread pool. -->
-    <PackageReference Include="ioxide.timer" Version="0.26.563" />
+    <PackageReference Include="ioxide.timer" Version="0.30.660" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="11.0.0-preview.5.26302.115" />
   </ItemGroup>
 

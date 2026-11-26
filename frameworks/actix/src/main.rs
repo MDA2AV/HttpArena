@@ -408,6 +408,10 @@ async fn main() -> io::Result<()> {
     // even the default cap of its 2-CPU box - so only the held-connection
     // profiles ever reach it.
     .max_connections(100_000)
+    // connections-ramp-h1 wants an idle connection kept for at least 30 seconds.
+    // actix's default is 5 s, timed on a clock that ticks every 500 ms, so 35
+    // clears the 30 by more than that tick.
+    .keep_alive(std::time::Duration::from_secs(35))
     .tcp_nodelay(true)
     .bind("0.0.0.0:8080")?;
 

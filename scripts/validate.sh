@@ -1251,7 +1251,7 @@ wait_h2() {
 # The fixed-rate profiles drive GET /baseline11, so they need the same
 # handler to be correct and gets its coverage from this section rather than
 # one of its own -- there is nothing about it a request-shaped check can see.
-if has_test "baseline" || has_test "limited-conn" || has_test "latency-1m" || has_test "latency-10k" || has_test "connections-5m" || has_test "connections-1m-tls" || has_test "connections-1m"; then
+if has_test "baseline" || has_test "limited-conn" || has_test "latency-1m" || has_test "latency-10k" || has_test "connections-5m" || has_test "connections-1m-tls" || has_test "connections-1m" || has_test "connections-ramp-h1"; then
     BASELINE_DOCS="$DOCS_BASE/h1/baseline/validation"
     echo "[test] baseline endpoints"
     check "GET /baseline11?a=13&b=42" "55" "$BASELINE_DOCS" \
@@ -1355,18 +1355,38 @@ fi
 # ───── Held connections: a listener on every loopback address ─────
 
 # connections-5m spreads its five million connections over 127.0.0.1-
-# 127.0.0.160 (connections-1m its million over .1-.32), because one source
-# address holds at most ~64K connections to one destination. A server bound to
+# 127.0.0.160 (connections-1m its million over .1-.32, connections-ramp-h1 its
+# two million over .1-.64), because one source address holds at most ~64K
+# connections to one destination. A server bound to
 # 127.0.0.1 or "localhost" passes every check above and refuses all of these
 # but the first, so the profiles ask for a listener on 0.0.0.0 or [::] and this
 # is where an entry finds out. Both ends of the widest range.
 HELD_DOCS="$DOCS_BASE/h1/connections/validation"
-if has_test "connections-5m" || has_test "connections-1m"; then
+if has_test "connections-5m" || has_test "connections-1m" || has_test "connections-ramp-h1"; then
     echo "[test] held connections: listener on every address"
     check "GET /baseline11 on 127.0.0.2" "55" "$HELD_DOCS" \
         "http://127.0.0.2:$PORT/baseline11?a=13&b=42"
     check "GET /baseline11 on 127.0.0.160" "55" "$HELD_DOCS" \
         "http://127.0.0.160:$PORT/baseline11?a=13&b=42"
+fi
+# connections-ramp-h1: 95% of its two million connections are idle after one
+# request. A server may close an idle connection, but has to keep it for 30
+# seconds first: with a five second keep-alive it holds a few percent of the fleet
+# and the profile measures how fast it can churn connections instead of how many
+# it can carry. The check waits 29 s - a second for timers that run coarse - and
+# the run is held to the same (scripts/conn_hold.py, idle_age).
+if has_test "connections-ramp-h1"; then
+    echo "[test] connections-ramp-h1: idle connections kept for 30 seconds"
+    IDLE_OUTPUT=$(python3 "$SCRIPT_DIR/validate-keepalive.py" localhost "$PORT" 29 2>&1) || true
+    echo "$IDLE_OUTPUT"
+    # A helper that died before its summary line is a failure, not a skip.
+    IDLE_PASS=$(printf '%s\n' "$IDLE_OUTPUT" | grep -oP '\d+(?= passed)' | tail -1 || true)
+    IDLE_FAIL=$(printf '%s\n' "$IDLE_OUTPUT" | grep -oP '\d+(?= failed)' | tail -1 || true)
+    PASS=$((PASS + ${IDLE_PASS:-0}))
+    FAIL=$((FAIL + ${IDLE_FAIL:-1}))
+    if [ "${IDLE_FAIL:-1}" -gt 0 ]; then
+        echo "        → $DOCS_BASE/h1/connections-ramp/validation"
+    fi
 fi
 # connections-1m-tls: a million over TLS on the h1 TLS port (127.0.0.1-.32),
 # where the baseline GET has to answer too, and over TLS 1.3 - the only
