@@ -4,9 +4,9 @@
 
 ## Stack
 
-- **Language:** Valk 0.9.3
-- **Framework:** standard library (`valk.http`, `valk.json`, `valk.template`, `valk.fs`, `valk.time`) + `valk-postgres`, `valk-protobuf`, `valk-sql`
-- **Build:** official Valk 0.9.3 release tarball on `ubuntu:24.04`, compiled with `valk build src -o /server --release --static`
+- **Language:** Valk 0.10.0
+- **Framework:** standard library (`valk.http`, `valk.json`, `valk.template`, `valk.fs`, `valk.time`) + `valk-grpc`, `valk-postgres`, `valk-protobuf`, `valk-sql`
+- **Build:** official Valk 0.10.0 release tarball on `ubuntu:24.04`, compiled with `valk build src -o /server --release --static`
 
 ## Listeners & Endpoints
 
@@ -21,6 +21,6 @@
 
 - **Routing:** `http.Router` with method and `@param` pattern matching (`route.param`)
 - **Middleware:** `http.Server.add_middleware` composable request/response pipeline
-- **Request:** parsed `http.Request` exposing method, path, query parameters, headers, and buffered or streamed body
+- **Request:** parsed `http.Request` exposing method, path, query parameters, headers and body
 - **Response:** declarative `http.Response` (`text`, `json_of`, custom body/content-type), built-in per-request gzip compression (`server.compress = true`), and `server.add_static_dir` (tracks disk mtime/size and serves pre-compressed `.br` / `.gz` sidecars when available)
 - **Event loop:** per-worker `io_uring` event loop with automatic `epoll` fallback when `io_uring` is unavailable, sharing ports via `SO_REUSEPORT` (`server.reuse_port = true`) with one worker per logical CPU

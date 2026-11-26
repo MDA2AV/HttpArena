@@ -10,7 +10,7 @@
     "response": true
   },
   "engine": "valk.http",
-  "description": "Valk's standard library HTTP/1.1, HTTP/2, HTTP/3 and WebSocket server (io_uring with epoll fallback), built-in router, JSON serializer, template engine, static file server, response compression, valk-postgres and valk-protobuf.",
+  "description": "Valk's standard library HTTP/1.1, HTTP/2, HTTP/3 and WebSocket server (io_uring with epoll fallback), built-in router, JSON serializer, template engine, static file server, response compression, valk-grpc, valk-postgres and valk-protobuf.",
   "repo": "https://github.com/valk-lang/valk",
   "website": "https://valk-lang.dev",
   "enabled": true,
