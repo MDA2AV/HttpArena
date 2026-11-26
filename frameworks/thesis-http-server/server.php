@@ -106,6 +106,38 @@ $router = new Router([
         headers: ['Content-Type' => 'application/octet-stream'],
         body: $request->takeBody(),
     )),
+    Route::get('/spec', static fn() => new Response(headers: ['Content-Type' => 'text/plain'], body: 'spec ok')),
+    Route::options('/spec', static function (Request $request) {
+        $request->takeBody()->discard();
+
+        return new Response(headers: ['Allow' => 'GET, HEAD, POST, OPTIONS']);
+    }),
+    Route::post('/spec', static fn(Request $request) => new Response(
+        headers: ['Content-Type' => 'application/octet-stream'],
+        body: $request->takeBody(),
+    )),
+    new Route([Method::GET, Method::POST], '/spec/headers', static function (Request $request) {
+        $request->takeBody()->discard();
+
+        $lines = [];
+        $host = $request->uri->getRawHost();
+
+        if ($host !== null) {
+            $port = $request->uri->getPort();
+            $lines[] = 'Host: ' . $host . ($port === null ? '' : ":{$port}");
+        }
+
+        foreach ($request->headers as $name => $values) {
+            foreach ($values as $value) {
+                $lines[] = "{$name}: {$value}";
+            }
+        }
+
+        return new Response(
+            headers: ['Content-Type' => 'text/plain'],
+            body: implode("\n", $lines),
+        );
+    }),
     new StaticFiles('/data/static')->route(prefix: '/static'),
 ]);
 

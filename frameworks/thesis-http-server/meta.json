@@ -24,5 +24,13 @@
     "middleware": true,
     "request": true,
     "response": true
-  }
+  },
+  "maintainers": [
+    "vudaltsov"
+  ],
+  "tls_check": false,
+  "resilience": false,
+  "spec": [
+    "h1"
+  ]
 }

@@ -4,7 +4,7 @@ RUN docker-php-ext-install pcntl
 FROM extensions AS dependencies
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 WORKDIR /app
-ARG THESIS_REV=dac45580f230f6fb3659f0f05acbe59a7982d2a3
+ARG THESIS_REV=2b2bc1126676f5dd288f0403976fab863c8838aa
 RUN mkdir thesis \
     && curl -fsSL --retry 3 "https://codeload.github.com/thesis-php/thesis/tar.gz/${THESIS_REV}" -o /tmp/thesis.tar.gz \
     && tar -xzf /tmp/thesis.tar.gz -C thesis --strip-components=1
