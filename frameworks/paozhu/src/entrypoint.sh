@@ -19,6 +19,71 @@ if [ -f /certs/server.crt ] && [ -f /certs/server.key ]; then
     done
 fi
 
+http_ioc_count() {
+    local key value item first last quota period quota_cpus
+    local allowed=""
+    local count=0
+    local -a ranges
+
+    if [ -r /proc/self/status ]; then
+        while IFS=: read -r key value; do
+            if [ "$key" = "Cpus_allowed_list" ]; then
+                allowed="$value"
+                break
+            fi
+        done < /proc/self/status
+    fi
+    if [ -z "$allowed" ] && [ -r /sys/devices/system/cpu/online ]; then
+        read -r allowed < /sys/devices/system/cpu/online || true
+    fi
+    if [ -z "$allowed" ]; then
+        allowed=$(getconf _NPROCESSORS_ONLN 2>/dev/null || printf '1')
+        if [[ "$allowed" =~ ^[0-9]+$ ]] && [ "$allowed" -gt 0 ]; then
+            allowed="0-$((allowed - 1))"
+        fi
+    fi
+
+    IFS=, read -r -a ranges <<< "$allowed"
+    for item in "${ranges[@]}"; do
+        item="${item//[[:space:]]/}"
+        if [[ "$item" == *-* ]]; then
+            first="${item%-*}"
+            last="${item#*-}"
+        else
+            first="$item"
+            last="$item"
+        fi
+        if [[ "$first" =~ ^[0-9]+$ && "$last" =~ ^[0-9]+$ ]]; then
+            count=$((count + last - first + 1))
+        fi
+    done
+    if [ "$count" -lt 1 ]; then count=1; fi
+
+    quota_cpus=0
+    if [ -r /sys/fs/cgroup/cpu.max ]; then
+        if read -r quota period < /sys/fs/cgroup/cpu.max; then
+            if [[ "$quota" =~ ^[0-9]+$ && "$period" =~ ^[0-9]+$ ]] &&
+               [ "$quota" -gt 0 ] && [ "$period" -gt 0 ]; then
+                quota_cpus=$(((quota + period - 1) / period))
+            fi
+        fi
+    elif [ -r /sys/fs/cgroup/cpu/cpu.cfs_quota_us ] &&
+         [ -r /sys/fs/cgroup/cpu/cpu.cfs_period_us ]; then
+        quota=""
+        period=""
+        read -r quota < /sys/fs/cgroup/cpu/cpu.cfs_quota_us || true
+        read -r period < /sys/fs/cgroup/cpu/cpu.cfs_period_us || true
+        if [[ "$quota" =~ ^[0-9]+$ && "$period" =~ ^[0-9]+$ ]] &&
+           [ "$quota" -gt 0 ] && [ "$period" -gt 0 ]; then
+            quota_cpus=$(((quota + period - 1) / period))
+        fi
+    fi
+    if [ "$quota_cpus" -gt 0 ] && [ "$quota_cpus" -lt "$count" ]; then
+        count=$quota_cpus
+    fi
+    printf '%s\n' "$count"
+}
+
 # HttpArena injects DATABASE_URL / DATABASE_MAX_CONN only for the DB profiles.
 # startup_orm_init() unconditionally reads <conf dir>/orm.conf, so render
 # src/conf/orm.conf into the main instance's conf dir from the environment
@@ -40,11 +105,30 @@ if [ -n "${DATABASE_URL:-}" ]; then
     if [ "$db_max" -lt 8 ]; then db_max=8; fi
     if [ "$db_max" -gt 256 ]; then db_max=256; fi
     # The DB profiles only SELECT and the edit pool has maxpool=0/minpool=0,
-    # so the full budget belongs to the select pool, matching ntex's 256.
+    # so the full budget belongs to the select pool.
     db_select_max=$db_max
-    # Shared ORM mode uses the HTTP iocs: the DB server cpuset provides 32.
-    # minpool is per slot; ceil(256 / 32) = 8 prebuilds all 256 connections.
-    db_select_min=$(( (db_select_max + 31) / 32 ))
+    http_iocs=$(http_ioc_count)
+    co_cap=0
+    ioc_cap=4
+    if [ -r /app/conf/main/server.conf ]; then
+        while IFS='=' read -r key value; do
+            key="${key//[[:space:]]/}"
+            value="${value%%;*}"
+            value="${value//[[:space:]]/}"
+            if [ "$key" = "cothreadnum" ] && [[ "$value" =~ ^[0-9]+$ ]]; then
+                co_cap=$value
+            elif [ "$key" = "ioc_thread_num" ] && [[ "$value" =~ ^[0-9]+$ ]]; then
+                ioc_cap=$value
+                if [ "$ioc_cap" -lt 1 ]; then ioc_cap=1; fi
+            fi
+        done < /app/conf/main/server.conf
+    fi
+    if [ "$co_cap" -gt 0 ] && [ "$co_cap" -lt "$http_iocs" ]; then
+        http_iocs=$co_cap
+    fi
+    if [ "$http_iocs" -lt 4 ]; then http_iocs=4; fi
+    if [ "$http_iocs" -gt "$ioc_cap" ]; then http_iocs=$ioc_cap; fi
+    db_select_min=$((db_select_max / http_iocs))
     if [ "$db_select_min" -lt 1 ]; then db_select_min=1; fi
 
     # Bash parameter substitution, not sed: passwords may contain '&', '\'

@@ -29,7 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Pinned so mini_project.sh, the controller generator and the CMake entry point
 # stay in sync with the scaffold this entry was written against.
-ARG PAOZHU_REF=31ce07483d5d4484a9282afbf7b964429c60d42d
+ARG PAOZHU_REF=c7e9f60d5a7907f077d3c6ffd97ba321801448af
 WORKDIR /paozhu
 # Prefer a source archive shipped in the build context (offline / slow-GitHub
 # environments); otherwise fetch the pinned revision from codeload. The direct
