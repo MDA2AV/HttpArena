@@ -15,6 +15,7 @@ This entry runs viltrum with its default configuration (standard mode).
 | connections-1m-tls | `GET /baseline11` on 8081 | the same over TLS 1.3 |
 | json-tls | `GET /json/:count?m=` on 8081 | the json-comp handler; the client sends no `Accept-Encoding`, so nothing is compressed |
 | 8gbit | `POST /echo` on 8081 | `c.body()` (Content-Length or chunked) back through `c.bytes` |
+| static-tls | `GET /static/*` on 8081 | the static-h2 handler (below) over HTTP/1.1 and TLS 1.3 |
 | async-db | `GET /async-db?min=&max=&limit=` | our own Postgres client (wire protocol, SCRAM-SHA-256), one thread per connection, sized from `DATABASE_MAX_CONN`; the worker parks with `c.suspend` until `app.wake` |
 | fortunes | `GET /fortunes` | the async-db pool and parking; the page is rendered on the worker with V's compile-time template (`fortunes.html`) |
 | baseline-h2 | `GET /baseline2` on 8443 | HTTP/2 over TLS, chosen by ALPN; the same handler and `Ctx` as HTTP/1.1 |
@@ -59,6 +60,5 @@ file, run per request). One caveat: `$tmpl` escapes HTML only inside veb's `$veb
 to a veb context, so `fortunes.html` calls `html.escape` (V's `encoding.html`) on the message itself
 rather than relying on an escaping default.
 
-`main.v` also has the routes the reference and gateway profiles use (`static-tls` on 8081, the
-`gateway-64` server behind `benches/httparena/compose.gateway.yml` in the viltrum repo), but the entry
-does not subscribe to them.
+`main.v` also has the `gateway-64` server behind `benches/httparena/compose.gateway.yml` in the
+viltrum repo, but the entry does not subscribe to it.
