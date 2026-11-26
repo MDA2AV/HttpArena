@@ -10,7 +10,8 @@
         ssl,
         epgsql,
         ecpool,
-        roadrunner
+        roadrunner,
+        roadrunner_grpc_protobuf
     ]},
     {env, []},
     {modules, []},

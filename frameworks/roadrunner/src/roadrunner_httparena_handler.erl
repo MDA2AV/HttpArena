@@ -23,6 +23,8 @@ routes() ->
             middlewares => [roadrunner_compress]
         },
         {~"/echo", ?MODULE, echo},
+        %% The resilience suite's parser attacks post here.
+        #{path => ~"/parse", handler => ?MODULE, state => parse, methods => [~"POST"]},
         {~"/async-db", ?MODULE, async_db},
         #{
             path => ~"/fortunes",
@@ -31,6 +33,10 @@ routes() ->
             middlewares => [roadrunner_compress]
         },
         {~"/ws", ?MODULE, ws},
+        %% The protocol-compliance suites (Http11Probe, h2spec) run
+        %% against these.
+        {~"/spec", ?MODULE, spec},
+        {~"/spec/headers", ?MODULE, spec_headers},
         #{
             path => ~"/static/*path",
             handler => roadrunner_static,
@@ -76,10 +82,16 @@ handle_route(json, Req) ->
     json_endpoint(Req);
 handle_route(echo, Req) ->
     echo_endpoint(Req);
+handle_route(parse, Req) ->
+    parse_endpoint(Req);
 handle_route(async_db, Req) ->
     async_db_endpoint(Req);
 handle_route(fortunes, Req) ->
     fortunes_endpoint(Req);
+handle_route(spec, Req) ->
+    spec_endpoint(roadrunner_req:method(Req), Req);
+handle_route(spec_headers, Req) ->
+    spec_headers_endpoint(Req);
 handle_route(ws, Req) ->
     {{websocket, roadrunner_httparena_ws, undefined}, Req};
 handle_route(item_get, Req) ->
@@ -162,6 +174,88 @@ echo_endpoint(Req) ->
             ],
             Body},
     {Resp, Req2}.
+
+%% The body is inflated per its `Content-Encoding` (roadrunner does not
+%% decode request bodies itself), at most the default
+%% `max_content_length` of it, then parsed with what its `Content-Type`
+%% names: `json:decode/1`, `roadrunner_qs:parse/1` into a map, or
+%% `roadrunner_multipart:parse/2`. Anything else is only buffered.
+-define(MAX_INFLATED, 10485760).
+
+parse_endpoint(Req) ->
+    {ok, Body, Req2} = roadrunner_req:read_body(Req),
+    Status =
+        maybe
+            {ok, Data} ?= decode_body(roadrunner_req:header(~"content-encoding", Req2), Body),
+            ok ?= parse_body(roadrunner_req:header(~"content-type", Req2), Data),
+            200
+        end,
+    {roadrunner_resp:status(Status), Req2}.
+
+decode_body(undefined, Body) ->
+    {ok, iolist_to_binary(Body)};
+decode_body(Coding, Body) ->
+    case media_token(Coding) of
+        ~"identity" -> {ok, iolist_to_binary(Body)};
+        ~"gzip" -> inflate(31, Body);
+        ~"x-gzip" -> inflate(31, Body);
+        ~"deflate" -> inflate(15, Body);
+        _ -> 415
+    end.
+
+%% Window bits 31 read a gzip stream, 15 a zlib one (RFC 9110 §8.4.1.2).
+%% Inflating stops as soon as the output passes the cap.
+inflate(WindowBits, Body) ->
+    Z = zlib:open(),
+    try
+        ok = zlib:inflateInit(Z, WindowBits),
+        inflate_loop(zlib:safeInflate(Z, Body), Z, 0, [])
+    catch
+        error:_ -> 400
+    after
+        zlib:close(Z)
+    end.
+
+inflate_loop({Status, Out}, Z, Total0, Acc) ->
+    case Total0 + iolist_size(Out) of
+        Total when Total > ?MAX_INFLATED ->
+            413;
+        Total when Status =:= continue ->
+            inflate_loop(zlib:safeInflate(Z, []), Z, Total, [Acc, Out]);
+        _Total ->
+            ok = zlib:inflateEnd(Z),
+            {ok, iolist_to_binary([Acc, Out])}
+    end.
+
+parse_body(undefined, _Data) ->
+    ok;
+parse_body(ContentType, Data) ->
+    parse_as(media_token(ContentType), ContentType, Data).
+
+parse_as(~"application/json", _ContentType, Data) ->
+    try json:decode(Data) of
+        _Term -> ok
+    catch
+        error:_ -> 400
+    end;
+parse_as(~"application/x-www-form-urlencoded", _ContentType, Data) ->
+    _ = maps:from_list(roadrunner_qs:parse(Data)),
+    ok;
+parse_as(~"multipart/form-data", ContentType, Data) ->
+    maybe
+        {ok, Boundary} ?= roadrunner_multipart:boundary(ContentType),
+        {ok, _Parts} ?= roadrunner_multipart:parse(Data, Boundary),
+        ok
+    else
+        {error, _} -> 400
+    end;
+parse_as(_Other, _ContentType, _Data) ->
+    ok.
+
+%% A header value's first token (before any `;` parameters), lowercased.
+media_token(Value) ->
+    [Token | _] = binary:split(Value, ~";"),
+    string:lowercase(string:trim(Token)).
 
 async_db_endpoint(Req) ->
     Qs = roadrunner_req:parse_qs(Req),
@@ -271,3 +365,19 @@ leading_digits(_Rest, Acc, true) ->
 %% chunks), not one binary — flatten before parsing.
 body_int(Body) ->
     bin_int(iolist_to_binary(Body), 0).
+
+%% GET and HEAD share one response (roadrunner drops the body on HEAD),
+%% OPTIONS lists the methods, POST echoes the body like /echo.
+spec_endpoint(~"POST", Req) ->
+    echo_endpoint(Req);
+spec_endpoint(~"OPTIONS", Req) ->
+    {ok, _Body, Req2} = roadrunner_req:read_body(Req),
+    {{200, [{~"allow", ~"GET, HEAD, POST, OPTIONS"}, {~"content-length", ~"0"}], ~""}, Req2};
+spec_endpoint(_Method, Req) ->
+    {roadrunner_resp:text(200, ~"spec ok"), Req}.
+
+%% Every request header as received, one `Name: Value` line each.
+spec_headers_endpoint(Req) ->
+    {ok, _Body, Req2} = roadrunner_req:read_body(Req),
+    Lines = [[Name, ~": ", Value, ~"\n"] || {Name, Value} <- roadrunner_req:headers(Req2)],
+    {roadrunner_resp:text(200, Lines), Req2}.

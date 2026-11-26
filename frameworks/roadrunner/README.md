@@ -13,12 +13,9 @@ Covered:
 - `baseline-h2`, `static-h2`, `baseline-h2c`, `json-h2c`
 - `baseline-h3`, `static-h3`
 - `echo-ws`, `echo-ws-pipeline`, `echo-ws-limited`
+- `unary-grpc`, `unary-grpc-tls`: roadrunner's gRPC with Protocol Buffers from gpb
 
 `gateway-64`, `gateway-h3` and `production-stack` run this same server behind stock proxies, from the compose files in [`frameworks/roadrunner-gateway`](../roadrunner-gateway).
-
-Deferred (tracked under [HttpArena coverage gaps](https://github.com/arizona-framework/roadrunner/blob/main/docs/roadmap.md) in the roadrunner roadmap):
-
-- `unary-grpc` and its TLS variant: no gRPC stack.
 
 ## Build
 
