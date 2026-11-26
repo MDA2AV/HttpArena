@@ -5,11 +5,13 @@ FROM extensions AS dependencies
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 WORKDIR /app
 ARG THESIS_REV=2b2bc1126676f5dd288f0403976fab863c8838aa
-RUN mkdir thesis \
-    && curl -fsSL --retry 3 "https://codeload.github.com/thesis-php/thesis/tar.gz/${THESIS_REV}" -o /tmp/thesis.tar.gz \
-    && tar -xzf /tmp/thesis.tar.gz -C thesis --strip-components=1
+RUN apk add --no-cache git \
+    && git init -q thesis \
+    && git -C thesis fetch --depth=1 https://github.com/thesis-php/thesis.git "${THESIS_REV}" \
+    && git -C thesis checkout -q --detach "${THESIS_REV}"
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-interaction --no-plugins --no-scripts --classmap-authoritative
+RUN composer install --prefer-source --no-dev --no-interaction --no-plugins --no-scripts --classmap-authoritative \
+    && find vendor -name .git -prune -exec rm -rf {} +
 
 FROM php:8.6-cli-alpine
 COPY --from=extensions /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
