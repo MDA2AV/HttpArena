@@ -283,6 +283,20 @@
       "response": true
     }
   },
+  "barejs": {
+    "dir": "barejs",
+    "description": "JIT-specialized web framework for Bun with zero-allocation context pooling, built-in compression middleware, static file handler, and native WebSocket routing.",
+    "repo": "https://github.com/xarhang/bareJS",
+    "type": "emerging",
+    "engine": "bun",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "beskar-websocket": {
     "dir": "beskar-websocket",
     "description": "High-performance WebSocket echo server built with Beskar.Networking.",
