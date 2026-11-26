@@ -1,44 +1,55 @@
 //! `/fortunes`: rows from Postgres plus one added at request time, sorted by
-//! message and rendered through the Askama template `templates/fortunes.html`.
+//! message and rendered through the sailfish template `templates/fortunes.stpl`.
 
-use std::fmt;
+use std::ptr;
 
-use askama::{Template, filters::Escaper};
-use ntex::util::BytesMut;
+use ntex::util::Bytes;
 use ntex::web::HttpResponse;
+use ntex_bytes::{StorageExt, StorageVTable};
+use sailfish::{TemplateSimple, runtime::Buffer};
 
 use crate::db;
 
 /// The row every request appends to the database rows before sorting.
 const RUNTIME_MESSAGE: &str = "Additional fortune added at request time.";
 /// Room for the rendered 201-row page, so rendering never reallocates.
+/// The ~25 KB page fills more than half of it, so shrinking the buffer to
+/// the page keeps the allocation in place.
 const PAGE_CAPACITY: usize = 32 * 1024;
 
-/// HTML escaper for `.html` templates, registered in `askama.toml`.
-///
-/// Askama's built-in escaper writes numeric entities (`&#60;`), while the
-/// validator looks for the named `&lt;script&gt;`.
-#[derive(Copy, Clone)]
-pub struct NamedHtml;
+/// A rendered page that becomes the response body without copying.
+struct Page(Box<[u8]>);
 
-impl Escaper for NamedHtml {
-    fn write_escaped_str<W: fmt::Write>(&self, mut dest: W, s: &str) -> fmt::Result {
-        let mut last = 0;
-        for (i, b) in s.bytes().enumerate() {
-            let entity = match b {
-                b'<' => "&lt;",
-                b'>' => "&gt;",
-                b'&' => "&amp;",
-                b'"' => "&quot;",
-                b'\'' => "&#39;",
-                _ => continue,
-            };
-            dest.write_str(&s[last..i])?;
-            dest.write_str(entity)?;
-            last = i + 1;
-        }
-        dest.write_str(&s[last..])
+// SAFETY: `create` leaks the box and `page_drop` frees it once; the page is
+// not modified while `Bytes` holds it.
+unsafe impl StorageExt for Page {
+    fn create(self) -> (*const u8, usize, &'static StorageVTable) {
+        static VTABLE: StorageVTable =
+            StorageVTable::new(page_ptr, page_len, page_clone, page_drop);
+        let len = self.0.len();
+        (Box::into_raw(self.0).cast::<u8>(), len, &VTABLE)
     }
+}
+
+fn page_ptr(addr: *const u8, _: usize) -> *const u8 {
+    addr
+}
+
+fn page_len(_: *const u8, len: usize) -> usize {
+    len
+}
+
+/// Clones copy the page.
+fn page_clone(_: *const u8, _: usize) -> Option<(*const u8, usize)> {
+    None
+}
+
+/// # Safety
+///
+/// `(addr, len)` is the pair returned by `Page::create`, passed once.
+unsafe fn page_drop(addr: *const u8, len: usize) {
+    // SAFETY: the pair comes from `Box::into_raw` in `Page::create`
+    drop(unsafe { Box::from_raw(ptr::slice_from_raw_parts_mut(addr.cast_mut(), len)) });
 }
 
 pub struct Fortune<'a> {
@@ -46,8 +57,10 @@ pub struct Fortune<'a> {
     pub message: &'a str,
 }
 
-#[derive(Template)]
-#[template(path = "fortunes.html")]
+/// `<%= %>` escapes `&"'<>` with named entities (`&lt;`), as the validator
+/// expects.
+#[derive(TemplateSimple)]
+#[template(path = "fortunes.stpl")]
 struct FortunesTemplate<'a> {
     fortunes: &'a [Fortune<'a>],
 }
@@ -61,15 +74,17 @@ fn render(mut fortunes: Vec<Fortune<'_>>) -> HttpResponse {
     });
     fortunes.sort_unstable_by(|a, b| a.message.cmp(b.message));
 
-    let mut page = BytesMut::with_capacity(PAGE_CAPACITY);
+    let mut buf = Buffer::with_capacity(PAGE_CAPACITY);
     match (FortunesTemplate {
         fortunes: &fortunes,
     })
-    .render_into(&mut page)
+    .render_once_to(&mut buf)
     {
         Ok(()) => HttpResponse::Ok()
             .content_type("text/html; charset=utf-8")
-            .body(page),
+            .body(Bytes::from_ext(Page(
+                buf.into_string().into_bytes().into_boxed_slice(),
+            ))),
         Err(_) => HttpResponse::InternalServerError().build(),
     }
 }
@@ -93,7 +108,28 @@ pub async fn fortunes() -> HttpResponse {
 mod tests {
     use super::*;
     use ntex::http::StatusCode;
+    use ntex::http::body::{Body, ResponseBody};
     use ntex::web::test;
+    use ntex_bytes::info::Kind;
+
+    /// STATEMENT: The rendered page becomes the response body without being
+    /// copied into ntex storage.
+    ///
+    /// HOW:
+    /// - Render one row.
+    /// - Confirm the body is `Body::Bytes` backed by external storage
+    ///   (`Kind::StExt`), which is the `Page` holding the render buffer.
+    #[test]
+    fn page_body_is_not_copied() {
+        let response = render(vec![Fortune {
+            id: 1,
+            message: "one",
+        }]);
+        let ResponseBody::Body(Body::Bytes(page)) = response.body() else {
+            panic!("unexpected body");
+        };
+        assert_eq!(page.info().kind, Kind::StExt);
+    }
 
     async fn page(response: HttpResponse) -> String {
         String::from_utf8(test::read_body(response).await.to_vec()).unwrap()
@@ -141,7 +177,7 @@ mod tests {
             "<td>11</td><td>&lt;script&gt;alert(1);&lt;/script&gt;</td>",
             "<td>2</td><td>A first</td>",
             "<td>0</td><td>Additional fortune added at request time.</td>",
-            "<td>1</td><td>Z &quot;quoted&quot; &amp; &#39;single&#39;</td>",
+            "<td>1</td><td>Z &quot;quoted&quot; &amp; &#039;single&#039;</td>",
             "<td>3</td><td>フレームワーク</td>",
         ];
         let positions: Vec<_> = order

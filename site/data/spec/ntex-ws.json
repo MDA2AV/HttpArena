@@ -5,17 +5,10 @@
     "ws": {
       "tool": "autobahn-testsuite",
       "version": "25.10.1",
-      "passed": 243,
+      "passed": 244,
       "total": 244,
       "non_strict": 2,
-      "failed": [
-        {
-          "id": "7.7.8",
-          "test": "Send close with valid close code 1010",
-          "expected": "Clean close with normal or echoed code",
-          "got": "Actual events match at least one expected. / close: The spec requires the connection to be failed cleanly here"
-        }
-      ]
+      "failed": []
     }
   }
 }
