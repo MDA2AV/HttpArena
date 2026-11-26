@@ -528,7 +528,7 @@
     "dir": "doba",
     "description": "A high-performance, transport- and protocol-agnostic C++20 server framework.",
     "repo": "https://github.com/martianlabs/doba",
-    "type": "emerging",
+    "type": "experimental",
     "engine": "doba",
     "mode": "standard",
     "completeness": {
