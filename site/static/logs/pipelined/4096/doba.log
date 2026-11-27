@@ -1,0 +1,1 @@
+workers per listener: 64; HTTP port: 8080; TLS port: 8081

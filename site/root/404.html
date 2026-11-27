@@ -13,6 +13,7 @@
      /old/logs/<path>      -> /logs/<path>      (run logs moved with the site)
      /leaderboard/         -> /                 (badge links live in other repos)
      /new-leaderboard/     -> /                 (pre-move URL of the board)
+     /board/<view>/        -> /                 (a view of the board that was retired)
      /docs, /docs/<path>   -> /docs/            (unknown doc path -> KB landing)
      /old/<anything else>  -> /                 (the whole namespace is gone)
 
@@ -28,7 +29,7 @@
 
   if (/^\/logs\//.test(p)) {
     to = p + location.search;                       // only reachable via /old/logs/*
-  } else if (/^\/(leaderboard|new-leaderboard)(\/|$)/.test(p)) {
+  } else if (/^\/(leaderboard|new-leaderboard|board)(\/|$)/.test(p)) {
     to = '/' + location.search + location.hash;
   } else if (/^\/docs(\/|$)/.test(p)) {
     to = '/docs/';                                  // unknown docs path -> real KB landing

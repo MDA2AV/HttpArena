@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN apt-get update && apt-get install -y --no-install-recommends liburing-dev \
     && rm -rf /var/lib/apt/lists/*
 
-ARG CINATRA_REF=389776e05c7a25f9fbbc367ab607cd7cf6b0ae5e
+ARG CINATRA_REF=4618b586b2c02735e636ed62d7dd9d789326d2f3
 WORKDIR /src/cinatra
 RUN git init . \
     && git remote add origin https://github.com/qicosmos/cinatra.git \
@@ -18,6 +18,9 @@ RUN cmake -S benchmark/httparena -B build -G Ninja \
         -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
         -DHTTPARENA_X86_64_V3=ON \
         -DHTTPARENA_FILE_IO_URING=ON \
+        -DHTTPARENA_LIBDEFLATE=ON \
+        -DHTTPARENA_OPENSSL_SOCKET_BIO=ON \
+        -DHTTPARENA_TLS_BUFFERING=OFF \
     && cmake --build build -j$(nproc) \
     && strip build/bin/httparena_server
 
