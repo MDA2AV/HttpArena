@@ -1,0 +1,83 @@
+{
+  "framework": "aegon",
+  "dir": "aegon",
+  "suites": {
+    "h1": {
+      "tool": "http11probe",
+      "version": "d50d818",
+      "passed": 159,
+      "total": 159,
+      "warnings": 10,
+      "failed": []
+    },
+    "h2": {
+      "tool": "h2spec",
+      "version": "2.6.0",
+      "passed": 145,
+      "total": 146,
+      "failed": [
+        {
+          "id": "http2/5.1/8",
+          "test": "closed: Sends a DATA frame after sending RST_STREAM frame",
+          "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+          "got": "Timeout"
+        }
+      ],
+      "listeners": {
+        "tls": {
+          "passed": 146,
+          "total": 146,
+          "failed": []
+        },
+        "h2c": {
+          "passed": 145,
+          "total": 146,
+          "failed": [
+            {
+              "id": "http2/5.1/8",
+              "test": "closed: Sends a DATA frame after sending RST_STREAM frame",
+              "expected": "GOAWAY Frame (Error Code: STREAM_CLOSED) or RST_STREAM Frame (Error Code: STREAM_CLOSED) or Connection closed",
+              "got": "Timeout"
+            }
+          ]
+        }
+      }
+    },
+    "h3": {
+      "tool": "h3spec",
+      "version": "v0.1.15",
+      "passed": 80,
+      "total": 85,
+      "failed": [
+        {
+          "id": "HTTP/3 servers treats a repeated setting identifier as an error whatever its value [HTTP/3 7.2.4]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_ID_ERROR if CANCEL_PUSH names a push ID not allowed [HTTP/3 7.2.3]",
+          "got": "predicate failed on expected exception: QUICException / ApplicationProtocolErrorIsReceived (ApplicationProtocolError 261) \"\""
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_ID_ERROR if MAX_PUSH_ID goes down [HTTP/3 7.2.7]",
+          "got": "predicate failed on expected exception: QUICException / ApplicationProtocolErrorIsReceived (ApplicationProtocolError 262) \"\""
+        },
+        {
+          "id": "HTTP/3 servers MUST send H3_FRAME_ERROR if MAX_PUSH_ID has octets after its push ID [HTTP/3 7.1]",
+          "got": "did not get expected exception: QUICException"
+        },
+        {
+          "id": "HTTP/3 servers MUST NOT buffer an over-long frame on a control stream [HTTP/3 7.1]",
+          "got": "did not get expected exception: QUICException"
+        }
+      ]
+    },
+    "ws": {
+      "tool": "autobahn-testsuite",
+      "version": "25.10.1",
+      "passed": 244,
+      "total": 244,
+      "non_strict": 2,
+      "failed": []
+    }
+  }
+}

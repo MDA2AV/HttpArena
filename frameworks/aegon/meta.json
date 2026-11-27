@@ -38,6 +38,12 @@
     "echo-ws-pipeline",
     "echo-ws-limited"
   ],
+  "spec": [
+    "h1",
+    "h2",
+    "h3",
+    "ws"
+  ],
   "maintainers": [
     "UdayKhare09"
   ]

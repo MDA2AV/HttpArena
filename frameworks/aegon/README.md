@@ -29,6 +29,7 @@
 | `/echo` | POST | TLS | 8Gbit verbatim binary stream echo |
 | `/static/*` | GET | TLS, HTTP/2 & HTTP/3 | High-throughput static file delivery via `router.static_files` |
 | `/ws` | Upgrade | HTTP/1.1 (RFC 6455) | Full-duplex WebSocket echo with SIMD unmasking and `io_uring` batching |
+| `/spec`, `/spec/headers` | GET, HEAD, OPTIONS, POST | HTTP/1.1, HTTP/2 & TLS | Compliance suite target (`Http11Probe`, `h2spec`) |
 | `/benchmark.BenchmarkService/GetSum` | POST | gRPC over h2c & h2+TLS | Native zero-overhead unary gRPC sum RPC (`unary-grpc`, `unary-grpc-tls`) |
 
 ## Ports & Protocols
