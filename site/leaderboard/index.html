@@ -14,7 +14,7 @@
 <body class="board">
   <header class="top">
     <div class="brand"><!--chrome:brand-->
-      <a class="brand-name" href="#" id="brandHome" aria-label="HttpArena home"><svg class="brand-ico" viewBox="0 0 28 28" aria-hidden="true"><rect class="bi-fr" x="1.75" y="1.75" width="24.5" height="24.5" rx="5"/><rect x="5.5" y="5.4" width="17" height="4.6" rx="1.2"/><rect x="5.5" y="11.7" width="17" height="4.6" rx="1.2"/><rect x="5.5" y="18" width="17" height="4.6" rx="1.2"/><circle class="bi-led" cx="19.3" cy="7.7" r="1.3"/><circle class="bi-led" cx="19.3" cy="14" r="1.3"/><circle class="bi-led a" cx="19.3" cy="20.3" r="1.3"/></svg><span><b>Http</b>Arena</span></a>
+      <a class="brand-name" href="/" id="brandHome" aria-label="HttpArena home"><svg class="brand-ico" viewBox="0 0 28 28" aria-hidden="true"><rect class="bi-fr" x="1.75" y="1.75" width="24.5" height="24.5" rx="5"/><rect x="5.5" y="5.4" width="17" height="4.6" rx="1.2"/><rect x="5.5" y="11.7" width="17" height="4.6" rx="1.2"/><rect x="5.5" y="18" width="17" height="4.6" rx="1.2"/><circle class="bi-led" cx="19.3" cy="7.7" r="1.3"/><circle class="bi-led" cx="19.3" cy="14" r="1.3"/><circle class="bi-led a" cx="19.3" cy="20.3" r="1.3"/></svg><span><b>Http</b>Arena</span></a>
     <!--/chrome:brand--></div>
     <nav class="top-nav" aria-label="Site"><!--chrome:nav-->
       <a class="tn" data-sec="board" href="/" data-tip="The leaderboard: every entry racked by its composite score."><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M4 9h16M4 15h16"/></svg><span>Racks</span></a>
@@ -179,10 +179,16 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // An archived round is the same board over another data set: ?round=<id>
   // loads rounds/<id>.js (written by gen_leaderboard_data.py), whose results,
   // profiles and hardware replace the current round's. Boot waits for it.
+  // The board's views and their addresses, {id: path}, on the deployed board: each view is
+  // a page of its own with its ranking in the HTML (build_view_pages in
+  // gen_leaderboard_data.py). The path names the view, the hash how it is shown. A local
+  // checkout has no such pages, and keeps the view in the hash as well.
+  var VIEWS=null, PAGE=location.pathname; try{ VIEWS=JSON.parse(document.body.getAttribute('data-views')); }catch(e){}
+  var ROOT = VIEWS ? '/' : '';
   var ROUND_ID = (location.search.match(/[?&]round=([A-Za-z0-9_-]+)/)||[])[1] || '';
   if(ROUND_ID && !lbBoot.waited){
     lbBoot.waited=true;
-    var _rs=document.createElement('script'); _rs.src='rounds/'+ROUND_ID+'.js';
+    var _rs=document.createElement('script'); _rs.src=ROOT+'rounds/'+ROUND_ID+'.js';
     _rs.onload=_rs.onerror=function(){ lbBoot(); };
     document.head.appendChild(_rs);
     return;
@@ -496,12 +502,12 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     p99:'99th-percentile latency - 99% of requests were faster than this.',
     cpu:'CPU usage across all cores (100% = one full core).',
     mem:'Peak container memory (RSS) during the run.',
-    score:'Composite - sum of normalized per-profile scores (each profile leader = 1000), less 2.5% for each of routing, middleware, request and response the entry does not do for you. The (-n) beside a score is what that cost it.',
-    scoreWs:'Composite - sum of normalized per-profile scores (each profile leader = 1000). The completeness factor does not apply here: routing, middleware, request and response are the HTTP path, and this board is not measuring it.',
-    scoreHelp:'How the composite is built: every scored profile is worth 1000 to the entry leading it - including the fixed-rate profiles, which are normalized on their own CPU-and-tails score rather than on requests per second. Those scores are summed, and the total is cut by 2.5% for each of routing, middleware, request and response the entry leaves to you — its completeness factor, ×1.00 down to ×0.90. Opens the scoring docs.',
-    scoreHelpWs:'How the composite is built: every scored profile is worth 1000 to the entry leading it, and those scores are summed. The completeness factor that scales the HTTP boards is not applied here — its four axes are the HTTP request-to-response path, which this family does not measure. Opens the scoring docs.',
+    score:'Composite - sum of normalized per-profile scores (each profile leader = 1000, times the profile’s weight on its column header), less 2.5% for each of routing, middleware, request and response the entry does not do for you. The (-n) beside a score is what that cost it.',
+    scoreWs:'Composite - sum of normalized per-profile scores (each profile leader = 1000, times the profile’s weight on its column header). The completeness factor does not apply here: routing, middleware, request and response are the HTTP path, and this board is not measuring it.',
+    scoreHelp:'How the composite is built: every scored profile is worth 1000 to the entry leading it - including the fixed-rate profiles, which are normalized on their own CPU-and-tails score rather than on requests per second - times its weight: 1, or a share of 1 for profiles that measure the same thing (CON-1M and CON-1M-TLS, 0.5 each), and 0 for a reference profile. Each column header shows its weight. Those scores are summed, and the total is cut by 2.5% for each of routing, middleware, request and response the entry leaves to you — its completeness factor, ×1.00 down to ×0.90. Opens the scoring docs.',
+    scoreHelpWs:'How the composite is built: every scored profile is worth 1000 to the entry leading it, times its weight (shown on each column header), and those scores are summed. The completeness factor that scales the HTTP boards is not applied here — its four axes are the HTTP request-to-response path, which this family does not measure. Opens the scoring docs.',
     scoreAll:'Overall - the HTTP/1.1, HTTP/2, HTTP/3, gRPC and WebSocket composites added up, each as its own board scores it, completeness factor included where that board applies it. The (-n) beside a score is what completeness cost it across them. Gateway is not in it: it ranks whole stacks, not the entry’s own server.',
-    scoreHelpAll:'How the overall is built: each family composite is computed exactly as on its own board - every scored profile worth 1000 to its leader - and the five are summed with no re-weighting, so a family counts for as many profiles as it scores. A family an entry does not serve adds nothing. Opens the scoring docs.',
+    scoreHelpAll:'How the overall is built: each family composite is computed exactly as on its own board - every scored profile worth its weight × 1000 to its leader - and the five are summed with no re-weighting (weight 1 each), so a family counts for as much as its weights add up to. A family an entry does not serve adds nothing. Opens the scoring docs.',
     fw:'Framework - click the name to open its repository.',
     fwCompact:'Narrow this column to the type square, the tuned mark and the name, and give the width back to the profile columns.',
     fwExpand:'Widen this column back to the favourite star, the tuned pill and the language.',
@@ -780,18 +786,50 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // and closes again on a pick.
   var railOpen=false, railFocus=null, railFrom=null;
   var RAIL_ABBR={all:'ALL',h1:'H/1.1',h2:'H/2',h3:'H/3',gw:'GW',grpc:'gRPC',ws:'WS',db:'DB'};
+  // The address of a view: a profile at some connections, or a composite (conns 0).
+  // rest is what else the address says, always in the hash. A view without a page - a
+  // profile only an archived round has - is named in the hash of the front page.
+  function viewAddr(id, conns, rest){
+    var p=rest.slice(), path=VIEWS && VIEWS[id];
+    if(path){ if(conns && conns!==PROF[id].conns[0]) p.unshift('conns='+conns); }
+    else {
+      path=VIEWS ? '/' : location.pathname;
+      if(conns) p.unshift('p='+encodeURIComponent(id), 'conns='+conns);
+      else if(id!=='h1') p.unshift('scope='+id);
+    }
+    return path+location.search+(p.length ? '#'+p.join('&') : '');
+  }
+  // The hash, with the view the path names in front when the hash names none. A hash that
+  // does name one is an old link, and wins: writeHash then gives it the view's address.
+  function viewHash(){
+    var h=location.hash.slice(1);
+    if(VIEWS && !/(^|&)(p|scope|doc)=/.test(h)) for(var id in VIEWS)
+      if(id!=='h1' && VIEWS[id]===location.pathname) return (PROF[id] ? 'p=' : 'scope=')+id+(h ? '&'+h : '');
+    return h;
+  }
+  // The view on screen changed without a page load: what else names the page follows, the
+  // canonical above all - it is what a phone shares. The copy under the board is about the
+  // view the page was loaded with, so it goes while another one is on screen.
+  function headTags(){
+    if(!VIEWS) return;
+    var home=state.view==='composite' && state.scope==='h1', url='https://http-arena.com'+(VIEWS[state.view==='profile' ? state.profile : state.scope]||'/');
+    document.title=home ? 'HTTP Web Server Benchmarks – HttpArena' : document.getElementById('ptitle').textContent+' – HttpArena';
+    var c=document.querySelector('link[rel="canonical"]'), o=document.querySelector('meta[property="og:url"]');
+    if(c) c.href=url;
+    if(o) o.content=url;
+    var seo=document.getElementById('boardSeo');
+    if(seo) seo.hidden=!!ROUND_ID || url!=='https://http-arena.com'+PAGE;
+  }
   // The address a pick leads to, as writeHash would write it after the pick: the
   // view, plus what carries over (types, Tuned, compact names, the room's view),
   // so a key opened in a new tab lands on the same board.
   function railHref(prof, v){
     var p=[];
-    if(prof){ p.push('p='+encodeURIComponent(v)); p.push('conns='+PROF[v].conns[0]); }
-    else if(v!=='h1') p.push('scope='+v);
     var ts=state.types.slice().sort().join(','); if(ts!=='emerging,flagship') p.push('type='+ts);
     if(!state.showTuned) p.push('tuned=0');
     if(state.compactFw) p.push('fw=compact');
     if(!state.maint) p.push(state.aisle ? 'aisle=1' : 'table=0');   // the Old View is the default (writeHash)
-    return esc(p.length ? '#'+p.join('&') : location.pathname+location.search);
+    return esc(viewAddr(v, prof ? PROF[v].conns[0] : 0, p));
   }
   var RAIL_MORE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 7 5 5-5 5M13 7l5 5-5 5"/></svg>';
   var RAIL_BACK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>';
@@ -1129,7 +1167,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     if(window.LB_SEARCH){ if(cb) cb(); return; }
     _searchCb=cb;
     if(_searchReq) return;
-    _searchReq=document.createElement('script'); _searchReq.src='search.js';
+    _searchReq=document.createElement('script'); _searchReq.src=ROOT+'search.js';
     _searchReq.onload=function(){ var f=_searchCb; _searchCb=null; if(f) f(); };
     // Run the callback anyway: buildSearchIndex() still indexes the profiles
     // and composite views from LB_DATA, so the box keeps working without the
@@ -1158,13 +1196,16 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     });
   }
 
+  var pushNext=false;
   function pickScope(scope){
+    pushNext=true;
     state.view='composite'; state.scope=scope; state.sortKey='score'; state.sortDir=-1; state.q=''; state.lang=''; document.getElementById('q').value='';
     expanded.add('composite');
     buildNav(); renderHead(); render();
   }
   function pickProfile(id){
     var p=PROF[id]; if(!p) return;
+    pushNext=true;
     var ds=defProfileSort(id);
     state.view='profile'; state.profile=id; state.conns=p.conns[0]; state.sortKey=ds.k; state.sortDir=ds.d; state.q=''; document.getElementById('q').value='';
     expanded.add('detailed'); expanded.add(familyOf(p));
@@ -1198,10 +1239,10 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       // The family blurb is also written into the pre-rendered page by
       // gen_leaderboard_data.py (build_index_page), so keep the two the same.
       blurb.innerHTML = state.scope==='all'
-        ? 'The HTTP/1.1, HTTP/2, HTTP/3, gRPC and WebSocket composites added up, each scored as on its own board (every profile worth 1,000 to its leader'
+        ? 'The HTTP/1.1, HTTP/2, HTTP/3, gRPC and WebSocket composites added up, each scored as on its own board (every profile worth its weight × 1,000 to its leader'
           +(state.rescale?' among the frameworks shown':' in the full field, so filtering does not change the numbers')
           +'). A protocol an entry does not serve adds nothing. Higher is better. <a href="/docs/scoring/composite-score/#overall-composite">How it works →</a>'
-        : 'Normalized score summed across '+sLabel+' (each profile worth 1,000 to its leader'
+        : 'Normalized score summed across '+sLabel+' (each profile worth its weight × 1,000 to its leader'
           +(state.rescale?' among the frameworks shown':' in the full field, so filtering does not change the numbers')
           +'), per framework type. Higher is better. <a href="/docs/scoring/composite-score/">How it works →</a>';
       ctl.innerHTML='';
@@ -1211,7 +1252,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       ctl.appendChild(t);
       var rs=document.createElement('div'); rs.className='toggle'+(state.rescale?' on':'');
       rs.innerHTML='<span class="sw"><i></i></span> Rescale to selection';
-      rs.setAttribute('data-tip','Off: each profile is worth 1,000 to the best entry in the whole field, so scores stay comparable while you filter. On: rescale to the frameworks currently shown, to compare a subset against itself.');
+      rs.setAttribute('data-tip','Off: each profile is worth its weight × 1,000 to the best entry in the whole field, so scores stay comparable while you filter. On: rescale to the frameworks currently shown, to compare a subset against itself.');
       rs.onclick=function(){ state.rescale=!state.rescale; rs.classList.toggle('on', state.rescale); render(); };
       ctl.appendChild(rs);
       // Arriving on #lang=X (from a language rank badge) filters the board to
@@ -1226,7 +1267,10 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       }
     } else {
       var p=PROF[state.profile];
-      cat.textContent=p.category; title.textContent=p.label+' benchmark';
+      // Four profiles are called Baseline: the heading says over which protocol, the same
+      // way _view_name() in gen_leaderboard_data.py does.
+      var fam=FAMILIES.filter(function(f){ return f.k===familyOf(p); })[0].label;
+      cat.textContent=p.category; title.textContent=(p.label.indexOf(fam)===0 ? '' : fam+' ')+p.label+' benchmark';
       var b=esc(p.blurb||'');
       if(p.doc) b+=(b?' ':'')+'<a href="/docs/'+p.doc+'/">Implementation guidelines →</a>';
       blurb.innerHTML=b;
@@ -1240,9 +1284,22 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
         seg.appendChild(b);
       });
       ctl.innerHTML=''; ctl.appendChild(cap); ctl.appendChild(seg);
+      // How much this test counts in its family's composite, for the league in
+      // view. render() keeps it current when the league changes (syncWeight).
+      var wt=document.createElement('span'); wt.className='pweight'; wt.id='pweight';
+      ctl.appendChild(wt); syncWeight();
       thumb.style.transition='none'; moveThumb(seg);           // position without an initial slide
       requestAnimationFrame(function(){ thumb.style.transition=''; });
     }
+    headTags();
+  }
+
+  function syncWeight(){
+    var el=document.getElementById('pweight'), p=PROF[state.profile];
+    if(!el || state.view!=='profile' || !p) return;
+    var t=leagueType(), fam=familyOf(p);
+    el.setAttribute('data-tip', weightTip(p.id, t));
+    el.innerHTML='Weight in the '+esc(FAM_NAME[fam]||scopeLabel(fam))+' composite <b>'+fmtW(weightForType(p.id, t))+'</b>';
   }
 
   // ── columns ──────────────────────────────────────────────
@@ -1368,6 +1425,19 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     return true;
   }
   function isScored(pid,fw){ return scoredForType(pid, typeOf(fw)); }
+  // What a profile's 0-1000 is multiplied by in the composite of an entry of
+  // type t: 0 where the profile is not scored, and 1 split evenly over the
+  // scored profiles of its group - CON-1M and CON-1M-TLS, Latency-1M and
+  // Latency-10K, JSON Comp and JSON TLS each measure one thing twice, so a pair
+  // counts as one test, 0.5 apiece - and 1 for any other. The groups are
+  // WEIGHT_GROUP in gen_leaderboard_data.py, carried on each profile in data.js;
+  // _weight_for() there is this function.
+  function weightForType(pid,t){
+    if(!scoredForType(pid,t)) return 0;
+    var g=PROF[pid].group; if(!g) return 1;
+    var n=0; D.profiles.forEach(function(p){ if(p.group===g && scoredForType(p.id,t)) n++; });
+    return 1/n;
+  }
   // The league the current view ranks. The exclusive types name themselves; any
   // framework selection shares the one framework scored set.
   function leagueType(){ for(var i=0;i<EXCLUSIVE_TYPES.length;i++){ if(state.types.indexOf(EXCLUSIVE_TYPES[i])>=0) return EXCLUSIVE_TYPES[i]; } return 'flagship'; }
@@ -1470,12 +1540,13 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
             sc=(eff(pid,fw)/maxR[pid])*1000;
             if(useMem && maxME[pid]>0){ var m=A.mem[pid][fw]||0; if(m>0) sc+=(Math.sqrt(rps)/m/maxME[pid])*1000*0.5; }
           }
-          var counts=isScored(pid,fw);
+          var counts=isScored(pid,fw), w=counts?weightForType(pid, typeOf(fw)):0;
           // `score` is set only where the cell must not print rps. Everywhere
-          // else it stays null and the renderer keeps showing throughput.
-          cells[pid]={v:sc, c:counts, rps:rps, mem:(A.mem[pid][fw]||0),
+          // else it stays null and the renderer keeps showing throughput. `v` is
+          // the profile's own 0-1000; the composite takes it times `w`.
+          cells[pid]={v:sc, c:counts, w:w, rps:rps, mem:(A.mem[pid][fw]||0),
                       score:(isLatProfile(pid)?sc:null)};
-          if(counts) sum+=sc;
+          if(counts) sum+=sc*w;
         }
       });
       if(any) rows.push({fw:fw, lang:langOf(fw), score:sum*cmpFactor(fw, scope), raw:sum,
@@ -1491,9 +1562,9 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // serves itself, added up. Each family is scored exactly as its own board
   // scores it - its scored set for the league in view, its own leaders, the
   // completeness factor where that board applies it - and nothing is
-  // re-weighted on top, so every scored profile is worth 1,000 to its leader
-  // here as it is there. A family weighs what its number of scored profiles
-  // makes it weigh, and a family an entry does not serve adds nothing.
+  // re-weighted on top, so every scored profile is worth its weight x 1,000 to
+  // its leader here as it is there. A family weighs what its profiles' weights
+  // add up to, and a family an entry does not serve adds nothing.
   //
   // Gateway is left out. Its profiles rank a whole stack - an edge proxy, a
   // cache, an auth service - put in front of the entry, which is a different
@@ -1608,7 +1679,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     }
     if(dv)dv.style.display='none';
     if(grid)grid.style.display=''; if(tools)tools.style.display=''; if(phead)phead.style.display='';
-    syncHeatCtl();
+    syncHeatCtl(); syncWeight();
     if(seo)seo.style.display='';
     document.documentElement.classList.toggle('maint', !!state.maint);
     if(!state.maint){ th.style.display='none'; renderRack(); }
@@ -1629,8 +1700,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       return;
     }
     var p=[], ts=state.types.slice().sort().join(',');
-    if(state.view==='profile'){ p.push('p='+state.profile); p.push('conns='+state.conns); }
-    else { if(state.scope!=='h1') p.push('scope='+state.scope); if(state.useMem) p.push('mem=1');
+    if(state.view!=='profile'){ if(state.useMem) p.push('mem=1');
       // Rescale is on by default, so it is written when off - and also whenever
       // the address spells out its leagues: a link with type= and no rescale= is
       // a ranking link (a rank badge), which opens with it off (restoreFromHash).
@@ -1650,12 +1720,15 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     if(!state.maint) p.push(state.aisle ? 'aisle=1' : 'table=0');
     if(A3D && state.aisle && !state.maint) p.push('3d=1');
     if(state.open && !state.maint) p.push('open='+encodeURIComponent(state.open));
-    var nh=p.length?('#'+p.join('&')):'';
-    if(location.hash!==nh){ try{ history.replaceState(null,'', nh||(location.pathname+location.search)); }catch(e){} }
+    var prof=state.view==='profile', to=viewAddr(prof ? state.profile : state.scope, prof ? state.conns : 0, p);
+    // A pick is a step Back takes back; everything else only edits the address.
+    var step=pushNext && VIEWS && to.split(/[?#]/)[0]!==location.pathname; pushNext=false;
+    if(location.pathname+location.search+location.hash!==to){ try{ history[step ? 'pushState' : 'replaceState'](null,'', to); }catch(e){} }
   }
   var _hashT; function scheduleHash(){ clearTimeout(_hashT); _hashT=setTimeout(writeHash,80); }
-  function restoreFromHash(){
-    var h=location.hash.slice(1); if(!h) return;
+  // back: the address was gone back to, and one that names nothing is the front page
+  function restoreFromHash(back){
+    var h=viewHash() || (back ? 'scope=h1' : ''); if(!h) return;
     var p={}; h.split('&').forEach(function(s){ var i=s.indexOf('='); if(i>0) p[s.slice(0,i)]=decodeURIComponent(s.slice(i+1)); });
     if(p.doc){ location.replace(docUrl(p.doc)); return; }   // legacy #doc=x bookmark -> /docs/x/
     if(p.type){ var ts=p.type.split(',').filter(Boolean); if(ts.length) state.types=ts; }
@@ -1780,13 +1853,37 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     if(on!==fl.classList.contains('on')) fl.classList.toggle('on', on);
   }
   window.addEventListener('scroll', function(){ if(FLOAT.el) floatCheck(); }, {passive:true});
+  // ── weights, as every view shows them ────────────────────
+  // The multiplier a test column enters the composite with (weightForType()),
+  // written the way its header shows it: ×1, ×0.5, ×0.
+  function fmtW(w){ return '×'+String(+w.toFixed(2)); }
+  function listJoin(a){ return a.length<3 ? a.join(' and ') : a.slice(0,-1).join(', ')+' and '+a[a.length-1]; }
+  // Why a profile weighs what it does, for the league of type t.
+  function weightTip(pid, t){
+    var p=PROF[pid], w=weightForType(pid, t), lab=FAM_NAME[familyOf(p)]||scopeLabel(familyOf(p));
+    if(!w) return 'Weight 0: '+p.label+' is shown for reference and is not part of the composite score.';
+    var mates=p.group ? D.profiles.filter(function(q){ return q.group===p.group && scoredForType(q.id, t); }) : [];
+    if(mates.length>1) return 'Weight '+String(+w.toFixed(2))+': '+listJoin(mates.map(function(q){ return q.label; }))
+      + ' measure the same thing, so they share the weight of one test in the '+lab+' composite.';
+    return 'Weight 1: '+p.label+' counts in full in the '+lab+' composite.';
+  }
+  // A test column's weight for the league in view, as a header shows it.
+  function weightTag(pid, cls){
+    var t=leagueType();
+    return '<span class="'+cls+'" data-tip="'+esc(weightTip(pid, t))+'">'+fmtW(weightForType(pid, t))+'</span>';
+  }
+  // The overall adds the family composites up as they are.
+  function famWeightTag(k, cls){
+    return '<span class="'+cls+'" data-tip="'+esc('Weight 1: the '+(FAM_NAME[k]||scopeLabel(k))+' composite is added to the overall as it is, its own profiles weighted as on its board.')+'">'+fmtW(1)+'</span>';
+  }
+
   // ── overall view: one column per family ──────────────────
   var FAM_NAME={h1:'HTTP/1.1',h2:'HTTP/2',h3:'HTTP/3',grpc:'gRPC',ws:'WebSocket'};
   // The same two-part control a profile column has: the left half opens that
   // family's own composite, the right half the docs for its profiles.
   function famHead(k, ar){
     var lab=scopeLabel(k), name=FAM_NAME[k]||lab;
-    return '<th class="num pcol famcol" data-k="'+esc(k)+'" data-tip="'+esc(name+' composite - the score this entry has on the '+lab+' board, and the place it holds there.')+'">'+esc(lab)+ar(k)
+    return '<th class="num pcol famcol" data-k="'+esc(k)+'" data-tip="'+esc(name+' composite - the score this entry has on the '+lab+' board, and the place it holds there.')+'">'+esc(lab)+famWeightTag(k, 'wt')+ar(k)
       + '<span class="pnav">'
       + '<a class="pico pscope" data-scope="'+esc(k)+'" role="button" tabindex="0"'
       +   ' data-tip="'+esc('Open the '+lab+' composite - every '+name+' profile, entry by entry.')+'"'
@@ -1882,7 +1979,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
         +   ' data-tip="'+esc('Implementation guide for '+p.label+' — what the profile runs, and the rules an entry has to follow.')+'"'
         +   ' aria-label="'+esc(p.label)+' implementation guide">'+PICO_GUIDE+'</a>'):'')
         + '</span>';
-      th+='<th class="num pcol'+(ref?' refcol':'')+'" data-k="'+pid+'" data-tip="'+esc(p.category+' · '+p.label+' - '+(p.blurb||'')+(ref?' Not part of the composite score.':''))+'">'+esc(p.label)+ar(pid)+nav+'</th>';
+      th+='<th class="num pcol'+(ref?' refcol':'')+'" data-k="'+pid+'" data-tip="'+esc(p.category+' · '+p.label+' - '+(p.blurb||'')+(ref?' Not part of the composite score.':''))+'">'+esc(p.label)+weightTag(pid, 'wt')+ar(pid)+nav+'</th>';
     });
     var body=rows.map(function(r){
       var c=lc(r.lang), rank=rankMap[r.fw], t=typeOf(r.fw), repo=repoOf(r.fw);
@@ -2333,22 +2430,22 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       + '<span class="plate ph" aria-hidden="true"></span>'
       + '<span class="leds ph" data-tip="'+esc(LED_HELP)+'"><b>PWR</b><b>ACT</b><b>STS</b></span>'
       + portHtml('score', all?'Overall':'Composite', all?TIP.scoreAll:cmpInScope()?TIP.score:TIP.scoreWs, 'lcdh',
-          '<a class="pico hq" href="/docs/scoring/composite-score/'+(all?'#overall-composite':'')+'" data-tip="'
+          '<span class="pw" aria-hidden="true"></span>'+'<a class="pico hq" href="/docs/scoring/composite-score/'+(all?'#overall-composite':'')+'" data-tip="'
           + esc(all?TIP.scoreHelpAll:cmpInScope()?TIP.scoreHelp:TIP.scoreHelpWs)+'" aria-label="How the '+(all?'overall':'composite')+' score works">?</a>');
     if(specSuite()) h+=portHtml('spec','Spec',TIP.spec,'mod',
-          '<a class="pico" href="/docs/test-profiles/compliance/" data-tip="'+esc('What the compliance suites test, the /spec route they run against, and how an entry subscribes to them.')+'" aria-label="How the compliance score works">?</a>');
+          '<span class="pw" aria-hidden="true"></span>'+'<a class="pico" href="/docs/test-profiles/compliance/" data-tip="'+esc('What the compliance suites test, the /spec route they run against, and how an entry subscribes to them.')+'" aria-label="How the compliance score works">?</a>');
     if(resilCol()) h+=portHtml('resil','Resil.',TIP.resil,'mod',
-          '<a class="pico" href="/docs/test-profiles/resilience/" data-tip="'+esc('What the resilience suite attacks, the box it runs the entry in, and how an entry opts in.')+'" aria-label="How the resilience score works">?</a>');
+          '<span class="pw" aria-hidden="true"></span>'+'<a class="pico" href="/docs/test-profiles/resilience/" data-tip="'+esc('What the resilience suite attacks, the box it runs the entry in, and how an entry opts in.')+'" aria-label="How the resilience score works">?</a>');
     h+='<span class="bays">'+M.pids.map(function(pid){
       if(all){
         var lab=scopeLabel(pid), name=FAM_NAME[pid]||lab;
         return portHtml(pid, lab, name+' composite - the score this entry has on the '+lab+' board, and the place it holds there.', 'bay',
-          '<span class="pnav"><a class="pico pscope" data-scope="'+esc(pid)+'" role="button" tabindex="0" data-tip="'+esc('Open the '+lab+' composite - every '+name+' profile, entry by entry.')+'" aria-label="'+esc('Open the '+lab+' composite')+'">'+PICO_VIEW+'</a>'
+          famWeightTag(pid, 'pw')+'<span class="pnav"><a class="pico pscope" data-scope="'+esc(pid)+'" role="button" tabindex="0" data-tip="'+esc('Open the '+lab+' composite - every '+name+' profile, entry by entry.')+'" aria-label="'+esc('Open the '+lab+' composite')+'">'+PICO_VIEW+'</a>'
           + '<a class="pico" href="/docs/test-profiles/'+esc(pid)+'/" data-tip="'+esc('What the '+name+' profiles run, and the rules an entry has to follow.')+'" aria-label="'+esc(name+' test profiles')+'">'+PICO_GUIDE+'</a></span>');
       }
       var p=PROF[pid], ref=!scoredForType(pid, leagueType());
       return portHtml(pid, p.label, p.category+' · '+p.label+' - '+(p.blurb||'')+(ref?' Not part of the composite score.':''), 'bay'+(ref?' refcol':''),
-        '<span class="pnav"><a class="pico pgo" data-pid="'+esc(pid)+'" role="button" tabindex="0" data-tip="'+esc('Open the '+p.label+' detail view — every entry’s result on this profile, with the columns that profile reports.')+'" aria-label="Open the '+esc(p.label)+' detail view">'+PICO_VIEW+'</a>'
+        weightTag(pid, 'pw')+'<span class="pnav"><a class="pico pgo" data-pid="'+esc(pid)+'" role="button" tabindex="0" data-tip="'+esc('Open the '+p.label+' detail view — every entry’s result on this profile, with the columns that profile reports.')+'" aria-label="Open the '+esc(p.label)+' detail view">'+PICO_VIEW+'</a>'
         + (p.doc?'<a class="pico" href="/docs/'+esc(p.doc)+'/" data-tip="'+esc('Implementation guide for '+p.label+' — what the profile runs, and the rules an entry has to follow.')+'" aria-label="'+esc(p.label)+' implementation guide">'+PICO_GUIDE+'</a>':'')+'</span>');
     }).join('')+'</span><span class="pullslot"></span></div><div class="ear r"></div>';
     return h;
@@ -2386,14 +2483,14 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       return runs.some(function(x){ var v=x.r[f[0]]; return !(v===undefined||v===null||v===''); });
     });
     var h='<div class="sheet-x"><table class="runs"><thead><tr><th>Profile</th><th class="n">Conns</th>'
-      + (cells?'<th class="n" data-tip="The normalized score this profile adds to the composite: 1000 to its leader.">Points</th>':'')
+      + (cells?'<th class="n" data-tip="What this profile adds to the composite: its normalized score, 1000 to its leader, times its weight.">Points</th>':'')
       + fields.map(function(f){ return '<th class="n">'+esc(f[1])+'</th>'; }).join('')
       + '<th data-tip="The raw output of the load generator for this run.">Console</th></tr></thead><tbody>';
     runs.forEach(function(x){
       var cell=cells&&cells[x.p.id];
       h+='<tr'+(x.first?' class="first"':'')+'><td>'+(x.first?'<a class="rp" data-pid="'+esc(x.p.id)+'" role="button" tabindex="0" data-tip="'+esc(x.p.category+' · '+(x.p.blurb||''))+'">'+esc(x.p.label)+'</a>':'')+'</td>'
         + '<td class="n">'+(+x.c).toLocaleString()+(x.counted?'':' <i class="ncnt" data-tip="This connection count is measured but not counted toward the composite.">ref</i>')+'</td>'
-        + (cells?'<td class="n">'+(x.first&&cell?cell.v.toFixed(0)+(cell.c?'':' <i class="ncnt" data-tip="'+(x.p.scored===false?'Reference profile, not part of the composite.':'Ran, but not counted toward this type’s composite.')+'">ref</i>'):'')+'</td>':'')
+        + (cells?'<td class="n">'+(x.first&&cell?(cell.c?(cell.v*cell.w).toFixed(0)+(cell.w!==1?' <i class="ncnt" data-tip="'+esc(weightTip(x.p.id, typeOf(fw)))+'">'+fmtW(cell.w)+'</i>':''):cell.v.toFixed(0))+(cell.c?'':' <i class="ncnt" data-tip="'+(x.p.scored===false?'Reference profile, not part of the composite.':'Ran, but not counted toward this type’s composite.')+'">ref</i>'):'')+'</td>':'')
         + fields.map(function(f){
             var v=x.r[f[0]];
             if(v===undefined||v===null||v==='') return '<td class="n">-</td>';
@@ -2727,7 +2824,21 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     var C=Math.max(1, Math.min(Math.floor((rack.clientWidth+gap)/(min+gap)), Math.ceil(n/6)));
     rack.style.setProperty('--acols', C); rack.style.setProperty('--arows', Math.ceil(n/C));
   }
-  window.addEventListener('resize', function(){ aisleGrid(); });
+  // The Rack's test columns stop where the Old View's do (--col-max in sr.css, which
+  // caps the rack at --rack-other plus its columns at their widest). --rack-other is
+  // everything on a unit that is not a test column - the posts, rank, name, display,
+  // Spec and Resil., handle, and the gaps between columns - measured here, as the
+  // rack less its column cells. Measured rather than left to width:fit-content,
+  // because browsers disagree on how wide those fixed parts ask to be (Firefox
+  // sizes each by its content, not its flex-basis).
+  function rackCap(){
+    var rack=document.getElementById('rack'); if(!rack || rack.classList.contains('aisle')) return;
+    var ports=rack.querySelectorAll('.unit.patch .bays > .port'), w=rack.getBoundingClientRect().width;
+    if(!w || !ports.length) return;
+    for(var i=0;i<ports.length;i++) w-=ports[i].getBoundingClientRect().width;
+    rack.style.setProperty('--rack-other', w.toFixed(2)+'px');
+  }
+  window.addEventListener('resize', function(){ aisleGrid(); rackCap(); });
   // The aisle's tray: the unit lifts out of its cabinet and a compact card
   // slides out under it, over the units below - the figures, the strength,
   // the way on. The full tray is the rack's.
@@ -2857,9 +2968,10 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     // row of lights; hovering one lights up its column (aisleHl).
     if(comp) cap+='<span class="rc-tests"><span class="rc-tl">Lights, left to right</span>'
       + M.pids.map(function(pid, i){ return '<span class="rct'+(M.gs&&M.gs[i]?' gs':'')+'" data-i="'+i+'"><i></i>'
-          + esc(M.all?scopeLabel(pid):(PROF[pid]?PROF[pid].label:pid))+'</span>'; }).join('')+'</span>';
+          + esc(M.all?scopeLabel(pid):(PROF[pid]?PROF[pid].label:pid))+(M.all?famWeightTag(pid, 'rw'):weightTag(pid, 'rw'))+'</span>'; }).join('')+'</span>';
     paintRack(rack, cap, patch, units, function(fw){ return by[fw]; });
     aisleGrid();
+    rackCap();
     var shares={}; if(!comp) units.forEach(function(u){ var r=by[u.fw]&&by[u.fw].r; if(r) shares[u.fw]=(r.rps||0)/(M.maxRps||1); });
     RACK.view={comp:comp, M:M, by:by, order:units.map(function(u){ return u.fw; }), label:label, share:shares};
     renderSortCtl(sortOpts);
@@ -2980,7 +3092,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   }
   initRail(); initLegend(); initTips(); init3d(); initSpecPanel(); initHeat(); initModal(); initRack(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initNavSearch(); hw(); buildNav(); renderHead(); render();
   (function(){ var b=document.getElementById('brandHome'); if(b) b.onclick=function(e){ e.preventDefault(); pickScope('h1'); }; })();
-  window.addEventListener('hashchange', function(){ restoreFromHash(); buildNav(); renderHead(); render(); });
+  window.addEventListener(VIEWS ? 'popstate' : 'hashchange', function(){ restoreFromHash(!!VIEWS); buildNav(); renderHead(); render(); });
   var _rz; window.addEventListener('resize', function(){ clearTimeout(_rz); _rz=setTimeout(function(){ if(state.view==='profile') render(); else if(state.view==='composite'){ syncTopScroll(); if(FLOAT.measure){ FLOAT.measure(); floatCheck(); } } }, 150); });
 });
 </script>

@@ -15,6 +15,11 @@
 )]
 //! DO NOT MODIFY. Auto-generated file
 
+const _: () = assert!(
+    ::ntex_grpc::CODEGEN_VERSION == 2,
+    "generated code does not match the ntex-grpc version (expects CODEGEN_VERSION 2), regenerate it with the matching ntex-grpc-codegen"
+);
+
 #[derive(Clone, PartialEq, Debug)]
 pub struct SumRequest {
     pub a: i32,

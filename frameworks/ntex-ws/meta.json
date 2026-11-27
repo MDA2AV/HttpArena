@@ -13,5 +13,5 @@
     "echo-ws-pipeline",
     "echo-ws-limited"
   ],
-  "maintainers": []
+  "maintainers": ["fafhrd91"]
 }
