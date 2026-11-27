@@ -209,7 +209,37 @@ void register_routes(Router& router) {
     // 8. WebSocket Echo endpoint
     router.ws("/ws");
 
-    // 9. gRPC BenchmarkService (unary-grpc, unary-grpc-tls)
+    // 9. Compliance routes (/spec and /spec/headers)
+    auto handle_spec_text = [](Context& ctx) {
+        ctx.res().text("spec ok");
+    };
+    router.get("/spec", handle_spec_text);
+    router.add_route(Method::HEAD, "/spec", handle_spec_text);
+    router.add_route(Method::OPTIONS, "/spec", [](Context& ctx) {
+        (void)ctx.req().body();
+        ctx.res().status(StatusCode::Ok)
+                 .header("Allow", "GET, HEAD, POST, OPTIONS")
+                 .body_view("");
+    });
+    router.post("/spec", [](Context& ctx) {
+        ctx.res().header("Content-Type", "application/octet-stream");
+        ctx.res().body_view(ctx.req().body());
+    });
+    auto handle_spec_headers = [](Context& ctx) {
+        (void)ctx.req().body();
+        std::string out;
+        for (const auto& h : ctx.req().headers()) {
+            out.append(h.name);
+            out.append(": ");
+            out.append(h.value);
+            out.push_back('\n');
+        }
+        ctx.res().text(out);
+    };
+    router.get("/spec/headers", handle_spec_headers);
+    router.post("/spec/headers", handle_spec_headers);
+
+    // 10. gRPC BenchmarkService (unary-grpc, unary-grpc-tls)
     auto grpc_svc = router.grpc_service("/benchmark.BenchmarkService");
     grpc_svc.unary<benchmark::SumRequest, benchmark::SumReply>("GetSum", [](grpc::UnaryContext<benchmark::SumRequest, benchmark::SumReply>& ctx) {
         benchmark::SumReply reply;
@@ -335,18 +365,17 @@ int main() {
     server.h2_initial_window_size(1048576);
     register_routes(server.router());
 
-    // Port 8080: Plaintext HTTP/1.1 (main benchmarks)
-    server.listen(8080);
-    // Port 8082: Plaintext HTTP/2 prior-knowledge (baseline-h2c, json-h2c)
-    server.listen(8082);
+    // Port 8080: Plaintext HTTP/1.1 + WS + h2c (baseline, ws, unary-grpc)
+    server.listen(8080, Protocol::H1 | Protocol::H2c);
+    // Port 8082: Strict cleartext HTTP/2 prior-knowledge (baseline-h2c, json-h2c)
+    server.listen(8082, Protocol::H2c);
 
     if (has_certs) {
         server.enable_tls(certFile, keyFile);
-        server.enable_http3(true);
-        // Port 8081: TLS HTTP/1.1 (json-tls, 8gbit)
-        server.listen_tls(8081);
-        // Port 8443: TLS HTTP/2 & HTTP/3 (baseline-h2, static-h2, baseline-h3, static-h3)
-        server.listen_tls(8443);
+        // Port 8081: TLS HTTP/1.1 only (json-tls, 8gbit, static-tls, connections-1m-tls)
+        server.listen(8081, Protocol::H1Tls);
+        // Port 8443: TLS HTTP/2 & HTTP/3 QUIC (baseline-h2, static-h2, baseline-h3, static-h3, unary-grpc-tls)
+        server.listen(8443, Protocol::H2 | Protocol::H3);
     }
 
     server.run(threads);
