@@ -669,9 +669,18 @@ asio::awaitable<std::string> arena_static(std::shared_ptr<httppeer> peer)
     }
 
     // 每请求直接读盘：文件小，预热后全在 page cache，没有真实
-    // 磁盘 IO；无缓存、无锁、无 stat 重校验，磁盘改动即时生效。
-    // 按客户端偏好 br → gz → 源文件 依次尝试。
+    // 磁盘 IO；无缓存、无锁，磁盘改动即时生效。
+    // 原始文件必须存在，再按客户端偏好 br → gz → 源文件依次尝试。
     const std::string base = "/data/static/" + filename;
+    struct stat base_stat {};
+    if (::stat(base.c_str(), &base_stat) != 0 || (base_stat.st_mode & S_IFREG) == 0)
+    {
+        peer->status(404);
+        peer->type("text/plain");
+        peer->output = "Not Found";
+        co_return "";
+    }
+
     unsigned char enc   = 0;
     bool served         = false;
     if (is_compressible_ext(filename))
