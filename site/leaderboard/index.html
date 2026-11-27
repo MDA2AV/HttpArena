@@ -2774,7 +2774,21 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     var C=Math.max(1, Math.min(Math.floor((rack.clientWidth+gap)/(min+gap)), Math.ceil(n/6)));
     rack.style.setProperty('--acols', C); rack.style.setProperty('--arows', Math.ceil(n/C));
   }
-  window.addEventListener('resize', function(){ aisleGrid(); });
+  // The Rack's test columns stop where the Old View's do (--col-max in sr.css, which
+  // caps the rack at --rack-other plus its columns at their widest). --rack-other is
+  // everything on a unit that is not a test column - the posts, rank, name, display,
+  // Spec and Resil., handle, and the gaps between columns - measured here, as the
+  // rack less its column cells. Measured rather than left to width:fit-content,
+  // because browsers disagree on how wide those fixed parts ask to be (Firefox
+  // sizes each by its content, not its flex-basis).
+  function rackCap(){
+    var rack=document.getElementById('rack'); if(!rack || rack.classList.contains('aisle')) return;
+    var ports=rack.querySelectorAll('.unit.patch .bays > .port'), w=rack.getBoundingClientRect().width;
+    if(!w || !ports.length) return;
+    for(var i=0;i<ports.length;i++) w-=ports[i].getBoundingClientRect().width;
+    rack.style.setProperty('--rack-other', w.toFixed(2)+'px');
+  }
+  window.addEventListener('resize', function(){ aisleGrid(); rackCap(); });
   // The aisle's tray: the unit lifts out of its cabinet and a compact card
   // slides out under it, over the units below - the figures, the strength,
   // the way on. The full tray is the rack's.
@@ -2907,6 +2921,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
           + esc(M.all?scopeLabel(pid):(PROF[pid]?PROF[pid].label:pid))+'</span>'; }).join('')+'</span>';
     paintRack(rack, cap, patch, units, function(fw){ return by[fw]; });
     aisleGrid();
+    rackCap();
     var shares={}; if(!comp) units.forEach(function(u){ var r=by[u.fw]&&by[u.fw].r; if(r) shares[u.fw]=(r.rps||0)/(M.maxRps||1); });
     RACK.view={comp:comp, M:M, by:by, order:units.map(function(u){ return u.fw; }), label:label, share:shares};
     renderSortCtl(sortOpts);
