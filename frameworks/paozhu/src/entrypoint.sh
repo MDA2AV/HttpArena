@@ -143,27 +143,70 @@ fi
 SERVER_PID=$!
 
 shutdown() {
-    trap - TERM INT
+    trap - TERM INT EXIT
     kill -TERM "$SERVER_PID" 2>/dev/null || true
     wait "$SERVER_PID" 2>/dev/null || true
 }
-trap shutdown TERM INT
+trap shutdown TERM INT EXIT
+
+wait_listeners() {
+    local i index port url status
+    local -a ports=(8080 8081 8082 8443)
+    local -a urls=(
+        http://localhost:8080/pipeline
+        https://localhost:8081/pipeline
+        http://localhost:8082/pipeline
+        https://localhost:8443/pipeline
+    )
+    local -a ready=(0 0 0 0)
+    local -a pending=()
+    local -a curl_args=()
+
+    printf 'Checking paozhu listeners: 8080, 8081, 8082, 8443\n'
+    for ((i = 1; i <= 120; i++)); do
+        if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+            status=0
+            wait "$SERVER_PID" || status=$?
+            printf '[error] paozhu exited before all listeners were ready (status %s)\n' "$status" >&2
+            return 1
+        fi
+
+        pending=()
+        for index in "${!ports[@]}"; do
+            [ "${ready[$index]}" -eq 1 ] && continue
+            port="${ports[$index]}"
+            url="${urls[$index]}"
+            curl_args=()
+            case "$port" in
+                8081) curl_args=(-k) ;;
+                8082) curl_args=(--http2-prior-knowledge) ;;
+                8443) curl_args=(-k --http2) ;;
+            esac
+            if ! curl -sf --connect-timeout 1 --max-time 2 \
+                 "${curl_args[@]}" -o /dev/null "$url" 2>/dev/null; then
+                pending+=("$port")
+                continue
+            fi
+            ready[$index]=1
+            printf '[ready] port %s\n' "$port"
+        done
+
+        if [ "${#pending[@]}" -eq 0 ]; then
+            printf 'paozhu ready: all 4 listeners are up\n'
+            return 0
+        fi
+        sleep 0.25
+    done
+
+    printf '[error] listeners not ready after 30s: %s\n' "${pending[*]}" >&2
+    return 1
+}
 
 # ── Lazy-cache warmup ────────────────────────────────────────────────────
 # arena.cpp 懒加载静态文件：首次 miss 时把存在的源文件/.gz/.br 变体全部
 # 读入全局 hash 表缓存。预热一次后 h2load 进来全部 hit，零 fopen/fread。
 # Accept-Encoding 与 h2load 一致（br;q=1, gzip;q=0.8），让预热 curl 本身
 # 也走 br 命中路径。
-wait_ready() {
-    local url="$1" i
-    for i in $(seq 1 120); do
-        if curl -sf --max-time 2 -o /dev/null "$url" 2>/dev/null; then
-            return 0
-        fi
-        sleep 0.25
-    done
-    return 1
-}
 warm_static() {
     local base="$1" f n
     for f in /data/static/*; do
@@ -175,10 +218,11 @@ warm_static() {
              "$base/static/$n" -o /dev/null 2>/dev/null || true
     done
 }
+wait_listeners
+
 if [ -d /data/static ]; then
-    # Readiness probe hits /pipeline so it does not touch the static cache;
-    # warm_static below is what loads the file variants.
-    wait_ready http://localhost:8080/pipeline || true
+    # The readiness probe above does not touch the static cache; warm_static
+    # below is what loads the file variants.
     warm_static http://localhost:8080
     warm_static http://localhost:8082
 fi
