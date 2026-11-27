@@ -367,7 +367,9 @@ html[data-theme="dark"]{
   .board-seo a{color:var(--accent)}
   .board-seo ul{margin:.4rem 0; padding-left:1.1rem}
 
-  .grid{--col-max:8.5rem; --cols:54px minmax(250px,2fr) minmax(150px,1fr) 112px 92px 92px 96px 86px}
+  /* the widest a test column gets, in the Old View (#grid) and on the Rack (#hall) alike */
+  .grid, .hall{--col-max:8.5rem}
+  .grid{--cols:54px minmax(250px,2fr) minmax(150px,1fr) 112px 92px 92px 96px 86px}
   .thead,.row{display:grid; grid-template-columns:var(--cols); align-items:center}
   .thead{position:sticky; top:57px; z-index:10; background:var(--bg); padding:.1rem 0 .55rem; border-bottom:1px solid var(--line); font-size:.72rem; font-weight:650; color:var(--muted); letter-spacing:.02em; text-transform:uppercase}
   .thead .th{padding:.2rem .55rem; cursor:pointer; user-select:none; white-space:nowrap}
@@ -1218,6 +1220,36 @@ table.runs{border-collapse:collapse; width:100%; font:500 .76rem/1.3 var(--mono)
   .rack.v-prof:not(.aisle) .patch .face>.port.mod>.pico{align-self:flex-end}
   .rack.v-prof:not(.aisle) .patch .face>.svc{align-items:center; padding-bottom:0}
   .rack.v-prof:not(.aisle) .patch .leds.ph{justify-content:center; padding-bottom:0}
+}
+
+/* ── a unit one row high: its test columns stop where the Old View's do ── */
+/* The user: "on the rack view, the table columns should have a max width same as
+   in old view". A test column (the bays below, the patch panel's ports above) grows
+   with the window up to --col-max, the Old View's widest, and the rack ends after
+   the last one, the way the Old View's table ends: posts, cap and foot come in with
+   it. The rack is capped at everything that is not a test column (--rack-other,
+   measured by rackCap() in the board's script) plus its columns at --col-max; the
+   bays share out what is left as before, so a board with more columns than the
+   window holds is unchanged.
+   A slid-out unit's tray too narrow for its two columns side by side puts the
+   service tag over the sheet, as a phone does, so the strength meters keep their room.
+   Only the 1U layouts; the 2U ones above keep their bays on a row the width of the
+   unit. Phones, the Aisle and the rack painted before the results arrive (neither
+   .v-comp nor .v-prof yet) are unchanged. */
+@media (min-width:901px){
+  .rack.v-comp:not(.many):not(.aisle){max-width:calc(var(--rack-other, 100vw) + var(--n,1) * var(--col-max))}
+  .rack.v-comp:not(.many):not(.aisle) .tray{container:tray / inline-size}
+}
+@media (min-width:1400px){
+  .rack.v-comp.many:not(.aisle){max-width:calc(var(--rack-other, 100vw) + var(--n,1) * var(--col-max))}
+  .rack.v-comp.many:not(.aisle) .tray{container:tray / inline-size}
+}
+@media (min-width:1121px){
+  .rack.v-prof:not(.aisle){max-width:calc(var(--rack-other, 100vw) + var(--n,1) * var(--col-max))}
+  .rack.v-prof:not(.aisle) .tray{container:tray / inline-size}
+}
+@container tray (width < 1000px){
+  .tray-in{grid-template-columns:minmax(0,1fr)}
 }
 
 /* ── phones and narrow windows ── */
