@@ -1264,7 +1264,7 @@ table.runs{border-collapse:collapse; width:100%; font:500 .76rem/1.3 var(--mono)
   .top{position:relative; height:auto; padding:.45rem .7rem .55rem; gap:.45rem .5rem; flex-wrap:wrap}
   .top-links, .pg .top-links{margin-left:auto; gap:.2rem}
   .top .icon-btn{width:31px; height:31px}
-  .top-nav{order:3; flex:1 1 100%; display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:.2rem}
+  .top-nav{order:3; flex:1 1 100%; display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:.2rem}
   .tn, .top-nav .fw-btn{justify-content:center; padding:.5rem .2rem; border-color:var(--line); background:var(--panel); font-size:.66rem; letter-spacing:0; min-width:0; white-space:normal; text-align:center; line-height:1.05}
   .tn span, .top-nav .fw-btn span{display:inline}
   .tn svg, .top-nav .fw-btn svg{display:none}
