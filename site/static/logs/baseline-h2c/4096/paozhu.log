@@ -6,4 +6,5 @@
 [sock_subpub] init: registered 0 clients
 [mqtt_subpub] init: registered 0 clients
 corrupted double-linked list
+corrupted double-linked list
 /entrypoint.sh: line 186:    10 Aborted                 (core dumped) /server /app/conf/server.conf
