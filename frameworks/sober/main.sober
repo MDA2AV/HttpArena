@@ -325,14 +325,30 @@ func run(port string, tport string, h2port string) int {
             return rc
         }
     }
+    lm := numOr(os.Getenv("LEDGER_MS") catch nil, 0)
     pe, se := task.Run((s task.Scope) => {
         if cfg != nil {
             _ = task.Spawn(s, () => serveTls(ds, cfg, tport))
+        }
+        if lm > 0 {
+            _ = task.Spawn(s, () => if ledgerLoop(lm) == nil { 0 } else { 1 })
         }
         _ = task.Spawn(s, () => if h2c(routes(ds), gzw, h2port) == nil { 0 } else { 1 })
         plain(routes(ds), gzw, port)
     })
     return if se != nil || pe != nil { 1 } else { 0 }
+}
+
+// LEDGER_MS (a measuring aid, off by default): every ms milliseconds, one stderr line with the run queue's longest wait (ns)
+// and the number of waits from task.Ledger. Both are window values that reset on each read, so the run's maximum is the
+// maximum over the lines. It is a separate task, so the route table and the request path are the same with and without it
+func ledgerLoop(ms int) error? {
+    while true {
+        os.Sleep(ms)
+        l := task.Ledger()
+        io.WriteStderr(bytes("ledger maxWait=${l.maxWait} waits=${l.waits}\n"))?
+    }
+    return nil
 }
 
 // HTTP/2 with prior knowledge (h2c) on the third port: the same routes, ServeConn with proto: H2 (the baseline-h2c and json-h2c profiles)

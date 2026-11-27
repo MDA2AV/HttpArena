@@ -4,7 +4,7 @@
 
 ## Stack
 
-- Language: Sober 0.7.6
+- Language: Sober 0.7.7
 - Framework: none beyond the standard library: `std/http/server` (server, router, middleware, gzip), `std/json`, `std/tls`, `std/pg`
 - Build: the release tarball of the compiler (one static ELF, standard library built in) on `alpine`, static binary on `scratch`.
   `sober build --profile=main.prof`: the server's hot-code profile places cold code blocks after the hot code (layout only)
