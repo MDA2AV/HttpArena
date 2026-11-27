@@ -310,7 +310,7 @@ func poolSize() int {
     return if m > 16 { m - 6 } else if m > 1 { m - 1 } else { 1 }
 }
 
-func run(port string, tport string, h2port string) int {
+func run(port string, tport string, h2port string, h2tls string) int {
     ds := load()
     gzw := task.NewLocal((w mut compress.flate.Work) => compress.flate.NewWork(mut w))
     cfg := certs()
@@ -319,7 +319,7 @@ func run(port string, tport string, h2port string) int {
         at, pw := splitUrl(u)
         mut rc := -1
         oe := pg.OpenPool(at, (p) => {
-            rc = serveDb(ds, gzw, cfg, port, tport, h2port, p)
+            rc = serveDb(ds, gzw, cfg, port, tport, h2port, h2tls, p)
         }, size: poolSize(), policy: pg.Policy{password: pw, dangerouslyPlaintext: true})
         if oe == nil && rc >= 0 {
             return rc
@@ -329,6 +329,7 @@ func run(port string, tport string, h2port string) int {
     pe, se := task.Run((s task.Scope) => {
         if cfg != nil {
             _ = task.Spawn(s, () => serveTls(ds, cfg, tport))
+            _ = task.Spawn(s, () => h2Tls(ds, cfg, h2tls))
         }
         if lm > 0 {
             _ = task.Spawn(s, () => if ledgerLoop(lm) == nil { 0 } else { 1 })
@@ -370,10 +371,11 @@ func plain(rs []http.server.Route, gzw task.Local, port string) error? {
 
 // With DATABASE_URL: the plain port answers /async-db from the pool p (a handler kept in the route table or behind
 // tls.Serve cannot capture the pool, so those answer the empty body). Without it the server is run / plain above, unchanged
-func serveDb(ds []Item, gzw task.Local, cfg tls.Config?, port string, tport string, h2port string, p pg.Pool) int {
+func serveDb(ds []Item, gzw task.Local, cfg tls.Config?, port string, tport string, h2port string, h2tls string, p pg.Pool) int {
     pe, se := task.Run((s task.Scope) => {
         if cfg != nil {
             _ = task.Spawn(s, () => serveTls(ds, cfg, tport))
+            _ = task.Spawn(s, () => h2Tls(ds, cfg, h2tls))
         }
         _ = task.Spawn(s, () => if h2c(routes(ds), gzw, h2port) == nil { 0 } else { 1 })
         plainDb(routes(ds), gzw, port, p)
@@ -389,10 +391,27 @@ func plainDb(rs []http.server.Route, gzw task.Local, port string, p pg.Pool) err
     return nil
 }
 
+// HTTP/2 over TLS with ALPN on the fourth port (8443 in the harness): the same routes plus /static
+// served by http.server.Static (the baseline-h2 and static-h2 profiles). The route table is built per
+// request for the same reason as serveTlsConn.
+func h2Tls(ds []Item, cfg tls.Config, port string) int {
+    _ = io.WriteStdout(bytes("h2-tls-ready ${port}\n"))
+    e := tls.Serve("0.0.0.0:${port}", tls.Alpn(cfg, []string{"h2", "http/1.1"}), (c net.Conn) => serveH2TlsConn(ds, c))
+    return if e != nil { 1 } else { 0 }
+}
+
+func serveH2TlsConn(ds []Item, c net.Conn) error? {
+    return http.server.ServeConn(c, (r http.server.Request) => http.server.Dispatch(h2Routes(ds), r), maxBody: maxBody, proto: http.server.Both)
+}
+
+func h2Routes(ds []Item) []http.server.Route {
+    return http.server.Merge(http.server.Static("/static", "/data/static", precompressed: true), routes(ds))
+}
+
 func main() int {
     args := os.Args() catch return 2
-    if len(args) > 4 {
+    if len(args) > 5 {
         return 2
     }
-    return run(if len(args) >= 2 { args[1] } else { "8080" }, if len(args) >= 3 { args[2] } else { "8081" }, if len(args) == 4 { args[3] } else { "8082" })
+    return run(if len(args) >= 2 { args[1] } else { "8080" }, if len(args) >= 3 { args[2] } else { "8081" }, if len(args) >= 4 { args[3] } else { "8082" }, if len(args) == 5 { args[4] } else { "8443" })
 }
