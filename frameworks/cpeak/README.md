@@ -1,10 +1,10 @@
 # cpeak
 
-[Cpeak for Rust](https://github.com/Cododev-Technology/cpeak/tree/main/rust), the Rust version of the Cpeak Node.js framework: an Express-style API (routes, middleware, `req` and `res`) on hyper, with one single-threaded Tokio event loop per core. Default configuration.
+[Cpeak for Rust](https://github.com/Cododev-Technology/cpeak/tree/main/rust), the Rust version of the Cpeak Node.js framework: an Express-style API (routes, middleware, `req` and `res`) on hyper, with one single-threaded Tokio event loop per core.
 
 ## Stack
 
-- **Language:** Rust 1.94
+- **Language:** Rust 1.99
 - **Framework:** Cpeak
 - **Engine:** hyper 1 (HTTP/1.1)
 - **TLS:** rustls (ring), through Cpeak's `https` option
@@ -26,8 +26,8 @@ Port 8080 is HTTP and port 8081 is the same app over HTTPS (HTTP/1.1, ALPN `http
 
 ## Notes
 
-- Everything goes through Cpeak's documented API, in its default configuration: the router for the paths, `req.params` and `req.query` for the path and query parameters, `req.chunk()` for the request bodies, `res.json()` and `res.end()` for the responses
-- JSON is serialized per request by `res.json()`, and compressed per request by Cpeak's own compression, switched on with its default options
+- Everything goes through Cpeak's documented API: the router for the paths, `req.params` and `req.query` for the path and query parameters, `req.chunk()` for the request bodies, `res.json()` and `res.end()` for the responses
+- JSON is serialized per request by `res.json()`, and compressed per request by Cpeak's own compression, with gzip set to level 1 (nginx's default) instead of Cpeak's default 6
 - `/delay/{ms}` waits with `cpeak::sleep`, which parks the request and not the thread
 - The worker count is Cpeak's default: one per core, each with its own `SO_REUSEPORT` listener on Linux. There is no socket code in the entry
 - A Cpeak app speaks either HTTP or HTTPS, so the routes are in a function that builds the app once for each port
