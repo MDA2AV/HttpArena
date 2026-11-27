@@ -1,0 +1,19 @@
+name: httparena_dox
+publish_to: 'none'
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  dox_core: ^3.2.6
+  dox_orm: ^3.2.3
+  dox_postgres_native: ^3.2.2
+  dox_view: ^3.2.0
+
+# Postgres only: skip the MySQL library, and do not bundle SQLite.
+hooks:
+  user_defines:
+    dox_mysql_native:
+      skip: true
+    sqlite3:
+      source: system
