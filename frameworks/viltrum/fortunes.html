@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head><title>Fortunes</title></head>
+<body>
+<table>
+<tr><th>id</th><th>message</th></tr>
+@for f in rows
+<tr><td>@f.id</td><td>@{esc(f.message)}</td></tr>
+@end
+</table>
+</body>
+</html>

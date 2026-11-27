@@ -10,7 +10,7 @@
     "response": true
   },
   "engine": "std/http",
-  "description": "Sober's standard library HTTP/1.1 server (std/http on std/net, TLS 1.3 from std/tls), default configuration. One task per connection; one io_uring and one SO_REUSEPORT listener per worker — each worker accepts on its own ring and runs the connection itself (epoll fallback), with workers pinned one per CPU. Routes are a plain table ([]http.Route with method, :param / *rest patterns, Mount / Merge, before / after middleware), JSON through std/json, gzip through the built-in compression: option of the server. /async-db through std/pg, the standard library's own PostgreSQL client (wire protocol 3.0, extended query, SCRAM-SHA-256) and its connection pool (pg.OpenPool / pg.With) sized from DATABASE_MAX_CONN. Static ELF with no libc, FROM scratch.",
+  "description": "Sober's standard library HTTP server (std/http on std/net, TLS 1.3 from std/tls), default configuration: HTTP/1.1, and HTTP/2 with prior knowledge (h2c) on 8082 where each stream runs its handler in its own task. One task per connection; one io_uring and one SO_REUSEPORT listener per worker — each worker accepts on its own ring and runs the connection itself (epoll fallback), with workers pinned one per CPU. Routes are a plain table ([]http.Route with method, :param / *rest patterns, Mount / Merge, before / after middleware), JSON through std/json, gzip through the built-in compression: option of the server. /async-db through std/pg, the standard library's own PostgreSQL client (wire protocol 3.0, extended query, SCRAM-SHA-256) and its connection pool (pg.OpenPool / pg.With) sized from DATABASE_MAX_CONN. Static ELF with no libc, FROM scratch.",
   "repo": "https://github.com/sober-lang/sober",
   "enabled": true,
   "resilience": true,
@@ -24,9 +24,13 @@
     "json-comp",
     "json-tls",
     "8gbit",
-    "async-db"
+    "async-db",
+    "baseline-h2c",
+    "json-h2c",
+    "connections-1m",
+    "connections-1m-tls"
   ],
-  "spec": ["h1"],
+  "spec": ["h1", "h2"],
   "maintainers": [
     "kr9ly"
   ]

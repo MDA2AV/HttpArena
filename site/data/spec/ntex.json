@@ -5,7 +5,7 @@
     "h1": {
       "tool": "http11probe",
       "version": "d50d818",
-      "passed": 152,
+      "passed": 154,
       "total": 159,
       "warnings": 19,
       "failed": [
@@ -48,20 +48,6 @@
           "got": "200, connection left open",
           "rfc": "RFC 9110 \u00a77.2",
           "level": "Must"
-        },
-        {
-          "id": "MAL-INCOMPLETE-REQUEST",
-          "test": "Partial HTTP request \u2014 request-line and headers but no final CRLF",
-          "expected": "400/close/timeout",
-          "got": "408, connection closed",
-          "level": "NotApplicable"
-        },
-        {
-          "id": "MAL-EMPTY-REQUEST",
-          "test": "Zero bytes \u2014 TCP connection established without sending any data",
-          "expected": "400/close/timeout",
-          "got": "408, connection closed",
-          "level": "NotApplicable"
         }
       ]
     }

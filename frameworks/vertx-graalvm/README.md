@@ -1,0 +1,52 @@
+# vertx-graalvm
+
+The [vertx](../vertx) entry on Oracle GraalVM in JIT mode. The source, `pom.xml` and JVM flags are
+the vertx entry's; only the runtime image differs. HotSpot runs with the Graal compiler (libgraal)
+in place of C2, which is Oracle GraalVM's default, so no compiler flags are set. This is not a
+Native Image build.
+
+Eclipse Vert.x with vertx-web on Netty, one Vert.x instance and `SO_REUSEPORT` listener per core.
+
+## Stack
+
+- **Language:** Java 25
+- **Framework:** Vert.x 5.2 (vertx-core + vertx-web)
+- **Build:** Maven shade jar, `container-registry.oracle.com/graalvm/jdk:25.0.5.1` runtime
+  (Oracle GraalVM 25.0.5.1, JIT)
+
+## Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/pipeline` | GET | Returns `ok` (plain text) |
+| `/baseline11` | GET | Sums query parameter values |
+| `/baseline11` | POST | Sums query parameters + request body |
+| `/json/{count}?m=N` | GET | First `count` dataset items with `total = price * quantity * m` |
+| `/echo` | POST | Returns the request body back verbatim |
+| `/baseline2` | GET | Sums query parameter values |
+| `/async-db` | GET | Reads from PostgreSQL through the reactive pg client |
+| `/static/:filename` | GET | Serves a file from disk with `sendFile`, the brotli or gzip variant when the client accepts one |
+| `/crud/items` | GET/POST | Lists items by category with paging, or inserts one |
+| `/crud/items/:id` | GET/PUT | Reads one item through a Redis cache-aside, or updates it and drops the cached copy |
+
+## Notes
+
+- Netty's epoll native transport rather than the JDK's NIO selector
+- Routing, path and query params through the vertx-web `Router`
+- JSON built as `JsonObject` and written with `RoutingContext.json`
+- Compression through `HttpServerOptions.setCompressionSupported(true)`
+- TLS through OpenSSL (BoringSSL from `netty-tcnative-boringssl-static`) via `OpenSSLEngineOptions`,
+  rather than the JDK's `SSLEngine` that Vert.x uses when no engine is set
+- One `Vertx` per core, each with a single event loop and one server verticle. Every server sets
+  `setReusePort(true)`, so each core binds its own `SO_REUSEPORT` socket on each port and the
+  kernel spreads new connections across them. Inside one `Vertx`, servers on the same host:port
+  share a single listening socket and a single acceptor thread
+- `/echo` is read from the request stream, so the 20 MB body is never buffered
+
+`json-tls` and `static-tls` listen on `8081` when `/certs/server.crt` and `/certs/server.key` are
+mounted. ALPN is off: those two profiles want HTTP/1.1 negotiated and no h2 offered.
+
+Static file bodies are read from disk on every request - `sendFile` hands the descriptor to the
+kernel rather than holding the bytes - and the pre-compressed sibling is picked per request.
+
+`tags` is a JSONB column, so the pg client hands back a `JsonArray` rather than text.

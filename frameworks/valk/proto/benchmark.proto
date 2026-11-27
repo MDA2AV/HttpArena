@@ -1,0 +1,37 @@
+// Canonical benchmark.proto used by ghz for gRPC streaming tests.
+// Each gRPC framework must implement the RPCs it subscribes to in its own
+// service; the shapes must match this file exactly.
+
+syntax = "proto3";
+
+package benchmark;
+
+service BenchmarkService {
+  // Unary — 1 request, 1 reply. Used by unary-grpc (h2load).
+  rpc GetSum (SumRequest) returns (SumReply);
+
+  // Server streaming — 1 request, server emits `count` replies. Used by
+  // stream-grpc / stream-grpc-tls (ghz).
+  rpc StreamSum (StreamRequest) returns (stream SumReply);
+
+  // Client streaming — N requests streamed in, 1 reply with the total.
+  rpc CollectSum (stream SumRequest) returns (SumReply);
+
+  // Bidirectional streaming — echo: 1 reply per request over a persistent stream.
+  rpc EchoSum (stream SumRequest) returns (stream SumReply);
+}
+
+message SumRequest {
+  int32 a = 1;
+  int32 b = 2;
+}
+
+message StreamRequest {
+  int32 a = 1;
+  int32 b = 2;
+  int32 count = 3;
+}
+
+message SumReply {
+  int32 result = 1;
+}

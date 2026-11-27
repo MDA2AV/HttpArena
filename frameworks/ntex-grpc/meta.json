@@ -11,5 +11,5 @@
     "unary-grpc",
     "unary-grpc-tls"
   ],
-  "maintainers": []
+  "maintainers": ["fafhrd91"]
 }
