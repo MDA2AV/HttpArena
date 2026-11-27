@@ -7,7 +7,8 @@ import 'package:httparena_dox/constants/http_ports.dart';
 
 void main() async {
   // Dox serves one port, so a second copy of this binary serves h2c.
-  if (env.port == HttpPorts.http1) {
+  // Each isolate group runs main() again: only the primary starts the copy.
+  if (Dox().isPrimary && env.port == HttpPorts.http1) {
     await Process.start(
       Platform.resolvedExecutable,
       <String>[],

@@ -16,6 +16,9 @@ AppConfig appConfig = AppConfig(
 
   /// gzip a response on a Rust thread when the client asks for gzip.
   compress: true,
+
+  /// One isolate group per core: each isolate has its own heap and GC.
+  flags: CoreFlags(isolateGroups: true),
   providers: <DoxProvider>[DatabaseProvider(), AppViewProvider()],
   routers: <Router>[
     ApiRouter(
