@@ -1,0 +1,25 @@
+{
+  "display_name": "BT-YE",
+  "language": "C++",
+  "type": "experimental",
+  "mode": "standard",
+  "engine": "hidi",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "description": "C++23 framework for HTTP/2 services on hidi: an actor per core, coroutines, server and client generated from an OpenAPI spec by svarg. Serves h2 on :8443 and h2c (prior knowledge) on :8082.",
+  "repo": "https://github.com/kelbon/BT-YE",
+  "enabled": true,
+  "tests": [
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c"
+  ],
+  "maintainers": [
+    "kelbon"
+  ]
+}
