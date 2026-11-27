@@ -153,6 +153,22 @@ CATALOG = [
     ]),
 ]
 
+# Weights. A profile's 0-1000 is multiplied by its weight before the composite
+# adds it up: 0 where the profile is not scored for the entry's league, 1 for any
+# other profile - except the ones in a group here. Each pair measures one thing
+# twice (holding a million connections, with and without TLS; CPU and tails at a
+# pinned rate, saturating and near idle; JSON, compressed and over TLS), so the
+# scored profiles of a group share a weight of 1 between them - 0.5 apiece - and
+# count as one test. A league that scores only one of a pair gives that one the
+# whole 1. The user: "lets group up some tests so their sum weight should be 1".
+# Carried on each profile in data.js as "group"; weightForType() in index.html
+# and _weight_for() below read it.
+WEIGHT_GROUP = {
+    "connections-1m": "connections", "connections-1m-tls": "connections",
+    "latency-1m": "latency", "latency-10k": "latency",
+    "json-comp": "json", "json-tls": "json",
+}
+
 # Fields kept per result row. tpl_* only emitted when present (api/gateway/prod).
 BASE_FIELDS = ("rps", "avg_latency", "p99_latency", "cpu", "memory", "bandwidth", "input_bw",
                "status_2xx", "status_3xx", "status_4xx", "status_5xx",
@@ -722,6 +738,8 @@ def _round_views(bundle):
                 prof = {"id": pid, "label": label, "category": category, "blurb": blurb,
                         "conns": present, "scoredConns": present if scored else [],
                         "scored": s, "engineScored": es, "infraScored": isf}
+                if WEIGHT_GROUP.get(pid):
+                    prof["group"] = WEIGHT_GROUP[pid]
                 if PROFILE_DOC.get(pid):
                     prof["doc"] = PROFILE_DOC[pid]
                 profiles.append(prof)
@@ -1302,12 +1320,11 @@ def lat_scores(pid):
     return out
 
 
-def _scored_for(prof, meta, pid, fw):
-    """scoredForType() in index.html. infraScored is read before the `scored`
-    short-circuit, not behind it: the infra set is not a subset of the framework
-    set — it counts Pipelined, which frameworks do not."""
-    p = prof[pid]
-    t = meta.get(fw, {}).get("type", "emerging")
+def _scored_type(p, t):
+    """scoredForType() in index.html, for one profile and one entry type.
+    infraScored is read before the `scored` short-circuit, not behind it: the
+    infra set is not a subset of the framework set — it counts Pipelined, which
+    frameworks do not."""
     if t == "infrastructure":
         return bool(p["infraScored"])
     if not p["scored"]:
@@ -1315,6 +1332,24 @@ def _scored_for(prof, meta, pid, fw):
     if t == "engine":
         return bool(p["engineScored"])
     return True
+
+
+def _scored_for(prof, meta, pid, fw):
+    """scoredForType() in index.html, for an entry."""
+    return _scored_type(prof[pid], meta.get(fw, {}).get("type", "emerging"))
+
+
+def _weight_for(prof, pid, t):
+    """weightForType() in index.html: what a profile's 0-1000 is multiplied by in
+    the composite of an entry of type `t`. 0 where it is not scored; 1 split
+    evenly over the scored profiles of its WEIGHT_GROUP; 1 for any other."""
+    p = prof[pid]
+    if not _scored_type(p, t):
+        return 0.0
+    g = p.get("group")
+    if not g:
+        return 1.0
+    return 1.0 / sum(1 for q in prof.values() if q.get("group") == g and _scored_type(q, t))
 
 
 # Framework tiers are the only ones graded on completeness. Engine and
@@ -1469,8 +1504,10 @@ def badge_composite(agg, profiles, meta, scope, types, show_tuned=True, lang=Non
                 # board renders, which is a number people can count (#1149).
                 any_result = True
                 if is_scored(pid, fw):
-                    # 0-1000 per profile; mirrors computeComposite() in
-                    # index.html, which check_badge_parity.js diffs against.
+                    # 0-1000 per profile, times the profile's weight; mirrors
+                    # computeComposite() in index.html, which
+                    # check_badge_parity.js diffs against - the same operations
+                    # in the same order, so the two agree.
                     #
                     # The fixed-rate profiles cannot be normalised on rps like
                     # the rest: the rate is pinned, so every entry that holds it
@@ -1478,12 +1515,13 @@ def badge_composite(agg, profiles, meta, scope, types, show_tuned=True, lang=Non
                     # all of them. Their own 0-100 score is normalised against
                     # the leader of the field instead, so this column's leader is
                     # worth the same 1000 as any other column's.
+                    w = _weight_for(prof, pid, meta.get(fw, {}).get("type", "emerging"))
                     if pid in _lat.FULL_RATE:
                         _m = max_lat.get(pid, 0.0)
                         if _m > 0:
-                            score += (lat_scores(pid).get(fw, 0.0) / _m) * 1000
+                            score += ((lat_scores(pid).get(fw, 0.0) / _m) * 1000) * w
                     else:
-                        score += (eff(pid, fw) / max_r[pid]) * 1000
+                        score += ((eff(pid, fw) / max_r[pid]) * 1000) * w
         if any_result:
             rows.append((fw, score * _cmp_factor(meta, fw, scope)))
     rows.sort(key=lambda r: (-r[1], r[0]))
@@ -1981,8 +2019,10 @@ def write_llms_txt(tree, content, families, fw_lang, current, round_name, profil
         "",
         "The HTTP/1.1 ranking is at " + SITE + "/, and every other ranking and every test profile has "
         "a page of its own, linked below, with its table in the HTML. The composite rankings are "
-        "repeated here as text. Scores are the composite: each profile is worth 1,000 to the best entry "
-        "in the field and a framework's score is the sum over the profiles of that family, scaled "
+        "repeated here as text. Scores are the composite: each profile is worth its weight times "
+        "1,000 to the best entry in the field - a weight of 1, or 0.5 apiece for two profiles that "
+        "measure one thing (CON-1M and CON-1M-TLS, Latency-1M and Latency-10K, JSON Compressed and "
+        "JSON TLS) - and a framework's score is the sum over the profiles of that family, scaled "
         "by its completeness factor - the entry loses 2.5% for each of routing, middleware, the "
         "request it hands you and the response it builds that it does not do, so the factor runs "
         "from 1.00 down to 0.90. Engine and infrastructure entries are not graded on it.",
@@ -2227,8 +2267,8 @@ def build_index_page(rows, fw_lang, current, round_name, n_profiles, n_entries,
     # with the same strings so the pre-rendered page and the rendered one say
     # the same thing.
     blurb = ("Normalized score summed across " + SCOPE_BLURB[DEFAULT_SCOPE] +
-             " (each profile worth 1,000 to its leader in the full field, so filtering does not "
-             'change the numbers), per framework type. Higher is better. '
+             " (each profile worth its weight × 1,000 to its leader in the full field, so filtering "
+             'does not change the numbers), per framework type. Higher is better. '
              '<a href="/docs/scoring/composite-score/">How it works →</a>')
 
     page = _board_page(
@@ -2776,7 +2816,8 @@ def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url="", achievements=(),
 
     if ranks:
         out.append('<h2 id="rank">Composite rank</h2>')
-        out.append("<p>Each profile of a family is worth 1,000 to the entry that leads it, and the "
+        out.append("<p>Each profile of a family is worth its weight × 1,000 to the entry that leads "
+                   "it - 1, or 0.5 apiece for two profiles that measure one thing - and the "
                    "composite is the sum over the family, less 2.5% for each of routing, "
                    "middleware, request and response the entry does not do for you - its "
                    '<a href="/docs/scoring/completeness/">completeness factor</a>, which the '
@@ -4104,8 +4145,9 @@ def build_view_pages(profiles, results, meta, families, fw_lang, round_name, upd
         if scope == "all":
             title, blurb = OVERALL_H1, (
                 "The HTTP/1.1, HTTP/2, HTTP/3, gRPC and WebSocket composites added up, each scored as on its "
-                "own board (every profile worth 1,000 to its leader in the full field, so filtering does not "
-                "change the numbers). A protocol an entry does not serve adds nothing. Higher is better. "
+                "own board (every profile worth its weight × 1,000 to its leader in the full field, so "
+                "filtering does not change the numbers). A protocol an entry does not serve adds nothing. "
+                "Higher is better. "
                 '<a href="/docs/scoring/composite-score/#overall-composite">How it works →</a>')
             over, kids = "Every protocol family in one ranking, " + same, [
                 link(k, SCOPE_H1[k]) for k in OVERALL_SCOPES]
@@ -4113,8 +4155,9 @@ def build_view_pages(profiles, results, meta, families, fw_lang, round_name, upd
                     "together, every composite " + same)
         else:
             title, blurb = SCOPE_H1[scope], (
-                "Normalized score summed across " + e(SCOPE_BLURB[scope]) + " (each profile worth 1,000 to its "
-                "leader in the full field, so filtering does not change the numbers), per framework type. "
+                "Normalized score summed across " + e(SCOPE_BLURB[scope]) + " (each profile worth its weight "
+                "× 1,000 to its leader in the full field, so filtering does not change the numbers), per "
+                "framework type. "
                 'Higher is better. <a href="/docs/scoring/composite-score/">How it works →</a>')
             over = "The composite ranking over " + SCOPE_BLURB[scope] + ", " + same
             kids = [link(p["id"], _view_name(p) + " benchmark") for p in profiles if _scope_of(p) == scope]
@@ -4405,6 +4448,8 @@ def build_profiles(index, docs_content=None):
                     "scoredConns": [c for c in scored if c in present],
                     "scored": s, "engineScored": es, "infraScored": isf,
                 }
+                if WEIGHT_GROUP.get(pid):
+                    prof["group"] = WEIGHT_GROUP[pid]
                 docid = PROFILE_DOC.get(pid)
                 if docid and docs_content is not None and docid in docs_content:
                     prof["doc"] = docid
