@@ -1,0 +1,221 @@
+{
+  "framework": "thesis-http-server",
+  "dir": "thesis-http-server",
+  "suites": {
+    "h1": {
+      "tool": "http11probe",
+      "version": "d50d818",
+      "passed": 133,
+      "total": 159,
+      "warnings": 16,
+      "failed": [
+        {
+          "id": "COMP-OPTIONS-STAR",
+          "test": "OPTIONS * is the only valid asterisk-form request",
+          "expected": "2xx or 405; close/timeout = warn",
+          "got": "404, connection left open",
+          "rfc": "RFC 9112 \u00a73.2.4",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-POST-CL-UNDERSEND",
+          "test": "POST with Content-Length: 10 but only 5 bytes sent \u2014 incomplete body",
+          "expected": "400/close/timeout",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a76.2",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-CHUNKED-NO-FINAL",
+          "test": "Chunked body without zero terminator \u2014 incomplete transfer",
+          "expected": "400/close/timeout",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-METHOD-CONNECT",
+          "test": "CONNECT to an origin server must be rejected",
+          "expected": "400/405/501 or close",
+          "got": "404, connection left open",
+          "rfc": "RFC 9110 \u00a79.3.6",
+          "level": "Should"
+        },
+        {
+          "id": "COMP-DATE-HEADER",
+          "test": "Origin server must include Date header in responses",
+          "expected": "2xx with Date header",
+          "got": "200, connection left open",
+          "rfc": "RFC 9110 \u00a76.6.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-TE-DOUBLE-CHUNKED",
+          "test": "Transfer-Encoding: chunked, chunked with CL is ambiguous",
+          "expected": "400 or 2xx",
+          "got": "501, connection closed",
+          "rfc": "RFC 9112 \u00a76.1",
+          "level": "Should"
+        },
+        {
+          "id": "SMUG-TE-NOT-FINAL-CHUNKED",
+          "test": "Transfer-Encoding where chunked is not final \u2014 server MUST respond with 400 (RFC 9112 \u00a76.3)",
+          "expected": "400 or close",
+          "got": "501, connection closed",
+          "rfc": "RFC 9112 \u00a76.3",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-BARE-SEMICOLON",
+          "test": "Chunk size with bare semicolon and no extension name must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection closed",
+          "rfc": "RFC 9112 \u00a77.1.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-EXT-INVALID-TOKEN",
+          "test": "Chunk extension with invalid token character must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection closed",
+          "rfc": "RFC 9112 \u00a77.1.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-UNDERSCORE",
+          "test": "Chunk size with underscores (1_0) must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection closed",
+          "rfc": "RFC 9112 \u00a77.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-TE-EMPTY-VALUE",
+          "test": "Transfer-Encoding with empty value must be rejected",
+          "expected": "400 or close",
+          "got": "501, connection closed",
+          "rfc": "RFC 9112 \u00a76.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-TE-LEADING-COMMA",
+          "test": "Transfer-Encoding with leading comma (, chunked) \u2014 RFC says empty list elements MUST be ignored",
+          "expected": "400 or 2xx",
+          "got": "501, connection closed",
+          "rfc": "RFC 9110 \u00a75.6.1",
+          "level": "Should"
+        },
+        {
+          "id": "SMUG-TE-DUPLICATE-HEADERS",
+          "test": "Two Transfer-Encoding headers with CL present \u2014 ambiguous framing",
+          "expected": "400 or close",
+          "got": "501, connection closed",
+          "rfc": "RFC 9112 \u00a76.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-HEX-PREFIX",
+          "test": "Chunk size with 0x prefix must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection closed",
+          "rfc": "RFC 9112 \u00a77.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-SIZE-PLUS",
+          "test": "Chunk size with leading plus sign must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection closed",
+          "rfc": "RFC 9112 \u00a77.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-SIZE-TRAILING-OWS",
+          "test": "Chunk size with trailing whitespace before CRLF must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection closed",
+          "rfc": "RFC 9112 \u00a77.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-LEADING-SP",
+          "test": "Chunk size with leading space must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection closed",
+          "rfc": "RFC 9112 \u00a77.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-MISSING-TRAILING-CRLF",
+          "test": "Chunk data without trailing CRLF must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection closed",
+          "rfc": "RFC 9112 \u00a77.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-SPILL",
+          "test": "Chunk declares size 5 but sends 7 bytes \u2014 oversized chunk data must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection closed",
+          "rfc": "RFC 9112 \u00a77.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-EXT-CTRL",
+          "test": "NUL byte in chunk extension must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection closed",
+          "rfc": "RFC 9112 \u00a77.1.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-EXT-CR",
+          "test": "Bare CR (not CRLF) in chunk extension \u2014 some parsers treat CR alone as line ending",
+          "expected": "400 or close",
+          "got": "200, connection closed",
+          "rfc": "RFC 9112 \u00a77.1.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-NEGATIVE",
+          "test": "Negative chunk size must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection closed",
+          "rfc": "RFC 9112 \u00a77.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-TE-TRAILING-COMMA",
+          "test": "Transfer-Encoding: chunked, \u2014 trailing comma produces empty list element",
+          "expected": "400 or 2xx",
+          "got": "501, connection closed",
+          "rfc": "RFC 9110 \u00a75.6.1",
+          "level": "Should"
+        },
+        {
+          "id": "SMUG-CHUNK-BARE-CR-TERM",
+          "test": "Chunk size line terminated by bare CR \u2014 not a valid line terminator",
+          "expected": "400 or close",
+          "got": "200, connection closed",
+          "rfc": "RFC 9112 \u00a72.2",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-LONG-METHOD",
+          "test": "100KB method name should be rejected",
+          "expected": "400, 501 or close",
+          "got": "431, connection closed",
+          "level": "Should"
+        },
+        {
+          "id": "MAL-CHUNK-SIZE-OVERFLOW",
+          "test": "Chunk size with integer overflow must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection closed",
+          "level": "Must"
+        }
+      ]
+    }
+  }
+}

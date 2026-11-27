@@ -2762,6 +2762,20 @@
       }
     ]
   },
+  "thesis-http-server": {
+    "dir": "thesis-http-server",
+    "description": "A fiber-based HTTP/1 server running on the Thesis event loop in PHP 8.6.",
+    "repo": "https://github.com/thesis-php/thesis",
+    "type": "experimental",
+    "engine": "thesis/http",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "tokio-uring-ws": {
     "dir": "tokio-uring-ws",
     "description": "Hand-rolled WebSocket echo on tokio-uring \u2014 the io_uring-backed Rust runtime with a completion/owned-buffer API. One tokio-uring runtime per core with SO_REUSEPORT, and a from-scratch RFC 6455 handshake (hand-written SHA-1 + base64) and frame parser/masking on tokio-uring's TcpStream. No WebSocket library.",

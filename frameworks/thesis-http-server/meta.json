@@ -1,0 +1,36 @@
+{
+  "display_name": "thesis-http-server",
+  "language": "PHP",
+  "type": "experimental",
+  "engine": "thesis/http",
+  "description": "A fiber-based HTTP/1 server running on the Thesis event loop in PHP 8.6.",
+  "repo": "https://github.com/thesis-php/thesis",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "limited-conn",
+    "latency-10k",
+    "latency-1m",
+    "pipelined",
+    "async",
+    "json-comp",
+    "json-tls",
+    "8gbit",
+    "static-tls"
+  ],
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "maintainers": [
+    "vudaltsov"
+  ],
+  "tls_check": false,
+  "resilience": false,
+  "spec": [
+    "h1"
+  ]
+}

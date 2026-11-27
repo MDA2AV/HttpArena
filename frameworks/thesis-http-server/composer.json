@@ -1,0 +1,30 @@
+{
+  "require": {
+    "ext-pcntl": "*",
+    "ext-zlib": "*",
+    "thesis/exceptionally": "^0.4",
+    "thesis/http": "^0.1"
+  },
+  "repositories": [
+    {
+      "type": "path",
+      "url": "thesis/packages/*",
+      "options": {
+        "versions": {
+          "thesis/http": "0.1.x-dev",
+          "thesis/io": "0.1.x-dev",
+          "thesis/net": "0.1.x-dev",
+          "thesis/async": "0.1.x-dev",
+          "thesis/dispatcher": "0.4.x-dev",
+          "thesis/formatter": "0.2.x-dev",
+          "thesis/source-location": "0.1.x-dev",
+          "thesis/time": "0.4.x-dev",
+          "thesis/exceptionally": "0.4.x-dev"
+        },
+        "symlink": false
+      }
+    }
+  ],
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}
