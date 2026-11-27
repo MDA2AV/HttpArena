@@ -77,6 +77,11 @@ app.uwsLite.post('/spec', { body: 'lent', limit: '1mb' }, (req, res) => {
 });
 app.uwsLite.get('/spec/headers', { headers: true }, specHeaders);
 app.uwsLite.post('/spec/headers', { body: 'lent', headers: true }, specHeaders);
+// OPTIONS * asks about the server, not a path: µWS lets it through since v20.72, Express has no
+// route for it. A RegExp is the only way to write "*" alone, after the other OPTIONS routes.
+app.options(/^\*$/, (req, res) => {
+    res.set('allow', 'GET, HEAD, POST, OPTIONS').end();
+});
 
 // The echo answers while the body is lent. Over the limit a 413, and the rest of the body is not read.
 const echo = (req, res) => {

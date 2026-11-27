@@ -9,6 +9,20 @@
       "total": 159,
       "warnings": 20,
       "failed": []
+    },
+    "h2": {
+      "tool": "h2spec",
+      "version": "2.6.0",
+      "passed": 146,
+      "total": 146,
+      "failed": [],
+      "listeners": {
+        "h2c": {
+          "passed": 146,
+          "total": 146,
+          "failed": []
+        }
+      }
     }
   }
 }

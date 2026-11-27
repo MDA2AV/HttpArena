@@ -2,8 +2,11 @@ use valk.core
 use valk.fs
 use valk.http
 use valk.json
+use valk.template
 use valk.thread
 use valk.time
+use grpc
+use postgres
 
 struct Rating {
     score: int
@@ -38,37 +41,120 @@ struct Page {
     count: int
 }
 
-type Handler (fn(http.Request)(http.Response))
+struct DbPage {
+    items: Array[Item]
+    count: int
+}
 
-global thread_dataset: ?Array[Item] (null)
-global current_route: ?http.Route[Handler] (null)
-global h1_routes: ?http.Router[Handler] (null)
-global h1_tls_routes: ?http.Router[Handler] (null)
-global h2_routes: ?http.Router[Handler] (null)
-global h2c_routes: ?http.Router[Handler] (null)
+struct Fortune {
+    id: int
+    message: String
+}
 
-fn dataset() Array[Item] {
-    let d = thread_dataset
-    if isset(d) : return d
+struct FortunesPage {
+    fortunes: Array[Fortune]
+}
+
+struct RouteCtx {
+    req: http.Request
+    route: http.Route[fn(RouteCtx)(http.Response)]
+
+    fn param(name: String) ?String {
+        return this.route.param(this.req.path, name) !? null
+    }
+}
+
+value STMT_ITEMS (0)
+value STMT_FORTUNES (1)
+
+global grpc_server: grpc.GrpcServer (create_grpc_server())
+global dataset: Array[Item] (load_dataset())
+global views: template.Engine (load_views())
+global router: http.Router[fn(RouteCtx)(http.Response)] (create_router())
+global db_pool_cache: ?postgres.PipelinePool (null)
+
+fn open_db_connection() postgres.Connection !postgres.Error {
+    let dsn = core.getenv("DATABASE_URL") !? ""
+    return postgres.connect_url(dsn, postgres.SslMode.disable) !>
+}
+
+fn db_pool() postgres.PipelinePool {
+    return db_pool_cache ?? <{
+        let max_conn = (core.getenv("DATABASE_MAX_CONN") !? "256").to_uint() !? 256
+        if max_conn == 0 : max_conn = 256
+        let workers = core.cpu_thread_count()
+        if workers < 1 : workers = 1
+        let per_worker = max_conn / workers
+        if per_worker < 1 : per_worker = 1
+
+        let pool = postgres.PipelinePool.new(open_db_connection, per_worker)
+        pool.prepare("SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN :min AND :max LIMIT :limit")
+        pool.prepare("SELECT id, message FROM fortune")
+        db_pool_cache = pool
+        return pool
+    }
+}
+
+class BenchmarkServiceImpl is BenchmarkServiceService {
+    + fn get_sum(ctx: grpc.CallContext, req: SumRequest) SumReply !grpc.GrpcError {
+        return SumReply { result: req.a + req.b }
+    }
+
+    + fn stream_sum(ctx: grpc.CallContext, req: StreamRequest, stream: grpc.TypedServerStream[StreamRequest, SumReply]) void !grpc.GrpcError {
+        throw grpc.err(.unimplemented, "StreamSum not implemented")
+    }
+
+    + fn collect_sum(stream: grpc.TypedServerStream[SumRequest, SumReply]) SumReply !grpc.GrpcError {
+        throw grpc.err(.unimplemented, "CollectSum not implemented")
+    }
+
+    + fn echo_sum(stream: grpc.TypedServerStream[SumRequest, SumReply]) void !grpc.GrpcError {
+        throw grpc.err(.unimplemented, "EchoSum not implemented")
+    }
+}
+
+fn create_grpc_server() grpc.GrpcServer {
+    let srv = grpc.GrpcServer.new()
+    register_BenchmarkService_service(srv, BenchmarkServiceImpl {})
+    return srv
+}
+
+fn create_router() http.Router[fn(RouteCtx)(http.Response)] {
+    let r = http.Router[fn(RouteCtx)(http.Response)].new()
+    r.add("GET", "/baseline11", baseline)
+    r.add("POST", "/baseline11", baseline)
+    r.add("GET", "/baseline2", baseline)
+    r.add("POST", "/baseline2", baseline)
+    r.add("GET", "/pipeline", pipeline)
+    r.add("GET", "/delay/@ms", delay)
+    r.add("GET", "/json/@count", json_items)
+    r.add("GET", "/async-db", async_db)
+    r.add("GET", "/fortunes", fortunes)
+    r.add("GET", "/ws", ws_echo)
+    r.add("POST", "/echo", echo_body)
+    r.add("POST", "/benchmark.BenchmarkService/GetSum", grpc_get_sum)
+    return r
+}
+
+fn load_dataset() Array[Item] {
     let path = core.getenv("DATASET_PATH") !? "/data/dataset.json"
     let text = fs.read(path) !? "[]"
-    let loaded = json.decode_to[Array[Item]](text) !? Array[Item].new()
-    thread_dataset = loaded
-    return loaded
+    return json.decode_to[Array[Item]](text) !? Array[Item].new()
 }
 
-fn route_param(req: http.Request, name: String) ?String {
-    let route = current_route ?! return null
-    return route.param(req.path, name) !? null
+fn load_views() template.Engine {
+    let engine = template.Engine.new()
+    engine.set_many(#embed_dir("src/views"))
+    return engine
 }
 
-fn dispatch(router: http.Router[Handler], req: http.Request) http.Response {
+fn handle(req: http.Request) http.Response {
     let route = router.find(req.method, req.path) ! return http.Response.text("not found", 404)
-    current_route = route
-    return (route.handler)(req)
+    return route.handler(RouteCtx { req: req, route: route })
 }
 
-fn baseline(req: http.Request) http.Response {
+fn baseline(ctx: RouteCtx) http.Response {
+    let req = ctx.req
     let a = (req.query_param("a") !? "0").to_int() !? 0
     let b = (req.query_param("b") !? "0").to_int() !? 0
     let sum = a + b
@@ -76,28 +162,26 @@ fn baseline(req: http.Request) http.Response {
     return http.Response.text(sum.to_string())
 }
 
-fn pipeline(req: http.Request) http.Response {
+fn pipeline(ctx: RouteCtx) http.Response {
     return http.Response.text("ok")
 }
 
-fn delay(req: http.Request) http.Response {
-    let raw = route_param(req, "ms") ?? "0"
-    let ms = raw.to_uint() !? 0
+fn delay(ctx: RouteCtx) http.Response {
+    let ms = (ctx.param("ms") ?? "0").to_uint() !? 0
     if ms > 0 : time.sleep_ms(ms)
     return http.Response.text(ms.to_string())
 }
 
-fn json_items(req: http.Request) http.Response {
-    let raw = route_param(req, "count") ?! return http.Response.text("bad request", 400)
+fn json_items(ctx: RouteCtx) http.Response {
+    let raw = ctx.param("count") ?! return http.Response.text("bad request", 400)
     let count = raw.to_int() ! return http.Response.text("bad request", 400)
-    let m = (req.query_param("m") !? "1").to_int() !? 1
-    let items = dataset()
+    let m = (ctx.req.query_param("m") !? "1").to_int() !? 1
     let n = count
     if n < 0 : n = 0
-    if n > items.length.to(int) : n = items.length.to(int)
+    if n > dataset.length.to(int) : n = dataset.length.to(int)
     let totals = Array[Total].new(n.to(uint))
     each 0 .. n.to(uint) as i {
-        let d = items[i]
+        let d = dataset[i]
         totals.append(Total {
             id: d.id
             name: d.name
@@ -113,12 +197,75 @@ fn json_items(req: http.Request) http.Response {
     return http.Response.json_of(Page { items: totals, count: n })
 }
 
-fn echo_body(req: http.Request) http.Response {
-    return http.Response.new(req.body, 200, "application/octet-stream")
+fn async_db(ctx: RouteCtx) http.Response {
+    let req = ctx.req
+    let min_price = (req.query_param("min") !? "10").to_int() !? 10
+    let max_price = (req.query_param("max") !? "50").to_int() !? 50
+    let limit = (req.query_param("limit") !? "50").to_int() !? 50
+    if limit < 1 : limit = 1
+    if limit > 50 : limit = 50
+
+    let query = db_pool().start(STMT_ITEMS) ! return http.Response.json("{\"items\":[],\"count\":0}")
+    let result = query.arg(min_price).arg(max_price).arg(limit).run() ! {
+        return http.Response.json("{\"items\":[],\"count\":0}")
+    }
+    defer result.release()
+
+    let items = Array[Item].new(limit.to(uint))
+    while result.next_row() {
+        let tags = json.decode_to[Array[String]](result.col_string(6)) !? Array[String].new()
+        items.append(Item {
+            id: result.col_int(0)
+            name: result.col_string(1)
+            category: result.col_string(2)
+            price: result.col_int(3)
+            quantity: result.col_int(4)
+            active: result.col_bool(5)
+            tags: tags
+            rating: Rating {
+                score: result.col_int(7)
+                count: result.col_int(8)
+            }
+        })
+    }
+    return http.Response.json_of(DbPage { items: items, count: items.length.to(int) })
 }
 
-fn ws_echo(req: http.Request) http.Response {
-    return http.WebSocket.upgrade(req, fn(ws: http.WebSocket) {
+fn fortunes(ctx: RouteCtx) http.Response {
+    let list = Array[Fortune].new(208)
+    let query = db_pool().start(STMT_FORTUNES) !? null
+    if isset(query) {
+        let result = query.run() !? null
+        if isset(result) {
+            defer result.release()
+            while result.next_row() {
+                list.append(Fortune {
+                    id: result.col_int(0)
+                    message: result.col_string(1)
+                })
+            }
+        }
+    }
+    list.append(Fortune {
+        id: 0
+        message: "Additional fortune added at request time."
+    })
+    list.sort(fn(a: Fortune, b: Fortune) bool { return a.message > b.message })
+    let out = ByteBuffer.new(32_768)
+    views.render_into("fortunes.html", FortunesPage { fortunes: list }, out) ! return http.Response.text("render error", 500)
+    return http.Response.html(out.into_string())
+}
+
+fn grpc_get_sum(ctx: RouteCtx) http.Response {
+    return grpc_server.handle_http(ctx.req)
+}
+
+fn echo_body(ctx: RouteCtx) http.Response {
+    return http.Response.new(ctx.req.body, 200, "application/octet-stream")
+}
+
+fn ws_echo(ctx: RouteCtx) http.Response {
+    return http.WebSocket.upgrade(ctx.req, fn(ws: http.WebSocket) {
         while true {
             let msg = ws.read() ! break
             if msg.is_text : ws.write(msg.data) ! break
@@ -127,78 +274,30 @@ fn ws_echo(req: http.Request) http.Response {
     })
 }
 
-fn handle_h1(req: http.Request) http.Response {
-    let r = h1_routes ?? <{
-        let built = http.Router[Handler].new()
-        built.add("GET", "/baseline11", baseline)
-        built.add("POST", "/baseline11", baseline)
-        built.add("GET", "/pipeline", pipeline)
-        built.add("GET", "/delay/@ms", delay)
-        built.add("GET", "/json/@count", json_items)
-        built.add("GET", "/ws", ws_echo)
-        h1_routes = built
-        return built
-    }
-    return dispatch(r, req)
-}
-
-fn handle_h1_tls(req: http.Request) http.Response {
-    let r = h1_tls_routes ?? <{
-        let built = http.Router[Handler].new()
-        built.add("GET", "/json/@count", json_items)
-        built.add("POST", "/echo", echo_body)
-        h1_tls_routes = built
-        return built
-    }
-    return dispatch(r, req)
-}
-
-fn handle_h2(req: http.Request) http.Response {
-    let r = h2_routes ?? <{
-        let built = http.Router[Handler].new()
-        built.add("GET", "/baseline2", baseline)
-        built.add("POST", "/baseline2", baseline)
-        h2_routes = built
-        return built
-    }
-    return dispatch(r, req)
-}
-
-fn handle_h2c(req: http.Request) http.Response {
-    let r = h2c_routes ?? <{
-        let built = http.Router[Handler].new()
-        built.add("GET", "/baseline2", baseline)
-        built.add("POST", "/baseline2", baseline)
-        built.add("GET", "/json/@count", json_items)
-        h2c_routes = built
-        return built
-    }
-    return dispatch(r, req)
-}
-
 fn start_h2c() {
-    let h2c = http.Server.new("0.0.0.0", 8082, handle_h2c)
+    let h2c = http.Server.new("0.0.0.0", 8082, handle)
     h2c.http2 = true
     h2c.reuse_port = true
     h2c.start() ! panic("Failed to start h2c server on port 8082")
 }
 
 fn start_h1_tls(cert_path: String, key_path: String, static_dir: String) {
-    let h1_tls = http.Server.new("0.0.0.0", 8081, handle_h1_tls)
+    let h1_tls = http.Server.new("0.0.0.0", 8081, handle)
     h1_tls.tls(cert_path, key_path) ! panic("Failed to configure TLS on port 8081")
     h1_tls.compress = true
     h1_tls.reuse_port = true
-    if fs.is_dir(static_dir) : h1_tls.add_static_dir(static_dir, "", "/static") ! {}
+    if fs.is_dir(static_dir) : h1_tls.add_static_dir("/static", static_dir) ! {}
     h1_tls.start() ! panic("Failed to start HTTPS server on port 8081")
 }
 
 fn start_h2_tls(cert_path: String, key_path: String, static_dir: String) {
-    let h2_tls = http.Server.new("0.0.0.0", 8443, handle_h2)
+    let h2_tls = http.Server.new("::", 8443, handle)
     h2_tls.tls(cert_path, key_path) ! panic("Failed to configure TLS on port 8443")
     h2_tls.http2 = true
+    h2_tls.http3 = true
     h2_tls.compress = true
     h2_tls.reuse_port = true
-    if fs.is_dir(static_dir) : h2_tls.add_static_dir(static_dir, "", "/static") ! {}
+    if fs.is_dir(static_dir) : h2_tls.add_static_dir("/static", static_dir) ! {}
     h2_tls.start() ! panic("Failed to start HTTP/2 TLS server on port 8443")
 }
 
@@ -207,16 +306,15 @@ fn main() {
     let key_path = core.getenv("TLS_KEY") !? "/certs/server.key"
     let static_dir = core.getenv("STATIC_DIR") !? "/data/static"
 
-    thread.Thread[void].start(start_h2c) ! panic("Failed to spawn h2c listener")
+    thread.start(start_h2c) ! panic("Failed to spawn h2c listener")
 
     if fs.is_file(cert_path) && fs.is_file(key_path) {
-        let run_h1_tls: atomic fn()() = fn() { start_h1_tls(cert_path, key_path, static_dir) }
-        let run_h2_tls: atomic fn()() = fn() { start_h2_tls(cert_path, key_path, static_dir) }
-        thread.Thread[void].start(run_h1_tls) ! panic("Failed to spawn HTTPS listener")
-        thread.Thread[void].start(run_h2_tls) ! panic("Failed to spawn HTTP/2 TLS listener")
+        thread.start(fn() { start_h1_tls(cert_path, key_path, static_dir) }) ! panic("Failed to spawn HTTPS listener")
+        thread.start(fn() { start_h2_tls(cert_path, key_path, static_dir) }) ! panic("Failed to spawn HTTP/2 TLS listener")
     }
 
-    let server = http.Server.new("0.0.0.0", 8080, handle_h1)
+    let server = http.Server.new("0.0.0.0", 8080, handle)
+    server.http2 = true
     server.compress = true
     server.reuse_port = true
     server.start() ! panic("Failed to start HTTP server on port 8080")

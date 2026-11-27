@@ -106,7 +106,7 @@ On the [composite leaderboard](https://http-arena.com/), the JSON Compressed col
 3. Apply the same `effectiveRps = avgRps × (minBpr / myBpr)²` formula.
 4. Normalize against the field leader, like every other profile column (0–1,000).
 
-The resulting per-profile score feeds into the composite like every other profile - summed with the other scored profiles of the family for that framework's type.
+The resulting per-profile score feeds into the composite like every other profile, times its weight - 0.5 for framework entries, shared with JSON TLS ([weights](/docs/scoring/composite-score/#weights)) - summed with the other scored profiles of the family for that framework's type.
 
 ### Consequences
 

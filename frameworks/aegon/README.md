@@ -35,9 +35,9 @@
 
 Aegon runs concurrent multi-port listeners with protocol multiplexing:
 
-- **Port 8080 (HTTP/1.1 Plaintext, HTTP/2 Prior Knowledge & WebSocket):** Primary plaintext, WebSocket, and unary gRPC (`unary-grpc` over h2c) benchmark port (`baseline`, `async`, `latency-*`, `pipelined`, `limited-conn`, `echo-ws`, `echo-ws-pipeline`, `echo-ws-limited`, `unary-grpc`).
+- **Port 8080 (HTTP/1.1 Plaintext, HTTP/2 Prior Knowledge & WebSocket):** Primary plaintext, WebSocket, and unary gRPC (`unary-grpc` over h2c) benchmark port (`baseline`, `async`, `latency-*`, `pipelined`, `limited-conn`, `connections-1m`, `echo-ws`, `echo-ws-pipeline`, `echo-ws-limited`, `unary-grpc`).
 - **Port 8082 (HTTP/2 Cleartext / Prior Knowledge):** `h2c` benchmarking (`baseline-h2c`, `json-h2c`).
-- **Port 8081 (HTTP/1.1 TLS):** Secure HTTP/1.1 workloads (`json-tls`, `8gbit`).
+- **Port 8081 (HTTP/1.1 TLS):** Secure HTTP/1.1 workloads (`json-tls`, `8gbit`, `connections-1m-tls`).
 - **Port 8443 (HTTP/2 TLS & HTTP/3 QUIC / UDP):** Secure HTTP/2, HTTP/3, and secure gRPC workloads (`baseline-h2`, `static-h2`, `baseline-h3`, `static-h3`, `unary-grpc-tls`).
 
 ## Completeness & Features

@@ -1,3 +1,0 @@
-[[escaper]]
-path = "crate::fortunes::NamedHtml"
-extensions = ["html"]

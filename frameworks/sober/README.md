@@ -1,12 +1,13 @@
 # sober
 
-[Sober](https://github.com/sober-lang/sober)'s standard library HTTP/1.1 server (`std/http/server` on `std/net`, TLS 1.3 from `std/tls`), default configuration.
+[Sober](https://github.com/sober-lang/sober)'s standard library HTTP server (`std/http/server` on `std/net`, TLS 1.3 from `std/tls`), default configuration: HTTP/1.1, and HTTP/2 with prior knowledge (h2c) on 8082.
 
 ## Stack
 
-- Language: Sober 0.7.5
+- Language: Sober 0.7.6
 - Framework: none beyond the standard library: `std/http/server` (server, router, middleware, gzip), `std/json`, `std/tls`, `std/pg`
-- Build: the release tarball of the compiler (one static ELF, standard library built in) on `alpine`, static binary on `scratch`
+- Build: the release tarball of the compiler (one static ELF, standard library built in) on `alpine`, static binary on `scratch`.
+  `sober build --profile=main.prof`: the server's hot-code profile places cold code blocks after the hot code (layout only)
 
 ## Endpoints
 
@@ -15,8 +16,9 @@
 | `/pipeline` | GET | 8080 | Returns `ok` (plain text) |
 | `/baseline11` | GET | 8080 | Sums query parameter values |
 | `/baseline11` | POST | 8080 | Sums query parameters + request body |
+| `/baseline2` | GET | 8080, 8082 | Sums query parameter values (the h2c profiles) |
 | `/delay/{ms}` | GET | 8080 | Sleeps `ms` milliseconds, returns `ms` |
-| `/json/{count}?m=N` | GET | 8080, 8081 | First `count` dataset items with `total = price * quantity * m` |
+| `/json/{count}?m=N` | GET | 8080, 8081, 8082 | First `count` dataset items with `total = price * quantity * m` |
 | `/echo` | POST | 8080, 8081 | Returns the request body back verbatim |
 | `/async-db?min=&max=&limit=` | GET | 8080 | Items with `price` between `min` and `max` from Postgres, up to `limit` (1 to 50) |
 | `/spec`, `/spec/headers` | GET, HEAD, OPTIONS, POST | 8080, 8081 | The compliance route (h1 suite) |
@@ -33,8 +35,11 @@
   at the default level, negotiated per request off `Accept-Encoding`, with `Vary: Accept-Encoding`
 - `json-tls` and `8gbit` listen on `8081` when `/certs/server.crt` and `/certs/server.key` (or `TLS_CERT` /
   `TLS_KEY`) can be read: `tls.Serve` hands each connection to the same route table only after the handshake,
-  and `http.server.ServeWith` serves it over `tls.Recv` / `tls.Send`. TLS 1.3 only, X25519, AES-128-GCM and
+  and `http.server.ServeConn` serves it like a plain connection (the connection carries the TLS state). TLS 1.3 only, X25519, AES-128-GCM and
   ChaCha20-Poly1305, no session resumption
+- `baseline-h2c` and `json-h2c` connect to `8082`: the same route table through `http.server.ServeConn(..., proto: http.server.H2)`
+  (HTTP/2 with prior knowledge, RFC 9113). Each stream runs its route in a task of its own, so a slow route does not hold up
+  the other streams of the connection
 - One task per connection (`net.Serve`), on a work-stealing scheduler with one worker per CPU in the
   affinity mask (capped by the cgroup `cpu.max` quota). io_uring with an acceptor per worker, epoll fallback
 - Missing dataset file means an empty item list, the server still starts
