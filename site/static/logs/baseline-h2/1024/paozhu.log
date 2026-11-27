@@ -5,6 +5,5 @@
 [ws_subpub] init: registered 0 clients
 [sock_subpub] init: registered 0 clients
 [mqtt_subpub] init: registered 0 clients
-free(): corrupted unsorted chunks
-free(): corrupted unsorted chunks
+corrupted double-linked list
 /entrypoint.sh: line 186:    10 Aborted                 (core dumped) /server /app/conf/server.conf

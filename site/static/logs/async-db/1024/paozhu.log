@@ -6,6 +6,4 @@
 [ws_subpub] init: registered 0 clients
 [sock_subpub] init: registered 0 clients
 [mqtt_subpub] init: registered 0 clients
-terminate called after throwing an instance of 'std::bad_alloc'
-  what():  std::bad_alloc
-/entrypoint.sh: line 186:    11 Aborted                 (core dumped) /server /app/conf/server.conf
+/entrypoint.sh: line 186:    11 Segmentation fault      (core dumped) /server /app/conf/server.conf

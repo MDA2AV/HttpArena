@@ -6,4 +6,5 @@
 [ws_subpub] init: registered 0 clients
 [sock_subpub] init: registered 0 clients
 [mqtt_subpub] init: registered 0 clients
-/entrypoint.sh: line 186:    11 Segmentation fault      (core dumped) /server /app/conf/server.conf
+corrupted size vs. prev_size
+/entrypoint.sh: line 186:    11 Aborted                 (core dumped) /server /app/conf/server.conf
