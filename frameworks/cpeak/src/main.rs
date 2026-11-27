@@ -1,15 +1,16 @@
 // The HttpArena entry for Cpeak (https://www.http-arena.com).
 //
-// Everything here goes through Cpeak's documented API, in its default configuration:
-// the router for the paths and their parameters, req.query for the query strings,
-// req.chunk() for the request bodies, res.json() for the JSON, Cpeak's own compression
-// for json-comp, cpeak::sleep() for async and Cpeak's https option for the TLS tests.
+// Everything here goes through Cpeak's documented API: the router for the paths and their
+// parameters, req.query for the query strings, req.chunk() for the request bodies,
+// res.json() for the JSON, Cpeak's own compression for json-comp (gzip set to level 1),
+// cpeak::sleep() for async and Cpeak's https option for the TLS tests.
 
 use std::sync::LazyLock;
 use std::time::Duration;
 
 use cpeak::{
     json, CompressionOptions, Cpeak, CpeakError, CpeakOptions, CpeakRequest, HttpsOptions,
+    ZlibOptions,
 };
 use deadpool_postgres::{Manager, ManagerConfig, Pool, RecyclingMethod};
 use serde::{Deserialize, Serialize};
@@ -166,7 +167,11 @@ fn https_options() -> Option<HttpsOptions> {
 // The app with all its routes, to serve over HTTP (https: None) or over HTTPS
 fn app(https: Option<HttpsOptions>) -> Cpeak {
     let mut server = Cpeak::new(CpeakOptions {
-        compression: Some(CompressionOptions::default()),
+        // gzip level 1, like nginx's default
+        compression: Some(CompressionOptions {
+            gzip: ZlibOptions { level: Some(1) },
+            ..Default::default()
+        }),
         https,
         ..Default::default()
     });

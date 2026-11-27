@@ -10,7 +10,7 @@
     "response": true
   },
   "engine": "hyper",
-  "description": "Cpeak for Rust is an HTTP framework on hyper with one single-threaded Tokio event loop per core. Default configuration: routing, path and query parameters through the Cpeak API, JSON through res.json() (sonic-rs), Cpeak's built-in compression (gzip or brotli, per request), cpeak::sleep() for the waits and Cpeak's https option (rustls) for TLS.",
+  "description": "Cpeak for Rust is an HTTP framework on hyper with one single-threaded Tokio event loop per core. Routing, path and query parameters through the Cpeak API, JSON through res.json() (sonic-rs), Cpeak's built-in compression (gzip or brotli, per request; gzip set to level 1), cpeak::sleep() for the waits and Cpeak's https option (rustls) for TLS.",
   "repo": "https://github.com/Cododev-Technology/cpeak/tree/main/rust",
   "enabled": true,
   "tests": [
@@ -18,6 +18,8 @@
     "async",
     "latency-1m",
     "latency-10k",
+    "connections-1m",
+    "connections-1m-tls",
     "pipelined",
     "limited-conn",
     "json-tls",
