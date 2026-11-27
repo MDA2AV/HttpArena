@@ -1,3 +1,4 @@
 tls-ready 8081
 ready 8080
+h2-tls-ready 8443
 h2c-ready 8082
