@@ -182,7 +182,7 @@ dump_benchmark_logs() {
 
 save_benchmark_logs() {
     local profile="$1" conns="$2"
-    local log_dir="$ROOT_DIR/site/static/logs/$profile/$conns"
+    local log_dir="${LOGS_DIR:-$ROOT_DIR/site/static/logs}/$profile/$conns"
     mkdir -p "$log_dir"
     local log_file="$log_dir/${FRAMEWORK}.log"
     if [ -n "${GATEWAY_PROJECT:-}" ]; then
