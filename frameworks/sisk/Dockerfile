@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS build
 WORKDIR /source
 
 COPY sisk.csproj ./
@@ -8,7 +8,7 @@ COPY . .
 
 RUN dotnet publish -c Release -r linux-x64 --self-contained -o /app
 
-FROM mcr.microsoft.com/dotnet/runtime-deps:10.0
+FROM mcr.microsoft.com/dotnet/runtime-deps:11.0
 WORKDIR /app
 COPY --from=build /app .
 

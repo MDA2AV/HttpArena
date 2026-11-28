@@ -4,7 +4,7 @@
   "type": "flagship",
   "mode": "standard",
   "engine": "kestrel",
-  "description": "ASP.NET Core gRPC server using .NET 10 preview with Kestrel.",
+  "description": "ASP.NET Core gRPC server using .NET 11 with Kestrel.",
   "repo": "https://github.com/dotnet/aspnetcore",
   "enabled": true,
   "tests": [

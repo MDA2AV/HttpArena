@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS build
 WORKDIR /app
 
 # Copy project file and shared source from aspnet-minimal: its Handlers and
@@ -11,13 +11,13 @@ COPY frameworks/aspnet-minimal/Types ./Types
 
 RUN dotnet publish -c Release -o out
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0
+FROM mcr.microsoft.com/dotnet/aspnet:11.0
 
 # StackExchange.Redis' TLS/auth layer tries to load libgssapi_krb5.so.2 at
 # connection time even though we don't use Kerberos — the library isn't
-# installed in aspnet:10.0 by default. Without it, Redis operations fail
+# installed in aspnet:11.0 by default. Without it, Redis operations fail
 # silently (the connection opens but SET/GET return errors the client
-# swallows). Install the Debian package to unblock the Redis path.
+# swallows). Install the Ubuntu package to unblock the Redis path.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libgssapi-krb5-2 \
     && apt-get clean \

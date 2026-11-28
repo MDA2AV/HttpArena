@@ -36,7 +36,7 @@
     <PackageReference Include="ioxide.pg" Version="0.26.563" />
     <!-- Ring-native timeouts for /delay: the wait completes on the reactor, not the thread pool. -->
     <PackageReference Include="ioxide.timer" Version="0.26.563" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="11.0.0-preview.5.26302.115" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="11.0.0" />
   </ItemGroup>
 
 </Project>

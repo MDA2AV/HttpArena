@@ -1,8 +1,8 @@
 # Pinned rather than floating: a preview tag moving under the entry has changed
 # its baseline number before, which is not something a tag should be able to do
 # silently. SDK and runtime version their tags differently: 11.0.1xx vs 11.0.0.
-ARG DOTNET_SDK_TAG=11.0.100-preview.7
-ARG DOTNET_RUNTIME_TAG=11.0.0-preview.7
+ARG DOTNET_SDK_TAG=11.0.100
+ARG DOTNET_RUNTIME_TAG=11.0.0
 FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_SDK_TAG} AS build
 WORKDIR /source
 COPY edixoi.csproj ./

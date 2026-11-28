@@ -1,8 +1,8 @@
 # Pinned rather than floating, as on edixoi: a preview tag moving under the entry has changed its
 # baseline number before, which is not something a tag should be able to do silently. SDK and
 # runtime version their tags differently: 11.0.1xx vs 11.0.0.
-ARG DOTNET_SDK_TAG=11.0.100-preview.7
-ARG DOTNET_RUNTIME_TAG=11.0.0-preview.7
+ARG DOTNET_SDK_TAG=11.0.100
+ARG DOTNET_RUNTIME_TAG=11.0.0
 
 # epoxide is not on NuGet yet: its source at a pinned commit of the ioxide repo, with the BoringSSL
 # it links (the one ioxide bundles). To build a tree that is not pushed, replace the epoxide-src

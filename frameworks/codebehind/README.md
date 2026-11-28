@@ -4,9 +4,9 @@ CodeBehind on ASP.NET Core and Kestrel, default configuration.
 
 ## Stack
 
-- **Language:** C# / .NET 10
+- **Language:** C# / .NET 11
 - **Framework:** CodeBehind (controller classes over ASP.NET Core)
-- **Build:** Multi-stage, self-contained, `runtime-deps:10.0`
+- **Build:** Multi-stage, self-contained, `runtime-deps:11.0`
 
 ## Endpoints
 

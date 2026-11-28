@@ -10,7 +10,7 @@
     "response": true
   },
   "engine": "kestrel",
-  "description": "Minimal ASP.NET Core server using .NET 10 with Kestrel and minimal API routing, published self-contained with the Satori GC.",
+  "description": "Minimal ASP.NET Core server using .NET 11 with Kestrel and minimal API routing, published self-contained with the Satori GC.",
   "repo": "https://github.com/dotnet/aspnetcore",
   "enabled": true,
   "tls_check": true,

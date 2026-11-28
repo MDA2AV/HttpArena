@@ -4,7 +4,7 @@ One framework to power them all. Write your HTTP APIs once and take advantage of
 
 ## Stack
 
-- **Language:** C# / .NET 10
+- **Language:** C# / .NET 11
 - **Framework:** ServiceStack
 - **Engine:** ServiceStack
 

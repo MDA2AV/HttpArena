@@ -9,7 +9,7 @@ Minimal ASP.NET Core HTTP server using .NET 11 with Kestrel on the **ioxide io_u
 - **Language:** C# / .NET 11
 - **Framework:** ASP.NET Core Minimal APIs
 - **Engine:** Kestrel on the ioxide io_uring transport (`ioxide.Kestrel`, `UseIoxide()`, default reactor count)
-- **Build:** Framework-dependent publish, `mcr.microsoft.com/dotnet/aspnet:11.0-preview` runtime (Debian 12)
+- **Build:** Framework-dependent publish, `mcr.microsoft.com/dotnet/aspnet:11.0` runtime (Ubuntu 26.04)
 
 ## Endpoints
 

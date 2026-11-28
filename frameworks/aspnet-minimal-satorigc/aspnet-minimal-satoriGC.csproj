@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-	<Sdk Name="PublishWithSatoriGC" Version="10.0.13-satori.38062657141.1" />
+	<Sdk Name="PublishWithSatoriGC" Version="11.0.2-satori.45942668844.1" />
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>  
   </PropertyGroup>

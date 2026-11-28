@@ -12,5 +12,3 @@
 EffinitiveFramework listening on:
   http://localhost:8080
   https://localhost:8443
-Cannot load library libgssapi_krb5.so.2 
-Error: libgssapi_krb5.so.2: cannot open shared object file: No such file or directory

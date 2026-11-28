@@ -4,11 +4,11 @@ ASP.NET Core minimal API behind Nginx reverse proxy. Participates in `gateway-64
 
 ## Stack
 
-- **Language:** C# / .NET 10
+- **Language:** C# / .NET 11
 - **Framework:** ASP.NET Core Minimal APIs
 - **Engine:** Kestrel (HTTP/1.1 on port 8080, behind nginx)
 - **Proxy:** nginx 1.27-alpine (TLS termination, static files, auth_request)
-- **Build:** Framework-dependent publish, `mcr.microsoft.com/dotnet/aspnet:10.0` runtime with `libgssapi-krb5-2`
+- **Build:** Framework-dependent publish, `mcr.microsoft.com/dotnet/aspnet:11.0` runtime with `libgssapi-krb5-2`
 
 ## Tests
 

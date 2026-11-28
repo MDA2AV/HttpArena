@@ -1,13 +1,13 @@
 # aspnet-minimal
 
-Minimal ASP.NET Core HTTP server using .NET 10 with Kestrel and minimal API routing.
+Minimal ASP.NET Core HTTP server using .NET 11 with Kestrel and minimal API routing.
 
 ## Stack
 
-- **Language:** C# / .NET 10
+- **Language:** C# / .NET 11
 - **Framework:** ASP.NET Core Minimal APIs
 - **Engine:** Kestrel
-- **Build:** Framework-dependent publish, `mcr.microsoft.com/dotnet/aspnet:10.0` runtime (Debian 12) with `libmsquic` installed for HTTP/3
+- **Build:** Framework-dependent publish, `mcr.microsoft.com/dotnet/aspnet:11.0` runtime (Ubuntu 26.04) with `libmsquic` installed for HTTP/3
 
 ## Endpoints
 

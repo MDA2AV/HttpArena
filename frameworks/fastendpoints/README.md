@@ -1,14 +1,14 @@
 # fastendpoints
 
-[FastEndpoints](https://fast-endpoints.com/) HTTP server using .NET 10 with Kestrel — a REPR-pattern
+[FastEndpoints](https://fast-endpoints.com/) HTTP server using .NET 11 with Kestrel — a REPR-pattern
 (Request-Endpoint-Response) endpoint framework built on top of ASP.NET Core.
 
 ## Stack
 
-- **Language:** C# / .NET 10
+- **Language:** C# / .NET 11
 - **Framework:** FastEndpoints 8.x
 - **Engine:** Kestrel
-- **Build:** Framework-dependent publish, `mcr.microsoft.com/dotnet/aspnet:10.0` runtime (Debian 12) with `libmsquic` installed for HTTP/3
+- **Build:** Framework-dependent publish, `mcr.microsoft.com/dotnet/aspnet:11.0` runtime (Ubuntu 26.04) with `libmsquic` installed for HTTP/3
 
 ## Endpoints
 
