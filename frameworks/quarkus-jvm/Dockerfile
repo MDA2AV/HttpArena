@@ -13,6 +13,7 @@ ENTRYPOINT ["java", \
   "-server", \
   "-XX:+UseParallelGC", \
   "-XX:+UseNUMA", \
+  "--sun-misc-unsafe-memory-access=allow", \
   "-Dio.netty.buffer.checkBounds=false", \
   "-Dio.netty.buffer.checkAccessible=false", \
   "-Dvertx.disableURIValidation=true", \
