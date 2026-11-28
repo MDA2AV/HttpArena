@@ -1,42 +1,40 @@
 # genhttp-ioxide
 
-[GenHTTP 11](https://github.com/Kaliumhexacyanoferrat/GenHTTP) running on a custom
-**io_uring** server engine (the [ioxide](https://github.com/MDA2AV/ioxide) runtime) instead of GenHTTP's default socket engine.
+[GenHTTP](https://github.com/Kaliumhexacyanoferrat/GenHTTP) running on
+[ioxide](https://github.com/MDA2AV/ioxide), an io_uring, thread-per-core runtime with one reactor per core.
 
-The engine runs GenHTTP's own HTTP/1.1 conversation directly on ioxide's per-connection
-duplex pipe — thread-per-core, one io_uring reactor per core, with chunked transfer-encoding,
-keep-alive, a per-second cached `Date` header and a per-reactor request pool. The ioxide engine
-([PR #860](https://github.com/Kaliumhexacyanoferrat/GenHTTP/pull/860)) is now merged and published
-to nuget.org: the app references the `GenHTTP.Engine.Ioxide` and `GenHTTP.Modules.IoxideFiles`
-packages alongside the standard IO / Layouting / Webservices / Compression modules and the
-`ioxide.pg` (Postgres) and `ioxide.tls` (TLS) packages — no source checkout needed.
+GenHTTP has pluggable server engines, and `GenHTTP.Engine.Ioxide` is the one built on ioxide. The
+application is ordinary GenHTTP code: layouts, webservices, the static asset handler, compression
+and websockets, all the same as on the default engine. Under that code, ioxide handles the
+connections, HTTP/1.1, HTTP/2, HTTP/3 and TLS. Compared with the [`genhttp`](../genhttp) entry, only
+the engine changes.
 
-Postgres access and TLS termination ride generic per-reactor seams the engine exposes
-(`IoxideReactor.Current`, an `onReactorStart` hook, and a connection-transport factory) — the
-engine itself stays free of any `ioxide.pg` / `ioxide.tls` dependency.
+## Implementation
 
-## Profiles
+| Route | Handler |
+|---|---|
+| `/baseline11`, `/baseline2` | `Baseline` webservice: sums the query values and the request body |
+| `/pipeline` | A static `ok` resource |
+| `/json/{count}` | `Json` webservice, with Brotli compression on this route only |
+| `/static/...` | `Assets`, which serves the pre-compressed `.br` files itself |
+| `/echo` | `Echo` webservice: returns the request body unchanged |
+| `/delay` | A plain `IHandler` that waits on an ioxide ring timer (`ioxide.timer`) |
+| `/async-db`, `/crud/items` | Webservices on Postgres via `ioxide.pg`, a ring-native pool for each reactor |
+| `/ws` | GenHTTP websocket echo, with frames of up to 64 KiB |
+| `/spec`, `/spec/headers` | The [compliance](https://http-arena.com/docs/test-profiles/compliance/) route |
 
-Responses are produced by GenHTTP's own pipeline (routing + serialization), not hand-written:
+`ioxide.pg` opens a Postgres pool on each reactor through the engine's `onReactorStart` hook.
+Handlers get that reactor's pool from `IoxideReactor.Current`, so the engine itself does not
+depend on Postgres. The database routes are mounted only when `DATABASE_URL` is set. The TLS
+listeners come up only when a certificate pair is mounted.
 
-- `baseline` — mixed GET/POST with query parsing (`/baseline11` sum webservice)
-- `pipelined` — 16× batched pipelining (`/pipeline`)
-- `limited-conn` — short-lived connections that close after 10 requests
-- `json` / `json-comp` — `/json/{count}?m=N` serialized items; json-comp adds Brotli (`Accept-Encoding`)
-- `json-tls` — `json` over TLS on `:8081` (`ioxide.tls`, kTLS TX offload)
-- `static` — `/static/...` files with encoding negotiation (Modules.IO / Files)
-- `8gbit` — `POST /echo`, returns the request body back unchanged
-- `async-db` — `/async-db?min=&max=&limit=`, Postgres via `ioxide.pg` (per-reactor pool)
-- `crud` — list / get / create / update on `/crud/items`, cache-aside (`X-Cache`, in-process)
-- compliance — `/spec` and `/spec/headers` ([contract](https://http-arena.com/docs/test-profiles/compliance/)) on `:8080`, `:8082` and `:8443` for the h1 and h2 suites; h3 and WebSocket need no route
+TLS is terminated by the engine in OpenSSL, with kernel TLS (kTLS) for sending. kTLS pins the
+minimum version to TLS 1.3 and needs the Linux `tls` module on the host
+(`/proc/sys/net/ipv4/tcp_available_ulp` should list `tls`).
 
-`json-tls` serves on `:8081` when `TLS_CERT` / `TLS_KEY` (default `/certs`) exist; the DB profiles
-need `DATABASE_URL`. Both are provided by the harness sidecars.
+## Build
 
-## Build note
-
-This entry targets **.NET 11** (`net11.0`), matching the GenHTTP `11.0.0-preview.24` packages it
-references - the same preview the `genhttp` entry builds against, and the first one that ships the
-merged ioxide engine branch (PR #887) with TLS, HTTP/2 and HTTP/3 in the engine. Requires the .NET 11
-SDK with Roslyn 5.3+ (GenHTTP's `MemoryView` source generator references `Microsoft.CodeAnalysis 5.3`);
-the `mcr.microsoft.com/dotnet/sdk:11.0.100-preview.7` image used by the Dockerfile provides both.
+The entry targets .NET 11. The Dockerfile builds GenHTTP from source at a pinned commit
+(`GENHTTP_COMMIT`), so the entry can run engine changes before they are released. The `ioxide.pg`
+and `ioxide.timer` packages must match the ioxide version that this GenHTTP commit pins, so
+update them together.
