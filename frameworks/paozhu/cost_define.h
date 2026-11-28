@@ -173,6 +173,11 @@
 #define CONST_HTTP1_KEEPALIVE_MAX_REQUESTS 1000
 
 // ---- HTTP/2 单连接资源上限（http2_parse.cpp）----
+// 对外承诺的单连接并发流上限（SETTINGS_MAX_CONCURRENT_STREAMS）。
+// 超限时对触发上限的那条流回 RST_STREAM(REFUSED_STREAM)，连接保留。
+// Advertised per-connection concurrent stream limit. Exceeding it resets only the offending stream with REFUSED_STREAM.
+#define CONST_HTTP2_MAX_CONCURRENT_STREAMS 100
+
 // 单连接上「未完成头部块」+「已建流但 body 未结束」的流数量上限。
 // server.cpp 的 steam_count 只统计「已派发」的流，客户端只发 HEADERS 不开 END_STREAM
 // 时永远不会触发，因此这里必须再卡一道，否则 http_data/http_post_data 可被撑爆。
@@ -202,8 +207,16 @@
 // grow per-connection encoder memory without bound. Separate from the decoder ceiling above.
 #define CONST_HTTP2_ENCODER_TABLE_CAP 4096
 
-// HPACK encoder dynamic table switch for response headers. Define to enable Indexed representation;
-// comment out to fall back to Literal without Indexing (0000xxxx).
+// HPACK encoder dynamic table switch for response headers. Define to enable Indexed
+// representation; comment out to fall back to Literal without Indexing (0000xxxx) — that
+// is still conformant HPACK (RFC 7541 §6.2.2), just larger header blocks, and it needs no
+// dynamic table size update signal. The status line and the legacy item/item2 builders
+// stay table-neutral in both modes (fixed 2026-11-23), so commenting this out is a full
+// fallback.
+// 响应头方向的 HPACK 编码器动态表开关。定义后可用 Indexed 表示；注释掉即整体回退到
+// Literal without Indexing（0000xxxx）——那仍是合规编码，只是头块更大，且不再需要 Size Update
+// 信号。状态行与旧 item/item2 在两种档位下都不碰动态表（2026-11-23 修复），所以注释掉本宏
+// 就是完整回退。
 #define PAOZHU_HPACK_ENCODER_DYNAMIC_TABLE 1
 
 // Connection-level error COMPRESSION_ERROR (RFC 9113 §7 / RFC 7541). GOAWAY with this code
@@ -248,10 +261,9 @@
 
 // 收到 stream id = 0 的 WINDOW_UPDATE 时，抬升后是否仍然合法（true = 放行）。
 //
-// RFC 9113 §6.9.1 的 2^31-1 上限约束的是「当前可用窗口」，不是「累计获准额度」：
-// 连接级记账里 window_update_num 是累计获准、has_send_update_num 是累计已发，
-// 可用额 = 两者之差。判在累计量上，一条长连接累计发满 2GB 之后每一个合法的
-// WINDOW_UPDATE 都会被判连接级 FLOW_CONTROL_ERROR，整条连接被 GOAWAY 带走。
+// RFC 9113 §6.9.1 的 2^31-1 上限约束的是「当前可用窗口」，不是「累计获准额度」。
+// 长连接累计发送超过 2GB 后，当前窗口仍可合法补量；实现直接使用有符号当前窗口，
+// 不把累计发送量或累计获准量作为上限判断。
 //
 // 单独成 constexpr 函数是为了让测试代码能直接调用这一条算式本身，而不是照抄一份。
 // Validity check for incoming WINDOW_UPDATE on stream id = 0 (true = accept).
@@ -287,63 +299,21 @@ constexpr bool http2_wu_stream_id_ok(unsigned long long sid, unsigned long long 
 
 #define CONST_HTTP2_SEND_FRAME_BUF 15360
 
-// 内联/文件发送每轮入内容环的 DATA 帧数上限：一次窗口预留按字节记账，切成至多这么多帧
-// 逐帧入环（仍按对端 MAX_FRAME_SIZE 切帧）。与下面的补喂闸配套：闸 24 + 批 6 = 30 ≤ 31
-// 可用槽，一批开始喂入后不会因本批而卡满。
-#define CONST_HTTP2_SEND_BATCH_FRAMES 6
-
-// 内容环补喂闸：积压槽数达到本值就就地等（20ms 一拍自醒），给在途批次与控制帧留槽。
-#define CONST_HTTP2_CONTENT_RING_FEED_GATE 24
-
-// 环满等待：基础拍长（微秒）+ 自适应边界。入参是环的积压槽数（has_size），不是剩余槽。
-// 积压 > SLOW：消费者还没排空多少，说明自己醒早了，持续翻倍加长等待；
-// 积压 < FAST：环几乎空了，说明上一觉睡过头（等待过长），持续减半缩短等待。
-// 持续朝同一方向推就持续指数退避，直到 MIN / MAX 封顶。
-// Base ring-full wait (μs) + adaptive bounds. Input is ring BACKLOG (has_size), not remaining
-// slots. Backlog > SLOW: consumer barely drained, we woke too early — keep doubling the wait;
-// backlog < FAST: ring nearly empty, we overslept — keep halving it. Capped at MIN / MAX.
-#define CONST_HTTP2_RING_FULL_WAIT_BASE     1000
-#define CONST_HTTP2_RING_FULL_WAIT_MIN      100       // 100μs
-#define CONST_HTTP2_RING_FULL_WAIT_MAX      200000    // 200ms
-#define CONST_HTTP2_RING_FULL_WAIT_FAST     3         // backlog < 3 → 睡过头，减半
-#define CONST_HTTP2_RING_FULL_WAIT_SLOW     18        // backlog > 18 → 醒早了，翻倍
-
-// 根据当前间隔 + 环积压槽数，算出下一次等待间隔（微秒）。
-// Compute next wait interval (μs) from current value + ring backlog (has_size).
-constexpr unsigned int http2_ring_wait_adjust_us(unsigned int current_us, unsigned char backlog_slots)
-{
-    if (backlog_slots < CONST_HTTP2_RING_FULL_WAIT_FAST)
-    {
-        if (current_us > CONST_HTTP2_RING_FULL_WAIT_MIN)
-            current_us /= 2;
-        if (current_us < CONST_HTTP2_RING_FULL_WAIT_MIN)
-            current_us = CONST_HTTP2_RING_FULL_WAIT_MIN;
-    }
-    else if (backlog_slots > CONST_HTTP2_RING_FULL_WAIT_SLOW)
-    {
-        if (current_us < CONST_HTTP2_RING_FULL_WAIT_MAX)
-            current_us *= 2;
-        if (current_us > CONST_HTTP2_RING_FULL_WAIT_MAX)
-            current_us = CONST_HTTP2_RING_FULL_WAIT_MAX;
-    }
-    return current_us;
-}
-
 // h1 文件直发单块尺寸（fread + 一次写）。原 4096 让 100KB 文件付 26 次写 syscall；
 // 64KB 块降到 2~3 次。心跳必须每块刷：64KB 在 6.2KB/s 慢客户端下约 10s 一块，
 // 对 httpwatch 的 now-60s idle 阈值留足余量（旧 %16 拍在 64KB 块下会变成 1MB 一刷）。
 // 池化 content 缓冲常驻容量随之涨到 64KB/对象，回池 clear() 不释放，属有意保留的热容量。
 #define CONST_HTTP1_FILE_CHUNK_BYTES 65536
 
-// 每连接 HTTP/2 发送环的槽数。三条硬约束：
+// WebSocket、原生 Socket 与 MQTT 共用的发送环槽数。三条硬约束：
 //   1. 必须是 2 的幂 —— 下标推进用 & (capacity_ - 1)，非 2 的幂会算出错误的下一格；
 //   2. 不能超过 255 —— head_/tail_ 是 unsigned char；
 //   3. 环里永远留一个空槽做满/空判定（head == tail 为空），所以实际可排队 capacity - 1 帧。
 // 每槽容量不回收，常驻上界按连接数 × capacity × 单帧大小算（16KB 帧、32 槽约 496KB/连接）。
-// Per-connection HTTP/2 send-ring slots. MUST be a power of two (index uses & (capacity_-1)),
+// Shared send-ring slots. MUST be a power of two (index uses & (capacity_-1)),
 // MUST fit unsigned char (head_/tail_), and one slot stays empty for the full/empty test,
 // so capacity-1 frames are queueable.
-#define CONST_HTTP2_RING_QUEUE_CAPACITY 32
+#define CONST_SEND_RING_QUEUE_CAPACITY 32
 
 // 一次窗口停等的总预算：到期 RST(CANCEL) 撤流，连接保留。按次重算，不是整条响应的
 // 预算；被 WU 叫醒后用剩余量重挂，小增量不续命。

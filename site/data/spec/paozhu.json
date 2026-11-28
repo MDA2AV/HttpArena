@@ -1,0 +1,227 @@
+{
+  "framework": "paozhu",
+  "dir": "paozhu",
+  "suites": {
+    "h1": {
+      "tool": "http11probe",
+      "version": "d50d818",
+      "passed": 142,
+      "total": 159,
+      "warnings": 12,
+      "failed": [
+        {
+          "id": "RFC9112-2.3-INVALID-VERSION",
+          "test": "Invalid HTTP version must be rejected",
+          "expected": "400/505, close, or timeout = warn",
+          "got": "200, connection closed",
+          "rfc": "RFC 9112 \u00a72.3",
+          "level": "Should"
+        },
+        {
+          "id": "RFC9112-3-MISSING-TARGET",
+          "test": "Request line with no target (space but no path) must be rejected",
+          "expected": "400, close, or timeout = warn",
+          "got": "404, connection left open",
+          "rfc": "RFC 9112 \u00a73",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-ASTERISK-WITH-GET",
+          "test": "Asterisk-form (*) request-target with GET must be rejected",
+          "expected": "400, close, or timeout = warn",
+          "got": "404, connection left open",
+          "rfc": "RFC 9112 \u00a73.2.4",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-REQUEST-LINE-TAB",
+          "test": "Tab as request-line delimiter \u2014 SHOULD reject but MAY parse on whitespace",
+          "expected": "400 or 2xx; close/timeout = warn",
+          "got": "501, connection closed",
+          "rfc": "RFC 9112 \u00a73",
+          "level": "Should"
+        },
+        {
+          "id": "COMP-VERSION-MISSING-MINOR",
+          "test": "HTTP/1 with no minor version digit is invalid",
+          "expected": "400, close, or timeout = warn",
+          "got": "200, connection closed",
+          "rfc": "RFC 9112 \u00a72.3",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-VERSION-LEADING-ZEROS",
+          "test": "HTTP/01.01 \u2014 leading zeros in version digits are invalid",
+          "expected": "400, close, or timeout = warn",
+          "got": "404, connection closed",
+          "rfc": "RFC 9112 \u00a72.3",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-VERSION-WHITESPACE",
+          "test": "HTTP/ 1.1 \u2014 whitespace inside version token is invalid",
+          "expected": "400, close, or timeout = warn",
+          "got": "200, connection closed",
+          "rfc": "RFC 9112 \u00a72.3",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-DATE-HEADER",
+          "test": "Origin server must include Date header in responses",
+          "expected": "2xx with Date header",
+          "got": "200, connection left open",
+          "rfc": "RFC 9110 \u00a76.6.1",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-VERSION-CASE",
+          "test": "HTTP version is case-sensitive \u2014 lowercase 'http' must be rejected",
+          "expected": "400, close, or timeout = warn",
+          "got": "200, connection closed",
+          "rfc": "RFC 9112 \u00a72.3",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-SPACE-IN-TARGET",
+          "test": "Whitespace inside request-target is invalid",
+          "expected": "400, close, or timeout = warn",
+          "got": "404, connection left open",
+          "rfc": "RFC 9112 \u00a73.2",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-BARE-SEMICOLON",
+          "test": "Chunk size with bare semicolon and no extension name must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-EXT-INVALID-TOKEN",
+          "test": "Chunk extension with invalid token character must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1.1",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-CHUNK-EXT-CTRL",
+          "test": "NUL byte in chunk extension must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a77.1.1",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-CONTROL-CHARS-HEADER",
+          "test": "Control characters in header value should be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-NON-ASCII-URL",
+          "test": "Non-ASCII bytes (UTF-8 \u00e9) in URL must be rejected",
+          "expected": "400 or close",
+          "got": "404, connection left open",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-NUL-IN-HEADER-VALUE",
+          "test": "NUL byte in header value should be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "level": "Must"
+        },
+        {
+          "id": "MAL-URL-OVERLONG-UTF8",
+          "test": "Overlong UTF-8 encoding of / (0xC0 0xAF) in URL must be rejected",
+          "expected": "400 or close",
+          "got": "404, connection left open",
+          "level": "Must"
+        }
+      ]
+    },
+    "h2": {
+      "tool": "h2spec",
+      "version": "2.6.0",
+      "error": "no HTTP/2 listener could be tested"
+    },
+    "ws": {
+      "tool": "autobahn-testsuite",
+      "version": "25.10.1",
+      "passed": 233,
+      "total": 244,
+      "non_strict": 9,
+      "failed": [
+        {
+          "id": "7.1.4",
+          "test": "Send text message after sending a close frame.",
+          "expected": "Clean close with normal code. Text message ignored.",
+          "got": "Actual events differ from any expected."
+        },
+        {
+          "id": "7.1.5",
+          "test": "Send message fragment1 followed by close then fragment",
+          "expected": "Clean close with normal code.",
+          "got": "Actual events differ from any expected."
+        },
+        {
+          "id": "7.9.1",
+          "test": "Send close with invalid close code 0",
+          "expected": "Clean close with protocol error code or drop TCP",
+          "got": "The close code should have been 1002 or empty / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "7.9.2",
+          "test": "Send close with invalid close code 999",
+          "expected": "Clean close with protocol error code or drop TCP",
+          "got": "The close code should have been 1002 or empty / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "7.9.3",
+          "test": "Send close with invalid close code 1004",
+          "expected": "Clean close with protocol error code or drop TCP",
+          "got": "The close code should have been 1002 or empty / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "7.9.4",
+          "test": "Send close with invalid close code 1005",
+          "expected": "Clean close with protocol error code or drop TCP",
+          "got": "The close code should have been 1002 or empty / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "7.9.5",
+          "test": "Send close with invalid close code 1006",
+          "expected": "Clean close with protocol error code or drop TCP",
+          "got": "The close code should have been 1002 or empty / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "7.9.6",
+          "test": "Send close with invalid close code 1016",
+          "expected": "Clean close with protocol error code or drop TCP",
+          "got": "The close code should have been 1002 or empty / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "7.9.7",
+          "test": "Send close with invalid close code 1100",
+          "expected": "Clean close with protocol error code or drop TCP",
+          "got": "The close code should have been 1002 or empty / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "7.9.8",
+          "test": "Send close with invalid close code 2000",
+          "expected": "Clean close with protocol error code or drop TCP",
+          "got": "The close code should have been 1002 or empty / close: The close code should have been 1002 or empty"
+        },
+        {
+          "id": "7.9.9",
+          "test": "Send close with invalid close code 2999",
+          "expected": "Clean close with protocol error code or drop TCP",
+          "got": "The close code should have been 1002 or empty / close: The close code should have been 1002 or empty"
+        }
+      ]
+    }
+  }
+}

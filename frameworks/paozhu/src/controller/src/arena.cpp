@@ -8,12 +8,10 @@
 
 #include <chrono>
 #include <cstdio>
-#include <mutex>
 #include <cstdlib>
 #include <fstream>
 #include <iterator>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -496,54 +494,35 @@ bool safe_filename(const std::string &name)
     return true;
 }
 
-// ── 静态文件懒加载缓存 ──────────────────────────────────────────────────
-// HttpArena static-h2 固定 20 个文件。键是 (文件名, 编码)：miss 时把存在的
-// 源文件 / .gz / .br 变体全部读入 unordered_map（每文件至多 3 条，共 ≤60 条），
-// 之后任何 Accept-Encoding 都命中内存。entrypoint.sh 用 curl 预热完再放
-// 压测进来，因此 benchmark 运行期间零 fopen / 零 fread；每次命中 stat 一次
-// 比对 mtime/size——validate 的 staleness 探针会原地替换文件，必须跟随磁盘。
-// 20 文件 br ≈ 418KB + gz + identity ≈ 170KB → 合计 < 1MB。
-struct cached_static
+// 整文件读入内存；不存在 / 非普通文件 / 读失败返回 false。
+static bool read_whole_file(const std::string &path, std::string &body)
 {
-    std::string name;       // 纯文件名（与 enc 字节拼接成缓存键）
-    std::string body;       // 预加载的文件内容（可能是压缩后的）
-    std::string path;       // 实际读取的磁盘路径（含 .br/.gz 后缀），命中重校验用
-    unsigned char enc;      // 0=identity, 1=gzip, 2=brotli
-    const char *mime;       // mime type
-    time_t mtime = 0;       // 读取时源文件的 mtime/size，任一变化即失效重读
-    off_t size   = 0;
-};
-
-static std::mutex g_static_cache_mutex;
-static std::unordered_map<std::string, cached_static> g_static_cache;
-
-// 键 = 文件名 + 编码字节。safe_filename 只放行字母数字 .-_，
-// 追加 0/1/2 字节不会与任何合法文件名歧义。
-static std::string cache_key(const std::string &name, unsigned char enc)
-{
-    std::string k = name;
-    k.push_back(static_cast<char>(enc));
-    return k;
-}
-
-// 锁内拷贝出完整 cached_static 返回，调用方拿到独立副本，
-// 后续访问不受并发插入影响
-static bool lookup_cached(const std::string &filename, unsigned char enc, cached_static &out)
-{
-    std::lock_guard<std::mutex> lock(g_static_cache_mutex);
-    auto it = g_static_cache.find(cache_key(filename, enc));
-    if (it == g_static_cache.end())
+    struct stat st {};
+    if (::stat(path.c_str(), &st) != 0 || (st.st_mode & S_IFREG) == 0)
+    {
         return false;
-    out = it->second;
+    }
+    std::ifstream in(path, std::ios::binary);
+    if (!in.is_open())
+    {
+        return false;
+    }
+    body.resize(static_cast<std::size_t>(st.st_size));
+    in.read(&body[0], static_cast<std::streamsize>(st.st_size));
+    body.resize(static_cast<std::size_t>(in.gcount()));
     return true;
 }
 
-// 写入缓存（加锁：同名同编码已存在则覆盖——磁盘文件被替换后重读的新内容要顶掉旧条目）
-static void insert_cached(cached_static cs)
+// 只有文本类型存在预压缩变体（与压测脚本的预压缩范围一致）。
+static bool is_compressible_ext(const std::string &filename)
 {
-    std::lock_guard<std::mutex> lock(g_static_cache_mutex);
-    const std::string key = cache_key(cs.name, cs.enc);
-    g_static_cache[key] = std::move(cs);
+    const std::size_t dot = filename.rfind('.');
+    if (dot == std::string::npos)
+    {
+        return false;
+    }
+    const std::string ext = filename.substr(dot + 1);
+    return ext == "css" || ext == "js" || ext == "html" || ext == "json" || ext == "svg";
 }
 
 }  // namespace
@@ -567,6 +546,56 @@ asio::awaitable<std::string> arena_echo(std::shared_ptr<httppeer> peer)
     // decoded by the parser into rawcontent. An empty body echoes as 200 empty.
     peer->type("application/octet-stream");
     peer->output = raw_body(peer);
+    co_return "";
+}
+
+// HttpArena protocol-compliance route (h1/h2 suites).
+// GET/HEAD: fixed text body >= 5 bytes (h2spec skips a flow-control test below 5).
+// POST: byte-for-byte raw body echo, through the same parser API as /echo.
+// OPTIONS: 200 with Allow; the core closes the connection if a body was sent
+// rather than leave unread bytes that could be parsed as a second request.
+//@urlpath(null,spec)
+asio::awaitable<std::string> arena_spec(std::shared_ptr<httppeer> peer)
+{
+    peer->status(200);
+    if (peer->method == static_cast<unsigned char>(HEAD_METHOD::HEAD) ||
+        peer->method == static_cast<unsigned char>(HEAD_METHOD::GET))
+    {
+        peer->type("text/plain");
+        peer->output = "spec ok";
+    }
+    else if (peer->method == static_cast<unsigned char>(HEAD_METHOD::POST))
+    {
+        peer->type("application/octet-stream");
+        peer->output = raw_body(peer);
+    }
+    else if (peer->method == static_cast<unsigned char>(HEAD_METHOD::OPTIONS))
+    {
+        peer->set_header("Allow", "GET, HEAD, POST, OPTIONS");
+        peer->type("text/plain");
+        peer->output.clear();
+    }
+    co_return "";
+}
+
+// Header echo: one `Name: Value` line per received header, in any order/case.
+// Read the body even though it is discarded, so POST bodies go through the
+// normal parser path and any >2MB spilled temp file is cleaned up.
+//@urlpath(null,spec/headers)
+asio::awaitable<std::string> arena_spec_headers(std::shared_ptr<httppeer> peer)
+{
+    raw_body(peer);
+    peer->status(200);
+    peer->type("text/plain");
+    std::string out;
+    for (const auto &kv : peer->header)
+    {
+        out += kv.first;
+        out += ": ";
+        out += kv.second;
+        out.push_back('\n');
+    }
+    peer->output = std::move(out);
     co_return "";
 }
 
@@ -639,82 +668,39 @@ asio::awaitable<std::string> arena_static(std::shared_ptr<httppeer> peer)
         co_return "";
     }
 
-    // ── Fast path: 按客户端偏好 br → gz → identity 查缓存 ──
-    cached_static entry;
-    bool hit = false;
-    if (peer->state.br)
-        hit = lookup_cached(filename, 2, entry);
-    if (!hit && peer->state.gzip)
-        hit = lookup_cached(filename, 1, entry);
-    if (!hit)
-        hit = lookup_cached(filename, 0, entry);
-    if (hit)
-    {
-        // staleness 探针会原地替换文件（等长不同字节）：stat 比对 mtime/size，
-        // 变了就落慢路径重读。稳态下只有这一次 stat，没有 fopen/fread。
-        struct stat cst {};
-        if (::stat(entry.path.c_str(), &cst) == 0 &&
-            cst.st_mtime == entry.mtime && cst.st_size == entry.size)
-        {
-            peer->type(entry.mime);
-            peer->compress = entry.enc;
-            peer->length(entry.body.size());
-            peer->output = std::move(entry.body);
-            co_return "";
-        }
-    }
-
-    // ── Slow path: 首次 miss 或磁盘文件已变（重校验失败）──
-    // 源文件 / .gz / .br 存在的变体全部读入缓存，之后任何编码都命中；
-    // 响应挑客户端能接受的最优变体（br > gz > identity）。
+    // 每请求直接读盘：文件小，预热后全在 page cache，没有真实
+    // 磁盘 IO；无缓存、无锁，磁盘改动即时生效。
+    // 原始文件必须存在，再按客户端偏好 br → gz → 源文件依次尝试。
     const std::string base = "/data/static/" + filename;
-    struct variant_t
+    struct stat base_stat {};
+    if (::stat(base.c_str(), &base_stat) != 0 || (base_stat.st_mode & S_IFREG) == 0)
     {
-        const char *suffix;
-        unsigned char enc;
-    };
-    const variant_t candidates[3] = {{".br", 2}, {".gz", 1}, {"", 0}};
+        peer->status(404);
+        peer->type("text/plain");
+        peer->output = "Not Found";
+        co_return "";
+    }
 
-    unsigned char served_enc = 0;
-    bool found               = false;
-    for (const variant_t &v : candidates)
+    unsigned char enc   = 0;
+    bool served         = false;
+    if (is_compressible_ext(filename))
     {
-        const std::string path = base + v.suffix;
-        struct stat st {};
-        if (::stat(path.c_str(), &st) != 0 || (st.st_mode & S_IFREG) == 0)
+        if (peer->state.br && read_whole_file(base + ".br", peer->output))
         {
-            continue;
+            enc    = 2;
+            served = true;
         }
-        std::ifstream in(path, std::ios::binary);
-        if (!in.is_open())
+        if (!served && peer->state.gzip && read_whole_file(base + ".gz", peer->output))
         {
-            continue;
-        }
-        std::string body;
-        body.resize(static_cast<std::size_t>(st.st_size));
-        in.read(&body[0], static_cast<std::streamsize>(st.st_size));
-        body.resize(static_cast<std::size_t>(in.gcount()));
-
-        cached_static cs;
-        cs.name  = filename;
-        cs.body  = body;
-        cs.enc   = v.enc;
-        cs.mime  = mime_of(filename);
-        cs.path  = path;
-        cs.mtime = st.st_mtime;
-        cs.size  = st.st_size;
-        insert_cached(std::move(cs));
-
-        const bool acceptable = (v.enc == 0) || (v.enc == 2 && peer->state.br) ||
-                                (v.enc == 1 && peer->state.gzip);
-        if (!found && acceptable)
-        {
-            peer->output = std::move(body);
-            served_enc   = v.enc;
-            found        = true;
+            enc    = 1;
+            served = true;
         }
     }
-    if (!found)
+    if (!served && read_whole_file(base, peer->output))
+    {
+        served = true;
+    }
+    if (!served)
     {
         peer->status(404);
         peer->type("text/plain");
@@ -722,7 +708,7 @@ asio::awaitable<std::string> arena_static(std::shared_ptr<httppeer> peer)
         co_return "";
     }
     peer->type(mime_of(filename));
-    peer->compress = served_enc;
+    peer->compress = enc;
     peer->length(peer->output.size());
     co_return "";
 }
