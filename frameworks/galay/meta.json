@@ -1,0 +1,18 @@
+{
+  "display_name": "Galay",
+  "language": "C++",
+  "type": "emerging",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": false,
+    "request": true,
+    "response": true
+  },
+  "engine": "galay-kernel",
+  "description": "C++23 coroutine HTTP server using Galay's default epoll backend on Linux, built-in routing, and HTTP/1.1 request and response APIs.",
+  "repo": "https://github.com/gzj-creator/galay",
+  "enabled": true,
+  "tests": ["baseline"],
+  "maintainers": ["gzj-creator"]
+}
