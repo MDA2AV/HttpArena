@@ -27,6 +27,7 @@
     "async-db",
     "baseline-h2c",
     "json-h2c",
+    "baseline-h2",
     "connections-1m",
     "connections-1m-tls"
   ],
