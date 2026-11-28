@@ -17,6 +17,11 @@
       "total": 146,
       "failed": [],
       "listeners": {
+        "tls": {
+          "passed": 146,
+          "total": 146,
+          "failed": []
+        },
         "h2c": {
           "passed": 146,
           "total": 146,
