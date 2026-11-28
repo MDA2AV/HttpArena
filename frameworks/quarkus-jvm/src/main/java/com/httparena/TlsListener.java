@@ -71,7 +71,7 @@ public class TlsListener {
                 .setHost("0.0.0.0")
                 .setSsl(true)
                 .setUseAlpn(false)
-                .setPemKeyCertOptions(new PemKeyCertOptions().setCertPath(CERT).setKeyPath(KEY));
+                .setKeyCertOptions(new PemKeyCertOptions().setCertPath(CERT).setKeyPath(KEY));
 
             vertx.createHttpServer(options)
                 .requestHandler(router)
