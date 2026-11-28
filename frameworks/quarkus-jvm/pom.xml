@@ -13,7 +13,7 @@
         <java.version>21</java.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
-        <quarkus.platform.version>3.17.8</quarkus.platform.version>
+        <quarkus.platform.version>4.0.1</quarkus.platform.version>
     </properties>
 
     <dependencyManagement>
