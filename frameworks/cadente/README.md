@@ -4,7 +4,7 @@ Cadente is a standalone managed HTTP/1.1 server for .NET. This entry uses `Sisk.
 
 ## Stack
 
-- **Language:** C# / .NET 10
+- **Language:** C# / .NET 11
 - **Engine:** Cadente managed sockets
 - **Package:** `Sisk.Cadente` 1.6.3-rc2
 - **Build:** Self-contained Linux x64 publish

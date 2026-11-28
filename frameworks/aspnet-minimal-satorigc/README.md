@@ -1,13 +1,13 @@
 # aspnet-minimal-satorigc
 
-Minimal ASP.NET Core HTTP server using .NET 10 with Kestrel, minimal API routing and Satori GC.
+Minimal ASP.NET Core HTTP server using .NET 11 with Kestrel, minimal API routing and Satori GC.
 
 ## Stack
 
-- **Language:** C# / .NET 10
+- **Language:** C# / .NET 11
 - **Framework:** ASP.NET Core Minimal APIs
 - **Engine:** Kestrel
-- **Build:** Framework-dependent publish, `mcr.microsoft.com/dotnet/aspnet:10.0` runtime (Debian 12) with `libmsquic` installed for HTTP/3
+- **Build:** Self-contained publish with the Satori GC, `mcr.microsoft.com/dotnet/aspnet:11.0` image (Ubuntu 26.04) with `libmsquic` installed for HTTP/3
 
 ## Endpoints
 

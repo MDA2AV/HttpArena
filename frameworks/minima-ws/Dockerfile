@@ -1,5 +1,5 @@
 # Build (managed / JIT).
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS build
 WORKDIR /source
 
 COPY minima-ws.csproj ./
@@ -12,7 +12,7 @@ RUN dotnet publish -c Release --no-self-contained -o /app/out
 # no native shim), so the stock runtime image suffices. The benchmark harness
 # runs containers with --security-opt seccomp=unconfined, which is required for
 # the io_uring_setup/enter syscalls.
-FROM mcr.microsoft.com/dotnet/runtime:10.0
+FROM mcr.microsoft.com/dotnet/runtime:11.0
 WORKDIR /app
 COPY --from=build /app/out ./
 EXPOSE 8080

@@ -1,5 +1,5 @@
 # Build (managed / JIT — no AOT toolchain needed).
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS build
 WORKDIR /source
 
 COPY riderdog.csproj ./
@@ -12,7 +12,7 @@ RUN dotnet publish -c Release --no-self-contained \
 
 # Runtime (glibc, includes the .NET runtime).
 # liburing2 is required by the bundled liburingshim.so for io_uring syscalls.
-FROM mcr.microsoft.com/dotnet/runtime:10.0
+FROM mcr.microsoft.com/dotnet/runtime:11.0
 RUN apt-get update && apt-get install -y --no-install-recommends liburing2 \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app

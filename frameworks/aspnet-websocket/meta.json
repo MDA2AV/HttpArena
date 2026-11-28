@@ -4,7 +4,7 @@
   "type": "flagship",
   "mode": "standard",
   "engine": "kestrel",
-  "description": "ASP.NET Core WebSocket echo server using .NET 10 preview with Kestrel and minimal API.",
+  "description": "ASP.NET Core WebSocket echo server using .NET 11 with Kestrel and minimal API.",
   "repo": "https://github.com/dotnet/aspnetcore",
   "enabled": true,
   "spec": ["ws"],

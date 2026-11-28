@@ -155,7 +155,7 @@
   },
   "aspnet-minimal": {
     "dir": "aspnet-minimal",
-    "description": "Minimal ASP.NET Core server using .NET 10 with Kestrel and minimal API routing.",
+    "description": "Minimal ASP.NET Core server using .NET 11 with Kestrel and minimal API routing.",
     "repo": "https://github.com/dotnet/aspnetcore",
     "type": "flagship",
     "engine": "kestrel",
@@ -169,7 +169,7 @@
     "variants": [
       {
         "dir": "aspnet-grpc",
-        "description": "ASP.NET Core gRPC server using .NET 10 preview with Kestrel.",
+        "description": "ASP.NET Core gRPC server using .NET 11 with Kestrel.",
         "repo": "https://github.com/dotnet/aspnetcore",
         "type": "flagship",
         "engine": "kestrel",
@@ -177,27 +177,13 @@
       },
       {
         "dir": "aspnet-websocket",
-        "description": "ASP.NET Core WebSocket echo server using .NET 10 preview with Kestrel and minimal API.",
+        "description": "ASP.NET Core WebSocket echo server using .NET 11 with Kestrel and minimal API.",
         "repo": "https://github.com/dotnet/aspnetcore",
         "type": "flagship",
         "engine": "kestrel",
         "mode": "standard"
       }
     ]
-  },
-  "aspnet-minimal-11": {
-    "dir": "aspnet-minimal-11",
-    "description": "aspnet-minimal on .NET 11 preview 7 with runtime async on: the same minimal API source and Kestrel, built with runtime-async=on so the runtime suspends and resumes async methods itself instead of compiler state machines. Exists to measure that one switch against aspnet-minimal.",
-    "repo": "https://github.com/dotnet/aspnetcore",
-    "type": "flagship",
-    "engine": "kestrel",
-    "mode": "standard",
-    "completeness": {
-      "routing": true,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
   },
   "aspnet-minimal-ioxide": {
     "dir": "aspnet-minimal-ioxide",
@@ -215,7 +201,7 @@
   },
   "aspnet-minimal-satorigc": {
     "dir": "aspnet-minimal-satorigc",
-    "description": "Minimal ASP.NET Core server using .NET 10 with Kestrel and minimal API routing, published self-contained with the Satori GC.",
+    "description": "Minimal ASP.NET Core server using .NET 11 with Kestrel and minimal API routing, published self-contained with the Satori GC.",
     "repo": "https://github.com/dotnet/aspnetcore",
     "type": "experimental",
     "engine": "kestrel",
@@ -646,7 +632,7 @@
   },
   "effinitive": {
     "dir": "effinitive",
-    "description": "Ultra-high-performance custom HTTP server for .NET 10 \u2014 built from scratch for maximum speed.",
+    "description": "Ultra-high-performance custom HTTP server for .NET 11 \u2014 built from scratch for maximum speed.",
     "repo": "https://github.com/HBartosch/Effinitive",
     "type": "experimental",
     "engine": "effinitive",
@@ -716,7 +702,7 @@
   },
   "fastendpoints": {
     "dir": "fastendpoints",
-    "description": "FastEndpoints (REPR-pattern endpoint framework on ASP.NET Core) using .NET 10 with Kestrel.",
+    "description": "FastEndpoints (REPR-pattern endpoint framework on ASP.NET Core) using .NET 11 with Kestrel.",
     "repo": "https://github.com/FastEndpoints/FastEndpoints",
     "type": "flagship",
     "engine": "kestrel",

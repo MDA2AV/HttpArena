@@ -4,10 +4,10 @@ Sisk is a lightweight, agnostic, simple, and robust web development framework.
 
 ## Stack
 
-- **Language:** C# / .NET 10
+- **Language:** C# / .NET 11
 - **Framework:** Sisk
 - **Engine:** Sisk
-- **Build:** Self-contained musl publish, `runtime-deps:10.0-alpine`
+- **Build:** Self-contained publish, `runtime-deps:11.0`
 
 ## Endpoints
 

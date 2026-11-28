@@ -9,7 +9,7 @@ RUN dotnet publish -c Release --no-self-contained -o /app
 
 FROM mcr.microsoft.com/dotnet/aspnet:11.0
 
-ADD https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb /packages-microsoft-prod.deb
+ADD https://packages.microsoft.com/config/ubuntu/26.04/packages-microsoft-prod.deb /packages-microsoft-prod.deb
 
 RUN dpkg -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb \
     && apt-get update \

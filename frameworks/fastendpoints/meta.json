@@ -10,7 +10,7 @@
     "response": true
   },
   "engine": "kestrel",
-  "description": "FastEndpoints (REPR-pattern endpoint framework on ASP.NET Core) using .NET 10 with Kestrel.",
+  "description": "FastEndpoints (REPR-pattern endpoint framework on ASP.NET Core) using .NET 11 with Kestrel.",
   "repo": "https://github.com/FastEndpoints/FastEndpoints",
   "enabled": true,
   "tests": [

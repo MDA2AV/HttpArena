@@ -4,10 +4,10 @@ SimpleW is Modern Web Server for .NET. Designed for Simplicity. Built for Speed.
 
 ## Stack
 
-- **Language:** C# / .NET 10
+- **Language:** C# / .NET 11
 - **Framework:** SimpleW
 - **Engine:** SimpleW
-- **Build:** Self-contained musl publish, `runtime-deps:10.0-alpine`
+- **Build:** Framework-dependent publish, `runtime:11.0`
 
 ## Endpoints
 

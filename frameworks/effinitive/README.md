@@ -1,13 +1,13 @@
 # effinitive
 
-Ultra-high-performance custom HTTP server for .NET 10 — built from scratch for maximum speed.
+Ultra-high-performance custom HTTP server for .NET 11 — built from scratch for maximum speed.
 
 ## Stack
 
-- **Language:** C# / .NET 10
+- **Language:** C# / .NET 11
 - **Framework:** Effinitive
 - **Engine:** Effinitive
-- **Build:** Framework-dependent publish, `mcr.microsoft.com/dotnet/runtime:10.0` runtime with `libmsquic` installed for HTTP/3
+- **Build:** Framework-dependent publish, `mcr.microsoft.com/dotnet/runtime:11.0` runtime with `libmsquic` installed for HTTP/3
 
 ## Endpoints
 
