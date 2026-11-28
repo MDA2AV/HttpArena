@@ -2,6 +2,7 @@
   "name": "httparena-morojs",
   "private": true,
   "dependencies": {
+    "@morojs/engine": "^1.2.5",
     "@morojs/moro": "^1.9.3",
     "ejs": "^3.1.10",
     "pg": "^8.16.3",
