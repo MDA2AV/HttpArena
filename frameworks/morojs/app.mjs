@@ -4,7 +4,6 @@
 // threads that each bind the port through SO_REUSEPORT. Moro re-runs this
 // file in every worker; the primary only starts and supervises them.
 
-import { spawn } from 'node:child_process';
 import cluster from 'node:cluster';
 import { existsSync, readFileSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
@@ -13,8 +12,6 @@ import { fileURLToPath } from 'node:url';
 import { isMainThread } from 'node:worker_threads';
 import { constants as zlibConstants } from 'node:zlib';
 import { createApp, middleware, MemoryCacheAdapter, RedisCacheAdapter } from '@morojs/moro';
-import ejs from 'ejs';
-import pg from 'pg';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FORTUNES_VIEW = join(HERE, 'views', 'fortunes.ejs');
@@ -24,16 +21,16 @@ const STATIC_ROOT = process.env.STATIC_ROOT || '/data/static';
 // entry outside the container.
 const CERTS_DIR = process.env.CERTS_DIR || '/certs';
 
-// One process per listener, because Moro locks one configuration per
-// process. 'plain' serves :8080; 'tls' serves json-tls, static-tls and 8gbit
-// on :8081 from /certs; 'tlscheck' serves the opt-in TLS hardening section on
-// :9000 from /certs-tls, reloading the pair whenever the files change. The
-// two HTTP/2 listeners are the native engine's too (`http2: true`, engine
-// 1.1.19): 'h2' is TLS with ALPN h2 on :8443 for baseline-h2 and static-h2;
-// 'h2c' is cleartext prior-knowledge HTTP/2 on :8082 for baseline-h2c and
-// json-h2c. HTTP/1.1 is served beside HTTP/2 on both ports, and they cluster
-// as every other listener here does, on worker threads.
-const ROLE = process.env.MORO_ROLE || 'plain';
+// One app per listener, all in this one process: each has its own
+// configuration, routes and middleware, and they share the process's one set
+// of worker threads (MoroJS 1.9.2), so a worker holds every listener and the
+// dataset once. 'plain' serves :8080; 'tls' serves json-tls, static-tls and
+// 8gbit on :8081 from /certs; 'tlscheck' serves the opt-in TLS hardening
+// section on :9000 from /certs-tls, reloading the pair whenever the files
+// change. The two HTTP/2 listeners are the native engine's too (`http2:
+// true`, engine 1.1.19): 'h2' is TLS with ALPN h2 on :8443 for baseline-h2
+// and static-h2; 'h2c' is cleartext prior-knowledge HTTP/2 on :8082 for
+// baseline-h2c and json-h2c. HTTP/1.1 is served beside HTTP/2 on both ports.
 const LISTENERS = {
     plain: { port: 8080 },
     tls: { port: 8081, certs: CERTS_DIR },
@@ -65,26 +62,6 @@ const workers = parseInt(process.env.WORKERS, 10) || cpuCount();
 // fallback transport. The primary serves nothing, so it loads no dataset and
 // opens no database pool.
 const isWorker = !isMainThread || cluster.isWorker;
-const isPrimary = !isWorker;
-
-// The harness mounts /certs for the TLS and HTTP/2 profiles and /certs-tls
-// for the tls_check section only; a listener whose pair is absent is not
-// started. h2c needs no material and always starts.
-if (ROLE === 'plain' && isPrimary) {
-    for (const role of ['tls', 'tlscheck', 'h2', 'h2c']) {
-        if (LISTENERS[role].certs && !hasPair(LISTENERS[role].certs)) continue;
-        const child = spawn(process.execPath, [fileURLToPath(import.meta.url)], {
-            stdio: 'inherit',
-            env: { ...process.env, MORO_ROLE: role },
-        });
-        child.on('exit', (code, signal) => {
-            console.error(`morojs: ${role} process exited (${signal ?? code})`);
-        });
-        for (const signal of ['SIGTERM', 'SIGINT']) {
-            process.on(signal, () => child.kill(signal));
-        }
-    }
-}
 
 // Dataset for /json; a missing file serves an empty list instead of taking
 // the worker down.
@@ -100,28 +77,32 @@ if (isWorker) {
 // the cluster as a whole stays inside what Postgres allows; 240 at most
 // leaves the server's own reserve (DATABASE_MAX_CONN is its max_connections,
 // and a cluster sitting exactly on it is refused its last connections).
+//
+// The driver and the template engine are loaded where there is a database
+// to use them on: without DATABASE_URL no route reaches either, and a worker
+// does not carry them.
 let pool = null;
-if (isWorker && ROLE === 'plain' && process.env.DATABASE_URL) {
+// The fortunes template, compiled once per worker: EJS escapes every
+// interpolated value, so the row carrying a <script> tag renders as text.
+let renderFortunes = null;
+if (isWorker && process.env.DATABASE_URL) {
+    const { default: pg } = await import('pg');
+    const { default: ejs } = await import('ejs');
     const maxConn = Math.min(parseInt(process.env.DATABASE_MAX_CONN, 10) || 256, 240);
     pool = new pg.Pool({
         connectionString: process.env.DATABASE_URL,
         max: Math.max(1, Math.floor(maxConn / workers)),
     });
     pool.on('error', () => {});
+    renderFortunes = ejs.compile(readFileSync(FORTUNES_VIEW, 'utf8'), { filename: FORTUNES_VIEW });
 }
-
-// The fortunes template, compiled once per worker: EJS escapes every
-// interpolated value, so the row carrying a <script> tag renders as text.
-const renderFortunes = isWorker
-    ? ejs.compile(readFileSync(FORTUNES_VIEW, 'utf8'), { filename: FORTUNES_VIEW })
-    : null;
 
 // The production-stack cache-aside goes through the framework's own cache
 // adapters: Redis when the stack provides one, shared across the cluster so
 // a write on any worker invalidates what every other one reads, and the
 // in-process memory adapter otherwise. TTLs are seconds.
 let cache = null;
-if (isWorker && ROLE === 'plain') {
+if (isWorker) {
     cache = process.env.REDIS_URL
         ? new RedisCacheAdapter({ url: process.env.REDIS_URL, keyPrefix: 'httparena:' })
         : new MemoryCacheAdapter();
@@ -169,7 +150,7 @@ function jsonItems(req) {
     return { items, count };
 }
 
-function defineRoutes(app) {
+function defineRoutes(app, role) {
     // A literal body in place of a handler is the framework's documented
     // static route: @morojs/engine answers it without entering JS, the same
     // way Bun's static routes serve the bun entry's /pipeline. It goes out as
@@ -235,7 +216,7 @@ function defineRoutes(app) {
     const json = (req, res) => {
         res.json(jsonItems(req));
     };
-    if (ROLE === 'plain') {
+    if (role === 'plain') {
         app.get('/json/:count')
             .before(
                 middleware.compression({
@@ -255,6 +236,46 @@ function defineRoutes(app) {
     // the framework's prepared reply.
     app.post('/echo').handler((req, res) => {
         res.send(req.rawBody ?? Buffer.alloc(0));
+    });
+
+    // /spec, the compliance route: Http11Probe reads it on :8080, h2spec on
+    // :8443 and :8082. Same listener, parser and routing as everything else
+    // here. HEAD has no route of its own: the framework answers it from the
+    // GET, with the GET's headers and no body. POST is the /echo of the 8gbit
+    // profile on another path; OPTIONS and the header echo read their body
+    // and drop it, which the framework has done by the time a handler runs.
+    app.get('/spec').handler((req, res) => {
+        res.send('spec ok');
+    });
+    app.options('/spec').handler((req, res) => {
+        res.setHeader('Allow', 'GET, HEAD, POST, OPTIONS');
+        res.status(200).end();
+    });
+    app.post('/spec').handler((req, res) => {
+        res.send(req.rawBody ?? Buffer.alloc(0));
+    });
+    const specHeaders = (req, res) => {
+        let out = '';
+        for (const name in req.headers) {
+            const value = req.headers[name];
+            if (Array.isArray(value)) {
+                for (const one of value) out += name + ': ' + one + '\n';
+            } else {
+                out += name + ': ' + value + '\n';
+            }
+        }
+        res.send(out);
+    };
+    app.get('/spec/headers').handler(specHeaders);
+    app.post('/spec/headers').handler(specHeaders);
+
+    // /parse, for the resilience suite: the framework parses a body by its
+    // media type before a handler runs (JSON, urlencoded and multipart into
+    // objects, anything else left as bytes), under its default limits. A body
+    // over them is a 413 and one that does not parse a 400, both answered by
+    // the framework.
+    app.post('/parse').handler((req, res) => {
+        res.send('ok');
     });
 
     // The driver hands the rows to its callback and the callback answers:
@@ -428,83 +449,100 @@ function defineRoutes(app) {
     });
 }
 
-// The listener this process owns. A TLS listener is the engine's own, ALPN
-// http/1.1; on :9000 the pair is watched and reloaded on the running listener
-// when the files change, connections in flight untouched.
-const listener = LISTENERS[ROLE];
-const server = { port: listener.port };
-if (listener.certs) {
-    server.ssl = { ...pairIn(listener.certs), ...(listener.watch ? { watch: true } : {}) };
-}
-if (listener.http2) {
-    server.http2 = true;
-}
+// One listener's app. A TLS listener is the engine's own, ALPN http/1.1; on
+// :9000 the pair is watched and reloaded on the running listener when the
+// files change, connections in flight untouched.
+async function listenerApp(role) {
+    const listener = LISTENERS[role];
+    const server = { port: listener.port };
+    if (listener.certs) {
+        server.ssl = { ...pairIn(listener.certs), ...(listener.watch ? { watch: true } : {}) };
+    }
+    if (listener.http2) {
+        server.http2 = true;
+    }
 
-const app = await createApp({
-    server: {
-        // Every interface: the harness reaches the container through published
-        // ports as well as host networking, and Moro's default host is localhost.
-        host: '0.0.0.0',
-        engine: 'moro',
-        requestTracking: { enabled: false },
-        requestLogging: { enabled: false },
-        // The listen backlog. The edges in front of the gateway and
-        // production-stack profiles keep an idle pool of 2048 upstream
-        // connections under tens of thousands of requests in flight, so they
-        // dial and drop thousands of connections per wave; at the engine's
-        // default of 512 a wave overflows a worker's accept queue, the
-        // kernel drops the SYN and the proxy retries it a second later. That
-        // second was the profile's tail (p99 of 0.8 s on gateway-h3, 3.8 s on
-        // production-stack). The harness raises somaxconn to 65535 for this.
-        backlog: 16384,
-        ...server,
-    },
-    performance: { clustering: { enabled: true, workers } },
-    // The engine's own RFC 6455 WebSocket support, on the plain listener where
-    // the echo profiles run.
-    ...(ROLE === 'plain' ? { websocket: { enabled: true } } : {}),
-    logger: { level: process.env.LOG_LEVEL || 'warn' },
-});
-defineRoutes(app);
-
-if (ROLE === 'plain') {
-    // echo-ws: a raw namespace, so a text frame arrives as the string it
-    // carried and goes back the same way; binary frames likewise.
-    app.websocket(
-        '/ws',
-        {
-            message: (socket, text) => {
-                socket.send(text);
-            },
-            binary: (socket, bytes) => {
-                socket.send(bytes, true);
-            },
+    const app = await createApp({
+        server: {
+            // Every interface: the harness reaches the container through published
+            // ports as well as host networking, and Moro's default host is localhost.
+            host: '0.0.0.0',
+            engine: 'moro',
+            requestTracking: { enabled: false },
+            requestLogging: { enabled: false },
+            // The listen backlog. The edges in front of the gateway and
+            // production-stack profiles keep an idle pool of 2048 upstream
+            // connections under tens of thousands of requests in flight, so they
+            // dial and drop thousands of connections per wave; at the engine's
+            // default of 512 a wave overflows a worker's accept queue, the
+            // kernel drops the SYN and the proxy retries it a second later. That
+            // second was the profile's tail (p99 of 0.8 s on gateway-h3, 3.8 s on
+            // production-stack). The harness raises somaxconn to 65535 for this.
+            backlog: 16384,
+            ...server,
         },
-        { raw: true }
-    );
-}
-
-if (ROLE === 'tls' || ROLE === 'h2') {
-    // Static files through the framework's own handler with its in-memory
-    // cache: a file and its .br and .gz sidecars are read once and served
-    // from memory with their validators, the sidecar negotiated per request
-    // off Accept-Encoding. The disk is looked at again once a second at
-    // most, or as soon as the directory reports a change, so a replaced file
-    // is served promptly; the uncached handler stats, resolves and reads the
-    // file and its sidecars on every request, and every one of those is a
-    // threadpool round trip shared by all the worker threads of the process.
-    // Behind a path check so the JSON route on this port does not pay for the
-    // lookup; the check calls next() synchronously, so the route stays on
-    // the server's synchronous dispatch.
-    const serveStatic = middleware.staticFiles({
-        root: STATIC_ROOT,
-        prefix: '/static',
-        precompressed: true,
-        cache: true,
+        performance: { clustering: { enabled: true, workers } },
+        // The engine's own RFC 6455 WebSocket support, on the plain listener where
+        // the echo profiles run.
+        ...(role === 'plain' ? { websocket: { enabled: true } } : {}),
+        logger: { level: process.env.LOG_LEVEL || 'warn' },
     });
-    await app.use((req, res, next) =>
-        req.path.startsWith('/static/') ? serveStatic(req, res, next) : next()
-    );
+    defineRoutes(app, role);
+
+    if (role === 'plain') {
+        // echo-ws: a raw namespace, so a text frame arrives as the string it
+        // carried and goes back the same way; binary frames likewise.
+        app.websocket(
+            '/ws',
+            {
+                message: (socket, text) => {
+                    socket.send(text);
+                },
+                binary: (socket, bytes) => {
+                    socket.send(bytes, true);
+                },
+            },
+            { raw: true }
+        );
+    }
+
+    if (role === 'tls' || role === 'h2') {
+        // Static files through the framework's own handler with its in-memory
+        // cache: a file and its .br and .gz sidecars are read once and served
+        // from memory with their validators, the sidecar negotiated per request
+        // off Accept-Encoding. The disk is looked at again once a second at
+        // most, or as soon as the directory reports a change, so a replaced file
+        // is served promptly; the uncached handler stats, resolves and reads the
+        // file and its sidecars on every request, and every one of those is a
+        // threadpool round trip shared by all the worker threads of the process.
+        // Behind a path check so the JSON route on this port does not pay for the
+        // lookup; the check calls next() synchronously, so the route stays on
+        // the server's synchronous dispatch.
+        const serveStatic = middleware.staticFiles({
+            root: STATIC_ROOT,
+            prefix: '/static',
+            precompressed: true,
+            cache: true,
+        });
+        await app.use((req, res, next) =>
+            req.path.startsWith('/static/') ? serveStatic(req, res, next) : next()
+        );
+    }
+    return app;
 }
 
-app.listen();
+// The harness mounts /certs for the TLS and HTTP/2 profiles and /certs-tls
+// for the tls_check section only; a listener whose pair is absent is not
+// started. h2c needs no material and always starts.
+//
+// Every app is built before any of them listens, and they are told to listen
+// in one go, so a worker binds its ports together: a client that has seen
+// one port answer is not refused on another. The two HTTP/1.1 TLS listeners
+// go first; no client asks them whether the service is up, and the ports a
+// client does ask follow.
+const apps = [];
+for (const role of ['tls', 'tlscheck', 'plain', 'h2', 'h2c']) {
+    if (LISTENERS[role].certs && !hasPair(LISTENERS[role].certs)) continue;
+    apps.push(await listenerApp(role));
+}
+for (const app of apps) app.listen();
