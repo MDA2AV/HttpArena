@@ -1,0 +1,23 @@
+{
+  "framework": "fulmine.js - uwsLite",
+  "dir": "fulmine-uwslite",
+  "suites": {
+    "h1": {
+      "tool": "http11probe",
+      "version": "d50d818",
+      "passed": 158,
+      "total": 159,
+      "warnings": 18,
+      "failed": [
+        {
+          "id": "COMP-HTTP10-DEFAULT-CLOSE",
+          "test": "HTTP/1.0 without keep-alive \u2014 server should close connection after response",
+          "expected": "2xx + close",
+          "got": "400, connection closed",
+          "rfc": "RFC 9112 \u00a79.3",
+          "level": "Should"
+        }
+      ]
+    }
+  }
+}

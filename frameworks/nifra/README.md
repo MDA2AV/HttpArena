@@ -7,8 +7,8 @@ Nifra's typed router and middleware running on Node.js through the official
 
 - **Language:** TypeScript
 - **Runtime:** Node.js 26
-- **Framework:** [Nifra](https://nifra.dev/) 5.13.0
-- **Adapter:** [`@nifrajs/node`](https://github.com/nifrajs/nifra/tree/main/packages/node) 5.13.0
+- **Framework:** [Nifra](https://nifra.dev/) 5.16.0
+- **Adapter:** [`@nifrajs/node`](https://github.com/nifrajs/nifra/tree/main/packages/node) 5.16.0
 - **Build:** Multi-stage on `node:26-trixie-slim`; Node 26 strips TypeScript types at load time
 
 ## Endpoints
@@ -27,9 +27,9 @@ Nifra's typed router and middleware running on Node.js through the official
 
 ## Notes
 
-- `compression()` is Nifra's official gzip middleware. It negotiates compression per request, so
-  `/json` is compressed only when the client sends `Accept-Encoding: gzip` and the body crosses the
-  middleware threshold.
+- `compression()` is Nifra's official gzip middleware, applied to the `/json` group only. It
+  negotiates compression per request, so a response is compressed only when the client sends
+  `Accept-Encoding: gzip` and the body crosses the middleware threshold.
 - Static files are read through Nifra's `serveStatic` adapter hook on every request. The benchmark's
   mounted directory remains the source of truth, including its staleness probes.
 - Each cluster worker creates its own Postgres pool and divides `DATABASE_MAX_CONN` across the

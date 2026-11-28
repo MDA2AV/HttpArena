@@ -65,9 +65,10 @@ app.get('/pipeline', (req, res) => {
 });
 
 // GET and POST registered apart: each one goes native on uWS, and the GET reads no header.
-app.get('/baseline11', (req, res) => {
+const baseline = (req, res) => {
     res.type('text/plain').send(String(sumQuery(req.query)));
-});
+};
+app.get('/baseline11', baseline);
 
 // the load generator sends no Content-Type, so the parser reads any body
 app.post('/baseline11', readText, (req, res) => {
@@ -234,6 +235,11 @@ app.options('/spec', readRaw, (req, res) => {
 app.post('/spec', readRaw, echo);
 app.get('/spec/headers', specHeaders);
 app.post('/spec/headers', readRaw, specHeaders);
+// OPTIONS * asks about the server, not a path: µWS lets it through since v20.72, Express has no
+// route for it. A RegExp is the only way to write "*" alone, after the other OPTIONS routes.
+app.options(/^\*$/, (req, res) => {
+    res.set('allow', 'GET, HEAD, POST, OPTIONS').end();
+});
 
 // /parse, for the resilience suite: each body goes through the parser of its type. The limits
 // are the parsers' defaults, a body over them is a 413 and an invalid one a 400.
@@ -249,17 +255,26 @@ app.post('/parse',
 // app.uwsApp.ws and not app.ws: the echo needs no Request object on the upgrade.
 // https://fulmine.sndesign.it/websockets
 // 64 KB: the Autobahn cases of the spec suite echo messages up to that size.
+// A client that stops reading is closed when a send goes over the backpressure limit, so its
+// queue does not grow in the kernel. end() calls dropped again, hence the set.
+const ending = new WeakSet();
 app.uwsApp.ws('/ws', {
     maxPayloadLength: 64 * 1024,
-    message: (ws, message, isBinary) => ws.send(message, isBinary)
+    message: (ws, message, isBinary) => ws.send(message, isBinary),
+    dropped: (ws) => {
+        if (ending.has(ws)) return;
+        ending.add(ws);
+        ws.end();
+    }
 });
 
-// json-tls, static-tls and 8gbit over TLS on 8081, when the harness mounts the certs.
+// json-tls, static-tls, 8gbit and connections-1m-tls over TLS on 8081, when the harness mounts the certs.
 // https://fulmine.sndesign.it/examples/https
 const tlsApp = (dir) => {
     const target = configure(express({
         uwsOptions: { key_file_name: dir + '/server.key', cert_file_name: dir + '/server.crt' }
     }));
+    target.get('/baseline11', baseline);
     registerJsonRoute(target);
     registerStaticRoute(target);
     registerEchoRoute(target);

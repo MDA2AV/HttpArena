@@ -345,8 +345,9 @@ html[data-theme="dark"]{
 
   /* Build-time ranking, written into #rows by gen_leaderboard_data.py and thrown
      away by renderComposite() as soon as data.js has been parsed. It is what a
-     reader without JavaScript gets, and what paints first for everyone else. */
-  .sb{width:100%; border-collapse:collapse; font-size:.86rem}
+     reader without JavaScript gets, and what paints first for everyone else. Its
+     five columns are held to the board's widest too. */
+  .sb{width:100%; max-width:calc(5 * var(--col-max)); border-collapse:collapse; font-size:.86rem}
   .sb th,.sb td{padding:.44rem .55rem; border-bottom:1px solid var(--line-soft); text-align:left}
   .sb th{color:var(--muted); font-size:.72rem; font-weight:650; letter-spacing:.02em; text-transform:uppercase}
   .sb td.n,.sb th.n{text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums}
@@ -366,6 +367,8 @@ html[data-theme="dark"]{
   .board-seo a{color:var(--accent)}
   .board-seo ul{margin:.4rem 0; padding-left:1.1rem}
 
+  /* the widest a test column gets, in the Old View (#grid) and on the Rack (#hall) alike */
+  .grid, .hall{--col-max:8.5rem}
   .grid{--cols:54px minmax(250px,2fr) minmax(150px,1fr) 112px 92px 92px 96px 86px}
   .thead,.row{display:grid; grid-template-columns:var(--cols); align-items:center}
   .thead{position:sticky; top:57px; z-index:10; background:var(--bg); padding:.1rem 0 .55rem; border-bottom:1px solid var(--line); font-size:.72rem; font-weight:650; color:var(--muted); letter-spacing:.02em; text-transform:uppercase}
@@ -501,7 +504,7 @@ html[data-theme="dark"]{
 
   /* ── Composite matrix ────────────────────────────────────── */
   /* table scrolls natively in both axes (bar drag, wheel, trackpad and finger all work); its own horizontal bar is hidden so only the synced bar shows */
-  .cwrap{display:block; width:100%; overflow-x:auto; overflow-y:auto; max-height:calc(100vh - 210px); border:1px solid var(--line); border-radius:10px; margin-top:.15rem; -webkit-overflow-scrolling:touch; scrollbar-width:thin; scrollbar-color:var(--line) transparent}
+  .cwrap{display:block; width:fit-content; max-width:100%; overflow-x:auto; overflow-y:auto; max-height:calc(100vh - 210px); border:1px solid var(--line); border-radius:10px; margin-top:.15rem; -webkit-overflow-scrolling:touch; scrollbar-width:thin; scrollbar-color:var(--line) transparent}
   .cwrap::-webkit-scrollbar{width:10px; height:0}
   .cwrap::-webkit-scrollbar-thumb{background:var(--line); border-radius:6px}
   .cwrap::-webkit-scrollbar-thumb:hover{background:var(--muted)}
@@ -520,16 +523,20 @@ html[data-theme="dark"]{
   .cscroll::-webkit-scrollbar-thumb{background:var(--text-2); border:2px solid var(--panel-2)}
   .cscroll::-webkit-scrollbar-thumb:hover{background:var(--text)}
   .cscroll>div{height:1px}
-  table.cm{border-collapse:separate; border-spacing:0; width:100%; min-width:max-content; font-size:.78rem; line-height:1.2}
+  table.cm{border-collapse:separate; border-spacing:0; font-size:.78rem; line-height:1.2}
   .cm th,.cm td{padding:.24rem .45rem; border-bottom:1px solid var(--line-soft); border-right:1px solid var(--line-soft); white-space:nowrap; background:var(--bg)}
   .cm th:last-child,.cm td:last-child{border-right:0}
   .cm tbody tr:last-child td{border-bottom:0}
   .cm thead th{position:sticky; top:0; z-index:3; background:var(--bg); border-bottom:1px solid var(--line); font-size:.76rem; text-transform:uppercase; letter-spacing:.02em; color:var(--text-2); font-weight:650; text-align:left; cursor:pointer}
   .cm thead th:hover{color:var(--text)}
   .cm th.num,.cm td.num{text-align:left; font-variant-numeric:tabular-nums; font-family:var(--mono)}
-  /* per-profile columns: as narrow as their figures, and sharing whatever width
-     the window has left over - no blank trailing column on a wide screen */
-  .cm th.pcol{white-space:normal; line-height:1.2; vertical-align:bottom}
+  /* per-profile columns: as narrow as their figures, and wider with the window up
+     to --col-max, where the table ends however wide the window is. The user: "set
+     a max width for columns to not fill the whole space". A cell's max-width does
+     not hold a column back in an auto-layout table, so the table is only as wide
+     as its columns ask for (no width of its own to share out) and --col-max is
+     what each of them asks for. */
+  .cm th.pcol{box-sizing:border-box; width:var(--col-max); line-height:1.2; vertical-align:bottom}
   .cm td.pc{color:var(--text-2); line-height:1.1; vertical-align:middle; position:relative}
   /* slim per-cell quality cue: bar length = this result's normalized score in its profile */
   .cm td.pc .cbar{position:absolute; left:0; bottom:0; height:2px; background:var(--muted); opacity:.45}
@@ -586,6 +593,7 @@ html[data-theme="dark"]{
   .cm td.pc.nc{opacity:.55}
 /* The compliance (Spec) column: a profile-like cell, set off from the profiles after it. */
 .cm th.spech, .cm td.spec{border-right:1px solid var(--line-soft)}
+.cm th.spech, .cm th.resilh{width:4.5rem}
 /* A crash during the suite: the percentage alone, in red. */
 .cm td.pc.spec.crashed .crps{color:#c0392b}
 html[data-theme="dark"] .cm td.pc.spec.crashed .crps{color:#f0857a}
@@ -614,7 +622,7 @@ html[data-theme="dark"] .cm td.pc.spec.crashed .crps{color:#f0857a}
   /* The overall view: five family columns where a family board has a dozen
      profile columns, so they can afford the room - the score, its place on the
      family board and a bar long enough to compare. */
-  .cm th.famcol{min-width:8.5rem}
+  .cm th.famcol{min-width:var(--col-max)}
   /* Two affordances per profile column: open that profile's detail view, and
      open its implementation guide. They sit on their own line under the label,
      so the column (width:1px, shrink-to-fit) does not get any wider. */
@@ -787,7 +795,8 @@ html:not([data-theme="dark"]) .round-sub{color:var(--lead)}
 .round-badge{border-radius:2px}
 
 .layout{display:block}
-/* no max width: the rack and the maintenance table take the whole window, however wide */
+/* no max width: the rack takes the whole window, however wide, and the maintenance
+   table as much of it as its columns ask for (--col-max, --row-max) */
 .main, .main.cmfull{max-width:none; margin:0; padding:1.3rem 1.25rem 4rem}
 .nav-mobile{display:none}
 
@@ -1211,6 +1220,36 @@ table.runs{border-collapse:collapse; width:100%; font:500 .76rem/1.3 var(--mono)
   .rack.v-prof:not(.aisle) .patch .face>.port.mod>.pico{align-self:flex-end}
   .rack.v-prof:not(.aisle) .patch .face>.svc{align-items:center; padding-bottom:0}
   .rack.v-prof:not(.aisle) .patch .leds.ph{justify-content:center; padding-bottom:0}
+}
+
+/* ── a unit one row high: its test columns stop where the Old View's do ── */
+/* The user: "on the rack view, the table columns should have a max width same as
+   in old view". A test column (the bays below, the patch panel's ports above) grows
+   with the window up to --col-max, the Old View's widest, and the rack ends after
+   the last one, the way the Old View's table ends: posts, cap and foot come in with
+   it. The rack is capped at everything that is not a test column (--rack-other,
+   measured by rackCap() in the board's script) plus its columns at --col-max; the
+   bays share out what is left as before, so a board with more columns than the
+   window holds is unchanged.
+   A slid-out unit's tray too narrow for its two columns side by side puts the
+   service tag over the sheet, as a phone does, so the strength meters keep their room.
+   Only the 1U layouts; the 2U ones above keep their bays on a row the width of the
+   unit. Phones, the Aisle and the rack painted before the results arrive (neither
+   .v-comp nor .v-prof yet) are unchanged. */
+@media (min-width:901px){
+  .rack.v-comp:not(.many):not(.aisle){max-width:calc(var(--rack-other, 100vw) + var(--n,1) * var(--col-max))}
+  .rack.v-comp:not(.many):not(.aisle) .tray{container:tray / inline-size}
+}
+@media (min-width:1400px){
+  .rack.v-comp.many:not(.aisle){max-width:calc(var(--rack-other, 100vw) + var(--n,1) * var(--col-max))}
+  .rack.v-comp.many:not(.aisle) .tray{container:tray / inline-size}
+}
+@media (min-width:1121px){
+  .rack.v-prof:not(.aisle){max-width:calc(var(--rack-other, 100vw) + var(--n,1) * var(--col-max))}
+  .rack.v-prof:not(.aisle) .tray{container:tray / inline-size}
+}
+@container tray (width < 1000px){
+  .tray-in{grid-template-columns:minmax(0,1fr)}
 }
 
 /* ── phones and narrow windows ── */
@@ -1716,6 +1755,8 @@ html:not([data-theme="dark"]) .str-m::after{filter:none}
 #grid .cm.heat td.pc .cbar{border-radius:4px !important}
 /* a profile's own maintenance view: the same quiet rows */
 #grid .thead{font:600 .8rem/1.25 var(--sans); letter-spacing:0; text-transform:none; color:var(--text-2); background:var(--panel-2); border:1px solid var(--line); border-bottom-color:var(--line); padding:.35rem 0}
+/* no wider than its columns at their widest (renderProfile) */
+#grid .thead, #grid #rows:has(>.row, >.empty){max-width:var(--row-max)}
 #grid .thead .th.sorted{color:var(--text)}
 #grid #rows:has(>.row){border:1px solid var(--line); border-top:0; overflow:hidden; background:var(--panel)}
 #grid .row, #grid .row:nth-child(even){background:var(--panel)}
@@ -1782,6 +1823,16 @@ html:not([data-theme="dark"]) .str-m::after{filter:none}
 #grid .row .nm{font:600 .86rem/1.2 var(--sans)}
 #grid .row .meter{flex-direction:row; justify-content:flex-end; align-items:center; gap:0; padding:3px 7px !important}
 #grid .row .meter .bar{position:absolute; left:7px; right:7px; bottom:2px; width:auto; height:2px}
+
+/* ── the Old View: a favourite lights its whole row ──
+   The user: "when selecting a favourite on old view, highlight the whole row".
+   The softer table paints every cell with the panel by id, which outweighed the
+   favourite tint of the rules further up: only the star and the gold edge on
+   the rank were left. Every cell of the row takes it again, the frozen ones
+   too, so the row stays lit end to end when the table scrolls sideways. */
+#grid .cm tbody tr.fav td, #grid .row.fav{background:var(--fav-bg)}
+#grid .cm tbody tr.fav:hover td, #grid .row.fav:hover{background:var(--fav-bg-h)}
+#grid .cm tbody tr.fav .nm, #grid .row.fav .nm{font-weight:700}
 
 /* ── the locator LED: on, the whole unit lights blue, end to end (rack and aisle) ── */
 .unit.fav>.face{background-image:linear-gradient(90deg, color-mix(in srgb, var(--led-b) 22%, transparent), color-mix(in srgb, var(--led-b) 9%, transparent) 40%, color-mix(in srgb, var(--led-b) 9%, transparent) 60%, color-mix(in srgb, var(--led-b) 22%, transparent)), var(--face)}
@@ -1941,3 +1992,26 @@ html.aisle .tools .a3d-btn{display:inline-flex}
 .rail-item{display:block; padding:.36rem .55rem .36rem .9rem; border-left:3px solid transparent; color:var(--text-2); font:500 .86rem/1.3 var(--sans); text-decoration:none}
 .rail-item:hover{background:var(--panel-2); color:var(--text)}
 .rail-item.on{border-left-color:var(--led-g); background:var(--accent-weak); color:var(--text); font-weight:650}
+
+/* ── weights: what each test column counts for in the composite ──
+   The user: "lets add weight for each test ... this should be visible in the ui
+   for all views". A test's weight is on its header in every view - the Old View's
+   column, the Rack's patch panel, the Aisle's key to its lights - and beside the
+   connection counts on a test's own view: ×1, ×0.5 for a test that shares one
+   test's weight with another, ×0 for a reference column. The tooltip says why. */
+/* the Old View: after the name, on the same line */
+.cm thead th .wt{margin-left:.4rem; font-weight:500; color:var(--text-2); font-variant-numeric:tabular-nums; cursor:help}
+#grid .cm thead th .wt{font-weight:500}
+/* the Rack: a line of its own between the name and the buttons, right-aligned
+   over the figures like the name. The composite's, Spec's and Resil.'s ports
+   carry an empty one, so every name stays on the strip's shared line. */
+.patch .port>.pw{flex:none; display:block; height:12px; font:600 .75rem/12px var(--sans); color:var(--text-2); text-align:right; font-variant-numeric:tabular-nums; letter-spacing:0; text-transform:none; cursor:help}
+.patch .bays>.port>.pw{padding-right:4px}
+.patch .bay.refcol>.pw{opacity:.75}
+/* the 2U layouts' first row is one line: no weight line to keep there */
+.rack.many:not(.aisle) .patch .face>.port>.pw{display:none}
+/* the Aisle: after the test's name in the key */
+.rct .rw{margin-left:-.1rem; font-weight:500; color:var(--muted); font-variant-numeric:tabular-nums; cursor:help}
+/* a test's own view */
+.pweight{margin-left:.9rem; font:500 .8125rem/1 var(--sans); color:var(--text-2); white-space:nowrap; cursor:help}
+.pweight b{margin-left:.3rem; font-weight:650; color:var(--text); font-variant-numeric:tabular-nums}

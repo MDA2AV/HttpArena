@@ -1,6 +1,6 @@
 # vertx
 
-Eclipse Vert.x with vertx-web on Netty, one server verticle per core.
+Eclipse Vert.x with vertx-web on Netty, one Vert.x instance and `SO_REUSEPORT` listener per core.
 
 ## Stack
 
@@ -31,13 +31,14 @@ Eclipse Vert.x with vertx-web on Netty, one server verticle per core.
 - Compression through `HttpServerOptions.setCompressionSupported(true)`
 - TLS through OpenSSL (BoringSSL from `netty-tcnative-boringssl-static`) via `OpenSSLEngineOptions`,
   rather than the JDK's `SSLEngine` that Vert.x uses when no engine is set
-- The verticle is deployed once per core, all instances sharing port 8080
+- One `Vertx` per core, each with a single event loop and one server verticle. Every server sets
+  `setReusePort(true)`, so each core binds its own `SO_REUSEPORT` socket on each port and the
+  kernel spreads new connections across them. Inside one `Vertx`, servers on the same host:port
+  share a single listening socket and a single acceptor thread
 - `/echo` is read from the request stream, so the 20 MB body is never buffered
 
 `json-tls` and `static-tls` listen on `8081` when `/certs/server.crt` and `/certs/server.key` are
-mounted. The verticle is deployed once per core and each instance binds both ports, so the TLS
-listener is spread across every event loop rather than parked on one. ALPN is off: those two
-profiles want HTTP/1.1 negotiated and no h2 offered.
+mounted. ALPN is off: those two profiles want HTTP/1.1 negotiated and no h2 offered.
 
 Static file bodies are read from disk on every request - `sendFile` hands the descriptor to the
 kernel rather than holding the bytes - and the pre-compressed sibling is picked per request.

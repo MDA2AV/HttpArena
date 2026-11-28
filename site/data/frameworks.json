@@ -283,6 +283,20 @@
       "response": true
     }
   },
+  "barejs": {
+    "dir": "barejs",
+    "description": "JIT-specialized web framework for Bun with zero-allocation context pooling, built-in compression middleware, static file handler, and native WebSocket routing.",
+    "repo": "https://github.com/xarhang/bareJS",
+    "type": "emerging",
+    "engine": "bun",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "beskar-websocket": {
     "dir": "beskar-websocket",
     "description": "High-performance WebSocket echo server built with Beskar.Networking.",
@@ -319,6 +333,20 @@
     "type": "flagship",
     "engine": "gunicorn",
     "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
+  "BT-YE": {
+    "dir": "btye",
+    "description": "C++23 framework for HTTP/2 services on hidi: an actor per core, coroutines, server and client generated from an OpenAPI spec by svarg. Serves h2 on :8443 and h2c (prior knowledge) on :8082.",
+    "repo": "https://github.com/kelbon/BT-YE",
+    "type": "experimental",
+    "engine": "hidi",
+    "mode": "standard",
     "completeness": {
       "routing": true,
       "middleware": true,
@@ -413,7 +441,7 @@
   },
   "cinatra": {
     "dir": "cinatra",
-    "description": "cinatra C++20 coroutine HTTP server, one event loop per available CPU and native SO_REUSEPORT acceptors. JSON through bundled iguana and cinatra's streaming response API with built-in gzip. Request-local PMR storage avoids copying immutable dataset strings. Native HTTP/1.1 TLS and WebSocket listeners.",
+    "description": "cinatra C++20 coroutine HTTP server with one event loop per available CPU and native SO_REUSEPORT acceptors. Buffered JSON through iguana, gzip compression, and native HTTP/1.1 TLS and WebSocket listeners.",
     "repo": "https://github.com/qicosmos/cinatra",
     "type": "flagship",
     "engine": "Asio / async_simple",
@@ -520,6 +548,20 @@
     "completeness": {
       "routing": true,
       "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
+  "doba": {
+    "dir": "doba",
+    "description": "A high-performance, transport- and protocol-agnostic C++20 server framework.",
+    "repo": "https://github.com/martianlabs/doba",
+    "type": "experimental",
+    "engine": "doba",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": false,
       "request": true,
       "response": true
     }
@@ -1082,6 +1124,36 @@
     "type": "flagship",
     "engine": "Puma",
     "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
+  "hapi-tuned": {
+    "dir": "hapi-tuned",
+    "description": "The hapi entry with three things changed. Each worker binds its own listener with reusePort, created in the entry and handed to hapi, instead of taking connections from the cluster primary. Brotli runs as one synchronous call at quality 1 inside the encoder hapi's compression calls, instead of a zlib stream at quality 3. Cookie parsing, range support and connection tracking for graceful stop are switched off. Routes, query and payload parsing and JSON serialization are the hapi entry's.",
+    "repo": "https://github.com/hapijs/hapi",
+    "type": "flagship",
+    "engine": "node:http",
+    "mode": "tuned",
+    "website": "https://hapi.dev",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
+  "hapi": {
+    "dir": "hapi",
+    "description": "hapi 21 on the Node http server, default configuration, one cluster worker per core. Routing, query and payload parsing, JSON serialization and compression are all hapi built-ins, with brotli (quality 3) registered through hapi's encoder API - no plugins.",
+    "repo": "https://github.com/hapijs/hapi",
+    "type": "flagship",
+    "engine": "node:http",
+    "mode": "standard",
+    "website": "https://hapi.dev",
     "completeness": {
       "routing": true,
       "middleware": true,
@@ -1771,6 +1843,36 @@
       "response": false
     }
   },
+  "nifra-bun": {
+    "dir": "nifra-bun",
+    "description": "Nifra's typed router and middleware on Bun's native HTTP server through app.listen(), with one reusePort process per available core.",
+    "repo": "https://github.com/nifrajs/nifra",
+    "type": "emerging",
+    "engine": "bun",
+    "mode": "standard",
+    "website": "https://nifra.dev",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
+  "nifra-uws": {
+    "dir": "nifra-uws",
+    "description": "Nifra's typed router and middleware on uWebSockets.js through the @nifrajs/node-uws adapter, with one cluster worker per available core.",
+    "repo": "https://github.com/nifrajs/nifra",
+    "type": "emerging",
+    "engine": "uWebSockets.js",
+    "mode": "standard",
+    "website": "https://nifra.dev",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "nifra": {
     "dir": "nifra",
     "description": "Nifra's typed router and middleware on the official Node HTTP adapter, with one cluster worker per available core.",
@@ -1831,7 +1933,7 @@
   },
   "ntex": {
     "dir": "ntex",
-    "description": "ntex 4 on its native runtime. Routing and extractors through ntex::web, JSON through HttpResponse::json. Static files served from disk per request, choosing a pre-compressed .br/.gz sibling off Accept-Encoding. async-db with deadpool's unmanaged pool (sized from DATABASE_MAX_CONN). fortunes rendered through an Askama template. json-tls and static-tls over HTTP/1.1 with rustls on 8081.",
+    "description": "ntex 4 on its native runtime. Routing and extractors through ntex::web, JSON through HttpResponse::json. Static files served from disk per request, choosing a pre-compressed .br/.gz sibling off Accept-Encoding. async-db with deadpool's unmanaged pool (sized from DATABASE_MAX_CONN). fortunes rendered through a sailfish template. json-tls and static-tls over HTTP/1.1 with rustls on 8081.",
     "repo": "https://github.com/ntex-rs/ntex",
     "type": "flagship",
     "engine": "ntex",
@@ -1868,6 +1970,13 @@
         "mode": "standard"
       }
     ]
+  },
+  "okena": {
+    "dir": "okena",
+    "description": "okena, a load balancer, reverse proxy and API gateway written in x86-64 assembly (no libc, io_uring), with HttpArena's handler module assembled into the binary (make MODULES=httparena.inc): /baseline sums the query and body, /json/{count} serializes the parsed dataset per request (compressed per request by okena's own gzip/brotli for json-comp), /echo returns the body okena read, /delay/{ms} holds the request on okena's timers without blocking the worker, and benchmark.BenchmarkService/GetSum answers unary gRPC (protobuf decoded and encoded by the module, grpc-status as an HTTP/2 trailer). Static files from okena's own file server with its precompressed .br/.gz. Its own TLS 1.3 / 1.2, HTTP/2 and HTTP/3. HTTP/1.1 (and h2c for gRPC) on :8080, h1 over TLS on :8081, h2c on :8082, h2 and h3 on :8443.",
+    "repo": "https://github.com/Lu4nScr1pt1ng/okena",
+    "type": "infrastructure",
+    "engine": "okena"
   },
   "orisha-uring": {
     "dir": "orisha-uring",
@@ -1997,7 +2106,7 @@
   },
   "Proa": {
     "dir": "proa",
-    "description": "Compiled Proa HTML components served over thread-per-core Axum/Hyper workers with mimalloc v2, sonic-rs JSON serialization, thread-local libdeflater gzip compression, TLS 1.3 (AES-128-GCM via aws-lc-rs) on :8081, and per-worker deadpool-postgres pools.",
+    "description": "Compiled Proa HTML components served over thread-per-core Axum/Hyper workers with mimalloc v2, sonic-rs JSON serialization, thread-local libdeflater gzip compression, TLS 1.3 (AES-128-GCM via aws-lc-rs) for HTTP/1.1 (:8081), HTTP/2 (:8443), h2c (:8082), HTTP/3/QUIC via quinn+h3 (:8443/udp), gRPC, batched WebSocket echo, and per-worker deadpool-postgres pools.",
     "repo": "https://github.com/Proa-Labs/proa",
     "type": "emerging",
     "engine": "hyper",
@@ -2269,6 +2378,13 @@
       "response": true
     }
   },
+  "roxygen": {
+    "dir": "roxygen",
+    "description": "Meta's Roxygen, an HTTP/1.1 and HTTP/2 library that brings Proxygen's design to Rust. Serves h2c and HTTP/2 over rustls on Roxygen's owned HTTP/2 driver, which polls every stream of a connection from one future instead of running a task per request.",
+    "repo": "https://github.com/facebookincubator/roxygen",
+    "type": "engine",
+    "engine": "roxygen"
+  },
   "rust-epoll": {
     "dir": "rust-epoll",
     "description": "Zero-dependency Rust HTTP engine using raw epoll syscalls, one-thread-per-core with SO_REUSEPORT.",
@@ -2448,7 +2564,7 @@
   },
   "sober": {
     "dir": "sober",
-    "description": "Sober's standard library HTTP/1.1 server (std/http on std/net, TLS 1.3 from std/tls), default configuration. One task per connection; one io_uring and one SO_REUSEPORT listener per worker \u2014 each worker accepts on its own ring and runs the connection itself (epoll fallback), with workers pinned one per CPU. Routes are a plain table ([]http.Route with method, :param / *rest patterns, Mount / Merge, before / after middleware), JSON through std/json, gzip through the built-in compression: option of the server. /async-db through std/pg, the standard library's own PostgreSQL client (wire protocol 3.0, extended query, SCRAM-SHA-256) and its connection pool (pg.OpenPool / pg.With) sized from DATABASE_MAX_CONN. Static ELF with no libc, FROM scratch.",
+    "description": "Sober's standard library HTTP server (std/http on std/net, TLS 1.3 from std/tls), default configuration: HTTP/1.1, and HTTP/2 with prior knowledge (h2c) on 8082 where each stream runs its handler in its own task. One task per connection; one io_uring and one SO_REUSEPORT listener per worker \u2014 each worker accepts on its own ring and runs the connection itself (epoll fallback), with workers pinned one per CPU. Routes are a plain table ([]http.Route with method, :param / *rest patterns, Mount / Merge, before / after middleware), JSON through std/json, gzip through the built-in compression: option of the server. /async-db through std/pg, the standard library's own PostgreSQL client (wire protocol 3.0, extended query, SCRAM-SHA-256) and its connection pool (pg.OpenPool / pg.With) sized from DATABASE_MAX_CONN. Static ELF with no libc, FROM scratch.",
     "repo": "https://github.com/sober-lang/sober",
     "type": "experimental",
     "engine": "std/http",
@@ -2818,7 +2934,7 @@
   },
   "valk": {
     "dir": "valk",
-    "description": "Valk's standard library HTTP/1.1, HTTP/2 and WebSocket server (io_uring with epoll fallback), built-in router, JSON serializer, static file server and response compression.",
+    "description": "Valk's standard library HTTP/1.1, HTTP/2, HTTP/3 and WebSocket server (io_uring with epoll fallback), built-in router, JSON serializer, template engine, static file server, response compression, valk-grpc, valk-postgres and valk-protobuf.",
     "repo": "https://github.com/valk-lang/valk",
     "type": "experimental",
     "engine": "valk.http",
@@ -2924,9 +3040,23 @@
       "response": true
     }
   },
+  "vertx-graalvm": {
+    "dir": "vertx-graalvm",
+    "description": "The vertx entry on Oracle GraalVM 25 in JIT mode: the same code and JVM flags, run on HotSpot with the Graal compiler (libgraal, the distribution default) in place of C2. Eclipse Vert.x 5 with vertx-web on Netty's epoll transport, one Vert.x instance with its own SO_REUSEPORT listener per core. Routing and query/path params through the Router API, JsonObject serialization, gzip through the server compression option, TLS through BoringSSL (netty-tcnative).",
+    "repo": "https://github.com/eclipse-vertx/vert.x",
+    "type": "flagship",
+    "engine": "Netty",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "vertx": {
     "dir": "vertx",
-    "description": "Eclipse Vert.x 5 with vertx-web on Netty's epoll transport, one server verticle per core. Routing and query/path params through the Router API, JsonObject serialization, gzip through the server compression option, TLS through BoringSSL (netty-tcnative).",
+    "description": "Eclipse Vert.x 5 with vertx-web on Netty's epoll transport, one Vert.x instance with its own SO_REUSEPORT listener per core. Routing and query/path params through the Router API, JsonObject serialization, gzip through the server compression option, TLS through BoringSSL (netty-tcnative).",
     "repo": "https://github.com/eclipse-vertx/vert.x",
     "type": "flagship",
     "engine": "Netty",
@@ -2954,7 +3084,7 @@
   },
   "viltrum": {
     "dir": "viltrum",
-    "description": "HTTP framework for V with its own engine: one SO_REUSEPORT epoll worker per CPU, pipelined responses batched into one write, and no allocation per request inside the framework (CI-enforced). Router with :params, middleware chain (c.next()), compile-time JSON encoder, gzip middleware on its own DEFLATE encoder, static files with ETag, ranges and precompressed .br/.gz copies. TLS 1.3 on the same workers: the common handshake (X25519, RSA-PSS) and the AES-GCM records on its own code, the rest on mbedtls, the TLS library V ships; certificates reloaded when the files change. HTTP/2 on the same workers and through the same router and Ctx: over TLS by ALPN and cleartext with prior knowledge, its own HPACK, flow control and RFC 9113 limits. WebSocket (RFC 6455) on the same workers, messages handed over as views into the read buffer. Request framing is smuggling-hardened (Content-Length and chunked) and fuzzed in CI. Default configuration.",
+    "description": "HTTP framework for V with its own engine: one SO_REUSEPORT epoll worker per CPU, pipelined responses batched into one write, and no allocation per request inside the framework (CI-enforced). Router with :params, middleware chain (c.next()), compile-time JSON encoder, gzip middleware on its own DEFLATE encoder, static files with ETag, ranges and precompressed .br/.gz copies. TLS 1.3 on the same workers: the common handshake (X25519, RSA-PSS) and the AES-GCM records on its own code, the rest on mbedtls, the TLS library V ships; certificates reloaded when the files change. HTTP/2 on the same workers and through the same router and Ctx: over TLS by ALPN and cleartext with prior knowledge, its own HPACK, flow control and RFC 9113 limits. WebSocket (RFC 6455) on the same workers, messages handed over as views into the read buffer. A quiet connection holds no buffers (they are lent per event). Request framing is smuggling-hardened (Content-Length and chunked) and fuzzed in CI. async-db and fortunes park the request (Ctx.suspend) while the entry's own Postgres wire client (no libpq) runs the query; fortunes renders with V's compile-time templates. Default configuration.",
     "repo": "https://github.com/Tuntii/viltrum",
     "type": "experimental",
     "engine": "viltrum",
